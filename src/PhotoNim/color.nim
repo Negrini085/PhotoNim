@@ -15,17 +15,23 @@ proc areClose*(x, y: Color): bool {.inline.} =
 
 
 
-proc multByScal*(color: Color, scalar: float32) : Color = 
+proc sumCol*(col1: Color, col2: Color): Color =
+    ## Sum of two colors 
+    result.r = col1.r + col2.r
+    result.g = col1.g + col2.g
+    result.b = col1.b + col2.b
+
+
+
+proc multByScal*(col: Color, scal: float32): Color = 
     ## Multiplication by a scalar
-    result.r = color.r * scalar
-    result.g = color.g * scalar
-    result.b = color.b * scalar
-
-    return result
+    result.r = col.r * scal
+    result.g = col.g * scal
+    result.b = col.b * scal
 
 
 
-proc multCol*(col1, col2: Color) : Color = 
+proc multCol*(col1, col2: Color): Color = 
     ## Multiplication of two colors
     result.r = col1.r * col2.r
     result.g = col1.g * col2.g
