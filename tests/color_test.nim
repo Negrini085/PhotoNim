@@ -14,6 +14,15 @@ suite "ColorTest":
         check areClose(col1.b, 3.0)
         check areClose(col2, newColor(0.0, 0.0, 0.0))
 
+    test "sumCol":
+        ## Sum of two color test
+        col2 = newColor(0.1, 0.2, 0.3)
+        var res: Color = col1.sumCol(col2)
+
+        check areClose(res.r, 1.1)
+        check areClose(res.g, 2.2)
+        check areClose(res.b, 3.3)
+
     test "multByScal":
         ## Multiplication by a scalar test
         col2 = col1.multByScal(2)
