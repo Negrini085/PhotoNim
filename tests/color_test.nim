@@ -20,3 +20,12 @@ suite "ColorTest":
         check areClose(col2.r, 2.0)
         check areClose(col2.g, 4.0)
         check areClose(col2.b, 6.0)
+
+    test "multCol":
+        ## Multiplication of two colors test
+        col2 = col1.multByScal(2)
+        var col3: Color = col1.multCol(col2)
+
+        check areClose(col3.r, 2.0)
+        check areClose(col3.g, 8.0)
+        check areClose(col3.b, 18.0)
