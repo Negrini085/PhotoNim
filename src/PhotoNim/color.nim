@@ -25,7 +25,7 @@ proc multByScal*(color: Color, scalar: float32) : Color =
 
 
 
-proc multColor*(col1, col2: Color) : Color = 
+proc multCol*(col1, col2: Color) : Color = 
     ## Multiplication of two colors
     result.r = col1.r * col2.r
     result.g = col1.g * col2.g
