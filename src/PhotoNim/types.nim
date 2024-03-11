@@ -1,6 +1,12 @@
 import common
 
-type
+
+
+#-----------------------------------------------#
+#                  Color type                   #
+#-----------------------------------------------#  
+
+type 
     Color* = object
         ## A Color in RGB format
         r*, g*, b*: float32
@@ -36,3 +42,28 @@ proc multCol*(col1, col2: Color): Color =
     result.r = col1.r * col2.r
     result.g = col1.g * col2.g
     result.b = col1.b * col2.b
+
+
+
+
+
+#-----------------------------------------------#
+#                HdrImage type                  #
+#-----------------------------------------------#  
+
+type
+    HdrImage* = object
+        ## An HDR image
+        width*, height*: int
+        image*: seq[Color]
+
+
+
+proc newHdrImage(width: int, height: int): HdrImage = 
+    ## Contructor which creates a one dimensional array of colors, whose dimension is width * height
+    result.width = width
+    result.height = height
+    
+    ## Every pixel is initialized as black (pixel.r = 0.0, pixel.g = 0.0, pixel.b = 0.0)
+    for i in 0..<width*height:
+        result.image.add(newColor(0.0, 0.0, 0.0))
