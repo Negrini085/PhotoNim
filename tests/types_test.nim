@@ -57,7 +57,7 @@ suite "ColorTest":
 suite "HdrImageTest":
     
     setup:
-        let im1: HdrImage = newHdrImage(2, 2)
+        var im1: HdrImage = newHdrImage(2, 2)
         let im2: HdrImage = HdrImage()
     
     test "newHdrImage":
@@ -94,3 +94,17 @@ suite "HdrImageTest":
         ## Pixel index calculator test
         check areClose(float(im1.pixel_offset(0,0)), 0.0)
         check areClose(float(im1.pixel_offset(1,1)), 3)
+
+    test "get_pixel":
+        ## Get pixel test
+        im1.image[3] = newColor(1.0, 2.0, 3.0)
+        
+        # Testing black color
+        check areClose(im1.get_pixel(1,0).r, 0.0)
+        check areClose(im1.get_pixel(1,0).g, 0.0)
+        check areClose(im1.get_pixel(1,0).b, 0.0)       
+
+        # Testing non black color
+        check areClose(im1.get_pixel(1,1).r, 1.0)
+        check areClose(im1.get_pixel(1,1).g, 2.0)
+        check areClose(im1.get_pixel(1,1).b, 3.0)
