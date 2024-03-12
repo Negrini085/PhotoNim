@@ -74,6 +74,11 @@ proc valid_coord*(img: HdrImage, row, col: int): bool =
     ## Checks if given coordinates are valid or not
     return (row >= 0) and (row < img.width) and (col >= 0) and (col < img.height)
 
-proc pixel_ind*(img: HdrImage, row, col: int): int =
+
+
+proc pixel_offset*(img: HdrImage, row, col: int): int =
     ## Calculate pixel position in HdrImage.image = seq[Color]
     return row*img.width + col
+
+
+

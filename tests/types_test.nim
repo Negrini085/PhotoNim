@@ -90,7 +90,7 @@ suite "HdrImageTest":
         check valid_coord(im1, 0, 0)
         check valid_coord(im1, 1, 1)
 
-    test "pixel_ind":
+    test "pixel_offset":
         ## Pixel index calculator test
-        check areClose(float(im1.pixel_ind(0,0)), 0.0)
-        check areClose(float(im1.pixel_ind(1,1)), 3)
+        check areClose(float(im1.pixel_offset(0,0)), 0.0)
+        check areClose(float(im1.pixel_offset(1,1)), 3)
