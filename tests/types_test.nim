@@ -79,13 +79,18 @@ suite "HdrImageTest":
         ## Valid coordinates test
         
         # Testing negative coordinates
-        check not valid_coord(-1, 0, im1)
-        check not valid_coord(0, -1, im1)
+        check not valid_coord(im1, -1, 0)
+        check not valid_coord(im1, 0, -1)
 
         #Testing out of bound coordinates
-        check not valid_coord(2, 0, im1)
-        check not valid_coord(0, 2, im1)
+        check not valid_coord(im1, 2, 0)
+        check not valid_coord(im1, 0, 2)
 
         #Testing valid coordinates
-        check valid_coord(0, 0, im1)
-        check valid_coord(1, 1, im1)
+        check valid_coord(im1, 0, 0)
+        check valid_coord(im1, 1, 1)
+
+    test "pixel_ind":
+        ## Pixel index calculator test
+        check areClose(float(im1.pixel_ind(0,0)), 0.0)
+        check areClose(float(im1.pixel_ind(1,1)), 3)
