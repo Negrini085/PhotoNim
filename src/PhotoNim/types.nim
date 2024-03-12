@@ -59,7 +59,7 @@ type
 
 
 
-proc newHdrImage(width: int, height: int): HdrImage = 
+proc newHdrImage*(width, height: int): HdrImage = 
     ## Contructor which creates a one dimensional array of colors, whose dimension is width * height
     result.width = width
     result.height = height
@@ -67,3 +67,9 @@ proc newHdrImage(width: int, height: int): HdrImage =
     ## Every pixel is initialized as black (pixel.r = 0.0, pixel.g = 0.0, pixel.b = 0.0)
     for i in 0..<width*height:
         result.image.add(newColor(0.0, 0.0, 0.0))
+
+
+
+proc valid_coord(row, col: int, img: HdrImage): bool =
+    ## Checks if given coordinates are valid or not
+    return (row >= 0) and (row < img.width) and (col >= 0) and (col < img.height)
