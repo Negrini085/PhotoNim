@@ -1,4 +1,7 @@
 import color
+import std/[endians, strutils]
+import system/exceptions
+
 
 type
     HdrImage* = object
@@ -36,7 +39,37 @@ proc get_pixel*(img: var HdrImage, row, col: int) : var Color =
     assert img.valid_coord(row, col)
     img.image[img.pixel_offset(row, col)]
 
+
 proc set_pixel*(img: var HdrImage, row, col: int, color: Color) = 
     ## Set the `Color` of pixel (row, col) in a `HdrImage`
     assert img.valid_coord(row, col)
     img.image[img.pixel_offset(row, col)] = color
+
+
+proc parseImgSize*(line: string): tuple[width, height: int] {.raises: [IOError, ValueError].} =
+    let sizes = line.split(" ")
+    if sizes.len != 2:
+        raise newException(IOError, "Invalid image size specification")
+
+    try:
+        result = (sizes[0].parseInt, sizes[1].parseInt)
+    except ValueError:
+        raise newException(IOError, "Missing image size specification")
+
+    if (result.width < 0) or (result.height < 0):
+        raise newException(ValueError, "Invalid image size specification: sizes must be positive")
+
+
+proc parseEndianness*(line: string): Endianness {.raises: [IOError].} =
+    var value: float
+    try:
+        value = line.parseFloat
+    except ValueError:
+        raise newException(IOError, "Missing endianness specification")
+
+    if value == 1.0:
+        return bigEndian
+    elif value == -1.0:
+        return littleEndian
+    else:
+        raise newException(IOError, "Invalid endianness specification")
