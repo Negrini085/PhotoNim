@@ -50,8 +50,17 @@ proc setPixel*(img: var HdrImage, row, col: uint, color: Color) =
     img.pixels[img.pixelOffset(row, col)] = color
 
 
-proc parseFloat(stream: Stream, endianness: Endianness): float32 = 
-    quit "ToDO"
+proc parseFloat(stream: Stream, endianness: Endianness = littleEndian): float32 = 
+    ## Reads a float from a stream and stores it according to endianness
+    # endianness has littleEndian as default value because is more common
+
+    var appo: float32 = stream.readFloat32
+
+    if endianness == bigEndian:
+        bigEndian32(addr result, addr appo)
+    
+    else:
+        littleEndian32(addr result, addr appo)
 
 
 proc writeFloat(stream: Stream, endianness: Endianness, value: float32) = 
