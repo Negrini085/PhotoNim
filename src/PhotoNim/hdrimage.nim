@@ -18,6 +18,7 @@ proc newHdrImage*(width, height: uint): HdrImage =
 
 
 proc fillHdrImage*(img: var HdrImage, color: Color) =
+    ## Fills with a background color
     for i in 0..<img.width * img.height:
         img.pixels[i] = color
 
