@@ -63,8 +63,19 @@ proc parseFloat(stream: Stream, endianness: Endianness = littleEndian): float32 
         littleEndian32(addr result, addr appo)
 
 
-proc writeFloat(stream: Stream, endianness: Endianness, value: float32) = 
-    quit "ToDO"
+proc writeFloat(stream: Stream, endianness: Endianness = littleEndian, value: float32): void = 
+    ## Writes a float according to endianness
+    # endianness has littleEndian as default value because is more common
+
+    var appo: float32
+
+    if endianness == bigEndian:
+        bigEndian32(addr appo, addr value)
+    
+    else:
+        littleEndian32(addr appo, addr value)
+    
+    stream.write(appo)
 
 
 proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
