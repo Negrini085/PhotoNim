@@ -97,32 +97,31 @@ proc parseEndian(stream: Stream): Endianness =
         raise newException(CatchableError, "Invalid endianness value: the only possible values are '1.0' or '-1.0'")
 
 
-proc parseDim(stream: Stream): tuple[width: int, height: int] = 
+proc parseDim(stream: Stream): array[2, uint] = 
     ## Reads dimension of PFM image from PFM file
     
     var 
         appo = stream.readLine().split(" ")
     
-    result.width = parseInt(appo[0])
-    result.height = parseInt(appo[1])
+    result[0] = parseUInt(appo[0])
+    result[1] = parseUInt(appo[1])
 
 
 proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
     var
-        width, height: uint
+        dim: array[2, uint]
         endianness: Endianness
 
     if stream.readLine != "PM":
         raise newException(CatchableError, "Invalid PFM magic specification: required 'PM\n'")
 
     try:
-        width = stream.readUint32
-        height = stream.readUint32
+        dim = stream.parseDim()
     except:
         raise newException(CatchableError, "Invalid image size specification: required 'width height\n' as unsigned integers")
     
     endianness = stream.parseEndian()
-    result = newHdrImage(width, height)
+    result = newHdrImage(dim[0], dim[1])
 
     var
         r, g, b: float32
@@ -144,11 +143,3 @@ proc writePFM*(img: HdrImage, stream: Stream, endianness: Endianness) =
             writeFloat(stream, endianness, color.r)
             writeFloat(stream, endianness, color.g)
             writeFloat(stream, endianness, color.b)
-        stream.write("\n")
-    
-
-var
-    img: HdrImage = newHdrImage(10, 12)
-
-img.setPixel(2, 3, newColor(1.0, 2.0, 3.0))
-echo img
