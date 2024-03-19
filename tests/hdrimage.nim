@@ -62,10 +62,18 @@ suite "HdrImageTest":
 
         var stream: Stream = newFileStream("files/wpFloat.txt", fmWrite)
         
-        #Testing float 
+        #Testing float & string type
         stream.writeFloat(bigEndian, float32(1.0))
+        stream.write("1.0")
         stream.close()
+
         stream = openFileStream("files/wpFloat.txt", fmRead)
         check areClose(stream.parseFloat(bigEndian), float32(1.0))
+        check "1.0" == stream.readLine()
+        stream.close()
+    
+    #test "writeparsePFM":
+        ## writePFM & parsePFM tests
+        # Checks rea
         
 
