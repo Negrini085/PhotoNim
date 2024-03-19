@@ -1,4 +1,5 @@
 import std/unittest
+import std/[streams, endians, strutils]
 import PhotoNim/[common, color, hdrimage]
 
 suite "HdrImageTest":
@@ -34,13 +35,12 @@ suite "HdrImageTest":
         check areClose(img.get_pixel(1,1).b, 3.0)
 
     
-    test "parseEndianness":
-        let f = open("endianness.txt")
-        defer: f.close()
-        var endiann: Endianness
-        try:
-            endiann = parseEndianness(f.readLine())
-        except IOError as e:
-            quit(e.msg, QuitFailure)
-
-        echo endiann
+    test "parseEndian":
+        ## parseEndian test
+        # Checks whether endianness is read correctly
+        var
+            stream: Stream = newFileStream("endianness.txt", fmRead)
+            endian: Endianness 
+        
+        endian = stream.parseEndian()
+        check endian == bigEndian
