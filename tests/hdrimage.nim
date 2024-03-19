@@ -15,9 +15,9 @@ suite "HdrImageTest":
 
         # Checking array content
         for i in 0..<img.height*img.width:
-            check areClose(img.image[i].r, 0.0)
-            check areClose(img.image[i].g, 0.0)
-            check areClose(img.image[i].b, 0.0)
+            check areClose(img.pixels[i].r, 0.0)
+            check areClose(img.pixels[i].g, 0.0)
+            check areClose(img.pixels[i].b, 0.0)
 
 
     test "set/get_pixel":
