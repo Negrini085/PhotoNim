@@ -39,8 +39,21 @@ suite "HdrImageTest":
         ## parseEndian test
         # Checks whether endianness is read correctly
         var
-            stream: Stream = newFileStream("endianness.txt", fmRead)
-            endian: Endianness 
-        
-        endian = stream.parseEndian()
+            stream: Stream = newFileStream("files/endianness.txt", fmRead)
+            endian: Endianness = stream.parseEndian()
+
         check endian == bigEndian
+        stream.close()
+    
+    test "parseDim":
+        ## parseDim test
+        # Checks whether dimension are read correctly
+        var
+            stream: Stream = newFileStream("files/dim.txt", fmRead)
+            appo: array[2, uint] = stream.parseDim()
+
+        check areClose(float32(appo[0]), float32(12))
+        check areClose(float32(appo[1]), float32(20))
+
+
+
