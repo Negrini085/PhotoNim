@@ -1,4 +1,4 @@
-import color
+import common, color
 import std/[endians, strutils, streams]
 import system/exceptions
 
@@ -89,9 +89,9 @@ proc parseEndian(stream: Stream): Endianness =
     except ValueError:
         raise newException(CatchableError, "Missing endianness specification: required bigEndian ('1.0\n') or littleEndian ('-1.0\n')")
 
-    if areClose(appo, 1.0):
+    if areClose(appo, float32(1.0)):
         result = bigEndian
-    elif areClose(appo, -1.0):
+    elif appo == -1.0:
         result = littleEndian
     else:
         raise newException(CatchableError, "Invalid endianness value: the only possible values are '1.0' or '-1.0'")
@@ -144,3 +144,11 @@ proc writePFM*(img: HdrImage, stream: Stream, endianness: Endianness) =
             writeFloat(stream, endianness, color.r)
             writeFloat(stream, endianness, color.g)
             writeFloat(stream, endianness, color.b)
+        stream.write("\n")
+    
+
+var
+    img: HdrImage = newHdrImage(10, 12)
+
+img.setPixel(2, 3, newColor(1.0, 2.0, 3.0))
+echo img
