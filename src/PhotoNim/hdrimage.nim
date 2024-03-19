@@ -78,10 +78,28 @@ proc writeFloat(stream: Stream, endianness: Endianness = littleEndian, value: fl
     stream.write(appo)
 
 
+proc parseEndian(stream: Stream): Endianness = 
+    ## Checks whether PFM file uses littleEndian or BigEndian
+
+    var 
+        appo: float32
+
+    try:
+        appo = parseFloat(stream.readLine)
+    except ValueError:
+        raise newException(CatchableError, "Missing endianness specification: required bigEndian ('1.0\n') or littleEndian ('-1.0\n')")
+
+    if areClose(appo, 1.0):
+        result = bigEndian
+    elif areClose(appo, -1.0):
+        result = littleEndian
+    else:
+        raise newException(CatchableError, "Invalid endianness value: the only possible values are '1.0' or '-1.0'")
+
+
 proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
     var
         width, height: uint
-        endianVal: float32
         endianness: Endianness
 
     if stream.readLine != "PM":
@@ -93,18 +111,7 @@ proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
     except:
         raise newException(CatchableError, "Invalid image size specification: required 'width height\n' as unsigned integers")
     
-    try:
-        endianVal = stream.readFloat32
-    except ValueError:
-        raise newException(CatchableError, "Missing endianness specification: required bigEndian ('1.0\n') or littleEndian ('-1.0\n')")
-
-    if endianVal == 1.0:
-        endianness = bigEndian
-    elif endianVal == -1.0:
-        endianness = littleEndian
-    else:
-        raise newException(CatchableError, "Invalid endianness value: the only possible values are '1.0' or '-1.0'")
-
+    endianness = stream.parseEndian()
     result = newHdrImage(width, height)
 
     var
