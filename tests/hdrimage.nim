@@ -5,8 +5,7 @@ import PhotoNim/[common, color, hdrimage]
 suite "HdrImageTest":
     
     setup:
-        var 
-            img: HdrImage = newHdrImage(2, 2)
+        var img: HdrImage = newHdrImage(2, 2)
     
     test "newHdrImage":
         ## Constructor test
@@ -72,8 +71,34 @@ suite "HdrImageTest":
         check "1.0" == stream.readLine()
         stream.close()
     
-    #test "writeparsePFM":
+    test "writeparsePFM":
         ## writePFM & parsePFM tests
-        # Checks rea
         
+        var 
+            stream: Stream = newFileStream("files/wpPFM.txt", fmWrite)
+            img1: HdrImage = newHdrImage(10, 15)
+            img2: HdrImage
+        
+        #Changing some pixel in order to test writePFM & readPFM procedures
+        img1.setPixel(3, 4, newColor(1.0, 2.0, 3.0))
+        img1.setPixel(6, 3, newColor(3.4, 17.8, 128.1))
+        img1.setPixel(8, 9, newColor(35.1, 18.2, 255.0))
 
+        img1.writePFM(stream, bigEndian)
+        stream.close()
+        stream = openFileStream("files/wpPFM.txt", fmRead)
+        img2 = stream.parsePFM()
+        stream.close()
+
+        #Checking pixel values
+        check areClose(img2.get_pixel(3,4).r, 1.0)
+        check areClose(img2.get_pixel(3,4).g, 2.0)
+        check areClose(img2.get_pixel(3,4).b, 3.0)  
+
+        check areClose(img2.get_pixel(6,3).r, 3.4)
+        check areClose(img2.get_pixel(6,3).g, 17.8)
+        check areClose(img2.get_pixel(6,3).b, 128.1)  
+
+        check areClose(img2.get_pixel(8,9).r, 35.1)
+        check areClose(img2.get_pixel(8,9).g, 18.2)
+        check areClose(img2.get_pixel(8,9).b, 255.0)  
