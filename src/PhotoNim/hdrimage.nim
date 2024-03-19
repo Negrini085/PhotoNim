@@ -44,26 +44,25 @@ proc getPixel*(img: var HdrImage, row, col: uint): var Color =
     img.pixels[img.pixelOffset(row, col)]
 
 
-proc setPixel*(img: var HdrImage, row, col: uint, color: Color) = 
+proc setPixel*(img: var HdrImage, row, col: uint, color: Color): void = 
     ## Set the `Color` of pixel (row, col) in a `HdrImage`.
     assert img.validPixel(row, col)
     img.pixels[img.pixelOffset(row, col)] = color
 
 
-proc parseFloat(stream: Stream, endianness: Endianness = littleEndian): float32 = 
+proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream and stores it according to endianness
     # endianness has littleEndian as default value because is more common
 
     var appo: float32 = stream.readFloat32
 
-    if endianness == bigEndian:
+    if endianness == bigEndian: 
         bigEndian32(addr result, addr appo)
-    
-    else:
+    else: 
         littleEndian32(addr result, addr appo)
 
 
-proc writeFloat(stream: Stream, endianness: Endianness = littleEndian, value: float32): void = 
+proc writeFloat*(stream: Stream, endianness: Endianness = littleEndian, value: float32): void = 
     ## Writes a float according to endianness
     # endianness has littleEndian as default value because is more common
 
@@ -71,18 +70,16 @@ proc writeFloat(stream: Stream, endianness: Endianness = littleEndian, value: fl
 
     if endianness == bigEndian:
         bigEndian32(addr appo, addr value)
-    
     else:
         littleEndian32(addr appo, addr value)
     
     stream.write(appo)
 
 
-proc parseEndian(stream: Stream): Endianness = 
+proc parseEndian*(stream: Stream): Endianness = 
     ## Checks whether PFM file uses littleEndian or BigEndian
 
-    var 
-        appo: float32
+    var appo: float32
 
     try:
         appo = parseFloat(stream.readLine)
@@ -97,11 +94,10 @@ proc parseEndian(stream: Stream): Endianness =
         raise newException(CatchableError, "Invalid endianness value: the only possible values are '1.0' or '-1.0'")
 
 
-proc parseDim(stream: Stream): array[2, uint] = 
+proc parseDim*(stream: Stream): array[2, uint] = 
     ## Reads dimension of PFM image from PFM file
     
-    var 
-        appo = stream.readLine().split(" ")
+    var appo = stream.readLine().split(" ")
     
     result[0] = parseUInt(appo[0])
     result[1] = parseUInt(appo[1])
@@ -123,8 +119,7 @@ proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
     endianness = stream.parseEndian()
     result = newHdrImage(dim[0], dim[1])
 
-    var
-        r, g, b: float32
+    var r, g, b: float32
     for y in countdown(result.height - 1, 0):
         for x in 0..<result.width:
             r = parseFloat(stream, endianness)
