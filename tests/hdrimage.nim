@@ -5,7 +5,8 @@ import PhotoNim/[common, color, hdrimage]
 suite "HdrImageTest":
     
     setup:
-        var img: HdrImage = newHdrImage(2, 2)
+        var 
+            img: HdrImage = newHdrImage(2, 2)
     
     test "newHdrImage":
         ## Constructor test
@@ -55,5 +56,16 @@ suite "HdrImageTest":
         check areClose(float32(appo[0]), float32(12))
         check areClose(float32(appo[1]), float32(20))
 
+    test "writeparseFloat":
+        ## writeFloat & parseFloat tests
+        # Checks whether writeFloat and parseFloat are correctly implemented
 
+        var stream: Stream = newFileStream("files/wpFloat.txt", fmWrite)
+        
+        #Testing float 
+        stream.writeFloat(bigEndian, float32(1.0))
+        stream.close()
+        stream = openFileStream("files/wpFloat.txt", fmRead)
+        check areClose(stream.parseFloat(bigEndian), float32(1.0))
+        
 
