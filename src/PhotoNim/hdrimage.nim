@@ -97,6 +97,16 @@ proc parseEndian(stream: Stream): Endianness =
         raise newException(CatchableError, "Invalid endianness value: the only possible values are '1.0' or '-1.0'")
 
 
+proc parseDim(stream: Stream): tuple[width: int, height: int] = 
+    ## Reads dimension of PFM image from PFM file
+    
+    var 
+        appo = stream.readLine().split(" ")
+    
+    result.width = parseInt(appo[0])
+    result.height = parseInt(appo[1])
+
+
 proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
     var
         width, height: uint
