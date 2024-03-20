@@ -1,4 +1,6 @@
+import PhotoNim/[common, color, hdrimage]
 import strutils
+
 
 let doc = """
 PhotoNim, a simple CPU raytracer written in Nim.
