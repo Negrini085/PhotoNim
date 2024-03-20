@@ -112,3 +112,14 @@ suite "HdrImageTest":
         img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
         img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
         check areClose(img.averageLuminosity(0.0), pow(36, 0.25))
+    
+    test "imageNorm":
+        ## Testing image normalization procedure
+        #Changing pixel values
+        img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
+        img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
+        img.imageNorm(2, )
+
+        check areClose(img.get_pixel(0,0).r, 0.5)
+        check areClose(img.get_pixel(0,0).g, 1.0)
+        check areClose(img.get_pixel(0,0).b, 1.5)
