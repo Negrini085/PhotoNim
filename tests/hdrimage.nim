@@ -62,7 +62,7 @@ suite "HdrImageTest":
         var stream: Stream = newFileStream("files/wpFloat.txt", fmWrite)
         
         #Testing float & string type
-        stream.writeFloat(bigEndian, float32(1.0))
+        stream.writeFloat(float32(1.0), bigEndian)
         stream.write("1.0")
         stream.close()
 
@@ -118,8 +118,22 @@ suite "HdrImageTest":
         #Changing pixel values
         img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
         img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
-        img.imageNorm(2, )
+        
+        #Using default value for normalization
+        img.imageNorm(2, false)
 
         check areClose(img.get_pixel(0,0).r, 0.5)
         check areClose(img.get_pixel(0,0).g, 1.0)
         check areClose(img.get_pixel(0,0).b, 1.5)
+
+        check areClose(img.get_pixel(0,1).r, 2.0)
+        check areClose(img.get_pixel(0,1).g, 2.5)
+        check areClose(img.get_pixel(0,1).b, 0.5)
+
+        check areClose(img.get_pixel(1,0).r, 0.0)
+        check areClose(img.get_pixel(1,0).g, 0.75)
+        check areClose(img.get_pixel(1,0).b, 1.0)
+
+        check areClose(img.get_pixel(1,1).r, 1.0)
+        check areClose(img.get_pixel(1,1).g, 5.0)
+        check areClose(img.get_pixel(1,1).b, 1.5)
