@@ -36,6 +36,10 @@ proc `*`*(col1, col2: Color): Color =
     result.g = col1.g * col2.g
     result.b = col1.b * col2.b
 
+proc luminosity*(col: Color): float32 = 
+    ## Color luminosity calculator
+    result = (max(col.r, max(col.g, col.b)) + min(col.r, min(col.g, col.b)))/2
+
 
 const 
     Black* = newColor(0, 0, 0)
