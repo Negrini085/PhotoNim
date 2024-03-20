@@ -40,6 +40,10 @@ proc `*`*(x, y: Color): Color =
 proc `$`*(col: Color): string {.inline.} = "<" & $col.r & " " & $col.g & " " & $col.b & ">" ## \
     ## Stringify a `Color`
 
+proc luminosity*(col: Color): float32 = 
+    ## Color luminosity calculator
+    result = (max(col.r, max(col.g, col.b)) + min(col.r, min(col.g, col.b)))/2
+
 
 const 
     Black* = newColor(0, 0, 0)

@@ -1,5 +1,5 @@
 import std/unittest
-import std/[streams, endians, strutils]
+import std/[streams, endians, strutils, math]
 import PhotoNim/[common, color, hdrimage]
 
 suite "HdrImageTest":
@@ -102,3 +102,13 @@ suite "HdrImageTest":
         check areClose(img2.get_pixel(8,9).r, 35.1)
         check areClose(img2.get_pixel(8,9).g, 18.2)
         check areClose(img2.get_pixel(8,9).b, 255.0)  
+    
+    test "averageLuminosity":
+        ## averageLuminosity procedure test
+        
+        #Testing with blanck image and delta default value
+        check areClose(log10(img.averageLuminosity), -10)
+        #Changing pixel values and setting delta to zero
+        img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
+        img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
+        check areClose(img.averageLuminosity(0.0), pow(36, 0.25))

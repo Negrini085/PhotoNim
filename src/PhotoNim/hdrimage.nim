@@ -1,5 +1,5 @@
 import common, color
-import std/[endians, strutils, streams]
+import std/[endians, strutils, streams, math]
 import system/exceptions
 
 
@@ -99,8 +99,12 @@ proc parseDim*(stream: Stream): array[2, uint] =
     
     var appo = stream.readLine().split(" ")
     
-    result[0] = parseUInt(appo[0])
-    result[1] = parseUInt(appo[1])
+    try:
+        result[0] = parseUInt(appo[0])
+        result[1] = parseUInt(appo[1])
+
+    except ValueError:
+        echo "Error! Problems regarding type conversion"
 
 
 proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
@@ -138,3 +142,15 @@ proc writePFM*(img: HdrImage, stream: Stream, endianness: Endianness) =
             writeFloat(stream, endianness, color.r)
             writeFloat(stream, endianness, color.g)
             writeFloat(stream, endianness, color.b)
+
+
+proc avarageLum(img: HdrImage, delta: float32 = 1e-10): float32 =
+    ## Procedure to determine HdrImage avarage luminosity
+    var sum: float32 = 0
+
+    #Evaluating exponent
+    for i in img.pixels:
+        sum += log(delta + i.luminosity, 10)
+    sum /= float32(img.width*img.height)
+
+    result = pow(10, sum)
