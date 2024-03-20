@@ -141,7 +141,7 @@ proc writePFM*(img: HdrImage, stream: Stream, endianness: Endianness) =
             writeFloat(stream, color.b, endianness)
 
 
-proc averageLuminosity*(img: HdrImage, delta: float32 = 1e-10): float32 =
+proc avarageLum*(img: HdrImage, delta: float32 = 1e-10): float32 =
     ## Procedure to determine HdrImage avarage luminosity
     var sum: float32 = 0
 
@@ -151,3 +151,13 @@ proc averageLuminosity*(img: HdrImage, delta: float32 = 1e-10): float32 =
     sum /= float32(img.width*img.height)
 
     result = pow(10, sum)
+    
+
+proc imageNorm*(img: var HdrImage, scal: float32, lum: bool = true) =
+    ## Normalizing pixel values
+    
+    var luminosity: float32 = 4.0
+    if lum: luminosity = img.averageLuminosity
+
+    for i in img.pixels:
+        i = i * (scal/luminosity)
