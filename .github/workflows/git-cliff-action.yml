@@ -30,4 +30,4 @@ jobs:
           set +e
           git add CHANGELOG.md
           git commit -m "Update changelog"
-          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/PhotoNim.git master
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/Negrini085/PhotoNim.git master
