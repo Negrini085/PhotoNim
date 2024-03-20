@@ -27,6 +27,7 @@ All notable changes to this project will be documented in this file.
 - *(Color)* Add luminosity procedure
 - *(HdrImage)* Add avarage luminosity (avarageLum) procedure
 - *(HdrImage)* Add image normalization function
+- *(HdrImage)* Add clamping image procedure
 
 ### 🐛 Bug Fixes
 
