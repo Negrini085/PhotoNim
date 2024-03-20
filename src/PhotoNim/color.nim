@@ -13,28 +13,32 @@ proc areClose*(x, y: Color): bool {.inline.} = areClose(x.r, y.r) and areClose(x
     ## Check if two `Color`s are the same up to numerical precision using `areClose`.
 
 
-proc `+`*(col1: Color, col2: Color): Color =
+proc `+`*(x, y: Color): Color =
     ## Sum of two RGB `Color`s.
-    result.r = col1.r + col2.r
-    result.g = col1.g + col2.g
-    result.b = col1.b + col2.b
+    result.r = x.r + y.r
+    result.g = x.g + y.g
+    result.b = x.b + y.b
 
 
-proc `*`*(col: Color, scal: float32): Color = 
+proc `*`*(x: Color, y: float32): Color = 
     ## Multiply a `Color` by a scalar.
-    result.r = col.r * scal
-    result.g = col.g * scal
-    result.b = col.b * scal
+    result.r = x.r * y
+    result.g = x.g * y
+    result.b = x.b * y
 
-proc `*`*(scal: float32, col: Color): Color {.inline.} = col * scal ## \
+proc `*`*(y: float32, col: Color): Color {.inline.} = col * y ## \
     ## Multiply a scalar by a `Color`.
 
 
-proc `*`*(col1, col2: Color): Color = 
+proc `*`*(x, y: Color): Color = 
     ## Multiply two RGB `Color`s element wise
-    result.r = col1.r * col2.r
-    result.g = col1.g * col2.g
-    result.b = col1.b * col2.b
+    result.r = x.r * y.r
+    result.g = x.g * y.g
+    result.b = x.b * y.b
+
+
+proc `$`*(col: Color): string {.inline.} = "<" & $col.r & " " & $col.g & " " & $col.b & ">" ## \
+    ## Stringify a `Color`
 
 
 const 
