@@ -141,7 +141,7 @@ proc writePFM*(img: HdrImage, stream: Stream, endianness: Endianness) =
             writeFloat(stream, color.b, endianness)
 
 
-proc avarageLum*(img: HdrImage, delta: float32 = 1e-10): float32 =
+proc averageLuminosity*(img: var HdrImage, delta: float32 = 1e-10): float32 =
     ## Procedure to determine HdrImage avarage luminosity
     var sum: float32 = 0
 
@@ -151,7 +151,7 @@ proc avarageLum*(img: HdrImage, delta: float32 = 1e-10): float32 =
     sum /= float32(img.width*img.height)
 
     result = pow(10, sum)
-    
+
 
 proc imageNorm*(img: var HdrImage, scal: float32, lum: bool = true) =
     ## Normalizing pixel values
@@ -159,5 +159,17 @@ proc imageNorm*(img: var HdrImage, scal: float32, lum: bool = true) =
     var luminosity: float32 = 4.0
     if lum: luminosity = img.averageLuminosity
 
-    for i in img.pixels:
-        i = i * (scal/luminosity)
+    for i in 0..<img.pixels.len:
+        img.pixels[i] = img.pixels[i] * (scal/luminosity)
+
+
+proc clamp(x: float32): float32 = 
+    ## Mathematical operation of clamping
+    
+    result = x/(1.0 + x)
+
+proc clampImage*(img: var HdrImage) =
+
+    for i in 0..<img.width:
+        for j in 0..<img.height:
+            img.setPixel(uint(i), uint(j), newColor(clamp(img.getPixel(i, j).r), clamp(img.getPixel(i, j).g), clamp(img.getPixel(i, j).b)))
