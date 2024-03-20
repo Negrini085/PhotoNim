@@ -44,16 +44,14 @@ proc getPixel*(img: var HdrImage, row, col: uint): var Color =
     img.pixels[img.pixelOffset(row, col)]
 
 
-proc setPixel*(img: var HdrImage, row, col: uint, color: Color): void = 
+proc setPixel*(img: var HdrImage, row, col: uint, color: Color) = 
     ## Set the `Color` of pixel (row, col) in a `HdrImage`.
     assert img.validPixel(row, col)
     img.pixels[img.pixelOffset(row, col)] = color
 
 
 proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
-    ## Reads a float from a stream and stores it according to endianness
-    # endianness has littleEndian as default value because is more common
-
+    ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var appo: float32 = stream.readFloat32
 
     if endianness == bigEndian: 
@@ -62,10 +60,9 @@ proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32
         littleEndian32(addr result, addr appo)
 
 
-proc writeFloat*(stream: Stream, endianness: Endianness = littleEndian, value: float32): void = 
+proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
     ## Writes a float according to endianness
     # endianness has littleEndian as default value because is more common
-
     var appo: float32
 
     if endianness == bigEndian:
@@ -139,12 +136,12 @@ proc writePFM*(img: HdrImage, stream: Stream, endianness: Endianness) =
     for y in countdown(img.height - 1, 0):
         for x in 0..<img.width:
             let color = img.getPixel(x, y)
-            writeFloat(stream, endianness, color.r)
-            writeFloat(stream, endianness, color.g)
-            writeFloat(stream, endianness, color.b)
+            writeFloat(stream, color.r, endianness)
+            writeFloat(stream, color.g, endianness)
+            writeFloat(stream, color.b, endianness)
 
 
-proc avarageLum(img: HdrImage, delta: float32 = 1e-10): float32 =
+proc averageLuminosity*(img: HdrImage, delta: float32 = 1e-10): float32 =
     ## Procedure to determine HdrImage avarage luminosity
     var sum: float32 = 0
 
