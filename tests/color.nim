@@ -37,3 +37,13 @@ suite "ColorTest":
         check areClose(col2.r, 2.0)
         check areClose(col2.g, 4.0)
         check areClose(col2.b, 6.0)
+
+    test "luminosity":
+        ## Test color luminosity calculation
+        var 
+            appo: float32 = col1.luminosity
+            pippo: float32 = col2.luminosity
+        
+        check areClose(appo, 2.0)
+        check areClose(pippo, 0.0)
+        
