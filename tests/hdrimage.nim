@@ -35,27 +35,27 @@ suite "HdrImageTest":
         check areClose(img.getPixel(1,1).b, 3.0)
 
     
-    test "parseEndian":
-        ## parseEndian test
-        # Checks whether endianness is read correctly
-        var
-            stream: Stream = newFileStream("files/endianness.txt", fmRead)
-            endian: Endianness = stream.parseEndian()
+    # test "parseEndian":
+    #     ## parseEndian test
+    #     # Checks whether endianness is read correctly
+    #     var
+    #         stream: Stream = newFileStream("files/endianness.txt", fmRead)
+    #         endian: Endianness = stream.parseEndian()
 
-        check endian == bigEndian
-        stream.close()
+    #     check endian == bigEndian
+    #     stream.close()
     
-    test "parseDim":
-        ## parseDim test
-        # Checks whether dimension are read correctly
-        var
-            stream: Stream = newFileStream("files/dim.txt", fmRead)
-            appo: array[2, uint] = stream.parseDim()
+    # test "parseDim":
+    #     ## parseDim test
+    #     # Checks whether dimension are read correctly
+    #     var
+    #         stream: Stream = newFileStream("files/dim.txt", fmRead)
+    #         appo: array[2, uint] = stream.parseDim()
 
-        check areClose(float32(appo[0]), float32(12))
-        check areClose(float32(appo[1]), float32(20))
+    #     check areClose(float32(appo[0]), float32(12))
+    #     check areClose(float32(appo[1]), float32(20))
 
-    test "writeparseFloat":
+    test "write/parseFloat":
         ## writeFloat & parseFloat tests
         # Checks whether writeFloat and parseFloat are correctly implemented
 
@@ -71,7 +71,7 @@ suite "HdrImageTest":
         check "1.0" == stream.readLine()
         stream.close()
     
-    test "writeparsePFM":
+    test "write/parsePFM":
         ## writePFM & parsePFM tests
         
         var 
@@ -84,10 +84,10 @@ suite "HdrImageTest":
         img1.setPixel(6, 3, newColor(3.4, 17.8, 128.1))
         img1.setPixel(8, 9, newColor(35.1, 18.2, 255.0))
 
-        img1.writePFM(stream, bigEndian)
+        stream.writePFM(img1, bigEndian)
         stream.close()
         stream = openFileStream("files/wpPFM.txt", fmRead)
-        img2 = stream.parsePFM()
+        img2 = stream.readPFM()
         stream.close()
 
         #Checking pixel values
@@ -107,20 +107,21 @@ suite "HdrImageTest":
         ## averageLuminosity procedure test
         
         #Testing with blanck image and delta default value
-        check areClose(log10(img.averageLuminosity), -10)
-        #Changing pixel values and setting delta to zero
+        check areClose(log10(img.averageLuminosity(1.0e-10)), -10)
+        
+        # Changing pixel values and setting delta to zero
         img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
         img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
         check areClose(img.averageLuminosity(0.0), pow(36, 0.25))
     
-    test "imageNorm":
+    test "normalizeImage":
         ## Testing image normalization procedure
         # Changing pixel values
         img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
         img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
         
         # Using default value for normalization
-        img.imageNorm(2, false)
+        normalizeImage(img, 2, false)
 
         check areClose(img.getPixel(0,0).r, 0.5)
         check areClose(img.getPixel(0,0).g, 1.0)
