@@ -28,6 +28,9 @@ All notable changes to this project will be documented in this file.
 - *(HdrImage)* Add avarage luminosity (avarageLum) procedure
 - *(HdrImage)* Add image normalization function
 - *(HdrImage)* Add clamping image procedure
+- *(Color)* New operators +=, -=, *=, /=.
+- *(Color)* Operator -
+- *(PhotonNim)* It is now possible to convert PFM images to PNG by using the CLI. nimPNG is added to the .nimble requirements.
 
 ### 🐛 Bug Fixes
 
@@ -49,6 +52,7 @@ All notable changes to this project will be documented in this file.
 - *(HdrImageTest)* Changed writeFloat and parseFloat procedure
 - *(HdrImageTest)* Changed averageLuminosity procedure test
 - *(Test)* Adding files needed in order to test stuff
+- *(HdrImage)* ParseEndian and parseDim are now incorporated in parsePFM, now called readPFM. imageNorm is now called normalizeImage.
 
 ### 📚 Documentation
 
