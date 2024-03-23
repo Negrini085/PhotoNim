@@ -11,3 +11,4 @@ bin           = @["PhotoNim"]
 
 requires "nim >= 2.0.2"
 requires "docopt >= 0.6"
+requires "nimPNG >= 0.3"
