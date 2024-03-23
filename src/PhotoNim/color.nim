@@ -19,6 +19,25 @@ proc `+`*(x, y: Color): Color =
     result.g = x.g + y.g
     result.b = x.b + y.b
 
+proc `-`*(x, y: Color): Color =
+    ## Sum of two RGB `Color`s.
+    result.r = x.r - y.r
+    result.g = x.g - y.g
+    result.b = x.b - y.b
+
+
+proc `+=`*(x: var Color, y: Color) = 
+    ## Increment a `Color`.
+    x.r += y.r
+    x.g += y.g
+    x.b += y.b
+
+proc `-=`*(x: var Color, y: Color) = 
+    ## Decrement a `Color`.
+    x.r -= y.r
+    x.g -= y.g
+    x.b -= y.b
+
 
 proc `*`*(x: Color, y: float32): Color = 
     ## Multiply a `Color` by a scalar.
