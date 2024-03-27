@@ -15,7 +15,7 @@ type
     Vec3f* = Vec3[float32]
     Vec4f* = Vec4[float32]
 
-
+    
 
 template VecOp(op: untyped) =
     ## Template for performing element-wise operations on vectors.
