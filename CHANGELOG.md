@@ -36,6 +36,8 @@ All notable changes to this project will be documented in this file.
 
 - *(HDRImage)* Now writeFloat has Endiannes as last argument so that it is possible to use the default value.
 - Nim dependency is now 2.0 only.
+- .gitignore excluded all the src/ dir.
+- Current nim required version is 2.0.
 
 ### 🚜 Refactor
 
@@ -54,6 +56,8 @@ All notable changes to this project will be documented in this file.
 - *(HdrImageTest)* Changed averageLuminosity procedure test
 - *(Test)* Adding files needed in order to test stuff
 - *(HdrImage)* ParseEndian and parseDim are now incorporated in parsePFM, now called readPFM. imageNorm is now called normalizeImage.
+- Branch now called vectorTypes.
+- No more color.nim, transfered in hdrimage.nim.
 
 ### 📚 Documentation
 
