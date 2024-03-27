@@ -35,6 +35,7 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - *(HDRImage)* Now writeFloat has Endiannes as last argument so that it is possible to use the default value.
+- Nim dependency is now 2.0 only.
 
 ### 🚜 Refactor
 
