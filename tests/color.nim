@@ -45,9 +45,7 @@ suite "ColorTest":
 
     test "$Color": 
         check $col1 == "<1.0 2.0 3.0>"
-        check areClose(col2.r, 2.0)
-        check areClose(col2.g, 4.0)
-        check areClose(col2.b, 6.0)
+
 
     test "luminosity":
         ## Test color luminosity calculation

@@ -1,7 +1,6 @@
-import common, color
-import std/[endians, strutils, streams, math]
-import system/exceptions
-
+import color
+import std/[endians, strutils, sequtils, streams, math, fenv]
+import nimPNG
 
 type
     HdrImage* = object
@@ -17,32 +16,19 @@ proc newHdrImage*(width, height: uint): HdrImage =
     result.pixels = newSeq[Color](width * height)
 
 
-proc fillHdrImage*(img: var HdrImage, color: Color) =
-    ## Fills with a background color
-    for i in 0..<img.width * img.height:
-        img.pixels[i] = color
-
-
 proc validPixel(img: HdrImage, row, col: uint): bool {.inline.} =
     ## Check if pixel coordinates are valid in a `HdrImage`.
     (row < img.width) and (col < img.height)
 
-
-proc pixelOffset(img: HdrImage, row, col: uint): uint {.inline.} =
+proc pixelOffset(img: HdrImage, x, y: uint): uint {.inline.} =
     ## Calculate pixel position in a `HdrImage`.
-    row * img.width + col
+    x + img.width * y
 
 
 proc getPixel*(img: HdrImage, row, col: uint): Color = 
     ## Access the `Color` of pixel (row, col) in a `HdrImage`.
     assert img.validPixel(row, col)
     img.pixels[img.pixelOffset(row, col)]
-
-proc getPixel*(img: var HdrImage, row, col: uint): var Color = 
-    ## Access the `Color` of pixel (row, col) in a `HdrImage`.
-    assert img.validPixel(row, col)
-    img.pixels[img.pixelOffset(row, col)]
-
 
 proc setPixel*(img: var HdrImage, row, col: uint, color: Color) = 
     ## Set the `Color` of pixel (row, col) in a `HdrImage`.
@@ -52,73 +38,52 @@ proc setPixel*(img: var HdrImage, row, col: uint, color: Color) =
 
 proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
-    var appo: float32 = stream.readFloat32
+    var tmp: float32 = stream.readFloat32
 
     if endianness == bigEndian: 
-        bigEndian32(addr result, addr appo)
+        bigEndian32(addr result, addr tmp)
     else: 
-        littleEndian32(addr result, addr appo)
-
+        littleEndian32(addr result, addr tmp)
 
 proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
-    ## Writes a float according to endianness
-    # endianness has littleEndian as default value because is more common
-    var appo: float32
+    ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
+    var tmp: float32
 
     if endianness == bigEndian:
-        bigEndian32(addr appo, addr value)
+        bigEndian32(addr tmp, addr value)
     else:
-        littleEndian32(addr appo, addr value)
+        littleEndian32(addr tmp, addr value)
     
-    stream.write(appo)
+    stream.write(tmp)
 
 
-proc parseEndian*(stream: Stream): Endianness = 
-    ## Checks whether PFM file uses littleEndian or BigEndian
-
-    var appo: float32
-
-    try:
-        appo = parseFloat(stream.readLine)
-    except ValueError:
-        raise newException(CatchableError, "Missing endianness specification: required bigEndian ('1.0\n') or littleEndian ('-1.0\n')")
-
-    if areClose(appo, float32(1.0)):
-        result = bigEndian
-    elif appo == -1.0:
-        result = littleEndian
-    else:
-        raise newException(CatchableError, "Invalid endianness value: the only possible values are '1.0' or '-1.0'")
-
-
-proc parseDim*(stream: Stream): array[2, uint] = 
-    ## Reads dimension of PFM image from PFM file
-    
-    var appo = stream.readLine().split(" ")
-    
-    try:
-        result[0] = parseUInt(appo[0])
-        result[1] = parseUInt(appo[1])
-
-    except ValueError:
-        echo "Error! Problems regarding type conversion"
-
-
-proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
+proc readPFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
     var
-        dim: array[2, uint]
+        width, height: uint
         endianness: Endianness
 
-    if stream.readLine != "PM":
-        raise newException(CatchableError, "Invalid PFM magic specification: required 'PM\n'")
+    if stream.readLine != "PF":
+        raise newException(CatchableError, "Invalid PFM magic specification: required 'PF\n'")
 
     try:
-        dim = stream.parseDim()
+        let line = stream.readLine.split(" ")
+        width = parseUInt(line[0])
+        height = parseUInt(line[1])
     except:
         raise newException(CatchableError, "Invalid image size specification: required 'width height\n' as unsigned integers")
     
-    endianness = stream.parseEndian()
-    result = newHdrImage(dim[0], dim[1])
+    try:
+        let endianFloat = parseFloat(stream.readLine)
+        if endianFloat == 1.0:
+            endianness = bigEndian
+        elif endianFloat == -1.0:
+            endianness = littleEndian
+        else:
+            raise newException(CatchableError, "")
+    except:
+        raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0\n') or littleEndian ('-1.0\n')")
+
+    result = newHdrImage(width, height)
 
     var r, g, b: float32
     for y in countdown(result.height - 1, 0):
@@ -128,48 +93,35 @@ proc parsePFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
             b = parseFloat(stream, endianness)
             result.setPixel(x, y, newColor(r, g, b))
 
-
-proc writePFM*(img: HdrImage, stream: Stream, endianness: Endianness) = 
-    stream.writeLine("PM\n", img.width, " ", img.height)
+proc writePFM*(stream: Stream, img: HdrImage, endianness: Endianness) = 
+    stream.writeLine("PF")
+    stream.writeLine(img.width, " ", img.height)
     stream.writeLine(if endianness == bigEndian: "1.0" else: "-1.0")
 
+    var c: Color
     for y in countdown(img.height - 1, 0):
         for x in 0..<img.width:
-            let color = img.getPixel(x, y)
-            writeFloat(stream, color.r, endianness)
-            writeFloat(stream, color.g, endianness)
-            writeFloat(stream, color.b, endianness)
+            c = img.getPixel(x, y)
+            writeFloat(stream, c.r, endianness)
+            writeFloat(stream, c.g, endianness)
+            writeFloat(stream, c.b, endianness)
 
 
-proc averageLuminosity*(img: var HdrImage, delta: float32 = 1e-10): float32 =
+proc averageLuminosity*(img: var HdrImage, eps: float32 = epsilon(float32)): float32 =
     ## Procedure to determine HdrImage avarage luminosity
-    var sum: float32 = 0
+    var sum: float32
+    for pixel in img.pixels: 
+        sum += log(eps + pixel.luminosity, 10)
+    pow(10, sum / float32(img.pixels.len))
 
-    #Evaluating exponent
-    for i in img.pixels:
-        sum += log(delta + i.luminosity, 10)
-    sum /= float32(img.width*img.height)
-
-    result = pow(10, sum)
-
-
-proc imageNorm*(img: var HdrImage, scal: float32, lum: bool = true) =
+proc normalizeImage*(img: var HdrImage, scal: float32, lum: bool = true) =
     ## Normalizing pixel values
-    
     var luminosity: float32 = 4.0
     if lum: luminosity = img.averageLuminosity
-
-    for i in 0..<img.pixels.len:
-        img.pixels[i] = img.pixels[i] * (scal/luminosity)
+    img.pixels.apply(proc(pix: Color): Color = pix * (scal / luminosity))
 
 
-proc clamp(x: float32): float32 = 
-    ## Mathematical operation of clamping
-    
-    result = x/(1.0 + x)
+proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
 
-proc clampImage*(img: var HdrImage) =
-
-    for i in 0..<img.width:
-        for j in 0..<img.height:
-            img.setPixel(uint(i), uint(j), newColor(clamp(img.getPixel(i, j).r), clamp(img.getPixel(i, j).g), clamp(img.getPixel(i, j).b)))
+proc clampImage*(img: var HdrImage) {.inline.} = 
+    img.pixels.apply(proc(pix: Color): Color = newColor(clamp(pix.r), clamp(pix.g), clamp(pix.b)))
