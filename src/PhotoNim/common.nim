@@ -1,9 +1,5 @@
 import std/[fenv, math]
 
-proc areClose*(x, y: float32): bool {.inline.} = abs(x - y) < epsilon(float32) ## \
-   ## Check if two floats are the same up to numerical precision 
-
-
 ## =================================================
 ## Vector Type
 ## =================================================
@@ -94,11 +90,6 @@ VecScalIncrOp(`/=`)
 
 VecVecToBoolOp(`==`)
 VecVecToBoolOp(`!=`)
-        
-proc areClose*[N: static[int]](a, b: Vec[N, float32]): bool = 
-    for i in 0..<N: 
-        if not areClose(a[i], b[i]): return false
-    true
 
 
 ## =================================================
@@ -125,6 +116,19 @@ proc normalize*[N: static[int], T](a: Vec[N, T]): Vec[N, T] {.inline} = a / a.no
 
 proc dir*[N: static[int], T](at, to: Vec[N, T]): Vec[N, T] {.inline} = (at - to).normalize
 
-
 proc cross*[T](a, b: Vec3[T]): Vec3[T] {.inline.} =
     for i in 0..2: result[i] = a[(i + 1) mod 3] * b[(i + 2) mod 3] - a[(i + 2) mod 3] * b[(i + 1) mod 3]
+
+
+
+## =================================================
+## areClose Functions
+## =================================================
+
+proc areClose*(x, y: float32): bool {.inline.} = abs(x - y) < epsilon(float32) ## \
+   ## Check if two floats are the same up to numerical precision 
+
+proc areClose*[N: static[int]](a, b: Vec[N, float32]): bool = 
+    for i in 0..<N: 
+        if not areClose(a[i], b[i]): return false
+    true
