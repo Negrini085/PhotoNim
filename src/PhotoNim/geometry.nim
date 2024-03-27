@@ -1,81 +1,60 @@
-import std/[math, random]    
-
-type 
-    ## Define a generic vector type with a fixed size and element type.
-    Vec*[N: static[int], V] = array[N, V]
-
-    ## Define vector type aliases for common size and element type vectors.
-    Vec2*[V] = Vec[2, V]
-    Vec3*[V] = Vec[3, V]
-    Vec4*[V] = Vec[4, V]
-    Vec2i* = Vec2[int]
-    Vec3i* = Vec3[int]
-    Vec4i* = Vec4[int]
-    Vec2f* = Vec2[float32]
-    Vec3f* = Vec3[float32]
-    Vec4f* = Vec4[float32]
-
-    
-
-template VecOp(op: untyped) =
-    ## Template for performing element-wise operations on vectors.
-    
-    proc op*[N: static[int], T](a: Vec[N, T], b: T): Vec[N, T] =
-        for i in 0..<N: 
-            result[i] = op(a[i], b)
-
-    proc op*[N: static[int], T](a: T, b: Vec[N, T]): Vec[N, T] =
-        for i in 0..<N: 
-            result[i] = op(a, b[i])    
-
-    proc op*[N: static[int], T](a, b: Vec[N, T]): Vec[N, T] =
-        for i in 0..<N: 
-            result[i] = op(a[i], b[i])  
-
-
-VecOp(`+`)
-VecOp(`-`)
-VecOp(`*`)
-VecOp(`/`)
-VecOp(`div`)
-VecOp(`mod`)
-VecOp(min)
-VecOp(max)
-
-
+import common
 
 type
-    Color = distinct Vec3f
+    Point2D {.borrow: `.`.} = distinct Vec2f
+    Point3D {.borrow: `.`.} = distinct Vec3f
+    Normal {.borrow: `.`.} = distinct Vec3f
 
-proc `+`*(a, b: Color): Color {.borrow.}
+proc newPoint2D*(x, y: float32): Point2D {.inline.} = 
+    result.data = [x, y]
 
+proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = 
+    result.data = [x, y, z]
 
-proc `[]`*(a: Color, i: Ordinal): float32 {.borrow.}
-proc r*(a: Color): float32 {.inline.} = a[0]
-proc g*(a: Color): float32 {.inline.} = a[1]
-proc b*(a: Color): float32 {.inline.} = a[2]
+proc newNormal*(x, y, z: float32): Normal {.inline.} = 
+    result.data = [x, y, z]
 
+proc x*(a: Point2D | Point3D | Normal): float32 {.inline.} = a.data[0]
+proc y*(a: Point2D | Point3D | Normal): float32 {.inline.} = a.data[1]
+proc z*(a: Point3D | Normal): float32 {.inline.} = a.data[2]
 
-proc dot2*[N: static[int], T](a, b: Vec[N, T]): T =
-    for i in 0..<N:
-        result += a[i] * b[i]
+proc toVec*(a: Point2D): Vec2f {.inline.} = newVec(a.x, a.y)
+proc toVec*(a: Point3D | Normal): Vec3f {.inline.} = newVec(a.x, a.y, a.z)
 
-proc norm2*[N: static[int], T](a: Vec[N, T]): T {.inline} = dot2(a, a)
+proc `$`*(a: Point2D): string {.borrow.}
+proc `$`*(a: Point3D): string {.borrow.}
+proc `$`*(a: Normal): string {.borrow.}
 
-proc dist2*[N: static[int], T](at, to: Vec[N, T]): T {.inline} = (at - to).norm2
+proc `==`*(a, b: Point2D): bool {.borrow.}
+proc `==`*(a, b: Point3D): bool {.borrow.}
+proc `==`*(a, b: Normal): bool {.borrow.}
 
-proc dot*[N: static[int], T](a, b: Vec[N, T]): float {.inline} = sqrt(dot2(a, b).float)
+proc areClose*(a, b: Point2D): bool {.borrow.}
+proc areClose*(a, b: Point3D): bool {.borrow.}
+proc areClose*(a, b: Normal): bool {.borrow.}
 
-proc norm*[N: static[int], T](a: Vec[N, T]): float {.inline} = dot(a, a)
+proc `-`*(a, b: Point2D): Point2D {.borrow.}
+proc `-`*(a, b: Point3D): Point3D {.borrow.}
 
-proc dist*[N: static[int], T](at, to: Vec[N, T]): float {.inline} = (at - to).norm
+proc `-`*(a: Normal): Normal {.borrow.}
+proc `*`*(a: Normal, b: float32): Normal {.borrow.}
+proc `*`*(a: float32, b: Normal): Normal {.borrow.}
 
-proc normalize*[N: static[int], T](a: Vec[N, T]): Vec[N, T] {.inline} = a / a.norm
+proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.x + b[0], a.y + b[1])
+proc `+`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] + b.x, a[1] + b.y)
+proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
+proc `+`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] + b.x, a[1] + b.y, a[2] + b.z)
 
-proc dir*[N: static[int], T](at, to: Vec[N, T]): Vec[N, T] {.inline} = (at - to).normalize
+proc `-`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.x - b[0], a.y - b[1])
+proc `-`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] - b.x, a[1] - b.y)
+proc `-`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x - b[0], a.y - b[1], a.z - b[2])
+proc `-`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] - b.x, a[1] - b.y, a[2] - b.z)
 
-proc angle*[T](a, b: Vec[2, T] | Vec[3, T]): float {.inline} = arccos(dot(a, b) / (a.norm * b.norm)) 
+proc norm2*(a: Normal): float32 {.borrow}
+proc norm*(a: Normal): float32 {.borrow}
+proc normalize*(a: Normal): Normal {.borrow}
 
-proc cross*[T](a, b: Vec3[T]): Vec3[T] =
-    for i in 0..2:
-        result[i] = a[(i + 1) mod 3] * b[(i + 2) mod 3] - a[(i + 2) mod 3] * b[(i + 1) mod 3]
+proc dist2*(a, b: Point2D): float32 {.borrow}
+proc dist2*(a, b: Point3D): float32 {.borrow}
+proc dist*(a, b: Point2D): float32 {.borrow}
+proc dist*(a, b: Point3D): float32 {.borrow}

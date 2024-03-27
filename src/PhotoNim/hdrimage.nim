@@ -1,6 +1,52 @@
-import color
+import common
 import std/[endians, strutils, sequtils, streams, math, fenv]
 import nimPNG
+
+## =================================================
+## Color Type
+## =================================================
+
+type
+    Color* {.borrow: `.`.} = distinct Vec3f
+
+proc newColor*(r, g, b: float32): Color {.inline.} = 
+    result.data = [r, g, b]
+
+proc r*(a: Color): float32 {.inline.} = a.data[0]
+proc g*(a: Color): float32 {.inline.} = a.data[1]
+proc b*(a: Color): float32 {.inline.} = a.data[2]
+
+proc toVec*(a: Color): Vec3f {.inline.} = newVec(a.r, a.g, a.b)
+
+proc `$`*(a: Color): string {.inline.} = "<" & $a.r & " " & $a.g & " " & $a.b & ">"
+
+
+## =================================================
+## Color Borrowed Operators from Vec3f
+## =================================================
+
+proc `==`*(a, b: Color): bool {.borrow.}
+proc `!=`*(a, b: Color): bool {.borrow.}
+proc areClose*(a, b: Color): bool {.borrow.}
+
+proc `+`*(a, b: Color): Color {.borrow.}
+proc `+=`*(a: var Color, b: Color) {.borrow.}
+
+proc `-`*(a, b: Color): Color {.borrow.}
+proc `-=`*(a: var Color, b: Color) {.borrow.}
+
+proc `*`*(a: Color, b: float32): Color {.borrow.}
+proc `*`*(a: float32, b: Color): Color {.borrow.}
+proc `*=`*(a: var Color, b: float32) {.borrow.}
+
+proc `/`*(a: Color, b: float32): Color {.borrow.}
+proc `/=`*(a: var Color, b: float32) {.borrow.}
+
+
+
+## =================================================
+## HdrImage Type
+## =================================================
 
 type
     HdrImage* = object
@@ -36,6 +82,35 @@ proc setPixel*(img: var HdrImage, row, col: uint, color: Color) =
     img.pixels[img.pixelOffset(row, col)] = color
 
 
+## =================================================
+## HdrImage Functions
+## =================================================
+
+proc luminosity*(a: Color): float32 {.inline.} = 
+    (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b))) / 2
+
+proc averageLuminosity*(img: var HdrImage, eps: float32 = epsilon(float32)): float32 {.inline.} =
+    ## Procedure to determine HdrImage avarage luminosity
+    pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
+
+proc normalizeImage*(img: var HdrImage, scal: float32, lum: bool = true) =
+    ## Normalizing pixel values
+    var luminosity: float32 = 4.0
+    if lum: luminosity = img.averageLuminosity
+    img.pixels.apply(proc(pix: Color): Color = pix * (scal / luminosity))
+
+
+proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
+
+proc clampImage*(img: var HdrImage) {.inline.} = 
+    img.pixels.apply(proc(pix: Color): Color = newColor(clamp(pix.r), clamp(pix.g), clamp(pix.b)))
+
+
+
+## =================================================
+## Stream PFM files
+## =================================================
+
 proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32 = stream.readFloat32
@@ -66,9 +141,9 @@ proc readPFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
         raise newException(CatchableError, "Invalid PFM magic specification: required 'PF\n'")
 
     try:
-        let line = stream.readLine.split(" ")
-        width = parseUInt(line[0])
-        height = parseUInt(line[1])
+        let sizes = stream.readLine.split(" ")
+        width = parseUInt(sizes[0])
+        height = parseUInt(sizes[1])
     except:
         raise newException(CatchableError, "Invalid image size specification: required 'width height\n' as unsigned integers")
     
@@ -105,23 +180,3 @@ proc writePFM*(stream: Stream, img: HdrImage, endianness: Endianness) =
             writeFloat(stream, c.r, endianness)
             writeFloat(stream, c.g, endianness)
             writeFloat(stream, c.b, endianness)
-
-
-proc averageLuminosity*(img: var HdrImage, eps: float32 = epsilon(float32)): float32 =
-    ## Procedure to determine HdrImage avarage luminosity
-    var sum: float32
-    for pixel in img.pixels: 
-        sum += log(eps + pixel.luminosity, 10)
-    pow(10, sum / float32(img.pixels.len))
-
-proc normalizeImage*(img: var HdrImage, scal: float32, lum: bool = true) =
-    ## Normalizing pixel values
-    var luminosity: float32 = 4.0
-    if lum: luminosity = img.averageLuminosity
-    img.pixels.apply(proc(pix: Color): Color = pix * (scal / luminosity))
-
-
-proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
-
-proc clampImage*(img: var HdrImage) {.inline.} = 
-    img.pixels.apply(proc(pix: Color): Color = newColor(clamp(pix.r), clamp(pix.g), clamp(pix.b)))
