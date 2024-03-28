@@ -1,5 +1,5 @@
 import PhotoNim/[color, hdrimage]
-import std/[streams, strutils, math]
+import std/[streams, strutils, math, os]
 import docopt
 import nimPNG
 
@@ -8,11 +8,12 @@ let doc = """
 PhotoNim, a simple CPU raytracer written in Nim.
 
 Usage: 
-    ./PhotoNim convert <HDR> <LDR> [--alpha=<alpha> --gamma=<gamma>]
+    ./PhotoNim convert <HDR> [<LDR>] [--alpha=<alpha> --gamma=<gamma>]
 
 Options:
-    --alpha=<alpha>     Color renormalization factor [default: 0.18]
-    --gamma=<gamma>     LDR factor [default: 1.0]
+    <LDR>               Output filepath, if not present the HDR filename will be used.
+    --alpha=<alpha>     Color renormalization factor [default: 0.18].
+    --gamma=<gamma>     LDR factor [default: 1.0].
     -h --help     
     --version     
 """
@@ -21,9 +22,13 @@ Options:
 let args = docopt(doc, version = "PhotoNim 0.1")
 
 if args["convert"]:
-    let 
-        fileIn = $args["<HDR>"]
-        fileOut = $args["<LDR>"]
+    let fileIn = $args["<HDR>"]
+    var fileOut: string
+
+    if args["<LDR>"]: fileOut = $args["<LDR>"]
+    else: 
+        let (dir, name, _) = splitFile(fileIn)
+        fileOut = dir & '/' & name & ".png"
 
     var alpha, gamma: float32
     if args["--alpha"]: 
