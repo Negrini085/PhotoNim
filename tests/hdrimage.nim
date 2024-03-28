@@ -1,6 +1,7 @@
 import std/unittest
 import std/[streams, endians, strutils, math]
-import PhotoNim/[common, color, hdrimage]
+import PhotoNim/[common, hdrimage]
+       
 
 suite "HdrImageTest":
     
@@ -35,26 +36,6 @@ suite "HdrImageTest":
         check areClose(img.getPixel(1,1).b, 3.0)
 
     
-    # test "parseEndian":
-    #     ## parseEndian test
-    #     # Checks whether endianness is read correctly
-    #     var
-    #         stream: Stream = newFileStream("files/endianness.txt", fmRead)
-    #         endian: Endianness = stream.parseEndian()
-
-    #     check endian == bigEndian
-    #     stream.close()
-    
-    # test "parseDim":
-    #     ## parseDim test
-    #     # Checks whether dimension are read correctly
-    #     var
-    #         stream: Stream = newFileStream("files/dim.txt", fmRead)
-    #         appo: array[2, uint] = stream.parseDim()
-
-    #     check areClose(float32(appo[0]), float32(12))
-    #     check areClose(float32(appo[1]), float32(20))
-
     test "write/parseFloat":
         ## writeFloat & parseFloat tests
         # Checks whether writeFloat and parseFloat are correctly implemented
@@ -103,6 +84,16 @@ suite "HdrImageTest":
         check areClose(img2.getPixel(8,9).g, 18.2)
         check areClose(img2.getPixel(8,9).b, 255.0)  
     
+
+    test "colorLuminosity":
+        ## Test color luminosity calculation
+        let 
+            col1 = newColor(1.0, 2.0, 3.0)
+            col2 = newColor(0.0, 0.0, 0.0)
+
+        check areClose(col1.luminosity, 2.0)
+        check areClose(col2.luminosity, 0.0)
+
     test "averageLuminosity":
         ## averageLuminosity procedure test
         
@@ -113,6 +104,7 @@ suite "HdrImageTest":
         img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
         img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
         check areClose(img.averageLuminosity(0.0), pow(36, 0.25))
+    
     
     test "normalizeImage":
         ## Testing image normalization procedure
