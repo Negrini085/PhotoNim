@@ -13,9 +13,9 @@ type
     Vec2*[T] = Vec[2, T]
     Vec3*[T] = Vec[3, T]
     Vec4*[T] = Vec[4, T]
-    Vec2f* = Vec2[float]
-    Vec3f* = Vec3[float]
-    Vec4f* = Vec4[float]
+    Vec2f* = Vec2[float32]
+    Vec3f* = Vec3[float32]
+    Vec4f* = Vec4[float32]
 
 
 proc newVec2*[T](x, y: T): Vec2[T] {.inline.} =
@@ -123,15 +123,15 @@ proc dot2*[N: static[int], T](a, b: Vec[N, T]): T {.inline.} =
     ## Calculate the dot product of two vectors.
     for i in 0..<N: result += a[i] * b[i]
 
-proc dot*[N: static[int], T](a, b: Vec[N, T]): float {.inline} =
+proc dot*[N: static[int], T](a, b: Vec[N, T]): float32 {.inline} =
     ## Calculate the dot product of two vectors.
-    sqrt(dot2(a, b).float)
+    sqrt(dot2(a, b).float32)
 
 proc norm2*[N: static[int], T](a: Vec[N, T]): T {.inline} =
     ## Calculate the squared norm (length) of a vector.
     dot2(a, a)
 
-proc norm*[N: static[int], T](a: Vec[N, T]): float {.inline} =
+proc norm*[N: static[int], T](a: Vec[N, T]): float32 {.inline} =
     ## Calculate the norm (length) of a vector.
     sqrt(dot(a, a))
 
@@ -139,7 +139,7 @@ proc dist2*[N: static[int], T](at, to: Vec[N, T]): T {.inline} =
     ## Calculate the squared distance between two vectors.
     (at - to).norm2
 
-proc dist*[N: static[int], T](at, to: Vec[N, T]): float {.inline} =
+proc dist*[N: static[int], T](at, to: Vec[N, T]): float32 {.inline} =
     ## Calculate the distance between two vectors.
     (at - to).norm
 
@@ -161,10 +161,10 @@ proc cross*[T](a, b: Vec3[T]): Vec3[T] {.inline.} =
 ## areClose Functions
 ## =================================================
 
-proc areClose*(x, y: float): bool {.inline.} = abs(x - y) < epsilon(float) ## \
+proc areClose*(x, y: float32): bool {.inline.} = abs(x - y) < epsilon(float32) ## \
    ## Check if two floats are the same up to numerical precision 
 
-proc areClose*[N: static[int]](a, b: Vec[N, float]): bool = 
+proc areClose*[N: static[int]](a, b: Vec[N, float32]): bool = 
     ## Check if two vectors of floats are approximately equal element-wise.
     for i in 0..<N: 
         if not areClose(a[i], b[i]): return false
