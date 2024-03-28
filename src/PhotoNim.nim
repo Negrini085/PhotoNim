@@ -1,46 +1,23 @@
-import PhotoNim/[common, hdrimage, geometry]
-import std/[streams, strutils, math, os]
+import PhotoNim/[hdrimage, geometry]
+import std/[math, os, streams, strutils, strformat]
 import docopt
 import nimPNG
 
+let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
 
-let doc = """
-PhotoNim, a simple CPU raytracer written in Nim.
-
-Usage: 
-    ./PhotoNim convert <HDR> [<LDR>] [--alpha=<alpha> --gamma=<gamma>]
-
+Usage:
+    ./PhotoNim convert <input> [<output>] [--alpha=<alpha> --gamma=<gamma>]
+    
 Options:
-    <LDR>               Output filepath, if not present the HDR filename will be used.
-    --alpha=<alpha>     Color renormalization factor [default: 0.18].
-    --gamma=<gamma>     LDR factor [default: 1.0].
-    -h --help     
-    --version     
+    --alpha=<alpha>     Color renormalization factor. [default: 0.18]
+    --gamma=<gamma>     Gamma correction factor. [default: 1.0]
+    
+    -h --help           Show this helper screen.
+    --version           Show PhotoNim version.
 """
 
 
-let args = docopt(doc, version = "PhotoNim 0.1")
-
-if args["convert"]:
-    let fileIn = $args["<HDR>"]
-    var fileOut: string
-
-    if args["<LDR>"]: fileOut = $args["<LDR>"]
-    else: 
-        let (dir, name, _) = splitFile(fileIn)
-        fileOut = dir & '/' & name & ".png"
-
-    var alpha, gamma: float32
-    if args["--alpha"]: 
-        try: alpha = parseFloat($args["--alpha"]) 
-        except: echo "Warning: alpha flag must be a float. Default value is used."
-
-    if args["--gamma"]: 
-        try: gamma = parseFloat($args["--gamma"]) 
-        except: echo "Warning: gamma flag must be a float. Default value is used."
-
-    echo "Converting an HDRImage to a LDRImage."
-
+proc convert(fileIn, fileOut: string, alpha, gamma: float32) =
     var 
         img: HdrImage
         fileStream = newFileStream(fileIn, fmRead)
@@ -68,10 +45,33 @@ if args["convert"]:
             pixelsString[i] = (255 * pow(pixel.b, gFactor)).char; i += 1
 
     discard savePNG24(fileOut, pixelsString, img.width.int, img.height.int)
+    echo fmt"Successfully converted {fileIn} to {fileOut}"
 
 
-elif args["render"]:
-    quit "toDO"
+let args = docopt(PhotoNimDoc, version = "PhotoNim 0.1")
 
+if args["convert"]:
+    let fileIn = $args["<input>"]
+    var 
+        fileOut: string
+        alpha, gamma: float
+
+    if args["--alpha"]: 
+        try: alpha = parseFloat($args["--alpha"]) 
+        except: echo "Warning: alpha flag must be a float. Default value is used."
+
+    if args["--gamma"]: 
+        try: gamma = parseFloat($args["--gamma"]) 
+        except: echo "Warning: gamma flag must be a float. Default value is used."
+
+    if args["<output>"]: fileOut = $args["<output>"]
+    else: 
+        let (dir, name, _) = splitFile(fileIn)
+        fileOut = dir & '/' & name & "_a" & $alpha & "_g" & $gamma & ".png"
+    
+    convert(fileIn, fileOut, alpha, gamma)
+
+elif args["render"]: 
+    quit "Not rendering! haahha gimme 5 bucks"
 else: 
-    quit "No other commands are availables!"
+    quit "Unknown command. Available commands: convert, render."
