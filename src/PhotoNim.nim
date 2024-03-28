@@ -1,4 +1,4 @@
-import PhotoNim/[color, hdrimage]
+import PhotoNim/[common, hdrimage, geometry]
 import std/[streams, strutils, math, os]
 import docopt
 import nimPNG

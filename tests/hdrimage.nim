@@ -154,3 +154,4 @@ suite "HdrImageTest":
         check areclose(img.getPixel(0,0).r, 0.5)
         check areClose(img.getPixel(0,0).g, 2.0/3.0)
         check areClose(img.getPixel(0,0).b, 0.75)
+
