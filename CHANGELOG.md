@@ -31,6 +31,7 @@ All notable changes to this project will be documented in this file.
 - *(Color)* New operators +=, -=, *=, /=.
 - *(Color)* Operator -
 - *(PhotonNim)* It is now possible to convert PFM images to PNG by using the CLI. nimPNG is added to the .nimble requirements.
+- *(PhotoNim)* Conver now can infer the LDR output if not passed explicitly.
 
 ### 🐛 Bug Fixes
 
