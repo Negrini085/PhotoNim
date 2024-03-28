@@ -16,7 +16,7 @@ proc r*(a: Color): float32 {.inline.} = a.data[0]
 proc g*(a: Color): float32 {.inline.} = a.data[1]
 proc b*(a: Color): float32 {.inline.} = a.data[2]
 
-proc toVec*(a: Color): Vec3f {.inline.} = newVec(a.r, a.g, a.b)
+proc toVec*(a: Color): Vec3f {.inline.} = newVec3(a.r, a.g, a.b)
 
 proc `$`*(a: Color): string {.inline.} = "<" & $a.r & " " & $a.g & " " & $a.b & ">"
 
@@ -26,7 +26,6 @@ proc `$`*(a: Color): string {.inline.} = "<" & $a.r & " " & $a.g & " " & $a.b & 
 ## =================================================
 
 proc `==`*(a, b: Color): bool {.borrow.}
-proc `!=`*(a, b: Color): bool {.borrow.}
 proc areClose*(a, b: Color): bool {.borrow.}
 
 proc `+`*(a, b: Color): Color {.borrow.}
