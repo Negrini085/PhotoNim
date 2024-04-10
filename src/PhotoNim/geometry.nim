@@ -86,23 +86,23 @@ proc `-`*(a: Vec3f, b: Point3D): Point3D {.inline.} =
     newPoint3D(a[0] - b.x, a[1] - b.y, a[2] - b.z)
 
 
-proc norm2*(a: Normal): float32 {.borrow}
+proc norm2*(a: Normal): float32 {.borrow.}
     ## Calculate the squared norm (length) of a normal vector.
     
-proc norm*(a: Normal): float32 {.borrow}
+proc norm*(a: Normal): float32 {.borrow.}
     ## Calculate the norm (length) of a normal vector.
     
-proc normalize*(a: Normal): Normal {.borrow}
+proc normalize*(a: Normal): Normal {.borrow.}
     ## Normalize a normal vector.
 
-proc dist2*(a, b: Point2D): float32 {.borrow}
+proc dist2*(a, b: Point2D): float32 {.borrow.}
     ## Calculate the squared distance between two 2D points.
     
-proc dist2*(a, b: Point3D): float32 {.borrow}
+proc dist2*(a, b: Point3D): float32 {.borrow.}
     ## Calculate the squared distance between two 3D points.
     
-proc dist*(a, b: Point2D): float32 {.borrow}
+proc dist*(a, b: Point2D): float32 {.borrow.}
     ## Calculate the distance between two 2D points.
     
-proc dist*(a, b: Point3D): float32 {.borrow}
+proc dist*(a, b: Point3D): float32 {.borrow.}
     ## Calculate the distance between two 3D points.
