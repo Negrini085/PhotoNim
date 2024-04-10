@@ -72,33 +72,23 @@ proc clampImage*(img: var HdrImage) {.inline.} =
 proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32 = stream.readFloat32
-
-    if endianness == bigEndian: 
-        bigEndian32(addr result, addr tmp)
-    else: 
-        littleEndian32(addr result, addr tmp)
+    if endianness == littleEndian: littleEndian32(addr result, addr tmp)
+    else: bigEndian32(addr result, addr tmp)
 
 proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
     ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32
-
-    if endianness == bigEndian:
-        bigEndian32(addr tmp, addr value)
-    else:
-        littleEndian32(addr tmp, addr value)
-    
+    if endianness == littleEndian: littleEndian32(addr tmp, addr value)
+    else: bigEndian32(addr tmp, addr value)
     stream.write(tmp)
 
 
-proc readPFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
-    var
-        width, height: uint
-        endianness: Endianness
+## =================================================
+## PFM HdrImage Type
+## =================================================
 
-    if stream.readLine != "PF":
-        raise newException(CatchableError, "Invalid PFM magic specification: required 'PF\n'")
-
-    try:
+proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
+    assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
         let sizes = stream.readLine.split(" ")
     assert sizes.len == 2, "Invalid image size specification: required 'width height'."
 
@@ -107,38 +97,39 @@ proc readPFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
         width = parseInt(sizes[0])
         height = parseInt(sizes[1])
     except:
-        raise newException(CatchableError, "Invalid image size specification: required 'width height\n' as unsigned integers")
+        raise newException(CatchableError, "Invalid image size specification: required 'width height' as unsigned integers")
     
     try:
-        let endianFloat = parseFloat(stream.readLine)
+        let endianFloat = stream.parseFloat
         if endianFloat == 1.0:
-            endianness = bigEndian
+            result.endian = bigEndian
         elif endianFloat == -1.0:
-            endianness = littleEndian
+            result.endian = littleEndian
         else:
             raise newException(CatchableError, "")
     except:
-        raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0\n') or littleEndian ('-1.0\n')")
+        raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
 
-    result = newHdrImage(width, height)
+    result.img = newHdrImage(width, height)
 
     var r, g, b: float32
-    for y in countdown(result.height - 1, 0):
-        for x in 0..<result.width:
-            r = parseFloat(stream, endianness)
-            g = parseFloat(stream, endianness)
-            b = parseFloat(stream, endianness)
-            result.setPixel(x, y, newColor(r, g, b))
+    for y in countdown(height - 1, 0):
+        for x in 0..<width:
+            r = parseFloat(stream, result.endian)
+            g = parseFloat(stream, result.endian)
+            b = parseFloat(stream, result.endian)
+            result.img.setPixel(x, y, newColor(r, g, b))
 
-proc writePFM*(stream: Stream, img: HdrImage, endianness: Endianness) = 
+
+proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian) = 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
-    stream.writeLine(if endianness == bigEndian: "1.0" else: "-1.0")
+    stream.writeLine(if endian == littleEndian: "-1.0" else: "1.0")
 
     var c: Color
     for y in countdown(img.height - 1, 0):
         for x in 0..<img.width:
             c = img.getPixel(x, y)
-            writeFloat(stream, c.r, endianness)
-            writeFloat(stream, c.g, endianness)
-            writeFloat(stream, c.b, endianness)
+            stream.writeFloat(c.r, endian)
+            stream.writeFloat(c.g, endian)
+            stream.writeFloat(c.b, endian)
