@@ -1,5 +1,5 @@
 import color
-import std/[sequtils, strutils, streams, endians, math, fenv]
+import std/[sequtils, strutils, streams, endians, strformat, math, fenv]
 import nimPNG
 
 ## =================================================
@@ -31,12 +31,12 @@ proc pixelOffset(img: HdrImage, x, y: int): int {.inline.} =
 
 proc getPixel*(img: HdrImage, row, col: int): Color = 
     ## Access the `Color` of pixel (row, col) in a `HdrImage`.
-    assert img.validPixel(row, col)
+    assert img.validPixel(row, col), fmt"Error! Index ({row}, {col}) out of bounds for a {img.width}x{img.height} HdrImage"
     img.pixels[img.pixelOffset(row, col)]
 
 proc setPixel*(img: var HdrImage, row, col: int, color: Color) = 
     ## Set the `Color` of pixel (row, col) in a `HdrImage`.
-    assert img.validPixel(row, col)
+    assert img.validPixel(row, col), fmt"Error! Index ({row}, {col}) out of bounds for a {img.width}x{img.height} HdrImage"
     img.pixels[img.pixelOffset(row, col)] = color
 
 
