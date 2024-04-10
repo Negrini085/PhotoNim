@@ -1,5 +1,5 @@
 import color
-import std/[endians, strutils, sequtils, streams, math, fenv]
+import std/[sequtils, strutils, streams, endians, math, fenv]
 import nimPNG
 
 ## =================================================
@@ -9,32 +9,32 @@ import nimPNG
 type
     HdrImage* = object
         ## `HdrImage` represents an HDR image as a sequence of `Color` associated with each pixel in (width, height)
-        width*, height*: uint
+        width*, height*: int
         pixels*: seq[Color]
 
 
-proc newHdrImage*(width, height: uint): HdrImage = 
+proc newHdrImage*(width, height: int): HdrImage = 
     ## Create a (width, height) `HdrImage` black canvas.
     result.width = width
     result.height = height
     result.pixels = newSeq[Color](width * height)
 
 
-proc validPixel(img: HdrImage, row, col: uint): bool {.inline.} =
+proc validPixel(img: HdrImage, row, col: int): bool {.inline.} =
     ## Check if pixel coordinates are valid in a `HdrImage`.
-    (row < img.width) and (col < img.height)
+    (0 < row and row < img.width) and (0 < col and col < img.height)
 
-proc pixelOffset(img: HdrImage, x, y: uint): uint {.inline.} =
+proc pixelOffset(img: HdrImage, x, y: int): int {.inline.} =
     ## Calculate pixel position in a `HdrImage`.
     x + img.width * y
 
 
-proc getPixel*(img: HdrImage, row, col: uint): Color = 
+proc getPixel*(img: HdrImage, row, col: int): Color = 
     ## Access the `Color` of pixel (row, col) in a `HdrImage`.
     assert img.validPixel(row, col)
     img.pixels[img.pixelOffset(row, col)]
 
-proc setPixel*(img: var HdrImage, row, col: uint, color: Color) = 
+proc setPixel*(img: var HdrImage, row, col: int, color: Color) = 
     ## Set the `Color` of pixel (row, col) in a `HdrImage`.
     assert img.validPixel(row, col)
     img.pixels[img.pixelOffset(row, col)] = color
@@ -100,8 +100,12 @@ proc readPFM*(stream: Stream): HdrImage {.raises: [CatchableError].} =
 
     try:
         let sizes = stream.readLine.split(" ")
-        width = parseUInt(sizes[0])
-        height = parseUInt(sizes[1])
+    assert sizes.len == 2, "Invalid image size specification: required 'width height'."
+
+    var width, height: int
+    try:
+        width = parseInt(sizes[0])
+        height = parseInt(sizes[1])
     except:
         raise newException(CatchableError, "Invalid image size specification: required 'width height\n' as unsigned integers")
     
