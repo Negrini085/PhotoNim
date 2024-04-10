@@ -15,8 +15,7 @@ type
 
 proc newHdrImage*(width, height: int): HdrImage = 
     ## Create a (width, height) `HdrImage` black canvas.
-    result.width = width
-    result.height = height
+    (result.width, result.height) = (width, height)
     result.pixels = newSeq[Color](width * height)
 
 
@@ -45,15 +44,16 @@ proc setPixel*(img: var HdrImage, row, col: int, color: Color) =
 ## =================================================
 
 proc luminosity*(a: Color): float32 {.inline.} = 
-    (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b))) / 2
+    ## Return the color luminosity
+    0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
 
-proc averageLuminosity*(img: var HdrImage, eps: float32 = epsilon(float32)): float32 {.inline.} =
-    ## Procedure to determine HdrImage avarage luminosity
+proc averageLuminosity*(img: HdrImage, eps: float32 = epsilon(float32)): float32 {.inline.} =
+    ## Return the HdrImage avarage luminosity
     pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
 
 proc normalizeImage*(img: var HdrImage, scal: float32, lum: bool = true) =
     ## Normalizing pixel values
-    var luminosity: float32 = 4.0
+    var luminosity: float32 = 1.0
     if lum: luminosity = img.averageLuminosity
     img.pixels.apply(proc(pix: Color): Color = pix * (scal / luminosity))
 
@@ -66,7 +66,7 @@ proc clampImage*(img: var HdrImage) {.inline.} =
 
 
 ## =================================================
-## Stream PFM files
+## Stream Float
 ## =================================================
 
 proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
@@ -89,7 +89,7 @@ proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = little
 
 proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
     assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
-        let sizes = stream.readLine.split(" ")
+    let sizes = stream.readLine.split(" ")
     assert sizes.len == 2, "Invalid image size specification: required 'width height'."
 
     var width, height: int
