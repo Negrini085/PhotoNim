@@ -1,0 +1,39 @@
+name: Continuous Integration tests.
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    paths-ignore:
+      - 'LICENSE'
+      - '*.md'
+    branches: 
+      - master
+
+  pull_request:
+    paths-ignore:
+      - 'LICENSE'
+      - '*.md'
+      
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macOS-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: '2.0.x' 
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Echo Nim version
+        run: nim -v
+      - name: Echo Nimble version
+        run: nimble -v
+      - name: Run build test
+        run: nimble build -Y
+      - name: Run unit tests
+        run: nimble test -Y
