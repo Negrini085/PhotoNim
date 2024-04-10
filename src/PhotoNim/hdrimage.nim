@@ -1,4 +1,4 @@
-import common
+import color
 import std/[endians, strutils, sequtils, streams, math, fenv]
 import nimPNG
 

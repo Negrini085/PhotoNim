@@ -1,5 +1,5 @@
 import common
-import std/[fenv, math]
+import std/math
 
 ## =================================================
 ## Point2D, Point3D and Normal Type
