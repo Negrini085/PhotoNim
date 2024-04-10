@@ -6,8 +6,8 @@ import nimPNG
 let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
 
 Usage:
-    ./PhotoNim convert <input> [<output>] [--alpha=<alpha> --gamma=<gamma>]
-    
+    ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma>]
+
 Options:
     --alpha=<alpha>     Color renormalization factor. [default: 0.18]
     --gamma=<gamma>     Gamma correction factor. [default: 1.0]
@@ -17,32 +17,33 @@ Options:
 """
 
 
-proc convert(fileIn, fileOut: string, alpha, gamma: float32) =
+proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
     var 
         img: HdrImage
-        fileStream = newFileStream(fileIn, fmRead)
+        inFS = newFileStream(fileIn, fmRead)
     try: 
-        img = readPFM(fileStream)
+        img = readPFM(inFS).img
     except CatchableError: 
         quit getCurrentExceptionMsg()
     finally:
-        fileStream.close
+        inFS.close
    
     normalizeImage(img, alpha)
     clampImage(img)
 
     var 
         i: int
-        pixel: Color
+        pix: Color
         pixelsString = newString(3 * img.pixels.len)
 
+    # Gamma compression
     let gFactor = 1 / gamma
     for y in 0..<img.height:
         for x in 0..<img.width:
-            pixel = img.getPixel(x, y)
-            pixelsString[i] = (255 * pow(pixel.r, gFactor)).char; i += 1
-            pixelsString[i] = (255 * pow(pixel.g, gFactor)).char; i += 1
-            pixelsString[i] = (255 * pow(pixel.b, gFactor)).char; i += 1
+            pix = img.getPixel(x, img.height - 1 - y)
+            pixelsString[i] = (255 * pow(pix.r, gFactor)).char; i += 1
+            pixelsString[i] = (255 * pow(pix.g, gFactor)).char; i += 1
+            pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
 
     discard savePNG24(fileOut, pixelsString, img.width.int, img.height.int)
     echo fmt"Successfully converted {fileIn} to {fileOut}"
@@ -50,7 +51,7 @@ proc convert(fileIn, fileOut: string, alpha, gamma: float32) =
 
 let args = docopt(PhotoNimDoc, version = "PhotoNim 0.1")
 
-if args["convert"]:
+if args["pfm2png"]:
     let fileIn = $args["<input>"]
     var 
         fileOut: string
@@ -69,7 +70,7 @@ if args["convert"]:
         let (dir, name, _) = splitFile(fileIn)
         fileOut = dir & '/' & name & "_a" & $alpha & "_g" & $gamma & ".png"
     
-    convert(fileIn, fileOut, alpha, gamma)
+    pfm2png(fileIn, fileOut, alpha, gamma)
 
 elif args["render"]: 
     quit "Not rendering! haahha gimme 5 bucks"
