@@ -7,6 +7,20 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - Continuous integration with GitHub Actions.
+- *(HdrImage)* Assert are now followed by a formatted string.
+
+### 🐛 Bug Fixes
+
+- Nim macro flags start and end with a dot: {.inline.}, {.borrow.}
+- Removed unused module imports.
+- *(HdrImage)* Change uint in favour of int (https://forum.nim-lang.org/t/8737).
+
+### 🚜 Refactor
+
+- *(Color)* Removed min/max.
+- *(HdrImage)* Delete redundant Color implementation.
+- *(HdrImage)* Parse/writeFloat are better formatted. readPFM now returns a tuple with the image and the endianness which otherwise would be lost.
+- *(PhotoNim)* 'convert' command is now called 'pfm2png' and it has its own procedure.
 
 ## [0.1.0] - 2024-03-28
 
