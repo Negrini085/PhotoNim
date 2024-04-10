@@ -38,6 +38,3 @@ proc `*=`*(a: var Color, b: float32) {.borrow.}
 
 proc `/`*(a: Color, b: float32): Color {.borrow.}
 proc `/=`*(a: var Color, b: float32) {.borrow.}
-
-proc min*(a: Color): float32 {.borrow.}
-proc max*(a: Color): float32 {.borrow.}
