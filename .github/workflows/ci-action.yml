@@ -42,3 +42,4 @@ jobs:
       - uses: coverallsapp/github-action@v2
         with: 
           github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: COVERALLS_REPO_TOKEN=ECzCqMcCMCGEpBzvgiSZR1p784fPaMAWv
