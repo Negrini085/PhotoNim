@@ -45,7 +45,7 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
             pixelsString[i] = (255 * pow(pix.g, gFactor)).char; i += 1
             pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
 
-    discard savePNG24(fileOut, pixelsString, img.width.int, img.height.int)
+    discard savePNG24(fileOut, pixelsString, img.width, img.height)
     echo fmt"Successfully converted {fileIn} to {fileOut}"
 
 
