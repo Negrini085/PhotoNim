@@ -1,6 +1,6 @@
 import std/unittest
 import std/[streams, endians, strutils, math]
-import PhotoNim/[common, hdrimage]
+import PhotoNim/[color, hdrimage]
        
 
 suite "HdrImageTest":
@@ -68,7 +68,7 @@ suite "HdrImageTest":
         stream.writePFM(img1, bigEndian)
         stream.close()
         stream = openFileStream("files/wpPFM.txt", fmRead)
-        img2 = stream.readPFM()
+        img2 = stream.readPFM.img
         stream.close()
 
         #Checking pixel values
@@ -146,4 +146,3 @@ suite "HdrImageTest":
         check areclose(img.getPixel(0,0).r, 0.5)
         check areClose(img.getPixel(0,0).g, 2.0/3.0)
         check areClose(img.getPixel(0,0).b, 0.75)
-
