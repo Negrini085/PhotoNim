@@ -18,6 +18,10 @@ proc toVec*(a: Color): Vec3f {.inline.} = newVec3(a.r, a.g, a.b)
 
 proc `$`*(a: Color): string {.inline.} = "<" & $a.r & " " & $a.g & " " & $a.b & ">"
 
+proc luminosity*(a: Color): float32 {.inline.} = 
+    ## Return the color luminosity
+    0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
+
 
 ## =================================================
 ## Color Borrowed Operators from Vec3f

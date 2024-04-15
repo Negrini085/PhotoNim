@@ -1,7 +1,14 @@
-import PhotoNim/[color, hdrimage, geometry]
-import std/[math, os, streams, strutils, strformat]
+import PhotoNim/[color, hdrimage]
+
 import docopt
-import nimPNG
+from nimPNG import savePNG24
+
+from std/os import splitFile
+from std/streams import Stream, newFileStream, close
+from std/strutils import parseFloat
+from std/strformat import fmt
+from std/math import pow
+
 
 let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
 
