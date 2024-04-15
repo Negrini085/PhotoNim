@@ -21,7 +21,7 @@ proc newHdrImage*(width, height: int): HdrImage =
 
 proc validPixel(img: HdrImage, row, col: int): bool {.inline.} =
     ## Check if pixel coordinates are valid in a `HdrImage`.
-    (0 < row and row < img.width) and (0 < col and col < img.height)
+    (0 <= row and row < img.width) and (0 <= col and col < img.height)
 
 proc pixelOffset(img: HdrImage, x, y: int): int {.inline.} =
     ## Calculate pixel position in a `HdrImage`.
