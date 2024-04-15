@@ -51,37 +51,37 @@ suite "HdrImageTest":
         check "1.0" == stream.readLine()
         stream.close()
     
-    # test "write/parsePFM":
-    #     ## writePFM & parsePFM tests
+    test "write/parsePFM":
+        ## writePFM & parsePFM tests
         
-    #     var 
-    #         stream: Stream = newFileStream("files/wpPFM.txt", fmWrite)
-    #         img1: HdrImage = newHdrImage(10, 15)
-    #         img2: HdrImage
+        var 
+            stream: Stream = newFileStream("files/wpPFM.txt", fmWrite)
+            img1: HdrImage = newHdrImage(10, 15)
+            img2: HdrImage
         
-    #     #Changing some pixel in order to test writePFM & readPFM procedures
-    #     img1.setPixel(3, 4, newColor(1.0, 2.0, 3.0))
-    #     img1.setPixel(6, 3, newColor(3.4, 17.8, 128.1))
-    #     img1.setPixel(8, 9, newColor(35.1, 18.2, 255.0))
+        # Changing some pixel in order to test writePFM & readPFM procedures
+        img1.setPixel(3, 4, newColor(1.0, 2.0, 3.0))
+        img1.setPixel(6, 3, newColor(3.4, 17.8, 128.1))
+        img1.setPixel(8, 9, newColor(35.1, 18.2, 255.0))
 
-    #     stream.writePFM(img1, bigEndian)
-    #     stream.close()
-    #     stream = openFileStream("files/wpPFM.txt", fmRead)
-    #     img2 = stream.readPFM.img
-    #     stream.close()
+        stream.writePFM(img1, bigEndian)
+        stream.close()
 
-    #     #Checking pixel values
-    #     check areClose(img2.getPixel(3,4).r, 1.0)
-    #     check areClose(img2.getPixel(3,4).g, 2.0)
-    #     check areClose(img2.getPixel(3,4).b, 3.0)  
+        stream = openFileStream("files/wpPFM.txt", fmRead)
+        img2 = stream.readPFM.img
+        stream.close()
 
-    #     check areClose(img2.getPixel(6,3).r, 3.4)
-    #     check areClose(img2.getPixel(6,3).g, 17.8)
-    #     check areClose(img2.getPixel(6,3).b, 128.1)  
+        check areClose(img2.getPixel(3,4).r, 1.0)
+        check areClose(img2.getPixel(3,4).g, 2.0)
+        check areClose(img2.getPixel(3,4).b, 3.0)  
 
-    #     check areClose(img2.getPixel(8,9).r, 35.1)
-    #     check areClose(img2.getPixel(8,9).g, 18.2)
-    #     check areClose(img2.getPixel(8,9).b, 255.0)  
+        check areClose(img2.getPixel(6,3).r, 3.4)
+        check areClose(img2.getPixel(6,3).g, 17.8)
+        check areClose(img2.getPixel(6,3).b, 128.1)  
+
+        check areClose(img2.getPixel(8,9).r, 35.1)
+        check areClose(img2.getPixel(8,9).g, 18.2)
+        check areClose(img2.getPixel(8,9).b, 255.0)  
     
 
     test "colorLuminosity":
@@ -105,30 +105,30 @@ suite "HdrImageTest":
         check areClose(img.averageLuminosity(0.0), pow(36, 0.25))
     
     
-    # test "normalizeImage":
-    #     ## Testing image normalization procedure
-    #     # Changing pixel values
-    #     img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
-    #     img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
+    test "normalizeImage":
+        ## Testing image normalization procedure
+        # Changing pixel values
+        img.setPixel(0, 0, newColor(1.0, 2.0, 3.0)); img.setPixel(0, 1, newColor(4.0, 5.0, 1.0))
+        img.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); img.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
         
-    #     # Using default value for normalization
-    #     normalizeImage(img, 2, false)
+        # Using default value for normalization
+        normalizeImage(img, 2, false)
 
-    #     check areClose(img.getPixel(0,0).r, 0.5)
-    #     check areClose(img.getPixel(0,0).g, 1.0)
-    #     check areClose(img.getPixel(0,0).b, 1.5)
+        check areClose(img.getPixel(0,0).r, 0.5)
+        check areClose(img.getPixel(0,0).g, 1.0)
+        check areClose(img.getPixel(0,0).b, 1.5)
 
-    #     check areClose(img.getPixel(0,1).r, 2.0)
-    #     check areClose(img.getPixel(0,1).g, 2.5)
-    #     check areClose(img.getPixel(0,1).b, 0.5)
+        check areClose(img.getPixel(0,1).r, 2.0)
+        check areClose(img.getPixel(0,1).g, 2.5)
+        check areClose(img.getPixel(0,1).b, 0.5)
 
-    #     check areClose(img.getPixel(1,0).r, 0.0)
-    #     check areClose(img.getPixel(1,0).g, 0.75)
-    #     check areClose(img.getPixel(1,0).b, 1.0)
+        check areClose(img.getPixel(1,0).r, 0.0)
+        check areClose(img.getPixel(1,0).g, 0.75)
+        check areClose(img.getPixel(1,0).b, 1.0)
 
-    #     check areClose(img.getPixel(1,1).r, 1.0)
-    #     check areClose(img.getPixel(1,1).g, 5.0)
-    #     check areClose(img.getPixel(1,1).b, 1.5)
+        check areClose(img.getPixel(1,1).r, 1.0)
+        check areClose(img.getPixel(1,1).g, 5.0)
+        check areClose(img.getPixel(1,1).b, 1.5)
     
     # test "clampImage":
     #     ## Testing clamping image procedure
