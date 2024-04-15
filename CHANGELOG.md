@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 - Nim macro flags start and end with a dot: {.inline.}, {.borrow.}
 - Removed unused module imports.
 - *(HdrImage)* Change uint in favour of int (https://forum.nim-lang.org/t/8737).
+- *(HdrImage)* Bug in validPixel when switched from uint to int.
+- *(PhotoNim)* Removed int convertion for uint index.
 
 ### 🚜 Refactor
 
