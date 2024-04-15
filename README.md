@@ -3,6 +3,7 @@
 ![GitHub License](https://img.shields.io/github/license/Negrini085/PhotoNim)
 ![GitHub Release](https://img.shields.io/github/v/release/Negrini085/PhotoNim)
 ![GitHub repo size](https://img.shields.io/github/repo-size/Negrini085/PhotoNim)
+![GitHub last commit](https://img.shields.io/github/last-commit/Negrini085/PhotoNim)
 
 ## Installing
 ### Dependencies
