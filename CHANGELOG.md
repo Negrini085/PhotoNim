@@ -24,6 +24,11 @@ All notable changes to this project will be documented in this file.
 - *(HdrImage)* Delete redundant Color implementation.
 - *(HdrImage)* Parse/writeFloat are better formatted. readPFM now returns a tuple with the image and the endianness which otherwise would be lost.
 - *(PhotoNim)* 'convert' command is now called 'pfm2png' and it has its own procedure.
+- Explicit importing from std and other libs listed in PhotoNim.nimble.
+
+### 🧪 Testing
+
+- Nimble Test Task.
 
 ## [0.1.0] - 2024-03-28
 
