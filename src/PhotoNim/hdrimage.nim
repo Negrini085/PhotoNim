@@ -1,6 +1,12 @@
+from std/streams import Stream, write, writeLine, readLine, readFloat32
+from std/endians import littleEndian32, bigEndian32
+from std/strutils import split, parseInt, parseFloat
+from std/strformat import fmt
+from std/sequtils import apply, map
+from std/math import sum, pow, log10
+from std/fenv import epsilon
+
 import color
-import std/[sequtils, strutils, streams, endians, strformat, math, fenv]
-import nimPNG
 
 ## =================================================
 ## HdrImage Type
