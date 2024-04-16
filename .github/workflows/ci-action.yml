@@ -38,6 +38,3 @@ jobs:
         run: nimble build -Y
       - name: Run unit tests
         run: nimble test
-
-      - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v2.2.3
