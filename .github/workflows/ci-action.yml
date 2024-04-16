@@ -37,8 +37,7 @@ jobs:
       - name: Run build test
         run: nimble build -Y
       - name: Run unit tests
-        run: nimble test -Y
+        run: nimble test
 
-      - uses: coverallsapp/github-action@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Coveralls GitHub Action
+        uses: coverallsapp/github-action@v2.2.3
