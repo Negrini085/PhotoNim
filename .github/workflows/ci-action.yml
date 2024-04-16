@@ -29,6 +29,7 @@ jobs:
         with:
           nim-version: '2.0.x' 
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Echo Nim version
         run: nim -v
       - name: Echo Nimble version
@@ -36,4 +37,9 @@ jobs:
       - name: Run build test
         run: nimble build -Y
       - name: Run unit tests
-        run: nimble test -Y
+        run: nimble test
+
+      - name: Report Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

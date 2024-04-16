@@ -12,3 +12,7 @@ bin           = @["PhotoNim"]
 requires "nim >= 2.0"
 requires "docopt >= 0.6"
 requires "nimPNG >= 0.3"
+
+task test, "Run the Nimble tester!":
+  withDir "tests":
+    exec "nim c -r hdrimage.nim"

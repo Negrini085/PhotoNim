@@ -1,4 +1,5 @@
-import std/[fenv, math]
+from std/math import sqrt
+from std/fenv import epsilon
 
 ## =================================================
 ## Vector Type

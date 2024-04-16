@@ -1,6 +1,13 @@
 import color
-import std/[sequtils, strutils, streams, endians, strformat, math, fenv]
-import nimPNG
+
+from std/streams import Stream, write, writeLine, readLine, readFloat32
+from std/endians import littleEndian32, bigEndian32
+from std/strutils import split, parseInt, parseFloat
+from std/strformat import fmt
+from std/sequtils import apply, map
+from std/math import sum, pow, log10
+from std/fenv import epsilon
+
 
 ## =================================================
 ## HdrImage Type
@@ -42,10 +49,6 @@ proc setPixel*(img: var HdrImage, row, col: int, color: Color) =
 ## =================================================
 ## HdrImage Functions
 ## =================================================
-
-proc luminosity*(a: Color): float32 {.inline.} = 
-    ## Return the color luminosity
-    0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
 
 proc averageLuminosity*(img: HdrImage, eps: float32 = epsilon(float32)): float32 {.inline.} =
     ## Return the HdrImage avarage luminosity
@@ -89,6 +92,7 @@ proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = little
 
 proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
     assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
+    
     let sizes = stream.readLine.split(" ")
     assert sizes.len == 2, "Invalid image size specification: required 'width height'."
 
@@ -100,7 +104,7 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
         raise newException(CatchableError, "Invalid image size specification: required 'width height' as unsigned integers")
     
     try:
-        let endianFloat = stream.parseFloat
+        let endianFloat = stream.readLine.parseFloat
         if endianFloat == 1.0:
             result.endian = bigEndian
         elif endianFloat == -1.0:
@@ -124,7 +128,7 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
 proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian) = 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
-    stream.writeLine(if endian == littleEndian: "-1.0" else: "1.0")
+    stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
 
     var c: Color
     for y in countdown(img.height - 1, 0):
