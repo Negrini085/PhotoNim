@@ -56,6 +56,18 @@ template Matrix_prod4x4(op:untyped) =
 
             result[i] = appo
             appo = 0.0
+
+template M4x4_vecProd(op:untyped) =
+    ## Template for 
+    proc op*[T](a: array[16, T], b: Vec4[T]): Vec4[T] =
+        var appo: float32 = 0.0
+
+        for i in 0..<len(b.data): 
+            for j in 0..<4:
+                appo += op(a[j + 4 * i], b[j])
+
+            result[i] = appo
+            appo = 0.0
     
 
 template TTtoTranOp(op: untyped) =
@@ -65,6 +77,13 @@ template TTtoTranOp(op: untyped) =
             result.inverse = b.inverse * a.inverse
 
 
+template TranVecToVec(op: untyped) =
+    ## Template for element wise operations between a transformation and a size 4 vector: gives a vector back
+    proc op*[T](a: Transformation[T], b: Vec4[T]): Vec4[T] {.inline}=       
+            result = a.matrix * b
+
+
+
 ScalTranToTranOp(`*`)
 TranScalToTranOp(`*`)
 TranScalToTranOp(`/`)
@@ -72,7 +91,10 @@ TranScalToTranOp(`/`)
 TranTranToTranOp(`+`)
 TranTranToTranOp(`-`)
 Matrix_prod4x4(`*`)
+M4x4_vecProd(`*`)
+
 TTtoTranOp(`*`)
+TranVecToVec(`*`)
 
 
 
@@ -105,10 +127,12 @@ proc `+`*(a, b: Translation): Translation {.borrow.}
 proc `-`*(a, b: Translation): Translation {.borrow.}
 proc `*`*(a, b: Translation): Translation {.borrow.}
 
+proc `*`*(a: Translation, b: Vec4f): Vec4f {.inline} =
+    result = a.matrix * b
+
 proc is_consistent*(a: Translation): bool {.borrow.}
     ## Checks if a.matrix * a.inverse operation gives the identity matrix
 
 proc inverse_tranf(t1: Translation): Translation {.borrow.}
     ## Enables the user to access to the inverse translation
-
 
