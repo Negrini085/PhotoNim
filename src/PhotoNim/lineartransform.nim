@@ -81,7 +81,13 @@ TTtoTranOp(`*`)
 #-----------------------------------------------#
 
 proc is_consistent*(t1: Transformation): bool = 
+    ## Checks whether the transformation is consistent or not: product within matrix and inverse gives identity??
     result = areClose(t1.matrix * t1.inverse, identity4x4)
+
+proc inverse_tranf(t1: Transform): Transform =
+    ## Enables the user to access to the inverse transformation 
+    result.matrix = t1.inverse
+    result.inverse = t1.matrix
 
 
 type
@@ -101,5 +107,8 @@ proc `*`*(a, b: Translation): Translation {.borrow.}
 
 proc is_consistent*(a: Translation): bool {.borrow.}
     ## Checks if a.matrix * a.inverse operation gives the identity matrix
+
+proc inverse_tranf(t1: Translation): Translation {.borrow.}
+    ## Enables the user to access to the inverse translation
 
 
