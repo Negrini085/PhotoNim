@@ -2,10 +2,11 @@ import common
 import std/math
 import geometry
 
+# Identity 4x4 matrix
 const identity4x4: array[16, float32] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0 ,1, 0, 0, 0, 0, 1]
 
 type
-    ## Define a generic transformation type
+    ## Define a generic transformation type: we store the direct transformation matrix and the inverse one
     Transform*[N: static[int], T] = object 
         matrix*: array[N, T]
         inverse*: array[N, T]
@@ -14,9 +15,11 @@ type
     Transformation*[T] = Transform[16, T]
     Transformationf* = Transformation[float32]
 
+
 ## Template constructor for a Transformation[T] type
 proc newTransform*[N, T](matr1, matr2: array[N, T]): Transform {.inline} =
     result.matrix = matr1; result.inverse = matr2 
+
 
 
 #-----------------------------------------------#
@@ -30,6 +33,7 @@ template ScalTranToTranOp(op: untyped) =
             result.matrix[i] = op(a, b.matrix[i])
             result.inverse[i] = op(a, b.inverse[i])
 
+
 template TranScalToTranOp(op: untyped) =
     ## Template for element-wise operations between a transformation and a scalar resulting in a new transformation.
     proc op*[N: static[int], T](a: Transform[N, T], b: T): Transform[N, T] =
@@ -37,12 +41,14 @@ template TranScalToTranOp(op: untyped) =
             result.matrix[i] = op(a.matrix[i], b)
             result.inverse[i] = op(a.inverse[i], b)
 
+
 template TranTrantoTranOp(op: untyped) =
     ## Template for element-wise operations between a scalar and a transformation resulting in a new transformation.
     proc op*[N: static[int], T](a, b: Transform[N, T]): Transform[N, T] =
         for i in 0..<N: 
             result.matrix[i] = op(a.matrix[i], b.matrix[i])
             result.inverse[i] = op(a.inverse[i], b.inverse[i])
+
 
 template Matrix_prod4x4(op:untyped) =
     ## Template for 4x4 matrix product
@@ -56,6 +62,7 @@ template Matrix_prod4x4(op:untyped) =
 
             result[i] = appo
             appo = 0.0
+
 
 template M4x4_vecProd(op:untyped) =
     ## Template for 
@@ -106,18 +113,30 @@ proc is_consistent*(t1: Transformation): bool =
     ## Checks whether the transformation is consistent or not: product within matrix and inverse gives identity??
     result = areClose(t1.matrix * t1.inverse, identity4x4)
 
+
 proc inverse_tranf(t1: Transform): Transform =
     ## Enables the user to access to the inverse transformation 
     result.matrix = t1.inverse
     result.inverse = t1.matrix
 
 
+
+
+
+#------------------------------------------------#
+#           Translation transformation           #
+#------------------------------------------------#
+
 type
     Translation*{.borrow: `.`.} = distinct Transformationf
+
 
 proc newTranslation*(mat1, mat2: array[16, float32]): Translation {.inline.} = 
     ## Creates a translation matrix with desired direct and inverse transformation
     result.matrix = mat1; result.inverse = mat2;
+
+
+#----------- Translation operations -----------#
 
 proc `*`*(a: Translation, b: float32): Translation {.borrow.}
 proc `/`*(a: Translation, b: float32): Translation {.borrow.}
@@ -129,6 +148,9 @@ proc `*`*(a, b: Translation): Translation {.borrow.}
 
 proc `*`*(a: Translation, b: Vec4f): Vec4f {.inline} =
     result = a.matrix * b
+
+
+#----------- Translation operations -----------#
 
 proc is_consistent*(a: Translation): bool {.borrow.}
     ## Checks if a.matrix * a.inverse operation gives the identity matrix
