@@ -1,7 +1,8 @@
+from std/strformat import fmt
+from std/strutils import split, parseInt
 from std/streams import Stream, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
-from std/strutils import split, parseInt, parseFloat
-from std/strformat import fmt
+
 from std/sequtils import apply, map
 from std/math import sum, pow, log10
 from std/fenv import epsilon
@@ -57,11 +58,10 @@ proc averageLuminosity*(img: HdrImage, eps: float32 = epsilon(float32)): float32
     ## Return the HdrImage avarage luminosity
     pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
 
-proc normalizeImage*(img: var HdrImage, scal: float32, lum: bool = true) =
+proc normalizeImage*(img: var HdrImage, alpha: float32) =
     ## Normalizing pixel values
-    var luminosity: float32 = 1.0
-    if lum: luminosity = img.averageLuminosity
-    img.pixels.apply(proc(pix: Color): Color = pix * (scal / luminosity))
+    let lum = img.averageLuminosity
+    img.pixels.apply(proc(pix: Color): Color = pix * (alpha / lum))
 
 
 proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
@@ -106,10 +106,10 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
         raise newException(CatchableError, "Invalid image size specification: required 'width height' as unsigned integers")
     
     try:
-        let endianFloat = stream.parseFloat
-        if endianFloat == 1.0:
+        let endianFloat = stream.readLine
+        if endianFloat == "1.0":
             result.endian = bigEndian
-        elif endianFloat == -1.0:
+        elif endianFloat == "-1.0":
             result.endian = littleEndian
         else:
             raise newException(CatchableError, "")
