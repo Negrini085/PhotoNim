@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Continuous integration with GitHub Actions.
 - *(HdrImage)* Assert are now followed by a formatted string.
+- Last commit badge.
 
 ### 🐛 Bug Fixes
 
