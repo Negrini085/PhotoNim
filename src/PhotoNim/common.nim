@@ -86,7 +86,7 @@ template VecVecToBoolOp(op: untyped) =
     proc op*[N: static[int], T](a, b: Vec[N, T]): bool =
         for i in 0..<N: 
             if not op(a[i], b[i]): return false
-        true
+
 
 
 ## =================================================
@@ -159,6 +159,47 @@ proc cross*[T](a, b: Vec3[T]): Vec3[T] {.inline.} =
 
 
 ## =================================================
+## Matrix Types
+## =================================================
+
+type
+    Mat*[M, N: static[int], V] = array[M, array[N, V]]
+    SQMat*[N: static[int], V] = Mat[N, N, V]
+
+    Mat2*[V] = SQMat[2, V]
+    Mat3*[V] = SQMat[3, V]
+    Mat4*[V] = SQMat[4, V]
+
+    Mat3f* = Mat3[float]
+    Mat4f* = Mat4[float]
+
+template MatOp(op: untyped) =
+    ## Template for performing element-wise operations on matrices.
+    ## ToDo: 
+    ##  - int vs float in matrix inversion because bad casting
+
+    proc op*[M, N: static[int], V](a, b: Mat[M, N, V]): Mat[M, N, V] =
+        for i in 0 ..< M: 
+            for j in 0 ..< N:
+                result[i][j] = op(a[i][j], b[i][j])    
+
+    proc op*[M, N: static[int], V](a: Mat[M, N, V], b: V): Mat[M, N, V] =
+        for i in 0 ..< M: 
+            for j in 0 ..< N:
+                result[i][j] = op(a[i][j], b)    
+
+    proc op*[M, N: static[int], V](a: V, b: Mat[M, N, V]): Mat[M, N, V] =
+        for i in 0 ..< M: 
+            for j in 0 ..< N:
+                result[i][j] = op(a, b[i][j])    
+
+MatOp(`+`)
+MatOp(`-`)
+MatOp(`*`)
+MatOp(`/`)
+
+
+## =================================================
 ## areClose Functions
 ## =================================================
 
@@ -169,10 +210,8 @@ proc areClose*[N: static[int]](a, b: Vec[N, float32]): bool =
     ## Check if two vectors of floats are approximately equal element-wise.
     for i in 0..<N: 
         if not areClose(a[i], b[i]): return false
-    true
 
 proc areClose*[N: static[int], T](a, b: array[N, T]): bool = 
     ## Check if two vectors of floats are approximately equal element-wise.
     for i in 0..<N: 
         if not areClose(a[i], b[i]): return false
-    true
