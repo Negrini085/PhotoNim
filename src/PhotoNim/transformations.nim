@@ -1,23 +1,32 @@
 import common
 
-type Transformation = ref object of RootObj
-    mat: array[4, array[4, float32]]
-    inv_mat: array[4, array[4, float32]]
+type Transformation* = object of RootObj
+    mat*: Mat4f
+    inv_mat*: Mat4f
 
-type Translation = ref object of Transformation
-type Scaling = ref object of Transformation
-type Rotation = ref object of Transformation
+proc newTransformation*(mat, inv_mat: Mat4f): Transformation = 
+    (result.mat, result.inv_mat) = (mat, inv_mat)
 
-proc `@`*(a: array[4, array[4, float32]], b: Vec4f): Vec4f =
+type Translation = object of Transformation
+type Scaling = object of Transformation
+type Rotation = object of Transformation
+
+proc `@`*(a, b: Transformation): Transformation =
+    quit "to overload"
+    
+proc `@`*(a: Transformation, b: Vec4f): Vec4f =
     quit "to overload"
 
-proc newTransformation(mat, inv_mat: array[4, array[4, float32]]): Transformation = 
-    result.mat = mat; result.inv_mat = inv_mat 
+proc `*`*(T: Transformation, scal: float32): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
+proc `*`*(scal: float32, T: Transformation): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
+proc `/`*(T: Transformation, scal: float32): Transformation {.inline.} = newTransformation(T.mat / scal, T.inv_mat / scal)
 
 proc newScaling(vec: Vec3f): Scaling =
     quit "to overload"
 
-method apply(T: Transformation, a: Vec4f): Vec4f {.base.} = T.mat @ a
+method apply(T: Transformation, a: Vec4f): Vec4f {.base, inline.} = T @ a
+method apply(T: Scaling, a: Vec4f): Vec4f {.inline.} = 
+    quit "to overload"
 
 var T1 = Scaling()
 echo T1.apply(newVec4[float32](1.0, 12.0, 2.0, 1.0))
