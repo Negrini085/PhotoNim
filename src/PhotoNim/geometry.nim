@@ -26,8 +26,10 @@ proc x*(a: Point2D | Point3D | Normal): float32 {.inline.} = a.data[0]
 proc y*(a: Point2D | Point3D | Normal): float32 {.inline.} = a.data[1]
 proc z*(a: Point3D | Normal): float32 {.inline.} = a.data[2]
 
-proc toVec*(a: Point2D): Vec2f {.inline.} = newVec2(a.x, a.y)
-proc toVec*(a: Point3D | Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
+proc toVec2*(a: Point2D): Vec2f {.inline.} = newVec2(a.x, a.y)
+proc toVec3*(a: Point3D | Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
+proc toVec4*(a: Point3D): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 1.0)
+proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 
 proc `$`*(a: Point2D): string {.borrow.}
 proc `$`*(a: Point3D): string {.borrow.}
