@@ -1,15 +1,23 @@
 import common
 
 type Transformation = ref object of RootObj
-    mat: array[4, array[4, float32]]
-    inv_mat: array[4, array[4, float32]]
+    mat*: array[4, array[4, float32]]
+    inv_mat*: array[4, array[4, float32]]
 
 type Translation = ref object of Transformation
 type Scaling = ref object of Transformation
 type Rotation = ref object of Transformation
 
-proc `@`*(a: array[4, array[4, float32]], b: Vec4f): Vec4f =
-    quit "to overload"
+proc `@`*(a: Transformation, b: Transformation): Transformation =
+    ## Implement Transformation product
+    for i in 0..<4: 
+        for j in 0..<4:
+            for k in 0..<4: 
+                result.mat[i][j] += a.mat[i][k] * b.mat[k][j]
+                result.inv_mat[i][j] += b.mat[i][k] * a.mat[k][j]
+
+proc `@`*(a: Transformation, b: Vec4f): Vec4f =
+    
 
 proc newTransformation(mat, inv_mat: array[4, array[4, float32]]): Transformation = 
     result.mat = mat; result.inv_mat = inv_mat 
