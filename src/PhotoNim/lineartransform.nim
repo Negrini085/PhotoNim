@@ -192,10 +192,11 @@ type
     Scaling*{.borrow: `.`.} = distinct Transformationf
 
 
-proc newScaling(scal: float32): Scaling {.inline} = 
+proc newScaling(scal: float32): Scaling = 
     ## Procedure that creates a new scaling transformation
     ## First off, we have to create scaling matrices
-    result.matrix = scal * identity4x4; result.inverse = (1/scal) * identity4x4
+    result.matrix = scal * identity4x4; result.matrix[15] = 1
+    result.inverse = (1/scal) * identity4x4; result.inverse[15] = 1
 
 
 #----------- Scaling operations -----------#
