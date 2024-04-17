@@ -223,8 +223,49 @@ proc inverse_tranf(t1: Scaling): Scaling {.borrow.}
 
 
 
-#------------------------------------------------------------------------#
-#           Operazioni di prodotto fra trasformazioni lineari            #
-#------------------------------------------------------------------------#
+#------------------------------------------------#
+#                    Rotation                    #
+#------------------------------------------------#
+
+type
+    Rotation*{.borrow: `.`.} = distinct Transformationf
+
+
+proc newRotation(vec: Vec4f, angle: float32): Rotation = 
+    ## Procedure that creates a new rotation transformation
+    ## First off, we have to create scaling matrices
+    result.matrix = [cos(angle) + pow(vec.data[0], 2) * (1 - cos(angle)), vec.data[0] * vec.data[1] * (1 - cos(angle)) - vec.data[2] * sin(angle), vec.data[0] * vec.data[2] * (1 - cos(angle)) + vec.data[1] * sin(angle), 0, vec.data[0] * vec.data[1] * (1 - cos(angle)) + vec.data[2] * sin(angle), cos(angle) + pow(vec.data[1], 2) * (1 - cos(angle)), vec.data[1] * vec.data[2] * (1 - cos(angle)) - vec.data[0] * sin(angle), 0,  vec.data[0] * vec.data[2] * (1 - cos(angle)) - vec.data[1] * sin(angle), vec.data[1] * vec.data[2] * (1 - cos(angle)) + vec.data[0] * sin(angle), cos(angle) + pow(vec.data[2], 2) * (1 - cos(angle)), 0, 0, 0, 0, 1]
+    result.inverse = [cos(angle) + pow(vec.data[0], 2) * (1 - cos(angle)), vec.data[0] * vec.data[1] * (1 - cos(angle)) + vec.data[2] * sin(angle), vec.data[0] * vec.data[2] * (1 - cos(angle)) - vec.data[1] * sin(angle), 0, vec.data[0] * vec.data[1] * (1 - cos(angle)) - vec.data[2] * sin(angle), cos(angle) + pow(vec.data[1], 2) * (1 - cos(angle)), vec.data[1] * vec.data[2] * (1 - cos(angle)) + vec.data[0] * sin(angle), 0,  vec.data[0] * vec.data[2] * (1 - cos(angle)) + vec.data[1] * sin(angle), vec.data[1] * vec.data[2] * (1 - cos(angle)) - vec.data[0] * sin(angle), cos(angle) + pow(vec.data[2], 2) * (1 - cos(angle)), 0, 0, 0, 0, 1]
+
+
+
+#----------- Rotation operations -----------#
+
+proc `*`*(a: Rotation, b: float32): Rotation {.borrow.}
+proc `/`*(a: Rotation, b: float32): Rotation {.borrow.}
+proc `*`*(a: float32, b: Rotation): Rotation {.borrow.}
+
+proc `+`*(a, b: Rotation): Rotation {.borrow.}
+proc `-`*(a, b: Rotation): Rotation {.borrow.}
+proc `*`*(a, b: Rotation): Rotation {.borrow.}
+
+proc `*`*(a: Rotation, b: Vec4f): Vec4f {.inline} =
+    result = a.matrix * b
+
+
+#----------- Translation procedures -----------#
+
+proc is_consistent*(a: Rotation): bool {.borrow.}
+    ## Checks if a.matrix * a.inverse operation gives the identity matrix
+
+proc inverse_tranf(t1: Rotation): Rotation {.borrow.}
+    ## Enables the user to access to the inverse translation
+
+
+
+
+#-----------------------------------------------------------------------#
+#         Product operation between different transformations           #
+#-----------------------------------------------------------------------#
 proc `*`*(a: Translation, b: Scaling): Transformationf {.borrow.}
 proc `*`*(a: Scaling, b: Translation): Transformationf {.borrow.}
