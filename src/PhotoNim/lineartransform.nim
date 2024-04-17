@@ -219,3 +219,11 @@ proc is_consistent*(a: Scaling): bool {.borrow.}
 
 proc inverse_tranf(t1: Scaling): Scaling {.borrow.}
     ## Enables the user to access to the inverse translation
+
+
+
+#------------------------------------------------------------------------#
+#           Operazioni di prodotto fra trasformazioni lineari            #
+#------------------------------------------------------------------------#
+proc `*`*(a: Translation, b: Scaling): Transformationf {.borrow.}
+proc `*`*(a: Scaling, b: Translation): Transformationf {.borrow.}
