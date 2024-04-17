@@ -124,16 +124,19 @@ proc inverse_tranf(t1: Transform): Transform =
 
 
 #------------------------------------------------#
-#           Translation transformation           #
+#                  Translation                   #
 #------------------------------------------------#
 
 type
     Translation*{.borrow: `.`.} = distinct Transformationf
 
 
-proc newTranslation*(mat1, mat2: array[16, float32]): Translation {.inline.} = 
-    ## Creates a translation matrix with desired direct and inverse transformation
-    result.matrix = mat1; result.inverse = mat2;
+proc newTranslation*(vec: Vec4f): Translation  = 
+    ## Procedure that creates a new translation
+    ## First off, we have to create translation matrices
+    result.matrix = [1, 0, 0, vec.data[0], 0, 1, 0 , vec.data[1], 0, 0, 1, vec.data[2], 0, 0, 0, 1]; 
+    result.inverse = [1, 0, 0, -vec.data[0], 0, 1, 0 , -vec.data[1], 0, 0, 1, -vec.data[2], 0, 0, 0, 1];
+
 
 
 #----------- Translation operations -----------#
@@ -157,4 +160,3 @@ proc is_consistent*(a: Translation): bool {.borrow.}
 
 proc inverse_tranf(t1: Translation): Translation {.borrow.}
     ## Enables the user to access to the inverse translation
-
