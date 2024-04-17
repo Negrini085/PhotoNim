@@ -198,6 +198,20 @@ proc newScaling(scal: float32): Scaling {.inline} =
     result.matrix = scal * identity4x4; result.inverse = (1/scal) * identity4x4
 
 
+#----------- Scaling operations -----------#
+
+proc `*`*(a: Scaling, b: float32): Scaling {.borrow.}
+proc `/`*(a: Scaling, b: float32): Scaling {.borrow.}
+proc `*`*(a: float32, b: Scaling): Scaling {.borrow.}
+
+proc `+`*(a, b: Scaling): Scaling {.borrow.}
+proc `-`*(a, b: Scaling): Scaling {.borrow.}
+proc `*`*(a, b: Scaling): Scaling {.borrow.}
+
+proc `*`*(a: Scaling, b: Vec4f): Vec4f {.inline} =
+    result = a.matrix * b
+
+
 #----------- Translation procedures -----------#
 
 proc is_consistent*(a: Scaling): bool {.borrow.}
