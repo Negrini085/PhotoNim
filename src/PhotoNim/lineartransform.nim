@@ -65,7 +65,7 @@ template Matrix_prod4x4(op:untyped) =
 
 
 template M4x4_vecProd(op:untyped) =
-    ## Template for 
+    ## Template for product between 4x4 matrix and vec4 type
     proc op*[T](a: array[16, T], b: Vec4[T]): Vec4[T] =
         var appo: float32 = 0.0
 
@@ -75,7 +75,20 @@ template M4x4_vecProd(op:untyped) =
 
             result[i] = appo
             appo = 0.0
-    
+
+
+template ScalMToM(op: untyped) = 
+    ## Template scal * 4x4 matrix procedure
+    proc op*[N: static[int], T](a: T, b: array[N, T]): array[N, T] =
+        for i in 0..<N:
+            result[i] = a * b[i]
+
+template MScalToM(op: untyped) = 
+    ## Template scal * 4x4 matrix procedure
+    proc op*[N: static[int], T](a: array[N, T], b: T): array[N, T] =
+        for i in 0..<N:
+            result[i] = b * a[i]
+        
 
 template TTtoTranOp(op: untyped) =
     ## Template for element-wise operations between a scalar and a transformation resulting in a new transformation.
@@ -90,16 +103,22 @@ template TranVecToVec(op: untyped) =
             result = a.matrix * b
 
 
-
+# Operations between scalar and transformation
 ScalTranToTranOp(`*`)
 TranScalToTranOp(`*`)
 TranScalToTranOp(`/`)
 
+# Sum/Difference between transformation
 TranTranToTranOp(`+`)
 TranTranToTranOp(`-`)
+
+# Operations on matrices
+MScalToM(`*`)
+ScalMtoM(`*`)
 Matrix_prod4x4(`*`)
 M4x4_vecProd(`*`)
 
+# Matrix product & matrix per vector multiplication
 TTtoTranOp(`*`)
 TranVecToVec(`*`)
 
@@ -153,10 +172,36 @@ proc `*`*(a: Translation, b: Vec4f): Vec4f {.inline} =
     result = a.matrix * b
 
 
-#----------- Translation operations -----------#
+#----------- Translation procedures -----------#
 
 proc is_consistent*(a: Translation): bool {.borrow.}
     ## Checks if a.matrix * a.inverse operation gives the identity matrix
 
 proc inverse_tranf(t1: Translation): Translation {.borrow.}
+    ## Enables the user to access to the inverse translation
+
+
+
+
+
+#------------------------------------------------#
+#                    Scaling                     #
+#------------------------------------------------#
+
+type
+    Scaling*{.borrow: `.`.} = distinct Transformationf
+
+
+proc newScaling(scal: float32): Scaling {.inline} = 
+    ## Procedure that creates a new scaling transformation
+    ## First off, we have to create scaling matrices
+    result.matrix = scal * identity4x4; result.inverse = (1/scal) * identity4x4
+
+
+#----------- Translation procedures -----------#
+
+proc is_consistent*(a: Scaling): bool {.borrow.}
+    ## Checks if a.matrix * a.inverse operation gives the identity matrix
+
+proc inverse_tranf(t1: Scaling): Scaling {.borrow.}
     ## Enables the user to access to the inverse translation
