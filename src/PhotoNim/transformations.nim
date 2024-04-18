@@ -17,7 +17,8 @@ proc `@`*(a, b: Transformation): Transformation =
     result.inv_mat = dot(b.inv_mat, a.inv_mat)
     
 proc `@`*(a: Transformation, b: Vec4f): Vec4f =
-    quit "to overload"
+    ## Procedure to apply a transformation
+    result = dot(a.mat, b)
 
 proc `*`*(T: Transformation, scal: float32): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
 proc `*`*(scal: float32, T: Transformation): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
