@@ -24,6 +24,10 @@ proc `*`*(T: Transformation, scal: float32): Transformation {.inline.} = newTran
 proc `*`*(scal: float32, T: Transformation): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
 proc `/`*(T: Transformation, scal: float32): Transformation {.inline.} = newTransformation(T.mat / scal, T.inv_mat / scal)
 
+proc inverse(T: Transformation): Transformation {.inline.} =
+    ## Procedure to get the inverse Transformation
+    result.mat = T.inv_mat; result.inv_mat = T.mat
+
 proc newScaling(scal: float32): Scaling =
     result.mat = scal * Mat4f.id; 
     result.inv_mat = Mat4f.id / scal
