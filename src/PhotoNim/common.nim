@@ -231,8 +231,19 @@ proc areClose*[N: static[int]](a, b: Vec[N, float32]): bool =
     ## Check if two vectors of floats are approximately equal element-wise.
     for i in 0..<N: 
         if not areClose(a[i], b[i]): return false
+    return true
+    
 
 proc areClose*[N: static[int], T](a, b: array[N, T]): bool = 
     ## Check if two vectors of floats are approximately equal element-wise.
     for i in 0..<N: 
         if not areClose(a[i], b[i]): return false
+    return true
+    
+
+proc areClose*[N: static[int], T](a, b: Mat[N, N, T]): bool = 
+    ## Check if two matrix of floats are approximately equal element-wise.
+    for i in 0..<N: 
+        for j in 0..<N:
+            if not areClose(a[i][j], b[i][j]): return false
+    return true

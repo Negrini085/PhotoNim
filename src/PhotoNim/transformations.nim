@@ -28,13 +28,21 @@ proc inverse(T: Transformation): Transformation {.inline.} =
     ## Procedure to get the inverse Transformation
     result.mat = T.inv_mat; result.inv_mat = T.mat
 
+proc is_consistent*(t1: Transformation): bool = 
+    ## Checks whether the transformation is consistent or not: product within matrix and inverse gives identity??
+    echo dot(t1.mat, t1.inv_mat)
+    echo Mat4f.id
+    result = areClose(dot(t1.mat, t1.inv_mat), Mat4f.id)
+
 proc newScaling(scal: float32): Scaling =
+    ## Procedure to define a new scaling transformation
     result.mat = scal * Mat4f.id; 
     result.inv_mat = Mat4f.id / scal
     result.mat[3][3] = 1.0
     result.inv_mat[3][3] = 1.0
 
 proc newTranslation*(v: Vec4f): Translation  = 
+    ## Procedure to define a new scaling transformation
     result.mat = [
         [1, 0, 0, v[0]], 
         [0, 1, 0, v[1]], 
