@@ -12,7 +12,9 @@ type Scaling = object of Transformation
 type Rotation = object of Transformation
 
 proc `@`*(a, b: Transformation): Transformation =
-    quit "to overload"
+    ## Procedure to compose transformations
+    result.mat = dot(a.mat, b.mat)
+    result.inv_mat = dot(b.inv_mat, a.inv_mat)
     
 proc `@`*(a: Transformation, b: Vec4f): Vec4f =
     quit "to overload"
@@ -45,5 +47,3 @@ method apply(T: Transformation, a: Vec4f): Vec4f {.base, inline.} = T @ a
 method apply(T: Scaling, a: Vec4f): Vec4f {.inline.} = 
     quit "to overload"
 
-var T1 = Scaling()
-echo T1.apply(newVec4[float32](1.0, 12.0, 2.0, 1.0))
