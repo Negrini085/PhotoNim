@@ -1,10 +1,13 @@
 import common
+import std/math
+import geometry
 
 type Transformation* = object of RootObj
     mat*: Mat4f
     inv_mat*: Mat4f
 
 proc newTransformation*(mat, inv_mat: Mat4f): Transformation = 
+    ## New transformation constructor
     (result.mat, result.inv_mat) = (mat, inv_mat)
 
 
@@ -25,7 +28,9 @@ proc `@`*(a: Transformation, b: Vec4f): Vec4f =
 
 proc `*`*(T: Transformation, scal: float32): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
 proc `*`*(scal: float32, T: Transformation): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
+## Multiplication by a scalar procedure
 proc `/`*(T: Transformation, scal: float32): Transformation {.inline.} = newTransformation(T.mat / scal, T.inv_mat / scal)
+## Division by a scalar procedure
 
 
 proc inverse(T: Transformation): Transformation {.inline.} =
@@ -35,8 +40,6 @@ proc inverse(T: Transformation): Transformation {.inline.} =
 
 proc is_consistent*(t1: Transformation): bool = 
     ## Checks whether the transformation is consistent or not: product within matrix and inverse gives identity??
-    echo dot(t1.mat, t1.inv_mat)
-    echo Mat4f.id
     result = areClose(dot(t1.mat, t1.inv_mat), Mat4f.id)
 
 
@@ -63,6 +66,21 @@ proc newTranslation*(v: Vec4f): Translation  =
         [0, 0, 0, 1    ]   
     ]
 
+
+proc newRotation(vec: Vec4f, angle: float32): Rotation = 
+    ## Procedure that creates a new rotation transformation
+    result.mat = [
+        [cos(angle) + pow(vec[0], 2) * (1 - cos(angle)), vec[0] * vec[1] * (1 - cos(angle)) - vec[2] * sin(angle), vec[0] * vec[2] * (1 - cos(angle)) + vec[1] * sin(angle), 0], 
+        [vec[0] * vec[1] * (1 - cos(angle)) + vec[2] * sin(angle), cos(angle) + pow(vec[1], 2) * (1 - cos(angle)), vec[1] * vec[2] * (1 - cos(angle)) - vec[0] * sin(angle), 0],  
+        [vec[0] * vec[2] * (1 - cos(angle)) - vec[1] * sin(angle), vec[1] * vec[2] * (1 - cos(angle)) + vec[0] * sin(angle), cos(angle) + pow(vec[2], 2) * (1 - cos(angle)), 0],
+        [0, 0, 0, 1]
+        ]
+    result.inv_mat = [
+        [cos(angle) + pow(vec[0], 2) * (1 - cos(angle)), vec[0] * vec[1] * (1 - cos(angle)) + vec[2] * sin(angle), vec[0] * vec[2] * (1 - cos(angle)) - vec[1] * sin(angle), 0], 
+        [vec[0] * vec[1] * (1 - cos(angle)) - vec[2] * sin(angle), cos(angle) + pow(vec[1], 2) * (1 - cos(angle)), vec[1] * vec[2] * (1 - cos(angle)) + vec[0] * sin(angle), 0],  
+        [vec[0] * vec[2] * (1 - cos(angle)) + vec[1] * sin(angle), vec[1] * vec[2] * (1 - cos(angle)) - vec[0] * sin(angle), cos(angle) + pow(vec[2], 2) * (1 - cos(angle)), 0], 
+        [0, 0, 0, 1]
+        ]
 
 method apply(T: Transformation, a: Vec4f): Vec4f {.base, inline.} = T @ a
     ## Method to apply a generic transformation
