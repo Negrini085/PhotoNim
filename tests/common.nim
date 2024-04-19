@@ -111,19 +111,44 @@ suite "Vec-UnitTest":
         m3x3: Mat3f = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         m4x4: Mat4f = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
 
-    test "Constructor type":
+    test "Mat type Constructor":
         # Squared 2x2 matrix constructor test
-        check areClose(m2x2[0][1], 2.0)
-        check areClose(m2x2[1][1], 1.0)
+        check areClose(m2x2[0][0], 1.0) and areClose(m2x2[0][1], 2.0)
+        check areClose(m2x2[1][0], 0.0) and areClose(m2x2[1][1], 1.0)
 
         # Squared 3x3 matrix constructor test
-        check areClose(m3x3[0][1], 2.0)
-        check areClose(m3x3[1][1], 5.0)
-        check areClose(m3x3[2][1], 8.0)
+        check areClose(m3x3[0][0], 1.0) and areClose(m3x3[0][1], 2.0) and areClose(m3x3[0][2], 3.0)
+        check areClose(m3x3[1][0], 4.0) and areClose(m3x3[1][1], 5.0) and areClose(m3x3[1][2], 6.0)
+        check areClose(m3x3[2][0], 7.0) and areClose(m3x3[2][1], 8.0) and areClose(m3x3[2][2], 9.0)
 
         # Squared 3x3 matrix constructor test
-        check areClose(m4x4[0][1], 2.0)
-        check areClose(m4x4[1][1], 6.0)
-        check areClose(m4x4[2][3], 12.0)
-        check areClose(m4x4[3][1], 14.0)
+        check areClose(m4x4[0][0], 1.0) and areClose(m4x4[0][1], 2.0) and areClose(m4x4[0][2], 3.0) and areClose(m4x4[0][3], 4.0)
+        check areClose(m4x4[1][0], 5.0) and areClose(m4x4[1][1], 6.0) and areClose(m4x4[1][2], 7.0) and areClose(m4x4[1][3], 8.0)
+        check areClose(m4x4[2][0], 9.0) and areClose(m4x4[2][1], 10.0) and areClose(m4x4[2][2], 11.0) and areClose(m4x4[2][3], 12.0)
+        check areClose(m4x4[3][0], 13.0) and areClose(m4x4[3][1], 14.0) and areClose(m4x4[3][2], 15.0) and areClose(m4x4[3][3], 16.0)
+        
+
+    test "Element Wise Mat Operations":
+        var 
+            m: Mat2[float32] = [[1, 2], [3, 0]]
+            ris: Mat2[float32] = m + m2x2 
+            scal: float32 = 2.0
+
+        # Element wise sum check
+        check areClose(ris[0][0], 2.0) and areClose(ris[0][1], 4.0)
+        check areClose(ris[1][0], 3.0) and areClose(ris[1][1], 1.0)
+
+        # Element wise matrix product check
+        ris = m * m2x2
+        check areClose(ris[0][0], 1.0) and areClose(ris[0][1], 4.0)
+        check areClose(ris[1][0], 0.0) and areClose(ris[1][1], 0.0)
+
+        # Element wise product per vec check
+        ris = m * scal
+        check areClose(ris[0][0], 2.0) and areClose(ris[0][1], 4.0)
+        check areClose(ris[1][0], 6.0) and areClose(ris[1][1], 0.0)
+
+        ris = scal * m
+        check areClose(ris[0][0], 2.0) and areClose(ris[0][1], 4.0)
+        check areClose(ris[1][0], 6.0) and areClose(ris[1][1], 0.0)
         
