@@ -89,6 +89,17 @@ suite "Derived Transformation test":
         check areClose(t @ vec, newVec4[float32](2, 4, 6, 1))
         check areClose(t.apply(vec), newVec4[float32](2, 4, 6, 1))
 
-
-
+    test "Translation":
+        var
+            t: Translation = newTranslation(newVec4[float32](2, 4, 1, 0))
+            vec: Vec4f = newVec4[float32](1, 2, 3, 0)
+            point: Vec4f = newVec4[float32](1, 0, 3, 1)
         
+        check t.is_consistent()
+
+        check areClose(t @ vec, vec)
+        check areClose(t @ point, newVec4[float32](3, 4, 4, 1))
+
+        check areClose(t.apply(vec), vec)
+        check areClose(t.apply(point), newVec4[float32](3, 4, 4, 1))
+
