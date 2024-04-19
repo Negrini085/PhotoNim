@@ -53,6 +53,10 @@ suite "Transformation tests":
         ris = t1 @ vec; point = t1 @ point
         check areClose(ris, vec)
         check areClose(point, newVec4[float32](5, 5, 2, 1))
+
+        ris = t1.apply(vec); point = t1.apply(point)
+        check areClose(ris, vec)
+        check areClose(point, newVec4[float32](9, 8, 1, 1))
     
 
     test "Transformation mult/div by scalar":
