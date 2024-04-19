@@ -11,9 +11,9 @@ proc newTransformation*(mat, inv_mat: Mat4f): Transformation =
     (result.mat, result.inv_mat) = (mat, inv_mat)
 
 
-type Translation = object of Transformation
-type Scaling = object of Transformation
-type Rotation = object of Transformation
+type Translation* = object of Transformation
+type Scaling* = object of Transformation
+type Rotation* = object of Transformation
 
 proc `@`*(a, b: Transformation): Transformation =
     ## Procedure to compose transformations
