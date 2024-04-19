@@ -21,6 +21,7 @@ suite "Vec-UnitTest":
             resultAdd2 = a2 + b2
             resultAdd3 = a3 + b3
             resultAdd4 = a4 + b4
+
         check resultAdd2[0] == 4.0 and resultAdd2[1] == 6.0
         check resultAdd3[0] == 5.0 and resultAdd3[1] == 7.0 and resultAdd3[2] == 9.0
         check resultAdd4[0] == 6.0 and resultAdd4[1] == 8.0 and resultAdd4[2] == 10.0 and resultAdd4[3] == 12.0
@@ -30,6 +31,7 @@ suite "Vec-UnitTest":
             resultSub2 = a2 - b2
             resultSub3 = a3 - b3
             resultSub4 = a4 - b4
+
         check resultSub2[0] == -2.0 and resultSub2[1] == -2.0
         check resultSub3[0] == -3.0 and resultSub3[1] == -3.0 and resultSub3[2] == -3.0
         check resultSub4[0] == -4.0 and resultSub4[1] == -4.0 and resultSub4[2] == -4.0 and resultSub4[3] == -4.0
@@ -46,6 +48,7 @@ suite "Vec-UnitTest":
             resultMulScal2 = scalar * a2
             resultMulScal3 = scalar * a3
             resultMulScal4 = scalar * a4
+
         check resultMulScal2[0] == 2.0 and resultMulScal2[1] == 4.0
         check resultMulScal3[0] == 2.0 and resultMulScal3[1] == 4.0 and resultMulScal3[2] == 6.0
         check resultMulScal4[0] == 2.0 and resultMulScal4[1] == 4.0 and resultMulScal4[2] == 6.0 and resultMulScal4[3] == 8.0
@@ -55,6 +58,7 @@ suite "Vec-UnitTest":
             resultMulVecScal2 = a2 * scalar
             resultMulVecScal3 = a3 * scalar
             resultMulVecScal4 = a4 * scalar
+
         check resultMulVecScal2[0] == 2.0 and resultMulVecScal2[1] == 4.0
         check resultMulVecScal3[0] == 2.0 and resultMulVecScal3[1] == 4.0 and resultMulVecScal3[2] == 6.0
         check resultMulVecScal4[0] == 2.0 and resultMulVecScal4[1] == 4.0 and resultMulVecScal4[2] == 6.0 and resultMulVecScal4[3] == 8.0
@@ -63,6 +67,7 @@ suite "Vec-UnitTest":
         var
             a4 = newVec4(1.0, -2.0, 3.0, -4.0)
             resultNegate = -a4
+            
         check resultNegate[0] == -1.0
         check resultNegate[1] == 2.0
         check resultNegate[2] == -3.0
