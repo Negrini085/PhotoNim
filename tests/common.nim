@@ -152,3 +152,18 @@ suite "Vec-UnitTest":
         check areClose(ris[0][0], 2.0) and areClose(ris[0][1], 4.0)
         check areClose(ris[1][0], 6.0) and areClose(ris[1][1], 0.0)
         
+
+    test "Matrix product":
+        var 
+            m: Mat2[float32] = [[1, 2], [3, 0]]
+            ris: Mat2[float32] = dot(m, m2x2)
+            vec: Vec2f = newVec2[float32](1, 2)
+        
+        # Checking matrix multiplication
+        check areClose(ris[0][0], 1.0) and areClose(ris[0][1], 4.0)
+        check areClose(ris[1][0], 3.0) and areClose(ris[1][1], 6.0)        
+
+        # Checking matrix per vector multiplication
+        vec = dot(m, vec)
+        check areClose(vec[0], 5.0)
+        check areClose(vec[1], 3.0)   
