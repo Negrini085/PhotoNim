@@ -89,6 +89,11 @@ suite "Derived Transformation test":
         check areClose(t @ vec, newVec4[float32](2, 4, 6, 1))
         check areClose(t.apply(vec), newVec4[float32](2, 4, 6, 1))
 
+        t = newScaling(vec)
+        check t.is_consistent()
+        check areClose(t @ vec, newVec4[float32](1, 4, 9, 1))
+        check areClose(t.apply(vec), newVec4[float32](1, 4, 9, 1))
+
     test "Translation":
         var
             t: Translation = newTranslation(newVec4[float32](2, 4, 1, 0))
