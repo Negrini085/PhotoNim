@@ -57,5 +57,8 @@ proc newTranslation*(v: Vec4f): Translation  =
     ]
 
 method apply(T: Transformation, a: Vec4f): Vec4f {.base, inline.} = T @ a
-method apply(T: Scaling, a: Vec4): Vec4 {.inline.} = 
-    result[0] = T[0][0] * a[0]; result[1] = T[1][1] * a[1]; result[2] = T[2][2] * a[2]; result[3] = a[3]; 
+    ## Method to apply a generic transformation
+
+method apply(T: Scaling, a: Vec4f): Vec4f {.inline.} = 
+    ## Method to apply a scaling transformation
+    result[0] = T.mat[0][0] * a[0]; result[1] = T.mat[1][1] * a[1]; result[2] = T.mat[2][2] * a[2]; result[3] = a[3]; 
