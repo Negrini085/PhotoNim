@@ -65,18 +65,30 @@ suite "Transformation tests":
             m1: Mat4f = [[2, 0, 0, 8], [0, 2, 0, 6], [0, 0, 2, -2], [0, 0, 0, 2]]
             m2: Mat4f = [[2, 0, 0, -8], [0, 2, 0, -6], [0, 0, 2, 2], [0, 0, 0, 2]]
         
-        t1 = 2 * t1;
+        t1 = scal * t1;
         check areClose(t1.mat, m1)
         check areClose(t1.inv_mat, m2)
 
-        t1 = t1/2
+        t1 = t1/scal
         check areClose(t1.mat, mat)
         check areClose(t1.inv_mat, inv_mat)
 
-        t1 = t1 * 2
+        t1 = t1 * scal
         check areClose(t1.mat, m1)
         check areClose(t1.inv_mat, m2)
 
 
+suite "Derived Transformation test":
+
+    test "Scaling":
+        var
+            t: Scaling = newScaling(2)
+            vec: Vec4f = newVec4[float32](1, 2, 3, 1)
         
+        check t.is_consistent()
+        check areClose(t @ vec, newVec4[float32](2, 4, 6, 1))
+        check areClose(t.apply(vec), newVec4[float32](2, 4, 6, 1))
+
+
+
         
