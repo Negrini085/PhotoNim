@@ -83,20 +83,59 @@ proc newTranslation*(v: Vec4f): Translation  =
     ]
 
 
-proc newRotation*(vec: Vec4f, angle: float32): Rotation = 
-    ## Procedure that creates a new rotation transformation
+proc newRotX*(angle: float32): Rotation = 
+    ## Procedure that creates a new rotation around x axis: angle is given in degrees
+    var theta = degToRad(angle)
+
     result.mat = [
-        [cos(angle) + pow(vec[0], 2) * (1 - cos(angle)), vec[0] * vec[1] * (1 - cos(angle)) - vec[2] * sin(angle), vec[0] * vec[2] * (1 - cos(angle)) + vec[1] * sin(angle), 0], 
-        [vec[0] * vec[1] * (1 - cos(angle)) + vec[2] * sin(angle), cos(angle) + pow(vec[1], 2) * (1 - cos(angle)), vec[1] * vec[2] * (1 - cos(angle)) - vec[0] * sin(angle), 0],  
-        [vec[0] * vec[2] * (1 - cos(angle)) - vec[1] * sin(angle), vec[1] * vec[2] * (1 - cos(angle)) + vec[0] * sin(angle), cos(angle) + pow(vec[2], 2) * (1 - cos(angle)), 0],
+        [1, 0, 0, 0], 
+        [0, cos(theta), -sin(theta), 0], 
+        [0, sin(theta), cos(theta), 0], 
         [0, 0, 0, 1]
-        ]
+    ]
+    result.mat = [
+        [1, 0, 0, 0], 
+        [0, cos(theta), sin(theta), 0], 
+        [0, -sin(theta), cos(theta), 0], 
+        [0, 0, 0, 1]
+    ]
+
+
+proc newRotY*(angle: float32): Rotation = 
+    ## Procedure that creates a new rotation around y axis: angle is given in degrees
+    var theta = degToRad(angle)
+
+    result.mat = [
+        [cos(theta), 0, sin(theta), 0], 
+        [0, 1, 0, 0], 
+        [-sin(theta), 0, cos(theta), 0], 
+        [0, 0, 0, 1]
+    ]
     result.inv_mat = [
-        [cos(angle) + pow(vec[0], 2) * (1 - cos(angle)), vec[0] * vec[1] * (1 - cos(angle)) + vec[2] * sin(angle), vec[0] * vec[2] * (1 - cos(angle)) - vec[1] * sin(angle), 0], 
-        [vec[0] * vec[1] * (1 - cos(angle)) - vec[2] * sin(angle), cos(angle) + pow(vec[1], 2) * (1 - cos(angle)), vec[1] * vec[2] * (1 - cos(angle)) + vec[0] * sin(angle), 0],  
-        [vec[0] * vec[2] * (1 - cos(angle)) + vec[1] * sin(angle), vec[1] * vec[2] * (1 - cos(angle)) - vec[0] * sin(angle), cos(angle) + pow(vec[2], 2) * (1 - cos(angle)), 0], 
+        [cos(theta), 0, -sin(theta), 0], 
+        [0, 1, 0, 0], 
+        [sin(theta), 0, cos(theta), 0], 
         [0, 0, 0, 1]
-        ]
+    ]
+
+
+proc newRotZ*(angle: float32): Rotation = 
+    ## Procedure that creates a new rotation around z axis: angle is given in degrees
+    var theta = degToRad(angle)
+
+    result.mat = [
+        [cos(theta), -sin(theta), 0, 0], 
+        [sin(theta), cos(theta), 0, 0], 
+        [0, 0, 1, 0], 
+        [0, 0, 0, 1]
+    ]
+    result.inv_mat = [
+        [cos(theta), sin(theta), 0, 0], 
+        [-sin(theta), cos(theta), 0, 0], 
+        [0, 0, 1, 0], 
+        [0, 0, 0, 1]
+    ]
+
 
 method apply*(T: Transformation, a: Vec4f): Vec4f {.base, inline.} = T @ a
     ## Method to apply a generic transformation
