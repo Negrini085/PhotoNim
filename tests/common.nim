@@ -126,7 +126,7 @@ suite "Vec-UnitTest":
         check areClose(m3x3[1][0], 4.0) and areClose(m3x3[1][1], 5.0) and areClose(m3x3[1][2], 6.0)
         check areClose(m3x3[2][0], 7.0) and areClose(m3x3[2][1], 8.0) and areClose(m3x3[2][2], 9.0)
 
-        # Squared 3x3 matrix constructor test
+        # Squared 4x4 matrix constructor test
         check areClose(m4x4[0][0], 1.0) and areClose(m4x4[0][1], 2.0) and areClose(m4x4[0][2], 3.0) and areClose(m4x4[0][3], 4.0)
         check areClose(m4x4[1][0], 5.0) and areClose(m4x4[1][1], 6.0) and areClose(m4x4[1][2], 7.0) and areClose(m4x4[1][3], 8.0)
         check areClose(m4x4[2][0], 9.0) and areClose(m4x4[2][1], 10.0) and areClose(m4x4[2][2], 11.0) and areClose(m4x4[2][3], 12.0)
