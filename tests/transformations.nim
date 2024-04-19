@@ -10,6 +10,19 @@ suite "Transformation tests":
             inv_mat: Mat4f = [[1, 0, 0, -4], [0, 1, 0, -3], [0, 0, 1, 1], [0, 0, 0, 1]]
             t1: Transformation = newTransformation(mat, inv_mat)
 
+    test "Transformation constructor and consistency tests":
+        var t2: Transformation = newTransformation(inv_mat, mat)
+
+        # Cheking consistency and constructor
+        check is_consistent(t2)
+        check areClose(t2.mat, inv_mat)
+        check areClose(t2.inv_mat, mat)
+
+        # Checking inverse method
+        t2 = t2.inverse()
+        check areClose(t2.mat, mat)
+        check areClose(t2.inv_mat, inv_mat)
+
     test "Transformation product test":
         var t2, ris: Transformation
         
