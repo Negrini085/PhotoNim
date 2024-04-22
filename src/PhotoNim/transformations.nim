@@ -133,14 +133,14 @@ proc newRotZ*(angle: float32): Rotation =
         s = sin(theta)
 
     result.mat = [
-        [cos(theta), -sin(theta), 0, 0], 
-        [sin(theta), cos(theta), 0, 0], 
+        [c, -s, 0, 0], 
+        [s, c, 0, 0], 
         [0, 0, 1, 0], 
         [0, 0, 0, 1]
     ]
     result.inv_mat = [
-        [cos(theta), sin(theta), 0, 0], 
-        [-sin(theta), cos(theta), 0, 0], 
+        [c, s, 0, 0], 
+        [-s, c, 0, 0], 
         [0, 0, 1, 0], 
         [0, 0, 0, 1]
     ]
