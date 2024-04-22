@@ -9,6 +9,32 @@ All notable changes to this project will be documented in this file.
 - Continuous integration with GitHub Actions.
 - *(HdrImage)* Assert are now followed by a formatted string.
 - Last commit badge.
+- *(lineartransform)* Created new package
+- *(LinearTransformations)* Add template tranformation type, template constructor, template scal & transformation operations and Translation type
+- *(LinearTransform)* Add Transformation multiplication and Transform template type sum and difference
+- *(Common)* Add areClore template procedure in order to check arrays
+- *(LinearTransform)* Add 4x4 matrix product procedure & is_consistent
+- *(LinearTransformation)* Add inverse procedure
+- *(LinearTransformation)* Add transformation vec product
+- *(Translation)* Add Translation constructor
+- *(LinearTransformation)* Add Scaling type, constructor and consistency procedure --> add template procedure for matrix scaling
+- *(LinearOperations)* Add scaling operations
+- *(LinearTransform)* Add mixed transformation product
+- *(LinearTransformation)* Add Rotation transformation
+- Promotion rules from Vec3f-Point2D-Point3D to Vec4f
+- *(Mat)* Matrix types and simple operations defined in common.nim and used in Transformation types.
+- Mat identity procedure and dot products
+- *(Quat)* New Quaternion data structure.
+- *(Transformation)* Add transformation product
+- *(Transformation)* Add Transformation product
+- *(Transformation)* Add procedure to apply a generic transformation
+- *(Transformation)* Add inverse procedure
+- *(Transformation)* Add is_consistent procedure
+- *(Transformation)* Add scaling transformation application
+- *(Translation)* Add traslation application optimized method
+- *(Transformation)* Add rotation constructor
+- *(Transformation)* Add new scaling constructor
+- *(Transformation)* Add 3 constructor for X, Y and Z rotations
 
 ### 🐛 Bug Fixes
 
@@ -17,6 +43,7 @@ All notable changes to this project will be documented in this file.
 - *(HdrImage)* Change uint in favour of int (https://forum.nim-lang.org/t/8737).
 - *(HdrImage)* Bug in validPixel when switched from uint to int.
 - *(PhotoNim)* Removed int convertion for uint index.
+- *(Transformation)* New implementation that avoids more complex abstraction layers
 
 ### 🚜 Refactor
 
@@ -25,10 +52,30 @@ All notable changes to this project will be documented in this file.
 - *(HdrImage)* Parse/writeFloat are better formatted. readPFM now returns a tuple with the image and the endianness which otherwise would be lost.
 - *(PhotoNim)* 'convert' command is now called 'pfm2png' and it has its own procedure.
 - Explicit importing from std and other libs listed in PhotoNim.nimble.
+- *(LinearTransformation)* Add & change some comment
+- *(Scaling)* Change constructor, now correct implementation
+- NewScaling and newTranslation.
+- *(Transformation)* Correct scaling transformation apply method
+- *(CommonTest)* Changed layout
+- *(Transformations)* Made some procedures public
+- *(TransformationTest)* Changed transformation application test
+- *(Transformation)* Make some procedure public
+- *(Transformation)* Correct RotX implemetation
+- *(Transformation)* More efficient newRotZ constructor
 
 ### 🧪 Testing
 
 - Nimble Test Task.
+- *(Common)* Add Mat type constructor test
+- *(Common)* Add element wise Mat operations tests
+- *(Common)* Add matrix product check
+- *(Transformations)* Add Transformation product test
+- *(Transformation)* Add mult/div by a scalar test
+- *(Transformations)* Add constructor, consistency and inverse test
+- *(Transformations)* Add Scaling test
+- *(Transformation)* Add Translation test
+- *(Scaling)* Add new constructor test
+- *(Transformation)* Add Rotation test
 
 ## [0.1.0] - 2024-03-28
 
