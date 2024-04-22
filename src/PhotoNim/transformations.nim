@@ -93,7 +93,7 @@ proc newRotX*(angle: float32): Rotation =
         [0, sin(theta), cos(theta), 0], 
         [0, 0, 0, 1]
     ]
-    result.mat = [
+    result.inv_mat = [
         [1, 0, 0, 0], 
         [0, cos(theta), sin(theta), 0], 
         [0, -sin(theta), cos(theta), 0], 
