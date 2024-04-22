@@ -86,7 +86,7 @@ template VecVecToBoolOp(op: untyped) =
     proc op*[N: static[int], T](a, b: Vec[N, T]): bool =
         for i in 0..<N: 
             if not op(a[i], b[i]): return false
-        true
+
 
 
 ## =================================================
@@ -159,6 +159,68 @@ proc cross*[T](a, b: Vec3[T]): Vec3[T] {.inline.} =
 
 
 ## =================================================
+## Matrix Types
+## =================================================
+
+type
+    Mat*[M, N: static[int], V] = array[M, array[N, V]]
+    SQMat*[N: static[int], V] = Mat[N, N, V]
+
+    Mat2*[V] = SQMat[2, V]
+    Mat3*[V] = SQMat[3, V]
+    Mat4*[V] = SQMat[4, V]
+
+    Mat3f* = Mat3[float32]
+    Mat4f* = Mat4[float32]
+
+proc id*[N: static[int], V](_: typedesc[SQMat[N, V]]): SQMat[N, V] {.inline.} = 
+    for i in 0 ..< N: result[i][i] = V(1)
+
+
+template MatOp(op: untyped) =
+    ## Template for performing element-wise operations on matrices.
+    ## ToDo: 
+    ##  - int vs float in matrix inversion because bad casting
+
+    proc op*[M, N: static[int], V](a, b: Mat[M, N, V]): Mat[M, N, V] =
+        for i in 0 ..< M: 
+            for j in 0 ..< N:
+                result[i][j] = op(a[i][j], b[i][j])    
+
+    proc op*[M, N: static[int], V](a: Mat[M, N, V], b: V): Mat[M, N, V] =
+        for i in 0 ..< M: 
+            for j in 0 ..< N:
+                result[i][j] = op(a[i][j], b)    
+
+    proc op*[M, N: static[int], V](a: V, b: Mat[M, N, V]): Mat[M, N, V] =
+        for i in 0 ..< M: 
+            for j in 0 ..< N:
+                result[i][j] = op(a, b[i][j])    
+
+MatOp(`+`)
+MatOp(`-`)
+MatOp(`*`)
+MatOp(`/`)
+
+
+proc dot*[M, N, P: static[int], T](a: Mat[M, N, T], b: Mat[N, P, T]): Mat[M, P, T] =
+    for i in 0 ..< M:
+        for j in 0 ..< P:
+            for k in 0 ..< N:
+                result[i][j] += a[i][k] * b[k][j]
+
+proc dot*[M, N: static[int], T](a: Mat[M, N, T], b: Vec[N, T]): Vec[M, T] =
+    for i in 0 ..< M:
+        for j in 0 ..< N:
+            result[i] += a[i][j] * b[j]
+
+proc dot*[M, N: static[int], T](a: Vec[M, T], b: Mat[M, N, T]): Vec[N, T] =
+    for i in 0 ..< M:
+        for j in 0 ..< N:
+            result[j] += a[i] * b[i][j]
+
+
+## =================================================
 ## areClose Functions
 ## =================================================
 
@@ -169,4 +231,19 @@ proc areClose*[N: static[int]](a, b: Vec[N, float32]): bool =
     ## Check if two vectors of floats are approximately equal element-wise.
     for i in 0..<N: 
         if not areClose(a[i], b[i]): return false
-    true
+    return true
+    
+
+proc areClose*[N: static[int], T](a, b: array[N, T]): bool = 
+    ## Check if two vectors of floats are approximately equal element-wise.
+    for i in 0..<N: 
+        if not areClose(a[i], b[i]): return false
+    return true
+    
+
+proc areClose*[N: static[int], T](a, b: Mat[N, N, T]): bool = 
+    ## Check if two matrix of floats are approximately equal element-wise.
+    for i in 0..<N: 
+        for j in 0..<N:
+            if not areClose(a[i][j], b[i][j]): return false
+    return true

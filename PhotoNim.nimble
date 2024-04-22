@@ -16,3 +16,4 @@ task test, "Run the PhotoNim tests!":
   withDir "tests":
     exec "nim c -r common.nim"    
     exec "nim c -r hdrimage.nim"
+    exec "nim c -r transformations.nim"
