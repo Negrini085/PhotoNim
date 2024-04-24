@@ -19,6 +19,6 @@ proc at*(ray: Ray, time: float32): Point3D =
     ## Procedure to determine position at a certain time t
     result = ray.start + ray.dir * time
 
-proc areClose(ray1, ray2: Ray): bool {.inline} =
+proc areClose*(ray1, ray2: Ray): bool {.inline} =
     ## Procedure to check wether rays are close or not
     result = areClose(ray1.start, ray2.start) and areClose(ray1.dir, ray2.dir)
