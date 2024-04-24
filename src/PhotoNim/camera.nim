@@ -1,4 +1,4 @@
-import transformation
+import transformations
 import std/math
 import geometry
 import common
@@ -11,6 +11,6 @@ type
         tmax*: float32
         depth*: int
 
-proc newRay*(p0: Point, direction: Vec3f): Ray {.inline} = 
+proc newRay*(p0: Point3D, direction: Vec3f): Ray {.inline} = 
     ## Procedure to create a new light ray
     result.start = p0; result.dir = direction; result.tmin = 0.0; result.tmax = Inf; result.depth = 0
