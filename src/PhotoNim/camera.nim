@@ -27,7 +27,7 @@ proc translateRay*(ray: Ray, vec: Vec3f): Ray =
     ## Procedure to translate a ray: vector defining translation is given
     result = ray; result.start = result.start + vec;
 
-proc translateRay*(ray: Ray, T: Translation): Ray =
+proc translateRay*(T: Translation, ray: Ray): Ray =
     ## Procedure to translate aray: translation transformaiton is given as an input
     result.start = toPoint3D(apply(T, toVec4(ray.start))); result.dir = ray.dir
     result.tmin = ray.tmin; result.tmax = ray.tmax; result.depth = ray.depth
