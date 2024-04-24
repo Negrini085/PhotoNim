@@ -13,9 +13,11 @@ suite "Ray tests":
         check areClose(ray.start, newPoint3D(1, 2, 3))
         check areClose(ray.dir, newVec3[float32](1, 0, 0))
     
+
     test "at":
         # Checking at procedure
         check areClose(ray.at(2.0), newPoint3D(3, 2, 3))
+
 
     test "areClose":
         # Checking areClose procedure
@@ -26,6 +28,7 @@ suite "Ray tests":
         check areClose(ray, ray1)
         check not areClose(ray, ray2)
     
+
     test "translateRay":
         # Checking ray translation procedures
         var 
@@ -34,3 +37,9 @@ suite "Ray tests":
 
         check areClose(ray.translateRay(vec).start, newPoint3D(2, 4, 6))
         check areClose(translateRay(T, ray).start, newPoint3D(2, 4, 6))
+    
+    test "rotateRay":
+        # Checking ray rotation procedures
+        var T = newRotY(180)
+
+        check areClose(rotateRay(T, ray),  newRay(newPoint3D(1, 2, 3), newVec3[float32](-1, 0, 0)))
