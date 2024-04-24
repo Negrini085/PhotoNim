@@ -22,3 +22,7 @@ proc at*(ray: Ray, time: float32): Point3D =
 proc areClose*(ray1, ray2: Ray): bool {.inline} =
     ## Procedure to check wether rays are close or not
     result = areClose(ray1.start, ray2.start) and areClose(ray1.dir, ray2.dir)
+
+proc translateRay*(ray: Ray, vec: Vec3f): Ray =
+    ## Procedure to translate a ray
+    result = ray; result.start = result.start + vec;
