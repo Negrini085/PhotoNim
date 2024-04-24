@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(Ray)* Add ray rotation procedure
+- *(Geometry)* Add procedure to change between different data types
+- *(Ray)* Add second ray translation procedure, using a transformation
+- *(Ray)* Add ray Translation transformation
+- *(Ray)* Add areClose procedure
+- *(Ray)* Add determination of ray position procedure
+- *(Ray)* Add ray constructor
 - *(Transformation)* Add 3 constructor for X, Y and Z rotations
 - *(Transformation)* Add new scaling constructor
 - *(Transformation)* Add rotation constructor
@@ -47,6 +54,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(Ray)* Make some types public, correct some typos
 - *(Transformation)* More efficient newRotZ constructor
 - *(Transformation)* Correct RotX implemetation
 - *(Transformation)* Make some procedure public
@@ -65,6 +73,12 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(Ray)* Add ray rotation procedure
+- *(Ray)* Add second ray translation procedure test
+- *(Ray)* Add ray translation test
+- *(Ray)* Add ray areClose procedure test
+- *(Ray)* Add at procedure test
+- *(Ray)* Add ray constructor test
 - *(Transformation)* Add Rotation test
 - *(Scaling)* Add new constructor test
 - *(Transformation)* Add Translation test
