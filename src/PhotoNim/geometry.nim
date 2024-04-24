@@ -6,9 +6,9 @@ import std/math
 ## =================================================
 
 type
-    Point2D {.borrow: `.`.} = distinct Vec2f
-    Point3D {.borrow: `.`.} = distinct Vec3f
-    Normal {.borrow: `.`.} = distinct Vec3f
+    Point2D* {.borrow: `.`.} = distinct Vec2f
+    Point3D* {.borrow: `.`.} = distinct Vec3f
+    Normal* {.borrow: `.`.} = distinct Vec3f
 
 proc newPoint2D*(x, y: float32): Point2D {.inline.} = 
     ## Create a new 2D point with the specified coordinates.
@@ -30,6 +30,9 @@ proc toVec2*(a: Point2D): Vec2f {.inline.} = newVec2(a.x, a.y)
 proc toVec3*(a: Point3D | Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
 proc toVec4*(a: Point3D): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 1.0)
 proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
+
+proc toPoint3D*(a: Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
+proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3[float32](a[0], a[1], a[2])
 
 proc `$`*(a: Point2D): string {.borrow.}
 proc `$`*(a: Point3D): string {.borrow.}
