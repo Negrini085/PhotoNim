@@ -14,3 +14,7 @@ suite "Ray tests":
         # Checking constructor test
         check areClose(ray.start, newPoint3D(1, 2, 3))
         check areClose(ray.dir, newVec3[float32](1, 0, 0))
+    
+    test "At procedure":
+        # Checking at procedure
+        check areClose(ray.at(2.0), newPoint3D(3, 2, 3))
