@@ -31,6 +31,9 @@ proc toVec3*(a: Point3D | Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
 proc toVec4*(a: Point3D): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 1.0)
 proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 
+proc toPoint3D*(a: Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
+proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3[float32](a[0], a[1], a[2])
+
 proc `$`*(a: Point2D): string {.borrow.}
 proc `$`*(a: Point3D): string {.borrow.}
 proc `$`*(a: Normal): string {.borrow.}
