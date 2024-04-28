@@ -79,3 +79,7 @@ type PerspectiveCamera* = object of Camera
 proc newCamera*(a, d: float32, T: Transformation): PerspectiveCamera {.inline.} = 
     ## Perspective Camera type constructor
     result.aspect_ratio = a; result.distance = d; result.T = T
+
+method fire_ray*(cam: PerspectiveCamera, u,v: float32): Ray {.inline.} = 
+    ## Method to fire a ray with an perspective camera
+    result = transformRay(cam.T, newRay(newPoint3D(-cam.distance, 0, 0), newVec3[float32](cam.distance, (1 - 2*u)*cam.aspect_ratio, 2*v - 1)))
