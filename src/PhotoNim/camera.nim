@@ -54,3 +54,12 @@ type
 method fire_ray*(cam: Camera, u,v: float32): Ray {.base.} =
     ## Base fire ray method
 
+#-----------------------------------------#
+#           Orthogonal Camera             #
+#-----------------------------------------#
+
+type OrthogonalCamera = object of Camera
+
+proc newCamera*(a: float32, T: Transformation): OrthogonalCamera {.inline.} = 
+    ## Orthogonal Camera type constructor
+    result.aspect_ratio = a; result.T = T
