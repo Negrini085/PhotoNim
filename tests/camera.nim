@@ -76,10 +76,15 @@ suite "Camera tests":
 
     test "Orthogonal Fire Ray":
         # Testing orthogonal fire_ray procedure
-        var
-            T = newTranslation(newVec4[float32](1, 2, 3, 0))
-            ray = oCam.fire_ray(0.5, 0.5)
+        var ray = oCam.fire_ray(0.5, 0.5)
         
-        check T.is_consistent
         check areClose(ray.dir, newVec3[float32](1, 0, 0))
         check areClose(toVec3(ray.start), newVec3[float32](0, 2, 3))
+    
+
+    test "Perspective Fire Ray":
+        # Testing perspective fire_ray procedure
+        var ray = pCam.fire_ray(0.5, 0.5)
+        
+        check areClose(ray.dir, newVec3[float32](5, 0, 0))
+        check areClose(toVec3(ray.start), newVec3[float32](-6, -2, -3))
