@@ -43,3 +43,19 @@ suite "Ray tests":
         var T = newRotY(180)
 
         check areClose(rotateRay(T, ray),  newRay(newPoint3D(1, 2, 3), newVec3[float32](-1, 0, 0)))
+
+
+
+#-------------------------------------#
+#          Camera type tests          #
+#-------------------------------------#
+suite "Camera tests":
+
+    var oCam = newCamera(1.2, newTranslation(newVec4[float32](1, 2, 3, 1)))
+
+    test "Orthogonal Contructor":
+        # Testing ortogonal type constructor
+        
+        check areClose(oCam.aspect_ratio, 1.2)
+        check oCam.T.is_consistent()
+        check areClose(oCam.T @ newVec4[float32](0, 0, 0, 1), newVec4[float32](1, 2, 3, 1))
