@@ -30,14 +30,9 @@ proc translateRay*(ray: Ray, vec: Vec3f): Ray =
     ## Procedure to translate a ray: vector defining translation is given
     result = ray; result.start = result.start + vec;
 
-proc translateRay*(T: Translation, ray: Ray): Ray =
+proc transformRay*(T: Transformation, ray: Ray): Ray =
     ## Procedure to translate a ray: translation transformation is given as an input
-    result.start = toPoint3D(apply(T, toVec4(ray.start))); result.dir = ray.dir
-    result.tmin = ray.tmin; result.tmax = ray.tmax; result.depth = ray.depth
-
-proc rotateRay*(T: Rotation, ray: Ray): Ray =
-    ## Procedure to rotate a ray: we are considering a rotation around an axis such that ray.start is a part of the axis
-    result.start = ray.start; result.dir = toVec3(apply(T, toVec4(ray.dir)))
+    result.start = toPoint3D(apply(T, toVec4(ray.start))); result.dir = toVec3(apply(T, toVec4(ray.dir)))
     result.tmin = ray.tmin; result.tmax = ray.tmax; result.depth = ray.depth
 
 
