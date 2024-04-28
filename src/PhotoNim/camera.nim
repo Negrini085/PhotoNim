@@ -48,5 +48,9 @@ proc rotateRay*(T: Rotation, ray: Ray): Ray =
 
 type
     Camera* = object of RootObj
-        distance*, aspect_ratio*: float32
+        aspect_ratio*: float32
+        T*: Transformation 
+
+method fire_ray*(cam: Camera, u,v: float32): Ray {.base.} =
+    ## Base fire ray method
 
