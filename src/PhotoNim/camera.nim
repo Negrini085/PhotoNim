@@ -3,6 +3,8 @@ import std/math
 import geometry
 import common
 
+const vec_ex: Vec3f = newVec3[float32](1, 0, 0)
+
 #--------------------------------------#
 #        Ray type implementation       # 
 #--------------------------------------#
@@ -58,3 +60,7 @@ type OrthogonalCamera = object of Camera
 proc newCamera*(a: float32, T: Transformation): OrthogonalCamera {.inline.} = 
     ## Orthogonal Camera type constructor
     result.aspect_ratio = a; result.T = T
+
+method fire_ray*(cam: OrthogonalCamera, u,v: float32): Ray = 
+    ## Method to fire a ray with an orthogonal camera
+    result = transformRay(cam.T, newRay(newPoint3D(-1, (1 - 2 * u) * cam.aspect_ratio, 2 * v - 1), vec_ex))
