@@ -33,17 +33,20 @@ suite "Ray tests":
         # Checking ray translation procedures
         var 
             vec = newVec3[float32](1, 2, 3)
-            T = newTranslation(newVec4[float32](1, 2, 3, 0))
 
         check areClose(ray.translateRay(vec).start, newPoint3D(2, 4, 6))
-        check areClose(translateRay(T, ray).start, newPoint3D(2, 4, 6))
     
-    test "rotateRay":
+
+    test "transformRay":
         # Checking ray rotation procedures
-        var T = newRotY(180)
+        var 
+            T1 = newTranslation(newVec4[float32](1, 2, 3, 0))
+            T2 = newRotY(180)
 
-        check areClose(rotateRay(T, ray),  newRay(newPoint3D(1, 2, 3), newVec3[float32](-1, 0, 0)))
-
+        check areClose(transformRay(T1, ray),  newRay(newPoint3D(2, 4, 6), newVec3[float32](1, 0, 0)))
+        check areClose(transformRay(T2, ray).dir, newVec3[float32](-1, 0, 0))
+        check areClose(transformRay(T2, ray),  newRay(newPoint3D(-1, 2, -3), newVec3[float32](-1, 0, 0)))
+        
 
 
 #-------------------------------------#
