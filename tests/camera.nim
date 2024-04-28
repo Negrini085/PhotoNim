@@ -54,7 +54,9 @@ suite "Ray tests":
 #-------------------------------------#
 suite "Camera tests":
 
-    var oCam = newCamera(1.2, newTranslation(newVec4[float32](1, 2, 3, 1)))
+    var 
+        oCam = newCamera(1.2, newTranslation(newVec4[float32](1, 2, 3, 0)))
+        pCam = newCamera(1.2, 5, newTranslation(newVec4[float32](-1, -2, -3, 0)))
 
     test "Orthogonal Contructor":
         # Testing ortogonal type constructor
@@ -62,6 +64,14 @@ suite "Camera tests":
         check areClose(oCam.aspect_ratio, 1.2)
         check oCam.T.is_consistent()
         check areClose(oCam.T @ newVec4[float32](0, 0, 0, 1), newVec4[float32](1, 2, 3, 1))
+
+    
+    test "Orthogonal Contructor":
+        # Testing ortogonal type constructor
+        
+        check areClose(pCam.aspect_ratio, 1.2)
+        check pCam.T.is_consistent()
+        check areClose(pCam.T @ newVec4[float32](0, 0, 0, 1), newVec4[float32](-1, -2, -3, 1))
     
 
     test "Orthogonal Fire Ray":
