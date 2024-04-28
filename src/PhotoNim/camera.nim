@@ -3,6 +3,9 @@ import std/math
 import geometry
 import common
 
+#--------------------------------------#
+#        Ray type implementation       # 
+#--------------------------------------#
 type
     Ray* = object
         start*: Point3D
@@ -36,3 +39,14 @@ proc rotateRay*(T: Rotation, ray: Ray): Ray =
     ## Procedure to rotate a ray: we are considering a rotation around an axis such that ray.start is a part of the axis
     result.start = ray.start; result.dir = toVec3(apply(T, toVec4(ray.dir)))
     result.tmin = ray.tmin; result.tmax = ray.tmax; result.depth = ray.depth
+
+
+
+#-----------------------------------------#
+#        Camera type implementation       #
+#-----------------------------------------#
+
+type
+    Camera* = object of RootObj
+        distance*, aspect_ratio*: float32
+
