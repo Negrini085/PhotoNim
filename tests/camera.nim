@@ -34,9 +34,11 @@ suite "Ray tests":
     test "translateRay":
         # Checking ray translation procedures
         var 
-            vec = newVec3[float32](1, 2, 3)
+            vec1 = newVec3[float32](0, 0, 0)
+            vec2 = newVec3[float32](1, 2, 3)
 
-        check areClose(ray.translateRay(vec).start, newPoint3D(2, 4, 6))
+        check areClose(ray.translateRay(vec1).start, newPoint3D(1, 2, 3))
+        check areClose(ray.translateRay(vec2).start, newPoint3D(2, 4, 6))
     
 
     test "transformRay":
