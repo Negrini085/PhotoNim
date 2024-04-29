@@ -79,7 +79,10 @@ suite "Camera tests":
     
 
     test "Orthogonal Fire Ray":
-        # Testing orthogonal fire_ray procedure: a ray is fired, than translated via a (1, 2, 3, 0) vector
+        # Testing orthogonal fire_ray procedure: a ray is fired
+        # Change ray transformation to identity, such ad a (0, 0, 0) vec translation
+        ocam.T = newTranslation(newVec4[float32](0, 0, 0, 0))
+
         var 
             ray1 = oCam.fire_ray(0, 0)
             ray2 = oCam.fire_ray(1, 0)
@@ -98,10 +101,10 @@ suite "Camera tests":
         check areClose(ray4.dir, vec_ex)
 
         # Testing arrive point
-        check areClose(ray1.at(1.0), newPoint3D(1, 3.2, 2))
-        check areClose(ray2.at(1.0), newPoint3D(1, 0.8, 2))
-        check areClose(ray3.at(1.0), newPoint3D(1, 3.2, 4))
-        check areClose(ray4.at(1.0), newPoint3D(1, 0.8, 4))
+        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
+        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
+        check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
+        check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
     
 
     test "Perspective Fire Ray":
