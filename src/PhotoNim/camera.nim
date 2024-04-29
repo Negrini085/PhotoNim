@@ -96,3 +96,7 @@ method fire_ray*(cam: PerspectiveCamera, u,v: float32): Ray {.inline.} =
 type ImageTracer* = object
     image*: HdrImage
     camera*: Camera
+
+proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} = 
+    ## ImageTracer constructor
+    result.image = im; result.camera = cam
