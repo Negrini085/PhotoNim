@@ -79,11 +79,29 @@ suite "Camera tests":
     
 
     test "Orthogonal Fire Ray":
-        # Testing orthogonal fire_ray procedure
-        var ray = oCam.fire_ray(0.5, 0.5)
+        # Testing orthogonal fire_ray procedure: a ray is fired, than translated via a (1, 2, 3, 0) vector
+        var 
+            ray1 = oCam.fire_ray(0, 0)
+            ray2 = oCam.fire_ray(1, 0)
+            ray3 = oCam.fire_ray(0, 1)
+            ray4 = oCam.fire_ray(1, 1)
         
-        check areClose(ray.dir, newVec3[float32](1, 0, 0))
-        check areClose(toVec3(ray.start), newVec3[float32](0, 2, 3))
+        # Testing ray parallelism
+        check areClose(0.0, cross(ray1.dir, ray2.dir).norm())
+        check areClose(0.0, cross(ray1.dir, ray3.dir).norm())
+        check areClose(0.0, cross(ray1.dir, ray4.dir).norm())
+
+        # Testing direction
+        check areClose(ray1.dir, vec_ex)
+        check areClose(ray2.dir, vec_ex)
+        check areClose(ray3.dir, vec_ex)
+        check areClose(ray4.dir, vec_ex)
+
+        # Testing arrive point
+        check areClose(ray1.at(1.0), newPoint3D(1, 3.2, 2))
+        check areClose(ray2.at(1.0), newPoint3D(1, 0.8, 2))
+        check areClose(ray3.at(1.0), newPoint3D(1, 3.2, 4))
+        check areClose(ray4.at(1.0), newPoint3D(1, 0.8, 4))
     
 
     test "Perspective Fire Ray":
