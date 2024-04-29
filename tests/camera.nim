@@ -108,8 +108,30 @@ suite "Camera tests":
     
 
     test "Perspective Fire Ray":
-        # Testing perspective fire_ray procedure
-        var ray = pCam.fire_ray(0.5, 0.5)
+        # Testing perspective fire_ray procedure: a ray is fired
+        # Change ray transformation to identity, such ad a (0, 0, 0) vec translation
+        pcam.T = newTranslation(newVec4[float32](0, 0, 0, 0))
+
+        var 
+            ray1 = pCam.fire_ray(0, 0)
+            ray2 = pCam.fire_ray(1, 0)
+            ray3 = pCam.fire_ray(0, 1)
+            ray4 = pCam.fire_ray(1, 1)
+
+        # Checking wether all rays share the same origin
+        check areClose(ray1.start, ray2.start)
+        check areClose(ray1.start, ray3.start)
+        check areClose(ray1.start, ray4.start)
         
-        check areClose(ray.dir, newVec3[float32](5, 0, 0))
-        check areClose(toVec3(ray.start), newVec3[float32](-6, -2, -3))
+        # Checking directions
+        check areClose(ray1.dir, newVec3[float32](5,  1.2, -1))
+        check areClose(ray2.dir, newVec3[float32](5, -1.2, -1))
+        check areClose(ray3.dir, newVec3[float32](5,  1.2,  1))
+        check areClose(ray4.dir, newVec3[float32](5, -1.2,  1))
+
+        # Testing arrive point
+        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
+        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
+        check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
+        check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
+    
