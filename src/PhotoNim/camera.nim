@@ -1,7 +1,9 @@
-import transformations
 import std/math
-import geometry
+
 import common
+import geometry
+import hdrimage
+import transformations
 
 const vec_ex: Vec3f = newVec3[float32](1, 0, 0)
 
@@ -83,3 +85,14 @@ proc newCamera*(a, d: float32, T: Transformation): PerspectiveCamera {.inline.} 
 method fire_ray*(cam: PerspectiveCamera, u,v: float32): Ray {.inline.} = 
     ## Method to fire a ray with an perspective camera
     result = transformRay(cam.T, newRay(newPoint3D(-cam.distance, 0, 0), newVec3[float32](cam.distance, (1 - 2*u)*cam.aspect_ratio, 2*v - 1)))
+
+
+
+
+
+#-------------------------------------#
+#         Image Tracere type          #
+#-------------------------------------#
+type ImageTracer* = object
+    image*: HdrImage
+    camera*: Camera
