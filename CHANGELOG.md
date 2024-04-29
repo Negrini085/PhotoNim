@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(Camera)* Add perspective fire_ray procedure
+- *(Camera)* Add PerspectiveCamera type & constructor
+- *(Camera)* Add fire_ray procedure for Orthogonal Camera
+- *(Ray)* Add transformRay procedure, delete distinct procedure for different transformation types
+- *(Camera)* Add OrthogonalCamera type & constructor
+- *(Camera)* Add fire_ray base method
 - *(Ray)* Add ray rotation procedure
 - *(Geometry)* Add procedure to change between different data types
 - *(Ray)* Add second ray translation procedure, using a transformation
@@ -54,6 +60,10 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(CameraTest)* Change perspective fire ray procedure test
+- *(CameraTest)* Change orthogonal fire ray procedure
+- *(RayTest)* Change tranlateRay test
+- *(RayTest)* Change at procedure test
 - *(Ray)* Make some types public, correct some typos
 - *(Transformation)* More efficient newRotZ constructor
 - *(Transformation)* Correct RotX implemetation
@@ -73,6 +83,12 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(Camera)* Change orthogonal camera fire ray procedure test
+- *(Camera)* Add perspective fire ray procedure
+- *(Camera)* Add PerspectiveCamera constructor test
+- *(Camera)* Add Orthogonal Camera fire_ray procedure
+- *(Ray)* Add ray transformation test (this will fail)
+- *(Camera)* Add Orthogonal Camera constructor test
 - *(Ray)* Add ray rotation procedure
 - *(Ray)* Add second ray translation procedure test
 - *(Ray)* Add ray translation test
