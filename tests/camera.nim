@@ -16,6 +16,8 @@ suite "Ray tests":
 
     test "at":
         # Checking at procedure
+        check areClose(ray.at(0), ray.start)
+        check areClose(ray.at(1.0), newPoint3D(2, 2, 3))
         check areClose(ray.at(2.0), newPoint3D(3, 2, 3))
 
 
