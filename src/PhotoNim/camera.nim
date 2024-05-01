@@ -110,10 +110,10 @@ proc fire_ray*(im_tr: ImageTracer, col, row: int, u_pixel, v_pixel: float32 = 0.
     
     result = im_tr.camera.fire_ray(u, v)
 
-proc fire_all_ray*(im_tr: var ImageTracer, row, col: int) = 
+proc fire_all_ray*(im_tr: var ImageTracer) = 
     ## Procedure to fire all ray needed to create image
     var appo: Ray
-    for i in 0..<row:
-        for j in 0..<col:
+    for i in 0..<im_tr.image.height:
+        for j in 0..<im_tr.image.width:
             appo = im_tr.fire_ray(i, j)
             im_tr.image.setPixel(i, j, newColor(i*j/(im_tr.image.width * im_tr.image.height), i*j/(im_tr.image.width * im_tr.image.height), i*j/(im_tr.image.width * im_tr.image.height)))
