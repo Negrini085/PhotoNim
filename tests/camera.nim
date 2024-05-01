@@ -1,5 +1,5 @@
 import std/[unittest, math]
-import PhotoNim/[transformations, common, geometry, camera]
+import PhotoNim/[transformations, common, geometry, camera, hdrimage, color]
 
 #----------------------------------#
 #          Ray type tests          #
@@ -134,4 +134,31 @@ suite "Camera tests":
         check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
         check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
         check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
-    
+
+
+
+#------------------------------------------#
+#         Image Tracer type tests          #
+#------------------------------------------#
+suite "ImageTracer":
+
+    var 
+        image: HdrImage = newHdrImage(5, 5)
+        trans: Translation = newTranslation(newVec4[float32](0, 0 ,0 , 0)) # It's an identity transform, we are not translating
+        cam: OrthogonalCamera = newCamera(1.2, trans)
+        im_tr = newImageTracer(image, cam)
+
+    test "ImageTracer tests":
+        # Checking image tracer type, we will have to open an issue
+        var
+            ray1 = im_tr.fire_ray(0, 0, 2.5, 1.5)
+            ray2 = im_tr.fire_ray(2, 1, 0.5, 0.5)
+
+        check areClose(toVec3(ray1.start), toVec3(ray2.start))
+
+        im_tr.fire_all_ray()
+
+        for i in 0..<im_tr.image.height:
+            for j in 0..<im_tr.image.width:
+                check areClose(im_tr.image.getPixel(i, j), newColor(i*j/(im_tr.image.width * im_tr.image.height), i*j/(im_tr.image.width * im_tr.image.height), i*j/(im_tr.image.width * im_tr.image.height)))
+        
