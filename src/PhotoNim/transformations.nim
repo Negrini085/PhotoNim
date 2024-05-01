@@ -157,3 +157,7 @@ method apply*(T: Translation, a: Vec4f): Vec4f =
     ## Method to apply a translation transformation
     result[0] = a[0] + T.mat[0][3] * a[3]; result[1] = a[1] + T.mat[1][3] * a[3]; 
     result[2] = a[2] + T.mat[2][3] * a[3]; result[3] = a[3];
+
+proc id*(_: typedesc[Transformation]): Transformation {.inline} = 
+    ## Procedure to have identity transformation
+    result.mat = Mat4f.id; result.inv_mat = Mat4f.id
