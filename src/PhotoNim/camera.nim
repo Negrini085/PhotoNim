@@ -62,7 +62,7 @@ method fire_ray*(cam: Camera, u,v: float32): Ray {.base.} =
 
 type OrthogonalCamera* = object of Camera
 
-proc newCamera*(a: float32, T: Transformation): OrthogonalCamera {.inline.} = 
+proc newCamera*(a: float32, T = Transformation.id): OrthogonalCamera {.inline.} = 
     ## Orthogonal Camera type constructor
     result.aspect_ratio = a; result.T = T
 
@@ -79,7 +79,7 @@ method fire_ray*(cam: OrthogonalCamera, u,v: float32): Ray {.inline.} =
 type PerspectiveCamera* = object of Camera
     distance*:float32
 
-proc newCamera*(a, d: float32, T: Transformation): PerspectiveCamera {.inline.} = 
+proc newCamera*(a, d: float32, T = Transformation.id): PerspectiveCamera {.inline.} = 
     ## Perspective Camera type constructor
     result.aspect_ratio = a; result.distance = d; result.T = T
 
