@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(Transformation)* Add identity transformation procedure
+- *(ImageTracer)* Add fire all ray procedure
+- *(ImageTracer)* Add fire_ray ImageTracer procedure
+- *(ImageTracer)* Add ImageTracer constructor
+- *(ImageTracer)* Add ImageTracer type
 - *(Camera)* Add perspective fire_ray procedure
 - *(Camera)* Add PerspectiveCamera type & constructor
 - *(Camera)* Add fire_ray procedure for Orthogonal Camera
@@ -60,6 +65,10 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(Camera)* Identity transformation is default transformation
+- *(CameraTest)* Identity transformation in default transform
+- *(ImageTracer)* Correct fire_all_ray implementation
+- *(ImageTracer)* Correct a typo in fire ray procedure
 - *(CameraTest)* Change perspective fire ray procedure test
 - *(CameraTest)* Change orthogonal fire ray procedure
 - *(RayTest)* Change tranlateRay test
@@ -83,6 +92,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(ImageTracer)* Add ImageTracer type test
 - *(Camera)* Change orthogonal camera fire ray procedure test
 - *(Camera)* Add perspective fire ray procedure
 - *(Camera)* Add PerspectiveCamera constructor test
