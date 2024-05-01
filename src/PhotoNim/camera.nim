@@ -102,7 +102,7 @@ proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} =
     ## ImageTracer constructor
     result.image = im; result.camera = cam
 
-proc fire_ray*(im_tr: ImageTracer, row, col: int, u_pixel, v_pixel: float32 = 0.5): Ray =
+proc fire_ray*(im_tr: ImageTracer, col, row: int, u_pixel, v_pixel: float32 = 0.5): Ray =
     ## Procedure to fire a ray to a specific pixel
     var
         u: float32 = (float32(col) + u_pixel)/float32(im_tr.image.width - 1)
