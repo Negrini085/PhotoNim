@@ -1,5 +1,6 @@
 import std/math
 
+import color
 import common
 import geometry
 import hdrimage
@@ -108,3 +109,11 @@ proc fire_ray*(im_tr: ImageTracer, row, col: int, u_pixel, v_pixel: float32 = 0.
         v: float32 = (float32(row) + v_pixel)/float32(im_tr.image.height - 1)
     
     result = im_tr.camera.fire_ray(u, v)
+
+proc fire_all_ray*(im_tr: var ImageTracer, row, col: int) = 
+    ## Procedure to fire all ray needed to create image
+    var appo: Ray
+    for i in 0..<row:
+        for j in 0..<col:
+            appo = im_tr.fire_ray(i, j)
+            im_tr.image.setPixel(i, j, newColor(i*j/(im_tr.image.width * im_tr.image.height), i*j/(im_tr.image.width * im_tr.image.height), i*j/(im_tr.image.width * im_tr.image.height)))
