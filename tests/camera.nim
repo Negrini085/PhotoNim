@@ -59,15 +59,15 @@ suite "Ray tests":
 suite "Camera tests":
 
     var 
-        oCam = newCamera(1.2, newTranslation(newVec4[float32](1, 2, 3, 0)))
-        pCam = newCamera(1.2, 5, newTranslation(newVec4[float32](-1, -2, -3, 0)))
+        oCam = newCamera(1.2)
+        pCam = newCamera(1.2, 5)
 
     test "Orthogonal Contructor":
         # Testing ortogonal type constructor
         
         check areClose(oCam.aspect_ratio, 1.2)
         check oCam.T.is_consistent()
-        check areClose(oCam.T @ newVec4[float32](0, 0, 0, 1), newVec4[float32](1, 2, 3, 1))
+        check areClose(oCam.T @ newVec4[float32](0, 0, 0, 1), newVec4[float32](0, 0, 0, 1))
 
     
     test "Orthogonal Contructor":
@@ -75,13 +75,11 @@ suite "Camera tests":
         
         check areClose(pCam.aspect_ratio, 1.2)
         check pCam.T.is_consistent()
-        check areClose(pCam.T @ newVec4[float32](0, 0, 0, 1), newVec4[float32](-1, -2, -3, 1))
+        check areClose(pCam.T @ newVec4[float32](0, 0, 0, 1), newVec4[float32](0, 0, 0, 1))
     
 
     test "Orthogonal Fire Ray":
         # Testing orthogonal fire_ray procedure: a ray is fired
-        # Change ray transformation to identity, such ad a (0, 0, 0) vec translation
-        ocam.T = newTranslation(newVec4[float32](0, 0, 0, 0))
 
         var 
             ray1 = oCam.fire_ray(0, 0)
@@ -109,8 +107,6 @@ suite "Camera tests":
 
     test "Perspective Fire Ray":
         # Testing perspective fire_ray procedure: a ray is fired
-        # Change ray transformation to identity, such ad a (0, 0, 0) vec translation
-        pcam.T = newTranslation(newVec4[float32](0, 0, 0, 0))
 
         var 
             ray1 = pCam.fire_ray(0, 0)
@@ -144,8 +140,7 @@ suite "ImageTracer":
 
     var 
         image: HdrImage = newHdrImage(5, 5)
-        trans: Translation = newTranslation(newVec4[float32](0, 0 ,0 , 0)) # It's an identity transform, we are not translating
-        cam: OrthogonalCamera = newCamera(1.2, trans)
+        cam: OrthogonalCamera = newCamera(1.2, Transformation.id)
         im_tr = newImageTracer(image, cam)
 
     test "ImageTracer tests":
