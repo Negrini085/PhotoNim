@@ -12,3 +12,7 @@ proc newHitRecord*(hit_point: Point3D, norm: Normal, uv: Vec2f, t: float32, ray:
     ## Procedure to create a new HitRecord object
     result.world_point = hit_point; result.normal = norm; result.uv = uv; result.t = t; result.ray = ray;
 
+proc areClose*(hit1, hit2: HitRecord): bool {.inline.} = 
+    ## Procedure to test wether two HitRecord are close or not
+    return areClose(hit1.world_point, hit2.world_point) and areClose(hit1.normal, hit2.normal) and areClose(hit1.uv, hit2.uv) and areClose(hit1.t, hit2.t) and areClose(hit1.ray, hit2.ray)
+
