@@ -65,6 +65,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(CameraTest)* Add setup enviroment
 - *(Camera)* Identity transformation is default transformation
 - *(CameraTest)* Identity transformation in default transform
 - *(ImageTracer)* Correct fire_all_ray implementation
