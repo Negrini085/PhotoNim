@@ -15,3 +15,15 @@ suite "HitRecord":
         check areClose(hit1.normal, newNormal(1, 0, 0))
         check areClose(hit1.t, 0.5)
         check areClose(hit1.ray, newRay(newPoint3D(0, 0, 0), newVec3[float32](0, 1, 0)))
+    
+    test "areClose":
+        # Checking areClose procedure for HitRecord variables
+        check areClose(hit1, hit1)
+
+        check not areClose(hit1.world_point, hit2.world_point)
+        check not areClose(hit1.normal, hit2.normal)
+        check not areClose(hit1.ray, hit2.ray)
+        check not areClose(hit1.uv, hit2.uv)
+        check not areClose(hit1.t, hit2.t)
+        
+        check not areClose(hit1, hit2)
