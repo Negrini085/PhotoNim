@@ -65,6 +65,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(TransformationTest)* Add setup enviroment
 - *(CameraTest)* Add setup enviroment
 - *(Camera)* Identity transformation is default transformation
 - *(CameraTest)* Identity transformation in default transform
