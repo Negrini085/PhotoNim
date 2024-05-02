@@ -6,7 +6,8 @@ import PhotoNim/[transformations, common, geometry, camera, hdrimage, color]
 #----------------------------------#
 suite "Ray tests":
 
-    var ray = newRay(newPoint3D(1, 2, 3), newVec3[float32](1, 0, 0))
+    setup:
+        var ray = newRay(newPoint3D(1, 2, 3), newVec3[float32](1, 0, 0))
 
     test "newRay":
         # Checking constructor test
@@ -58,9 +59,10 @@ suite "Ray tests":
 #-------------------------------------#
 suite "Camera tests":
 
-    var 
-        oCam = newCamera(1.2)
-        pCam = newCamera(1.2, 5)
+    setup:
+        var 
+            oCam = newCamera(1.2)
+            pCam = newCamera(1.2, 5)
 
     test "Orthogonal Contructor":
         # Testing ortogonal type constructor
@@ -138,10 +140,11 @@ suite "Camera tests":
 #------------------------------------------#
 suite "ImageTracer":
 
-    var 
-        image: HdrImage = newHdrImage(5, 5)
-        cam: OrthogonalCamera = newCamera(1.2, Transformation.id)
-        im_tr = newImageTracer(image, cam)
+    setup:
+        var 
+            image: HdrImage = newHdrImage(5, 5)
+            cam: OrthogonalCamera = newCamera(1.2, Transformation.id)
+            im_tr = newImageTracer(image, cam)
 
     test "ImageTracer tests":
         # Checking image tracer type, we will have to open an issue
