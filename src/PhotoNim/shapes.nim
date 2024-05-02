@@ -37,4 +37,6 @@ type
     Sphere* = object of Shape
     Plane* = object of Shape
 
-
+proc newSphere*(T: Transformation): Sphere {.inline.} = 
+    ## Sphere object constructor
+    result.T = T
