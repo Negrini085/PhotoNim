@@ -161,8 +161,8 @@ suite "ImageTracer":
             ray1 = im_tr.fire_ray(0, 0, 0, 0)   # Ray direct to top left corner
             ray2 = im_tr.fire_ray(4, 4, 1, 1)   # Ray direct to bottom right corner
         
-        check areClose(ray1.at(1.0), newPoint3D(0, -1.2, 1))
-        check areClose(ray2.at(1.0), newPoint3D(0, 1.2, -1))
+        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, 1))
+        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
 
 
     test "ImageTracer fire_all_ray":
