@@ -65,6 +65,9 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(ImageTracerTest)* Add correct orientation test
+- *(ImageTracer)* Correct index choice
+- *(ImageTracerTest)* Divide in two tests
 - *(TransformationTest)* Add setup enviroment
 - *(CameraTest)* Add setup enviroment
 - *(Camera)* Identity transformation is default transformation
@@ -94,6 +97,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(ImageTracer)* Add image orientation test
 - *(ImageTracer)* Add ImageTracer type test
 - *(Camera)* Change orthogonal camera fire ray procedure test
 - *(Camera)* Add perspective fire ray procedure
