@@ -5,7 +5,9 @@ import PhotoNim/[transformations, common]
 #     Transformation type test     #
 #----------------------------------#
 suite "Transformation tests":
-    var
+
+    setup:
+        var
             mat: Mat4f = [[1, 0, 0, 4], [0, 1, 0, 3], [0, 0, 1, -1], [0, 0, 0, 1]]
             inv_mat: Mat4f = [[1, 0, 0, -4], [0, 1, 0, -3], [0, 0, 1, 1], [0, 0, 0, 1]]
             t1: Transformation = newTransformation(mat, inv_mat)
