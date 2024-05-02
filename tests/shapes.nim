@@ -1,5 +1,5 @@
 import std/unittest
-import PhotoNim/[shapes, geometry, camera, common]
+import PhotoNim/[shapes, geometry, camera, common, transformations]
 
 #---------------------------------------#
 #         Hit Record type tests         #
@@ -33,3 +33,24 @@ suite "HitRecord":
         check not areClose(hit1.t, hit2.t)
 
         check not areClose(hit1, hit2)
+
+
+
+#---------------------------------------#
+#           Shape type tests            #
+#---------------------------------------#
+suite "Shapes":
+
+    setup:
+        var sphere = newSphere(Transformation.id)
+        
+
+    #----------------------------------------#
+    #           Sphere type tests            #
+    #----------------------------------------#
+
+    test "SphereConstructor":
+        # Checking sphere constructor procedure
+
+        check areClose(sphere.T.mat, Mat4f.id)
+        check areClose(sphere.T.inv_mat, Mat4f.id)
