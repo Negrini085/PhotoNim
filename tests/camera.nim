@@ -146,13 +146,15 @@ suite "ImageTracer":
             cam: OrthogonalCamera = newCamera(1.2, Transformation.id)
             im_tr = newImageTracer(image, cam)
 
-    test "ImageTracer tests":
+    test "ImageTracer index":
         # Checking image tracer type, we will have to open an issue
         var
             ray1 = im_tr.fire_ray(0, 0, 2.5, 1.5)
             ray2 = im_tr.fire_ray(2, 1, 0.5, 0.5)
 
         check areClose(toVec3(ray1.start), toVec3(ray2.start))
+
+    test "ImageTracer fire_all_ray":
 
         im_tr.fire_all_ray()
 
