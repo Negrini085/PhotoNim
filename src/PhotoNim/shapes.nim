@@ -14,7 +14,7 @@ type HitRecord* = object
 
 proc newHitRecord*(hit_point: Point3D, norm: Normal, uv: Vec2f, t: float32, ray: Ray): HitRecord {.inline.} =
     ## Procedure to create a new HitRecord object
-    result.world_point = hit_point; result.normal = norm; result.uv = uv; result.t = t; result.ray = ray;
+    HitRecord(world_point: hit_point, normal: norm, uv: uv, t: t, ray: ray)
 
 proc areClose*(hit1, hit2: HitRecord): bool {.inline.} = 
     ## Procedure to test wether two HitRecord are close or not
