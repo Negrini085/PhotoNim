@@ -167,4 +167,22 @@ suite "Plane":
 
         check not plane.intersectionRay(ray3).isSome
 
+
+    test "RayIntersection: with transformation":
+        # Checking ray intersection procedure on plane: a translation along the z axis is performed
+        var
+            tr = newTranslation(newVec4[float32](0, 0, 3, 0))
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
+            ray2 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
+            ray3 = newRay(newPoint3D(1, -2, -3), newVec3[float32](0, 4/5, 3/5))
+        
+        plane.T = tr
+
+        check not plane.intersectionRay(ray1).isSome
+        check not plane.intersectionRay(ray2).isSome
+
+        check areClose(plane.intersectionRay(ray3).get().world_point, newPoint3D(1, 6, 3))
+        check areClose(plane.intersectionRay(ray3).get().normal, newNormal(0, 0, -1))
+        check areClose(plane.intersectionRay(ray3).get().t, 10)
+        check areClose(plane.intersectionRay(ray3).get().uv, newVec2[float32](0, 0))
     
