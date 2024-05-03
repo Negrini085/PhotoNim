@@ -1,4 +1,4 @@
-import std/unittest
+import std/[unittest, math]
 import PhotoNim/[shapes, geometry, camera, common, transformations]
 
 #---------------------------------------#
@@ -37,20 +37,26 @@ suite "HitRecord":
 
 
 #---------------------------------------#
-#           Shape type tests            #
+#          Sphere type tests            #
 #---------------------------------------#
-suite "Shapes":
+suite "Sphere":
 
     setup:
         var sphere = newSphere(Transformation.id)
-        
-
-    #----------------------------------------#
-    #           Sphere type tests            #
-    #----------------------------------------#
 
     test "SphereConstructor":
         # Checking sphere constructor procedure
 
         check areClose(sphere.T.mat, Mat4f.id)
         check areClose(sphere.T.inv_mat, Mat4f.id)
+    
+
+    test "Surface Normal":
+        # Checking sphere normal computation method
+        var
+            p1 = newPoint3D(1, 0 ,0)
+            p2 = newPoint3D(cos(PI/3), sin(PI/3) ,0)
+            d = newVec3[float32](-1, 2, 0)
+        
+        check areClose(sphereNorm(p1, d), newNormal(1, 0, 0))
+        check areClose(sphereNorm(p2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
