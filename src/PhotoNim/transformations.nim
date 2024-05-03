@@ -1,4 +1,4 @@
-import common
+import common, geometry
 import std/math
 
 
@@ -24,6 +24,14 @@ proc `@`*(a, b: Transformation): Transformation =
 proc `@`*(a: Transformation, b: Vec4f): Vec4f =
     ## Procedure to apply a transformation
     result = dot(a.mat, b)
+
+proc `@`*(a: Transformation, b: Point3D): Vec4f =
+    ## Procedure to apply a transformation to a Point3D
+    result = dot(a.mat, toVec4(b))
+
+proc `@`*(a: Transformation, b: Vec3f): Vec4f =
+    ## Procedure to apply a transformation to a Vec3f
+    result = dot(a.mat, toVec4(b))
 
 
 proc `*`*(T: Transformation, scal: float32): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
