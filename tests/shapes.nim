@@ -72,8 +72,8 @@ suite "Sphere":
         check areClose(sphere_uv(p2), newVec2[float32](1/6, 1/3))
     
 
-    test "RayIntersection: module 1":
-        # Checking ray intersection procedure
+    test "RayIntersection: no transformation":
+        # Checking ray intersection procedure on unitary shperical surface: no traslation is performed on sphere
         var
             ray1 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
             ray2 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
@@ -93,3 +93,30 @@ suite "Sphere":
         check areClose(sphere.intersectionRay(ray3).get().normal, newNormal(-1, 0, 0))
         check areClose(sphere.intersectionRay(ray3).get().t, 1)
         check areClose(sphere.intersectionRay(ray1).get().uv, newVec2[float32](0, 0))
+    
+
+    test "RayIntersection: with transformation":
+        # Checking ray intersection procedure: we are trasnforming the sphere
+        var
+            tr = newTranslation(newVec4[float32](10, 0, 0, 0))
+
+            ray1 = newRay(newPoint3D(10, 0, 2), newVec3[float32](0, 0, -1))
+            ray2 = newRay(newPoint3D(13, 0, 0), newVec3[float32](-1, 0, 0))
+            ray3 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
+            ray4 = newRay(newPoint3D(-10, 0, 0), newVec3[float32](0, 0, -1))
+        
+        sphere.T = tr
+
+        check areClose(sphere.intersectionRay(ray1).get().world_point, newPoint3D(10, 0, 1))
+        check areClose(sphere.intersectionRay(ray1).get().normal, newNormal(0, 0, 1))
+        check areClose(sphere.intersectionRay(ray1).get().t, 1)
+        check areClose(sphere.intersectionRay(ray1).get().uv, newVec2[float32](0, 0))
+
+        check areClose(sphere.intersectionRay(ray2).get().world_point, newPoint3D(11, 0, 0))
+        check areClose(sphere.intersectionRay(ray2).get().normal, newNormal(1, 0, 0))
+        check areClose(sphere.intersectionRay(ray2).get().t, 2)
+        check areClose(sphere.intersectionRay(ray2).get().uv, newVec2[float32](0, 0.5))
+
+        sphere.T = Transformation.id
+        check sphere.intersectionRay(ray3).isSome
+        check not sphere.intersectionRay(ray4).isSome
