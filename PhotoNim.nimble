@@ -17,3 +17,5 @@ task test, "Run the PhotoNim tests!":
     exec "nim c -r common.nim"    
     exec "nim c -r hdrimage.nim"
     exec "nim c -r transformations.nim"
+    exec "nim c -r camera.nim"
+    exec "nim c -r shapes.nim"
