@@ -96,7 +96,7 @@ suite "Sphere":
     
 
     test "RayIntersection: with transformation":
-        # Checking ray intersection procedure: we are trasnforming the sphere
+        # Checking ray intersection procedure: we are transforming the sphere
         var
             tr = newTranslation(newVec4[float32](10, 0, 0, 0))
 
@@ -120,3 +120,13 @@ suite "Sphere":
         sphere.T = Transformation.id
         check sphere.intersectionRay(ray3).isSome
         check not sphere.intersectionRay(ray4).isSome
+    
+
+    test "FastIntersection":
+        # Checking Fast intersection procedure
+        var
+            ray3 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
+            ray4 = newRay(newPoint3D(-10, 0, 0), newVec3[float32](0, 0, -1))
+        
+        check sphere.fastIntersection(ray3)
+        check not sphere.fastIntersection(ray4)
