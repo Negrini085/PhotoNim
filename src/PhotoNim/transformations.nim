@@ -171,6 +171,16 @@ method apply*(T: Transformation, a: Point3D): Point3D {.base, inline.} = T @ a
 method apply*(T: Transformation, a: Vec3f): Vec3f {.base, inline.} = T @ a
     ## Method to apply a generic transformation to a Vec3f
 
+method apply*(T: Transformation, n: Normal): Normal {.base.} =
+    ## Method to apply a generic transformation to a Normal
+    # We need to pay attention here, because applying a transformation to a normal is identical 
+    # to applying it to a vector, but you need to use the transpose of the inverse matrix
+    var
+        x = n.x * T.inv_mat[0][0] + n.y * T.inv_mat[1][0] + n.z * T.inv_mat[2][0]
+        y = n.x * T.inv_mat[0][1] + n.y * T.inv_mat[1][1] + n.z * T.inv_mat[2][1]
+        z = n.x * T.inv_mat[0][2] + n.y * T.inv_mat[1][2] + n.z * T.inv_mat[2][2]
+    
+    result = newNormal(x, y, z)
 
 
 #-----------------------------------------------#
