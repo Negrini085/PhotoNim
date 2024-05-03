@@ -61,7 +61,7 @@ proc sphere_uv*(p: Point3D): Vec2f =
     result[1] = arccos(p.z)/PI
 
 
-method intersectionRay(sphere: Sphere, ray: Ray): Option[HitRecord] =
+method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     ## Method to detect a ray - sphere intersection
     # Here we create a sphere centered in (0, 0, 0) and having unitary ray.
     # We can obtain every kind of sphere and even ellipsoids using specific transformations
