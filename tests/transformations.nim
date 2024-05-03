@@ -1,5 +1,5 @@
 import std/[unittest, math]
-import PhotoNim/[transformations, common]
+import PhotoNim/[transformations, common, geometry]
 
 #----------------------------------#
 #     Transformation type test     #
@@ -43,7 +43,7 @@ suite "Transformation tests":
         check areClose(ris.inv_mat, Mat4f.id)
         
 
-    test "Transformation application test":
+    test "Overloading @ to Vec4f":
         var
             vec: Vec4f = newVec4[float32](1, 2, 3, 0)
             point: Vec4f = newVec4[float32](1, 2, 3, 1)
@@ -60,6 +60,24 @@ suite "Transformation tests":
         check areClose(ris, vec)
         check areClose(point, newVec4[float32](9, 8, 1, 1))
     
+
+    test "Overloading @ to Point3D":
+        var
+            p1 = newPoint3D(0, 0, 0)
+            p2 = newPoint3D(1, 2, 3) 
+            
+        check  areClose(t1 @ p1, newPoint3D(4, 3, -1))
+        check  areClose(t1 @ p2, newPoint3D(5, 5, 2))
+    
+
+    test "Overloading @ to Vec3f":
+        var
+            p1 = newVec3[float32](0, 0, 0)
+            p2 = newVec3[float32](1, 2, 3) 
+            
+        check  areClose(t1 @ p1, newVec3[float32](0, 0, 0))
+        check  areClose(t1 @ p2, newVec3[float32](1, 2, 3))
+
 
     test "Transformation mult/div by scalar":
         var
