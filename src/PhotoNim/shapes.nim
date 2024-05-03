@@ -32,9 +32,15 @@ method intersectionRay(shape: Shape, ray: Ray): Option[HitRecord] {.base} =
     ## Base procedure to compute ray intersection with a generic shape
     quit "to overload"
 
+method fastIntersection(shape: Shape, ray: Ray): bool {.base} =
+    ## Base procedure to test ray intersection with a generic shape
+    quit "to overload"
+
+
 type
     Sphere* = object of Shape
     Plane* = object of Shape
+
 
 
 #-------------------------------------------#
@@ -101,8 +107,8 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     return some(newHitRecord(apply(sphere.T, rayInv.at(t)),apply(sphere.T, sphereNorm(rayInv.at(t), rayInv.dir)), sphere_uv(rayInv.at(t)), t, ray))
 
 
-proc fastIntersection*(sphere: Sphere, ray: Ray): bool = 
-    ## Procedure that simply states wether there is a intersection or not
+method fastIntersection*(sphere: Sphere, ray: Ray): bool = 
+    ## Method that simply states wether there is a intersection or not
     var
         t1, t2, delta_4: float32
         a, b, c: float32
@@ -155,3 +161,17 @@ method intersectionRay*(plane: Plane, ray: Ray): Option[HitRecord] =
 
     int_point = inv_ray.at(t)
     return some(newHitRecord(apply(plane.T, int_point), apply(plane.T, newNormal(0, 0, if inv_ray.dir[2]<0: 1 else: -1)), newVec2[float32](int_point.x - floor(int_point.x), int_point.y - floor(int_point.y)), t, ray))
+
+
+method fastIntersection*(plane: Plane, ray: Ray): bool = 
+    ## Method that simply states wether there is a intersection or not
+    var 
+        inv_ray = transformRay(plane.T.inverse(), ray)
+        t: float32
+
+    if abs(inv_ray.dir[2]) < 1e-5: return false
+
+    t = - inv_ray.start.z/inv_ray.dir[2]
+    if t < inv_ray.tmin or t > inv_ray.tmax: 
+        return false
+    return true
