@@ -55,6 +55,6 @@ proc sphereNorm*(p: Point3D, dir: Vec3f): Normal =
 
 proc sphere_uv*(p: Point3D): Vec2f = 
     ## Procedure to compute (u, v) coordinates of the hitpoint
-    result[0] = arctan2(p.x, p.y)/(2 * PI)
+    result[0] = arctan2(p.y, p.x)/(2 * PI)
     if result[0] < 0: result[0] += 1
     result[1] = arccos(p.z)/PI
