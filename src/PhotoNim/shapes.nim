@@ -142,7 +142,7 @@ method intersectionRay*(plane: Plane, ray: Ray): Option[HitRecord] =
     var
         t: float32
         int_point: Point3D
-        inv_ray = transformRay(plane.T, ray)
+        inv_ray = transformRay(plane.T.inverse(), ray)
     
     # We have applied the required inverse transformation on ray: we don't want to consider those
     # rays which are almost parallel to the plane. We will have to check the value of direction z coordinate.
