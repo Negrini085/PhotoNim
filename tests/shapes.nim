@@ -60,3 +60,13 @@ suite "Sphere":
         
         check areClose(sphereNorm(p1, d), newNormal(1, 0, 0))
         check areClose(sphereNorm(p2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
+
+    
+    test "(u, v) coordinates":
+        # Checking (u, v) coordinates computation
+        var
+            p1 = newPoint3D(1, 0, 1)
+            p2 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
+            
+        check areClose(sphere_uv(p1), newVec2[float32](0, 0))
+        check areClose(sphere_uv(p2), newVec2[float32](1/6, 1/3))
