@@ -130,3 +130,19 @@ suite "Sphere":
         
         check sphere.fastIntersection(ray3)
         check not sphere.fastIntersection(ray4)
+
+
+
+#---------------------------------------#
+#           Plane type tests            #
+#---------------------------------------#
+suite "Plane":
+
+    setup:
+        var plane = newPlane(Transformation.id)
+
+    test "PlaneConstructor":
+        # Checking plane constructor procedure
+
+        check areClose(plane.T.mat, Mat4f.id)
+        check areClose(plane.T.inv_mat, Mat4f.id)
