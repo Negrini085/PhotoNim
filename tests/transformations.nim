@@ -43,38 +43,45 @@ suite "Transformation tests":
         check areClose(ris.inv_mat, Mat4f.id)
         
 
-    test "Overloading @ to Vec4f":
+    test "Transformation on Vec4f":
         var
             vec: Vec4f = newVec4[float32](1, 2, 3, 0)
             point: Vec4f = newVec4[float32](1, 2, 3, 1)
-            ris: Vec4f
 
         # In order to test general methods we are using translation matrices: that means that
         # transformation acts different depending on the last vector component
             
-        ris = t1 @ vec; point = t1 @ point
-        check areClose(ris, vec)
-        check areClose(point, newVec4[float32](5, 5, 2, 1))
+        check areClose(t1 @ vec, vec)
+        check areClose(t1 @ point, newVec4[float32](5, 5, 2, 1))
 
-        ris = t1.apply(vec); point = t1.apply(point)
-        check areClose(ris, vec)
-        check areClose(point, newVec4[float32](9, 8, 1, 1))
+        check areClose(t1.apply(vec), vec)
+        check areClose(t1.apply(point), newVec4[float32](5, 5, 2, 1))
     
 
-    test "Overloading @ to Point3D":
+    test "Transformation on Point3D":
         var
             p1 = newPoint3D(0, 0, 0)
             p2 = newPoint3D(1, 2, 3) 
-            
+        
+        # Testing @ overloading
         check  areClose(t1 @ p1, newPoint3D(4, 3, -1))
         check  areClose(t1 @ p2, newPoint3D(5, 5, 2))
+
+        # Testing apply procedure
+        check  areClose(apply(t1, p1), newPoint3D(4, 3, -1))
+        check  areClose(apply(t1, p2), newPoint3D(5, 5, 2))
     
 
-    test "Overloading @ to Vec3f":
+    test "Transformaion on Vec3f":
         var
             p1 = newVec3[float32](0, 0, 0)
             p2 = newVec3[float32](1, 2, 3) 
-            
+
+        # Testing @ overloading    
+        check  areClose(t1 @ p1, newVec3[float32](0, 0, 0))
+        check  areClose(t1 @ p2, newVec3[float32](1, 2, 3))
+
+        # Testing apply procedure
         check  areClose(t1 @ p1, newVec3[float32](0, 0, 0))
         check  areClose(t1 @ p2, newVec3[float32](1, 2, 3))
 
