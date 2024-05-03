@@ -123,13 +123,13 @@ suite "Sphere":
     
 
     test "FastIntersection":
-        # Checking Fast intersection procedure
+        # Checking Fast intersection method
         var
-            ray3 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
-            ray4 = newRay(newPoint3D(-10, 0, 0), newVec3[float32](0, 0, -1))
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
+            ray2 = newRay(newPoint3D(-10, 0, 0), newVec3[float32](0, 0, -1))
         
-        check sphere.fastIntersection(ray3)
-        check not sphere.fastIntersection(ray4)
+        check sphere.fastIntersection(ray1)
+        check not sphere.fastIntersection(ray2)
 
 
 
@@ -186,3 +186,14 @@ suite "Plane":
         check areClose(plane.intersectionRay(ray3).get().t, 10)
         check areClose(plane.intersectionRay(ray3).get().uv, newVec2[float32](0, 0))
     
+
+    test "FastIntersection":
+        # Checking Fast intersection method
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
+            ray2 = newRay(newPoint3D(1, 0, 1), newVec3[float32](0, 0, 1))
+            ray3 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
+        
+        check plane.fastIntersection(ray1)
+        check not plane.fastIntersection(ray2)
+        check not plane.fastIntersection(ray3)
