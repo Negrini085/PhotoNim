@@ -126,3 +126,12 @@ proc fastIntersection*(sphere: Sphere, ray: Ray): bool =
 
     # Time does respect the boundaries that we required on ray evolution??
     return (rayInv.tmin < t1 and t1 < rayInv.tmax) or (rayInv.tmin < t2 and t2 < rayInv.tmax)
+
+
+
+#------------------------------------------#
+#        Plane methods and procedure       #
+#------------------------------------------#
+proc newPlane*(T: Transformation): Plane {.inline.} = 
+    ## Plane constructor
+    result.T = T
