@@ -1,5 +1,5 @@
 import std/[unittest, math]
-import PhotoNim/[transformations, common]
+import PhotoNim/[transformations, common, geometry]
 
 #----------------------------------#
 #     Transformation type test     #
@@ -43,23 +43,62 @@ suite "Transformation tests":
         check areClose(ris.inv_mat, Mat4f.id)
         
 
-    test "Transformation application test":
+    test "Transformation on Vec4f":
         var
             vec: Vec4f = newVec4[float32](1, 2, 3, 0)
             point: Vec4f = newVec4[float32](1, 2, 3, 1)
-            ris: Vec4f
 
         # In order to test general methods we are using translation matrices: that means that
         # transformation acts different depending on the last vector component
             
-        ris = t1 @ vec; point = t1 @ point
-        check areClose(ris, vec)
-        check areClose(point, newVec4[float32](5, 5, 2, 1))
+        check areClose(t1 @ vec, vec)
+        check areClose(t1 @ point, newVec4[float32](5, 5, 2, 1))
 
-        ris = t1.apply(vec); point = t1.apply(point)
-        check areClose(ris, vec)
-        check areClose(point, newVec4[float32](9, 8, 1, 1))
+        check areClose(t1.apply(vec), vec)
+        check areClose(t1.apply(point), newVec4[float32](5, 5, 2, 1))
     
+
+    test "Transformation on Point3D":
+        var
+            p1 = newPoint3D(0, 0, 0)
+            p2 = newPoint3D(1, 2, 3) 
+        
+        # Testing @ overloading
+        check  areClose(t1 @ p1, newPoint3D(4, 3, -1))
+        check  areClose(t1 @ p2, newPoint3D(5, 5, 2))
+
+        # Testing apply procedure
+        check  areClose(apply(t1, p1), newPoint3D(4, 3, -1))
+        check  areClose(apply(t1, p2), newPoint3D(5, 5, 2))
+    
+
+    test "Transformaion on Vec3f":
+        var
+            p1 = newVec3[float32](0, 0, 0)
+            p2 = newVec3[float32](1, 2, 3) 
+
+        # Testing @ overloading    
+        check  areClose(t1 @ p1, newVec3[float32](0, 0, 0))
+        check  areClose(t1 @ p2, newVec3[float32](1, 2, 3))
+
+        # Testing apply procedure
+        check  areClose(t1 @ p1, newVec3[float32](0, 0, 0))
+        check  areClose(t1 @ p2, newVec3[float32](1, 2, 3))
+    
+
+    test "Transformaion on Normal":
+        var
+            n1 = newNormal(0, 0, 0)
+            n2 = newNormal(1, 0, 0)
+            n3 = newNormal(0, 3/5, 4/5)
+            m1: Mat4f = [[1, 0, 0, 0], [0, 4/5, -3/5, 0], [0, 3/5, 4/5, 0], [0, 0, 0, 1]]
+            m2: Mat4f = [[1, 0, 0, 0], [0, 4/5, 3/5, 0], [0, -3/5, 4/5, 0], [0, 0, 0, 1]]
+            t: Transformation = newTransformation(m1, m2)
+
+        check  areClose(apply(t1, n1), newNormal(0, 0, 0))
+        check  areClose(apply(t1, n2), newNormal(1, 0, 0))
+        check  areClose(apply(t, n3), newNormal(0, 0, 1))
+
 
     test "Transformation mult/div by scalar":
         var
@@ -82,33 +121,87 @@ suite "Transformation tests":
 
 suite "Derived Transformation test":
 
-    test "Scaling":
+    setup:
         var
-            t: Scaling = newScaling(2)
-            vec: Vec4f = newVec4[float32](1, 2, 3, 1)
+            t1: Scaling = newScaling(2)
+            t2: Scaling = newScaling(newVec3[float32](1, 2, 3))
+            t3: Translation = newTranslation(newVec4[float32](2, 4, 1, 0))
+
+
+    test "Scaling of Vec4f":
+        # Checking scaling of a Vec4f object
+        var vec: Vec4f = newVec4[float32](1, 2, 3, 1)
         
-        check t.is_consistent()
-        check areClose(t @ vec, newVec4[float32](2, 4, 6, 1))
-        check areClose(t.apply(vec), newVec4[float32](2, 4, 6, 1))
+        check t1.is_consistent()
+        check areClose(t1 @ vec, newVec4[float32](2, 4, 6, 1))
+        check areClose(t1.apply(vec), newVec4[float32](2, 4, 6, 1))
 
-        t = newScaling(vec)
-        check t.is_consistent()
-        check areClose(t @ vec, newVec4[float32](1, 4, 9, 1))
-        check areClose(t.apply(vec), newVec4[float32](1, 4, 9, 1))
+        check t2.is_consistent()
+        check areClose(t2 @ vec, newVec4[float32](1, 4, 9, 1))
+        check areClose(t2.apply(vec), newVec4[float32](1, 4, 9, 1))
+    
 
-    test "Translation":
+    test "Scaling of Point3D":
+        # Checking scaling of a Point3D object
+        var p = newPoint3D(0, 3, 1)
+        
+        # Checking omogeneous scaling
+        check t1.is_consistent()
+        check areClose(t1 @ p, newPoint3D(0, 6, 2))
+        check areClose(t1.apply(p), newPoint3D(0, 6, 2))
+
+        # Checking arbitrary scaling
+        check t2.is_consistent()
+        check areClose(t2 @ p, newPoint3D(0, 6, 3))
+        check areClose(t2.apply(p), newPoint3D(0, 6, 3))
+    
+
+    test "Scaling of Vec3f":
+        # Checking scaling of a Point3D object
+        var p = newVec3[float32](0, 3, 1)
+        
+        # Checking omogeneous scaling
+        check t1.is_consistent()
+        check areClose(t1 @ p, newVec3[float32](0, 6, 2))
+        check areClose(t1.apply(p), newVec3[float32](0, 6, 2))
+
+        # Checking arbitrary scaling
+        check t2.is_consistent()
+        check areClose(t2 @ p, newVec3[float32](0, 6, 3))
+        check areClose(t2.apply(p), newVec3[float32](0, 6, 3))
+
+
+    test "Translation of Vec4f":
         var
-            t: Translation = newTranslation(newVec4[float32](2, 4, 1, 0))
             vec: Vec4f = newVec4[float32](1, 2, 3, 0)
             point: Vec4f = newVec4[float32](1, 0, 3, 1)
         
-        check t.is_consistent()
+        check t3.is_consistent()
 
-        check areClose(t @ vec, vec)
-        check areClose(t @ point, newVec4[float32](3, 4, 4, 1))
+        # Checking @ operator
+        check areClose(t3 @ vec, vec)
+        check areClose(t3 @ point, newVec4[float32](3, 4, 4, 1))
 
-        check areClose(t.apply(vec), vec)
-        check areClose(t.apply(point), newVec4[float32](3, 4, 4, 1))
+        # Checking apply procedure
+        check areClose(t3.apply(vec), vec)
+        check areClose(t3.apply(point), newVec4[float32](3, 4, 4, 1))
+    
+
+    test "Translation of Point3D":
+        var 
+            p1 = newPoint3D(0, 0, 0)
+            p2 = newPoint3D(0, 3, 1)
+        
+        check t3.is_consistent()
+
+        # Checking @ operator
+        check areClose(t3 @ p1, newPoint3D(2, 4, 1))
+        check areClose(t3 @ p2, newPoint3D(2, 7, 2))
+
+        # Checking apply procedure
+        check areClose(t3.apply(p1), newPoint3D(2, 4, 1))
+        check areClose(t3.apply(p2), newPoint3D(2, 7, 2))
+
 
     test "Rotation":
         var

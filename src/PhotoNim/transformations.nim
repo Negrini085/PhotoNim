@@ -1,4 +1,4 @@
-import common
+import common, geometry
 import std/math
 
 
@@ -24,6 +24,14 @@ proc `@`*(a, b: Transformation): Transformation =
 proc `@`*(a: Transformation, b: Vec4f): Vec4f =
     ## Procedure to apply a transformation
     result = dot(a.mat, b)
+
+proc `@`*(a: Transformation, b: Point3D): Point3D =
+    ## Procedure to apply a transformation to a Point3D
+    result = toPoint3D(dot(a.mat, toVec4(b)))
+
+proc `@`*(a: Transformation, b: Vec3f): Vec3f =
+    ## Procedure to apply a transformation to a Vec3f
+    result = toVec3(dot(a.mat, toVec4(b)))
 
 
 proc `*`*(T: Transformation, scal: float32): Transformation {.inline.} = newTransformation(scal * T.mat, scal * T.inv_mat)
@@ -51,7 +59,7 @@ proc newScaling*(scal: float32): Scaling =
     result.inv_mat[3][3] = 1.0
 
 
-proc newScaling*(vec: Vec4f): Scaling =
+proc newScaling*(vec: Vec3f): Scaling =
     ## Procedure to define a new scaling transformation
     result.mat = [
         [vec[0], 0, 0, 0], 
@@ -146,18 +154,61 @@ proc newRotZ*(angle: float32): Rotation =
     ]
 
 
+proc id*(_: typedesc[Transformation]): Transformation {.inline} = 
+    ## Procedure to have identity transformation
+    result.mat = Mat4f.id; result.inv_mat = Mat4f.id
+
+
+#-----------------------------------------------#
+#                  Base methods                 #
+#-----------------------------------------------#   
 method apply*(T: Transformation, a: Vec4f): Vec4f {.base, inline.} = T @ a
     ## Method to apply a generic transformation
 
-method apply*(T: Scaling, a: Vec4f): Vec4f {.inline.} = 
-    ## Method to apply a scaling transformation
-    result[0] = T.mat[0][0] * a[0]; result[1] = T.mat[1][1] * a[1]; result[2] = T.mat[2][2] * a[2]; result[3] = a[3]; 
+method apply*(T: Transformation, a: Point3D): Point3D {.base, inline.} = T @ a
+    ## Method to apply a generic transformation to a Point3D
 
+method apply*(T: Transformation, a: Vec3f): Vec3f {.base, inline.} = T @ a
+    ## Method to apply a generic transformation to a Vec3f
+
+method apply*(T: Transformation, n: Normal): Normal {.base.} =
+    ## Method to apply a generic transformation to a Normal
+    # We need to pay attention here, because applying a transformation to a normal is identical 
+    # to applying it to a vector, but you need to use the transpose of the inverse matrix
+    var
+        x = n.x * T.inv_mat[0][0] + n.y * T.inv_mat[1][0] + n.z * T.inv_mat[2][0]
+        y = n.x * T.inv_mat[0][1] + n.y * T.inv_mat[1][1] + n.z * T.inv_mat[2][1]
+        z = n.x * T.inv_mat[0][2] + n.y * T.inv_mat[1][2] + n.z * T.inv_mat[2][2]
+    
+    result = newNormal(x, y, z)
+
+
+#-----------------------------------------------#
+#                Scaling methods                #
+#-----------------------------------------------#
+method apply*(T: Scaling, a: Vec4f): Vec4f {.inline.} = 
+    ## Method to perform scaling on a Vec4f
+    result = newVec4[float32](T.mat[0][0] * a[0], T.mat[1][1] * a[1], T.mat[2][2] * a[2], a[3])
+
+method apply*(T: Scaling, a: Point3D): Point3D {.inline.} = 
+    ## Method to perform scaling on a Point3D
+    result = newPoint3D(T.mat[0][0] * a.x, T.mat[1][1] * a.y, T.mat[2][2] * a.z)
+
+method apply*(T: Scaling, a: Vec3f): Vec3f {.inline.} = 
+    ## Method to perform scaling on a Vec3f
+    result = newVec3[float32](T.mat[0][0] * a[0], T.mat[1][1] * a[1], T.mat[2][2] * a[2])
+
+
+
+#-----------------------------------------------#
+#             Translation methods               #
+#-----------------------------------------------#
 method apply*(T: Translation, a: Vec4f): Vec4f =
     ## Method to apply a translation transformation
     result[0] = a[0] + T.mat[0][3] * a[3]; result[1] = a[1] + T.mat[1][3] * a[3]; 
     result[2] = a[2] + T.mat[2][3] * a[3]; result[3] = a[3];
 
-proc id*(_: typedesc[Transformation]): Transformation {.inline} = 
-    ## Procedure to have identity transformation
-    result.mat = Mat4f.id; result.inv_mat = Mat4f.id
+method apply*(T: Translation, a: Point3D): Point3D {.inline.} =
+    ## Method to apply a translation transformation to a Point3D element
+    result = newPoint3D(a.x + T.mat[0][3], a.y + T.mat[1][3], a.z + T.mat[2][3])
+

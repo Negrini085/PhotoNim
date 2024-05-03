@@ -21,7 +21,7 @@ type
 
 proc newRay*(p0: Point3D, direction: Vec3f): Ray {.inline} = 
     ## Procedure to create a new light ray
-    result.start = p0; result.dir = direction; result.tmin = 0.0; result.tmax = Inf; result.depth = 0
+    Ray(start: p0, dir: direction, tmin: 1e-5, tmax: Inf, depth: 0)
 
 proc at*(ray: Ray, time: float32): Point3D =
     ## Procedure to determine position at a certain time t
@@ -37,7 +37,7 @@ proc translateRay*(ray: Ray, vec: Vec3f): Ray =
 
 proc transformRay*(T: Transformation, ray: Ray): Ray =
     ## Procedure to translate a ray: translation transformation is given as an input
-    result.start = toPoint3D(apply(T, toVec4(ray.start))); result.dir = toVec3(apply(T, toVec4(ray.dir)))
+    result.start = apply(T, ray.start); result.dir = apply(T, ray.dir)
     result.tmin = ray.tmin; result.tmax = ray.tmax; result.depth = ray.depth
 
 
@@ -64,7 +64,7 @@ type OrthogonalCamera* = object of Camera
 
 proc newCamera*(a: float32, T = Transformation.id): OrthogonalCamera {.inline.} = 
     ## Orthogonal Camera type constructor
-    result.aspect_ratio = a; result.T = T
+    OrthogonalCamera(aspect_ratio: a, T: T)
 
 method fire_ray*(cam: OrthogonalCamera, u,v: float32): Ray {.inline.} = 
     ## Method to fire a ray with an orthogonal camera
@@ -81,7 +81,7 @@ type PerspectiveCamera* = object of Camera
 
 proc newCamera*(a, d: float32, T = Transformation.id): PerspectiveCamera {.inline.} = 
     ## Perspective Camera type constructor
-    result.aspect_ratio = a; result.distance = d; result.T = T
+    PerspectiveCamera(aspect_ratio: a, distance: d, T: T)
 
 method fire_ray*(cam: PerspectiveCamera, u,v: float32): Ray {.inline.} = 
     ## Method to fire a ray with an perspective camera
@@ -100,7 +100,7 @@ type ImageTracer* = object
 
 proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} = 
     ## ImageTracer constructor
-    result.image = im; result.camera = cam
+    ImageTracer(image: im, camera: cam)
 
 proc fire_ray*(im_tr: ImageTracer, col, row: int, u_pixel, v_pixel: float32 = 0.5): Ray =
     ## Procedure to fire a ray to a specific pixel
