@@ -69,7 +69,6 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     var
         origin = newPoint3D(0, 0, 0)
         t1, t2, t, delta_4: float32
-        radius: float32 = 1
         a, b, c: float32
         rayInv: Ray
 
@@ -85,7 +84,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     c = toVec3(rayInv.start).norm2() - 1
 
     delta_4 = pow(b, 2) - a * c
-    if delta_4 < 0: return none(HitRecord)
+    if delta_4 <= 0: return none(HitRecord)
 
     t1 = - (b + sqrt(delta_4))/a
     t2 =  (-b + sqrt(delta_4))/a
@@ -102,3 +101,27 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
 
     return some(newHitRecord(apply(sphere.T, rayInv.at(t)),apply(sphere.T, sphereNorm(rayInv.at(t), rayInv.dir)), sphere_uv(rayInv.at(t)), t, ray))
    
+
+proc fastIntersection*(sphere: Sphere, ray: Ray): bool = 
+    ## Procedure that simply states wether there is a intersection or not
+    var
+        origin = newPoint3D(0, 0, 0)
+        t1, t2, t, delta_4: float32
+        a, b, c: float32
+        rayInv: Ray
+
+    rayInv = transformRay(sphere.T.inverse(), ray)
+
+    # Checking for possible solution of the intersecation condition
+    a = rayInv.dir.norm2()
+    b = dot2(toVec3(rayInv.start), rayInv.dir)
+    c = toVec3(rayInv.start).norm2() - 1
+
+    delta_4 = pow(b, 2) - a * c
+    if delta_4 <= 0: return false
+
+    t1 = - (b + sqrt(delta_4))/a
+    t2 =  (-b + sqrt(delta_4))/a
+
+    # Time does respect the boundaries that we required on ray evolution??
+    return (rayInv.tmin < t1 and t1 < rayInv.tmax) or (rayInv.tmin < t2 and t2 < rayInv.tmax)
