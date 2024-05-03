@@ -1,5 +1,5 @@
 import common, transformations, camera, geometry
-
+import std/[math, options]
 
 #-------------------------------#
 #        Hit Record Type        #
@@ -28,15 +28,27 @@ proc areClose*(hit1, hit2: HitRecord): bool {.inline.} =
 type Shape* = object of RootObj
     T*: Transformation
 
-method intersectionRay(shape: Shape, ray: Ray): HitRecord {.base} =
+method intersectionRay(shape: Shape, ray: Ray): Option[HitRecord] {.base} =
     ## Base procedure to compute ray intersection with a generic shape
     quit "to overload"
-    
 
 type
     Sphere* = object of Shape
     Plane* = object of Shape
 
+
+#-------------------------------------------#
+#        Sphere methods and procedure       #
+#-------------------------------------------#
 proc newSphere*(T: Transformation): Sphere {.inline.} = 
     ## Sphere object constructor
     result.T = T
+
+proc sphereNorm*(p: Point3D, dir: Vec3f): Normal = 
+    ## Procedure to compute normal on a surface point
+    # Considering that we are working with an unitary sphere, we can simply use the point coordinates in order to 
+    # compute the normal. We than just have to chose the direction: we will use the value of the dot product with ray direction
+    # as a decisive criterium.
+    result = newNormal(p.x, p.y, p.z)
+    if dot2(toVec3(result), dir) > 0:
+        result = -result
