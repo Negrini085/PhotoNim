@@ -59,7 +59,7 @@ proc newScaling*(scal: float32): Scaling =
     result.inv_mat[3][3] = 1.0
 
 
-proc newScaling*(vec: Vec4f): Scaling =
+proc newScaling*(vec: Vec3f): Scaling =
     ## Procedure to define a new scaling transformation
     result.mat = [
         [vec[0], 0, 0, 0], 
