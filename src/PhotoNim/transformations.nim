@@ -154,18 +154,51 @@ proc newRotZ*(angle: float32): Rotation =
     ]
 
 
+proc id*(_: typedesc[Transformation]): Transformation {.inline} = 
+    ## Procedure to have identity transformation
+    result.mat = Mat4f.id; result.inv_mat = Mat4f.id
+
+
+#-----------------------------------------------#
+#                  Base methods                 #
+#-----------------------------------------------#   
 method apply*(T: Transformation, a: Vec4f): Vec4f {.base, inline.} = T @ a
     ## Method to apply a generic transformation
 
-method apply*(T: Scaling, a: Vec4f): Vec4f {.inline.} = 
-    ## Method to apply a scaling transformation
-    result[0] = T.mat[0][0] * a[0]; result[1] = T.mat[1][1] * a[1]; result[2] = T.mat[2][2] * a[2]; result[3] = a[3]; 
+method apply*(T: Transformation, a: Point3D): Point3D {.base, inline.} = T @ a
+    ## Method to apply a generic transformation to a Point3D
 
+method apply*(T: Transformation, a: Vec3f): Vec3f {.base, inline.} = T @ a
+    ## Method to apply a generic transformation to a Vec3f
+
+
+
+#-----------------------------------------------#
+#                Scaling methods                #
+#-----------------------------------------------#
+method apply*(T: Scaling, a: Vec4f): Vec4f {.inline.} = 
+    ## Method to perform scaling on a Vec4f
+    result = newVec4[float32](T.mat[0][0] * a[0], T.mat[1][1] * a[1], T.mat[2][2] * a[2], a[3])
+
+method apply*(T: Scaling, a: Point3D): Point3D {.inline.} = 
+    ## Method to perform scaling on a Point3D
+    result = newPoint3D(T.mat[0][0] * a.x, T.mat[1][1] * a.y, T.mat[2][2] * a.z)
+
+method apply*(T: Scaling, a: Vec3f): Vec3f {.inline.} = 
+    ## Method to perform scaling on a Vec3f
+    result = newVec3[float32](T.mat[0][0] * a[0], T.mat[1][1] * a[1], T.mat[2][2] * a[2])
+
+
+
+#-----------------------------------------------#
+#             Translation methods               #
+#-----------------------------------------------#
 method apply*(T: Translation, a: Vec4f): Vec4f =
     ## Method to apply a translation transformation
     result[0] = a[0] + T.mat[0][3] * a[3]; result[1] = a[1] + T.mat[1][3] * a[3]; 
     result[2] = a[2] + T.mat[2][3] * a[3]; result[3] = a[3];
 
-proc id*(_: typedesc[Transformation]): Transformation {.inline} = 
-    ## Procedure to have identity transformation
-    result.mat = Mat4f.id; result.inv_mat = Mat4f.id
+method apply*(T: Translation, a: Point3D): Point3D {.inline.} =
+    ## Method to apply a translation transformation to a Point3D element
+    result = newPoint3D(a.x + T.mat[0][3], a.y + T.mat[1][3], a.z + T.mat[2][3])
+
