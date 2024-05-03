@@ -84,6 +84,20 @@ suite "Transformation tests":
         # Testing apply procedure
         check  areClose(t1 @ p1, newVec3[float32](0, 0, 0))
         check  areClose(t1 @ p2, newVec3[float32](1, 2, 3))
+    
+
+    test "Transformaion on Normal":
+        var
+            n1 = newNormal(0, 0, 0)
+            n2 = newNormal(1, 0, 0)
+            n3 = newNormal(0, 3/5, 4/5)
+            m1: Mat4f = [[1, 0, 0, 0], [0, 4/5, -3/5, 0], [0, 3/5, 4/5, 0], [0, 0, 0, 1]]
+            m2: Mat4f = [[1, 0, 0, 0], [0, 4/5, 3/5, 0], [0, -3/5, 4/5, 0], [0, 0, 0, 1]]
+            t: Transformation = newTransformation(m1, m2)
+
+        check  areClose(apply(t1, n1), newNormal(0, 0, 0))
+        check  areClose(apply(t1, n2), newNormal(1, 0, 0))
+        check  areClose(apply(t, n3), newNormal(0, 0, 1))
 
 
     test "Transformation mult/div by scalar":
