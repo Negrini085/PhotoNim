@@ -67,9 +67,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     # We can obtain every kind of sphere and even ellipsoids using specific transformations
 
     var
-        origin = newPoint3D(0, 0, 0)
         t1, t2, t, delta_4: float32
-        radius: float32 = 1
         a, b, c: float32
         rayInv: Ray
 
@@ -106,8 +104,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
 proc fastIntersection*(sphere: Sphere, ray: Ray): bool = 
     ## Procedure that simply states wether there is a intersection or not
     var
-        origin = newPoint3D(0, 0, 0)
-        t1, t2, t, delta_4: float32
+        t1, t2, delta_4: float32
         a, b, c: float32
         rayInv: Ray
 
@@ -135,3 +132,26 @@ proc fastIntersection*(sphere: Sphere, ray: Ray): bool =
 proc newPlane*(T: Transformation): Plane {.inline.} = 
     ## Plane constructor
     result.T = T
+
+
+method intersectionRay*(plane: Plane, ray: Ray): Option[HitRecord] =
+    ## Method to detect a ray - plane intersection
+    # Here we want to treat a plane which is described by z = 0: clearly every possible plane can 
+    # be created via wisely applied transformations 
+
+    var
+        t: float32
+        int_point: Point3D
+        inv_ray = transformRay(plane.T, ray)
+    
+    # We have applied the required inverse transformation on ray: we don't want to consider those
+    # rays which are almost parallel to the plane. We will have to check the value of direction z coordinate.
+    if abs(inv_ray.dir[2]) < 1e-5: return none(HitRecord)
+
+    # We can now compute when the intersection event occours and check wether 
+    # it if it belongs to the time interval of our interest
+    t = - inv_ray.start.z/inv_ray.dir[2]
+    if t < inv_ray.tmin or t > inv_ray.tmax: return none(HitRecord)
+
+    int_point = inv_ray.at(t)
+    return some(newHitRecord(apply(plane.T, int_point), apply(plane.T, newNormal(0, 0, if inv_ray.dir[2]<0: 1 else: -1)), newVec2[float32](int_point.x - floor(int_point.x), int_point.y - floor(int_point.y)), t, ray))
