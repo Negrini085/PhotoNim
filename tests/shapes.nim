@@ -146,3 +146,25 @@ suite "Plane":
 
         check areClose(plane.T.mat, Mat4f.id)
         check areClose(plane.T.inv_mat, Mat4f.id)
+
+    
+    test "RayIntersection: no transformation":
+        # Checking ray intersection procedure on plane: no trasformation is performed
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
+            ray2 = newRay(newPoint3D(1, -2, -3), newVec3[float32](0, 4/5, 3/5))
+            ray3 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
+
+        check areClose(plane.intersectionRay(ray1).get().world_point, newPoint3D(0, 0, 0))
+        check areClose(plane.intersectionRay(ray1).get().normal, newNormal(0, 0, 1))
+        check areClose(plane.intersectionRay(ray1).get().t, 2)
+        check areClose(plane.intersectionRay(ray1).get().uv, newVec2[float32](0, 0))
+
+        check areClose(plane.intersectionRay(ray2).get().world_point, newPoint3D(1, 2, 0))
+        check areClose(plane.intersectionRay(ray2).get().normal, newNormal(0, 0, -1))
+        check areClose(plane.intersectionRay(ray2).get().t, 5)
+        check areClose(plane.intersectionRay(ray2).get().uv, newVec2[float32](0, 0))
+
+        check not plane.intersectionRay(ray3).isSome
+
+    
