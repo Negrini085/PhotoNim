@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(Plane)* Add plane fast intersection method
+- *(Plane)* Add intersectionRay method
+- *(Plane)* Add plane constructor
+- *(Sphere)* Add fastIntersection procedure to check wether an intersection could happen or not
+- *(Sphere)* Add checking
+- *(Sphere)* Add procedure to compute intersection
+- *(Transformation)* Add Normal transformation base method
+- *(Sphere)* Add (u, v) coordinates computation
+- *(Sphere)* Add Normal computation procedure
+- *(Transformations)* Add apply methods for Point3D and Vec3f type
+- *(Transformation)* Add @ overloading, now we can apply transformations to Point3D and Vec3f
+- *(Shapes)* NewSphere procedure
+- *(Shapes)* Add Shape abstract type and base method intersectionRay
+- *(HitRecord)* Add areClose procedure
+- *(HitRecord)* Add newHitRecord procedure
+- *(HitRecord)* Add areClose procedure
+- *(HitRecord)* Add HitRecord type
 - *(Transformation)* Add identity transformation procedure
 - *(ImageTracer)* Add fire all ray procedure
 - *(ImageTracer)* Add fire_ray ImageTracer procedure
@@ -65,6 +82,15 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- Change constructor porcedure
+- *(Plane)* Correct intersectionRay procedure, now using inverse transform on ray
+- *(Ray)* Change ray transform procedure
+- *(Sphere)* Make sphere.intersectionRay procedure public
+- *(Sphere)* Correct sphere_uv implementation
+- *(Transformations)* Change Scaling constructor
+- *(Transformation)* Changed return types of @ operator
+- *(HitRecordTest)* Changed newHitRecord procedure test
+- *(HitRecordTest)* Change HitRecord constructor test
 - *(ImageTracerTest)* Add correct orientation test
 - *(ImageTracer)* Correct index choice
 - *(ImageTracerTest)* Divide in two tests
@@ -97,6 +123,23 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(Plane)* Add fast intersection test
+- *(Plane)* Add intersectionRay test module 2
+- *(Plane)* Add intersectionRay procedure first module test
+- *(Plane)* Add new plane constructor
+- *(Sphere)* Add fastIntersection procedure check
+- *(Sphere)* Add intersectionRay test module 2
+- *(Sphere)* Add first module intersectionRay procedure test
+- *(Transformations)* Add Normal transformation base method
+- *(Sphere)* Add (u, v) coordinates computation test
+- *(Sphere)* Add Sphere Normal procedure test
+- *(Transformations)* Add last needed test for transformation application
+- *(Scaling)* Add new scaling application on Vec4f test
+- *(Transformations)* Add apply base method tests
+- *(Trasformations)* Add new overload @ tests
+- *(Shapes)* Add newSphere procedure test
+- *(HitRecord)* Add areClose procedure test
+- *(HitRecord)* Add newHitRecord procedure test
 - *(ImageTracer)* Add image orientation test
 - *(ImageTracer)* Add ImageTracer type test
 - *(Camera)* Change orthogonal camera fire ray procedure test
