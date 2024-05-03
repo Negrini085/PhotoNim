@@ -69,6 +69,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     var
         origin = newPoint3D(0, 0, 0)
         t1, t2, t, delta_4: float32
+        radius: float32 = 1
         a, b, c: float32
         rayInv: Ray
 
@@ -84,7 +85,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     c = toVec3(rayInv.start).norm2() - 1
 
     delta_4 = pow(b, 2) - a * c
-    if delta_4 <= 0: return none(HitRecord)
+    if delta_4 < 0: return none(HitRecord)
 
     t1 = - (b + sqrt(delta_4))/a
     t2 =  (-b + sqrt(delta_4))/a
@@ -100,7 +101,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
         return none(HitRecord)
 
     return some(newHitRecord(apply(sphere.T, rayInv.at(t)),apply(sphere.T, sphereNorm(rayInv.at(t), rayInv.dir)), sphere_uv(rayInv.at(t)), t, ray))
-   
+
 
 proc fastIntersection*(sphere: Sphere, ray: Ray): bool = 
     ## Procedure that simply states wether there is a intersection or not
