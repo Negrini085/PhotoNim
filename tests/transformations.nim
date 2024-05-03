@@ -107,19 +107,37 @@ suite "Transformation tests":
 
 suite "Derived Transformation test":
 
-    test "Scaling":
+    setup:
         var
-            t: Scaling = newScaling(2)
-            vec: Vec4f = newVec4[float32](1, 2, 3, 1)
-        
-        check t.is_consistent()
-        check areClose(t @ vec, newVec4[float32](2, 4, 6, 1))
-        check areClose(t.apply(vec), newVec4[float32](2, 4, 6, 1))
+            t1: Scaling = newScaling(2)
+            t2: Scaling = newScaling(newVec3[float32](1, 2, 3))
 
-        t = newScaling(vec)
-        check t.is_consistent()
-        check areClose(t @ vec, newVec4[float32](1, 4, 9, 1))
-        check areClose(t.apply(vec), newVec4[float32](1, 4, 9, 1))
+
+    test "Scaling of Vec4f":
+        # Checking scaling of a Vec4f object
+        var vec: Vec4f = newVec4[float32](1, 2, 3, 1)
+        
+        check t1.is_consistent()
+        check areClose(t1 @ vec, newVec4[float32](2, 4, 6, 1))
+        check areClose(t1.apply(vec), newVec4[float32](2, 4, 6, 1))
+
+        check t2.is_consistent()
+        check areClose(t2 @ vec, newVec4[float32](1, 4, 9, 1))
+        check areClose(t2.apply(vec), newVec4[float32](1, 4, 9, 1))
+    
+
+    test "Scaling of Point3D":
+        # Checking scaling of a Point3D object
+        var p = newPoint3D(0, 3, 1)
+        
+        check t1.is_consistent()
+        check areClose(t1 @ p, newPoint3D(0, 6, 2))
+        check areClose(t1.apply(p), newPoint3D(0, 6, 2))
+
+        check t2.is_consistent()
+        check areClose(t2 @ p, newPoint3D(0, 6, 3))
+        check areClose(t2.apply(p), newPoint3D(0, 6, 3))
+
 
     test "Translation":
         var
@@ -134,6 +152,7 @@ suite "Derived Transformation test":
 
         check areClose(t.apply(vec), vec)
         check areClose(t.apply(point), newVec4[float32](3, 4, 4, 1))
+
 
     test "Rotation":
         var
