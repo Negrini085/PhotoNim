@@ -7,7 +7,42 @@ from std/sequtils import apply, map
 from std/math import sum, pow, log10
 from std/fenv import epsilon
 
-import color
+import geometry
+
+## =================================================
+## Color Type
+## =================================================
+
+type
+    Color* {.borrow: `.`.} = distinct Vec3f
+
+proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
+
+proc r*(a: Color): float32 {.inline.} = a.Vec3f[0]
+proc g*(a: Color): float32 {.inline.} = a.Vec3f[1]
+proc b*(a: Color): float32 {.inline.} = a.Vec3f[2]
+
+proc toVec*(a: Color): Vec3f {.inline.} = newVec3(a.r, a.g, a.b)
+
+proc `$`*(a: Color): string {.inline.} = "<" & $a.r & " " & $a.g & " " & $a.b & ">"
+
+
+proc `==`*(a, b: Color): bool {.borrow.}
+proc areClose*(a, b: Color): bool {.borrow.}
+
+proc `+`*(a, b: Color): Color {.borrow.}
+proc `+=`*(a: var Color, b: Color) {.borrow.}
+
+proc `-`*(a, b: Color): Color {.borrow.}
+proc `-=`*(a: var Color, b: Color) {.borrow.}
+
+proc `*`*(a: Color, b: float32): Color {.borrow.}
+proc `*`*(a: float32, b: Color): Color {.borrow.}
+proc `*=`*(a: var Color, b: float32) {.borrow.}
+
+proc `/`*(a: Color, b: float32): Color {.borrow.}
+proc `/=`*(a: var Color, b: float32) {.borrow.}
+
 
 ## =================================================
 ## HdrImage Type

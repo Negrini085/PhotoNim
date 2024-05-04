@@ -1,5 +1,5 @@
 import std/[unittest, math]
-import PhotoNim/[transformations, common, geometry, camera, hdrimage, color]
+import PhotoNim/[geometry, camera, hdrimage]
 
 #----------------------------------#
 #          Ray type tests          #
@@ -165,9 +165,9 @@ suite "ImageTracer":
         check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
 
 
-    test "ImageTracer fire_all_ray":
+    test "ImageTracer fire_all_rays":
 
-        im_tr.fire_all_ray()
+        im_tr.fire_all_rays()
 
         for i in 0..<im_tr.image.height:
             for j in 0..<im_tr.image.width:

@@ -1,4 +1,4 @@
-import PhotoNim/[color, hdrimage]
+import PhotoNim/[geometry, hdrimage, camera]
 
 import docopt
 from nimPNG import savePNG24

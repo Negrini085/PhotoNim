@@ -1,5 +1,5 @@
 import std/[unittest, math, options]
-import PhotoNim/[shapes, geometry, camera, common, transformations]
+import PhotoNim/[shapes, geometry, camera]
 
 #---------------------------------------#
 #         Hit Record type tests         #

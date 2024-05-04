@@ -1,12 +1,7 @@
-import std/math
-
-import color
-import common
 import geometry
 import hdrimage
-import transformations
 
-const vec_ex*: Vec3f = newVec3[float32](1, 0, 0)
+const eX*: Vec3f = newVec3[float32](1, 0, 0)
 
 #--------------------------------------#
 #        Ray type implementation       # 
@@ -68,7 +63,7 @@ proc newCamera*(a: float32, T = Transformation.id): OrthogonalCamera {.inline.} 
 
 method fire_ray*(cam: OrthogonalCamera, u,v: float32): Ray {.inline.} = 
     ## Method to fire a ray with an orthogonal camera
-    result = transformRay(cam.T, newRay(newPoint3D(-1, (1 - 2 * u) * cam.aspect_ratio, 2 * v - 1), vec_ex))
+    result = transformRay(cam.T, newRay(newPoint3D(-1, (1 - 2 * u) * cam.aspect_ratio, 2 * v - 1), eX))
 
 
 
@@ -102,7 +97,7 @@ proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} =
     ## ImageTracer constructor
     ImageTracer(image: im, camera: cam)
 
-proc fire_ray*(im_tr: ImageTracer, col, row: int, u_pixel, v_pixel: float32 = 0.5): Ray =
+proc fire_ray*(im_tr: ImageTracer, col, row: int, u_pixel: float32 = 0.5, v_pixel: float32 = 0.5): Ray =
     ## Procedure to fire a ray to a specific pixel
     var
         u: float32 = (float32(col) + u_pixel)/float32(im_tr.image.width)
@@ -110,7 +105,7 @@ proc fire_ray*(im_tr: ImageTracer, col, row: int, u_pixel, v_pixel: float32 = 0.
     
     result = im_tr.camera.fire_ray(u, v)
 
-proc fire_all_ray*(im_tr: var ImageTracer) = 
+proc fire_all_rays*(im_tr: var ImageTracer) = 
     ## Procedure to fire all ray needed to create image
     var appo: Ray
     for i in 0..<im_tr.image.height:
