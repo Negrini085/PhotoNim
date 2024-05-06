@@ -1,10 +1,6 @@
 import std/unittest
 
-from PhotoNim/geometry import 
-    `+`, `-`, `*`, `/`, `+=`, `-=`, `*=`, `/=`, areClose,
-    Vec, newVec, newVec2, newVec3, newVec4,
-    Mat, newMat, newMat2, newMat3, newMat4,
-    cross, dot, dot2, norm, norm2, dist2, normalize
+import PhotoNim/geometry
 
 
 suite "Vec unittest":
@@ -47,11 +43,11 @@ suite "Vec unittest":
         check a[0] == 1.0 and a[1] == 2.0 and a[2] == -3.0
 
 
-    test "`+` binary proc":
+    test "`+` proc":
         let result = x + y
         check result[0] == 4.0 and result[1] == 6.0
 
-    test "`-` binary proc":
+    test "`-` proc":
         let result = x - y
         check result[0] == -2.0 and result[1] == -2.0
 
@@ -59,13 +55,13 @@ suite "Vec unittest":
         let result = -y
         check result[0] == -3.0 and result[1] == -4.0
 
-    test "`*` binary proc":
+    test "`*` proc":
         let result1 = 2.0 * x
         let result2 = x * 2.0
         check result1 == result2
         check result1[0] == 2.0 and result1[1] == 4.0
 
-    test "`/` binary proc":
+    test "`/` proc":
         let result = y / 2.0
         check result[0] == 1.5 and result[1] == 2.0
 
@@ -112,6 +108,26 @@ suite "Vec unittest":
         check a.norm == 1.0
         check areClose(a[0], 0.6) and areClose(a[1], 0.8)
 
+suite "distinct Vec unittest":
+
+    setup:
+        let 
+            p2 = newPoint2D(1.0, 20.0)
+            p3 = newPoint3D(-2.5, 1.0, 20.0)
+
+    teardown:
+        discard p2; discard p3
+
+    test "xyz access proc":
+        check p2.x == 1.0 and p2.y == 20.0
+        
+    test "toPoint3D proc":
+        check p3.Vec3f is Vec3f
+        check newVec3(float32 0.01, 0.02, 0.03).toPoint3D is Point3D
+
+    test "`$` proc":
+        check $p2 == "(1.0, 20.0)"
+
 
 suite "Mat unittest":
     echo "Testing the `Mat` type and its procedures."
@@ -140,6 +156,7 @@ suite "Mat unittest":
 
     test "`[]` access proc":
         check x[0][0] == 1.0 and x[1][0] == 3.0 and y[1][1] == 8.0
+        check x[0] == [1.0, 2.0]
 
     test "`[]=` assign proc": 
         var a = x
@@ -190,4 +207,9 @@ suite "Mat unittest":
 
 
     test "dot proc":
-        echo dot(x, y)
+        echo "to implement doc proc"
+
+    test "T proc":
+        # check x.T == newMat2([1.0, 3.0], [2.0, 4.0])    
+        check [[float32 1.0, 2.0, 3.0]].T is Vec3f
+        check [float32 1.0, 2.0, 3.0].T is Mat[1, 3, float32]

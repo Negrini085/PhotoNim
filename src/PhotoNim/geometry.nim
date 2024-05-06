@@ -1,5 +1,6 @@
-from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, PI, degToRad
+from std/strformat import fmt
 from std/fenv import epsilon
+from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI
 
 type 
     Vec*[N: static[int], V] = array[N, V]
@@ -80,6 +81,73 @@ proc dist*[N: static[int], V](`from`, to: Vec[N, V]): float32 {.inline.} = (`fro
 proc normalize*[N: static[int], V](a: Vec[N, V]): Vec[N, V] {.inline.} = a / a.norm
 proc dir*[N: static[int], V](at, to: Vec[N, V]): Vec[N, V] {.inline.} = (at - to).normalize
 
+proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
+
+proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 
+    for i in 0..<N: 
+        if not areClose(a[i], b[i], eps): return false
+
+
+type
+    Point2D* {.borrow: `.`.} = distinct Vec2f
+    Point3D* {.borrow: `.`.} = distinct Vec3f
+    Normal* {.borrow: `.`.} = distinct Vec3f
+
+proc newPoint2D*(x, y: float32): Point2D {.inline.} = Point2D([x, y]) 
+proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
+proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z])
+
+proc x*(a: Point2D): float32 {.inline.} = a.Vec2f[0]
+proc y*(a: Point2D): float32 {.inline.} = a.Vec2f[1]
+
+proc x*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[0]
+proc y*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[1]
+proc z*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[2]
+
+proc `==`*(a, b: Point2D): bool {.borrow.}
+proc `==`*(a, b: Point3D): bool {.borrow.}
+proc `==`*(a, b: Normal): bool {.borrow.}
+
+proc areClose*(a, b: Point2D; eps: float32 = epsilon(float32)): bool {.borrow.}
+proc areClose*(a, b: Point3D; eps: float32 = epsilon(float32)): bool {.borrow.}
+proc areClose*(a, b: Normal; eps: float32 = epsilon(float32)): bool {.borrow.}
+
+proc `-`*(a, b: Point2D): Point2D {.borrow.}
+proc `-`*(a, b: Point3D): Point3D {.borrow.}
+
+proc `-`*(a: Normal): Normal {.borrow.}
+proc `*`*(a: Normal, b: float32): Normal {.borrow.}
+proc `*`*(a: float32, b: Normal): Normal {.borrow.}
+
+proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.x + b[0], a.y + b[1])
+proc `+`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] + b.x, a[1] + b.y)
+proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
+proc `+`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] + b.x, a[1] + b.y, a[2] + b.z)
+
+proc `-`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.x - b[0], a.y - b[1])
+proc `-`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] - b.x, a[1] - b.y)
+proc `-`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x - b[0], a.y - b[1], a.z - b[2])
+proc `-`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] - b.x, a[1] - b.y, a[2] - b.z)
+
+proc norm2*(a: Normal): float32 {.borrow.}    
+proc norm*(a: Normal): float32 {.borrow.}    
+proc normalize*(a: Normal): Normal {.borrow.}
+proc dist2*(a, b: Point2D): float32 {.borrow.}    
+proc dist2*(a, b: Point3D): float32 {.borrow.}    
+proc dist*(a, b: Point2D): float32 {.borrow.}    
+proc dist*(a, b: Point3D): float32 {.borrow.}
+
+proc `$`*(p: Point2D): string {.inline.} = fmt"({p.x}, {p.y})"
+proc `$`*(p: Point3D): string {.inline.} = fmt"({p.x}, {p.y}, {p.z})"
+proc `$`*(n: Normal): string {.inline.} = fmt"<{n.x}, {n.y}, {n.z}>"
+
+proc toVec4*(a: Point3D): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 1.0)
+proc toVec4*(a: Normal): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 0.0)
+proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
+
+proc toPoint3D*(a: Vec3f | Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
+proc toNormal*(a: Vec3f | Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
+proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3[float32](a[0], a[1], a[2])
 
 
 type
@@ -154,116 +222,42 @@ proc id*[N: static[int], V](_: typedesc[SQMat[N, V]]): SQMat[N, V] {.inline.} =
     for i in 0..<N: result[i][i] = V(1)
 
 
-proc T*[M, N: static[int], V](mat: Mat[M, N, V]): Mat[N, M, V] =
-    for i in 0..<M:
-        for j in 0..<N: result[j][i] = mat[i][j]
+proc T*[N: static[int], V](mat: Mat[1, N, V]): Vec[N, V] {.inline.} = mat[0]
+proc T*[N: static[int], V](vec: Vec[N, V]): Mat[1, N, V] {.inline.} = result[0] = vec
 
-proc T*[N: static[int], V](vec: Vec[N, V]): Mat[1, N, V] =
-    for i in 0..<N: result[0][i] = vec[i]
-
-proc T*[N: static[int], V](mat: Mat[1, N, V]): Vec[N, V] = 
-    for i in 0..<N: result[i] = mat[0][i]
+# proc T*[M, N: static[int], V](mat: Mat[M, N, V]): Mat[N, M, V] =
+#     for j in 0..<N:
+#         for i in 0..<M: result[j][i] = mat[i][j]
 
 
-proc dot*[M, N, P: static[int], T](a: Mat[M, N, T], b: Mat[N, P, T]): Mat[M, P, T] =
+proc dot*[M, N, P: static[int], V](a: Mat[M, N, V], b: Mat[N, P, V]): Mat[M, P, V] =
     for i in 0..<M:
         for j in 0..<P:
             for k in 0..<N: result[i][j] += a[i][k] * b[k][j]
 
-proc dot*[M, N: static[int], T](a: Mat[M, N, T], b: Vec[N, T]): Vec[M, T] =
+proc dot*[M, N: static[int], V](a: Mat[M, N, V], b: Vec[N, V]): Vec[M, V] =
     for i in 0..<M:
         for j in 0..<N: result[i] += a[i][j] * b[j]
 
-proc dot*[T](a: Mat4[T], b: Vec3[T]): Vec3[T] =
+proc dot*[M, N: static[int], V](a: Vec[M, V], b: Mat[M, N, V]): Mat[1, N, V] {.inline.} = dot(a.T, b)
+
+proc dot*[V](a: Mat4[V], b: Vec3[V]): Vec3[V] =
     for i in 0..<3:
         for j in 0..<3: result[i] += a[i][j] * b[j]
 
-proc dot*[M, N: static[int], T](a: Vec[M, T], b: Mat[M, N, T]): Vec[N, T] = dot(a.T, b)
-
-proc dot*[T](a: Vec3[T], b: Mat4[T]): Vec3[T] =
+proc dot*[V](a: Vec3[V], b: Mat4[V]): Mat[1, 3, V] =
     for i in 0..<3:
-        for j in 0..<3: result[i] += a[i] * b[j][i]
+        for j in 0..<3: result[i] += a[i][j] * b[j]
+
+# proc dot*[V](a: Vec3[V], b: Mat4[V]): Vec3[V] =
+#     for i in 0..<3:
+#         for j in 0..<3: result[i] += a[i] * b[j][i]
 
 
-proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
-
-proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 
-    for i in 0..<N: 
-        if not areClose(a[i], b[i], eps): return false
-
-proc areClose*[M, N: static[int], T](a, b: Mat[M, N, T]; eps: float32 = epsilon(float32)): bool = 
+proc areClose*[M, N: static[int], V](a, b: Mat[M, N, V]; eps: V = epsilon(V)): bool = 
     for i in 0..<M: 
         for j in 0..<N:
             if not areClose(a[i][j], b[i][j], eps): return false
-
-
-
-## =================================================
-## Point2D, Point3D and Normal Type
-## =================================================
-
-type
-    Point2D* {.borrow: `.`.} = distinct Vec2f
-    Point3D* {.borrow: `.`.} = distinct Vec3f
-    Normal* {.borrow: `.`.} = distinct Vec3f
-
-proc newPoint2D*(x, y: float32): Point2D {.inline.} = Point2D([x, y]) 
-proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
-proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z])
-
-proc x*(a: Point2D): float32 {.inline.} = a.Vec2f[0]
-proc y*(a: Point2D): float32 {.inline.} = a.Vec2f[1]
-
-proc x*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[0]
-proc y*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[1]
-proc z*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[2]
-
-proc toVec2*(a: Point2D): Vec2f {.inline.} = newVec2(a.x, a.y)
-proc toVec3*(a: Point3D | Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
-proc toVec4*(a: Point3D): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 1.0)
-proc toVec4*(a: Normal): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 0.0)
-proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
-
-proc toPoint3D*(a: Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
-proc toNormal*(a: Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
-proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3[float32](a[0], a[1], a[2])
-
-proc `$`*(a: Point2D): string {.borrow.}
-proc `$`*(a: Point3D): string {.borrow.}
-proc `$`*(a: Normal): string {.borrow.}
-
-proc `==`*(a, b: Point2D): bool {.borrow.}
-proc `==`*(a, b: Point3D): bool {.borrow.}
-proc `==`*(a, b: Normal): bool {.borrow.}
-
-proc areClose*(a, b: Point2D; eps: float32 = epsilon(float32)): bool {.borrow.}
-proc areClose*(a, b: Point3D; eps: float32 = epsilon(float32)): bool {.borrow.}
-proc areClose*(a, b: Normal; eps: float32 = epsilon(float32)): bool {.borrow.}
-
-proc `-`*(a, b: Point2D): Point2D {.borrow.}
-proc `-`*(a, b: Point3D): Point3D {.borrow.}
-
-proc `-`*(a: Normal): Normal {.borrow.}
-proc `*`*(a: Normal, b: float32): Normal {.borrow.}
-proc `*`*(a: float32, b: Normal): Normal {.borrow.}
-
-proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.x + b[0], a.y + b[1])
-proc `+`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] + b.x, a[1] + b.y)
-proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
-proc `+`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] + b.x, a[1] + b.y, a[2] + b.z)
-
-proc `-`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.x - b[0], a.y - b[1])
-proc `-`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] - b.x, a[1] - b.y)
-proc `-`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x - b[0], a.y - b[1], a.z - b[2])
-proc `-`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] - b.x, a[1] - b.y, a[2] - b.z)
-
-proc norm2*(a: Normal): float32 {.borrow.}    
-proc norm*(a: Normal): float32 {.borrow.}    
-proc normalize*(a: Normal): Normal {.borrow.}
-proc dist2*(a, b: Point2D): float32 {.borrow.}    
-proc dist2*(a, b: Point3D): float32 {.borrow.}    
-proc dist*(a, b: Point2D): float32 {.borrow.}    
-proc dist*(a, b: Point3D): float32 {.borrow.}
 
 
 type Transformation* = object of RootObj
@@ -272,24 +266,26 @@ type Transformation* = object of RootObj
 
 
 proc newTransformation*(mat, inv_mat: Mat4f): Transformation = 
-    ## New transformation constructor
-    assert areClose(dot(mat, inv_mat), Mat4f.id), "Invalid Transfomation! To create a new Transformation please provide the transformation matrix and its inverse."
+    assert areClose(dot(mat, inv_mat), Mat4f.id), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
     (result.mat, result.inv_mat) = (mat, inv_mat)
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline} = newTransformation(Mat4f.id, Mat4f.id)
 
 
-method apply*(trasf: Transformation, vec: Vec4f): Vec4f {.base, inline.} = dot(trasf.mat, vec)
+method apply*(trasf: Transformation, vec: Vec4f): Vec4f {.base, inline.} = dot(trasf.mat, vec) 
 method apply*(trasf: Transformation, vec: Vec3f): Vec3f {.base, inline.} = dot(trasf.mat, vec)
-method apply*(trasf: Transformation, pt: Point3D): Point3D {.base, inline.} = toPoint3D(dot(trasf.mat, toVec4(pt)))
-method apply*(trasf: Transformation, n: Normal): Normal {.base, inline.} = Normal(dot(toVec3(n), trasf.inv_mat))
-    # ## Method to apply a generic transformation to a Normal by multiply the transpose of the inverse matrix
-    # var
-    #     x = n.x * T.inv_mat[0][0] + n.y * T.inv_mat[1][0] + n.z * T.inv_mat[2][0]
-    #     y = n.x * T.inv_mat[0][1] + n.y * T.inv_mat[1][1] + n.z * T.inv_mat[2][1]
-    #     z = n.x * T.inv_mat[0][2] + n.y * T.inv_mat[1][2] + n.z * T.inv_mat[2][2]
-    
-    # result = newNormal(x, y, z)
+
+## Here toVec4 is to substitute with two specific dot prod between Mat4 and Vec3 and viceversa
+method apply*(trasf: Transformation, pt: Point3D): Point3D {.base, inline.} = dot(trasf.mat, pt.toVec4).toPoint3D
+method apply*(trasf: Transformation, n: Normal): Normal {.base, inline.} = (dot(n.toVec4, trasf.inv_mat).T).toNormal
+
+# ## Method to apply a generic transformation to a Normal by multiply the transpose of the inverse matrix
+# var
+#     x = n.x * T.inv_mat[0][0] + n.y * T.inv_mat[1][0] + n.z * T.inv_mat[2][0]
+#     y = n.x * T.inv_mat[0][1] + n.y * T.inv_mat[1][1] + n.z * T.inv_mat[2][1]
+#     z = n.x * T.inv_mat[0][2] + n.y * T.inv_mat[1][2] + n.z * T.inv_mat[2][2]
+
+# result = newNormal(x, y, z)
 
 
 proc `*`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat * scal)
@@ -303,13 +299,10 @@ proc `@`*(a, b: Transformation): Transformation =
     result.inv_mat = dot(b.inv_mat, a.inv_mat)
     
 proc inverse*(transf: Transformation): Transformation {.inline.} =
-    result.mat = transf.inv_mat; result.inv_mat = transf.mat
+    (result.mat, result.inv_mat) = (transf.inv_mat, transf.mat)
 
 
-
-type Translation* = object of Transformation
 type Scaling* = object of Transformation
-type Rotation* = object of Transformation
 
 proc newScaling*(factor: float32): Scaling =
     result.mat = Mat4f.id * factor
@@ -318,101 +311,19 @@ proc newScaling*(factor: float32): Scaling =
     result.inv_mat[3][3] = 1.0
 
 
-proc newScaling*(vec: Vec3f): Scaling =
+proc newScaling*(v: Vec3f): Scaling =
     result.mat = [
-        [vec[0], 0, 0, 0], 
-        [0, vec[1], 0, 0], 
-        [0, 0, vec[2], 0], 
-        [0, 0, 0, 1]
+        [v[0], 0.0, 0.0, 0.0], 
+        [0.0, v[1], 0.0, 0.0], 
+        [0.0, 0.0, v[2], 0.0], 
+        [0.0, 0.0,  0.0, 1.0]
     ]
     result.inv_mat = [
-        [1/vec[0], 0, 0, 0], 
-        [0, 1/vec[1], 0, 0], 
-        [0, 0, 1/vec[2], 0], 
-        [0, 0, 0, 1]   
+        [1/v[0], 0.0, 0.0, 0.0], 
+        [0.0, 1/v[1], 0.0, 0.0], 
+        [0.0, 0.0, 1/v[2], 0.0], 
+        [0.0,  0.0,  0.0,  1.0]   
     ]
-
-
-proc newTranslation*(v: Vec3f): Translation  = 
-    result.mat = [
-        [1, 0, 0, v[0]], 
-        [0, 1, 0, v[1]], 
-        [0, 0, 1, v[2]], 
-        [0, 0, 0, 1]
-    ]
-    result.inv_mat = [
-        [1, 0, 0, -v[0]], 
-        [0, 1, 0, -v[1]], 
-        [0, 0, 1, -v[2]], 
-        [0, 0, 0, 1]   
-    ]
-
-
-proc newRotX*(angle: float32): Rotation = 
-    ## Procedure that creates a new rotation around x axis: angle is given in degrees
-    var theta = degToRad(angle)
-    let
-        c = cos(theta)
-        s = sin(theta)
-
-    result.mat = [
-        [1, 0, 0, 0], 
-        [0, c, -s, 0], 
-        [0, s, c, 0], 
-        [0, 0, 0, 1]
-    ]
-    result.inv_mat = [
-        [1, 0, 0, 0], 
-        [0, c, s, 0], 
-        [0, -s, c, 0], 
-        [0, 0, 0, 1]
-    ]
-
-
-proc newRotY*(angle: float32): Rotation = 
-    ## Procedure that creates a new rotation around y axis: angle is given in degrees
-    var theta = degToRad(angle)
-    let
-        c = cos(theta)
-        s = sin(theta)
-
-    result.mat = [
-        [c, 0, s, 0], 
-        [0, 1, 0, 0], 
-        [-s, 0, c, 0], 
-        [0, 0, 0, 1]
-    ]
-    result.inv_mat = [
-        [c, 0, -s, 0], 
-        [0, 1, 0, 0], 
-        [s, 0, c, 0], 
-        [0, 0, 0, 1]
-    ]
-
-
-proc newRotZ*(angle: float32): Rotation = 
-    ## Procedure that creates a new rotation around z axis: angle is given in degrees
-    var theta = degToRad(angle)
-    let
-        c = cos(theta)
-        s = sin(theta)
-
-    result.mat = [
-        [c, -s, 0, 0], 
-        [s, c, 0, 0], 
-        [0, 0, 1, 0], 
-        [0, 0, 0, 1]
-    ]
-    result.inv_mat = [
-        [c, s, 0, 0], 
-        [-s, c, 0, 0], 
-        [0, 0, 1, 0], 
-        [0, 0, 0, 1]
-    ]
-
-#-----------------------------------------------#
-#                Scaling methods                #
-#-----------------------------------------------#
 
 method apply*(scale: Scaling, vec: Vec4f): Vec4f {.inline.} = 
     newVec4(scale.mat[0][0] * vec[0], scale.mat[1][1] * vec[1], scale.mat[2][2] * vec[2], vec[3])
@@ -423,9 +334,22 @@ method apply*(scale: Scaling, vec: Vec3f): Vec3f {.inline.} =
 method apply*(scale: Scaling, pt: Point3D): Point3D {.inline.} = 
     newPoint3D(scale.mat[0][0] * pt.x, scale.mat[1][1] * pt.y, scale.mat[2][2] * pt.z)
 
-#-----------------------------------------------#
-#             Translation methods               #
-#-----------------------------------------------#
+
+type Translation* = object of Transformation
+
+proc newTranslation*(v: Vec3f): Translation  = 
+    result.mat = [
+        [1.0, 0.0, 0.0, v[0]], 
+        [0.0, 1.0, 0.0, v[1]], 
+        [0.0, 0.0, 1.0, v[2]], 
+        [0.0, 0.0, 0.0, 1.0]
+    ]
+    result.inv_mat = [
+        [1.0, 0.0, 0.0, -v[0]], 
+        [0.0, 1.0, 0.0, -v[1]], 
+        [0.0, 0.0, 1.0, -v[2]], 
+        [0.0, 0.0, 0.0,  1.0]   
+    ]
 
 method apply*(traslate: Translation, vec: Vec4f): Vec4f =
     result[0] = vec[0] + traslate.mat[0][3] * vec[3]
@@ -435,6 +359,71 @@ method apply*(traslate: Translation, vec: Vec4f): Vec4f =
 
 method apply*(translate: Translation, pt: Point3D): Point3D {.inline.} =
     newPoint3D(pt.x + translate.mat[0][3], pt.y + translate.mat[1][3], pt.z + translate.mat[2][3])
+
+
+type Rotation* = object of Transformation
+
+proc newRotX*(angle: float32): Rotation = 
+    ## Procedure that creates a new rotation around x axis: angle is given in degrees
+    let
+        theta = degToRad(angle)
+        c = cos(theta)
+        s = sin(theta)
+
+    result.mat = [
+        [1.0, 0.0, 0.0, 0.0], 
+        [0.0,   c,  -s, 0.0], 
+        [0.0,   s,   c, 0.0], 
+        [0.0, 0.0, 0.0, 1.0]
+    ]
+    result.inv_mat = [
+        [1.0, 0.0, 0.0, 0.0], 
+        [0.0,   c,   s, 0.0], 
+        [0.0,  -s,   c, 0.0], 
+        [0.0, 0.0, 0.0, 1.0]
+    ]
+
+
+proc newRotY*(angle: float32): Rotation = 
+    ## Procedure that creates a new rotation around y axis: angle is given in degrees
+    let
+        theta = degToRad(angle)
+        c = cos(theta)
+        s = sin(theta)
+
+    result.mat = [
+        [  c, 0.0,   s, 0.0], 
+        [0.0, 1.0, 0.0, 0.0], 
+        [ -s, 0.0,   c, 0.0], 
+        [0.0, 0.0, 0.0, 1.0]
+    ]
+    result.inv_mat = [
+        [  c, 0.0,  -s, 0.0], 
+        [0.0, 1.0, 0.0, 0.0], 
+        [  s, 0.0,   c, 0.0], 
+        [0.0, 0.0, 0.0, 1.0]
+    ]
+
+
+proc newRotZ*(angle: float32): Rotation = 
+    ## Procedure that creates a new rotation around z axis: angle is given in degrees
+    let
+        theta = degToRad(angle)
+        c = cos(theta)
+        s = sin(theta)
+
+    result.mat = [
+        [  c,  -s, 0.0, 0.0], 
+        [  s,   c, 0.0, 0.0], 
+        [0.0, 0.0, 1.0, 0.0], 
+        [0.0, 0.0, 0.0, 1.0]
+    ]
+    result.inv_mat = [
+        [  c,   s, 0.0, 0.0], 
+        [ -s,   c, 0.0, 0.0], 
+        [0.0, 0.0, 1.0, 0.0], 
+        [0.0, 0.0, 0.0, 1.0]
+    ]
 
 
 ## =================================================
