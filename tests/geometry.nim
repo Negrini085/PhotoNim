@@ -209,7 +209,175 @@ suite "Mat unittest":
     test "dot proc":
         echo "to implement doc proc"
 
+
     test "T proc":
-        # check x.T == newMat2([1.0, 3.0], [2.0, 4.0])    
         check [[float32 1.0, 2.0, 3.0]].T is Vec3f
         check [float32 1.0, 2.0, 3.0].T is Mat[1, 3, float32]
+
+
+
+suite "Transformation unittest":
+
+    setup:
+        let
+            mat: Mat4f = [[1.0, 0.0, 0.0, 4.0], [0.0, 1.0, 0.0, 3.0], [0.0, 0.0, 1.0, -1.0], [0.0, 0.0, 0.0, 1.0]]
+            inv_mat: Mat4f = [[1.0, 0.0, 0.0, -4.0], [0.0, 1.0, 0.0, -3.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]]
+        var t1 = newTransformation(mat, inv_mat)
+
+    teardown:
+        discard mat; discard inv_mat; discard t1
+
+    test "newTransformation proc":
+        let t2 = newTransformation(inv_mat, mat)
+        check areClose(t2.mat, inv_mat)
+        check areClose(t2.inv_mat, mat)
+        
+    test "inverse proc":
+        let t2 = t1.inverse()
+        check areClose(t2.mat, t1.inv_mat)
+        check areClose(t2.inv_mat, t1.mat)
+
+    test "`@` compose proc":
+        # Checking Transformation product: we are composing inverse transformation
+        let T = t1 @ newTransformation(inv_mat, mat)
+
+        check areClose(T.mat, Mat4f.id)
+        check areClose(T.inv_mat, Mat4f.id)
+        
+    test "`*` proc":
+        let 
+            scal: float32 = 2.0
+            t2 = scal * t1
+            t3 = t1 * scal
+
+        check areClose(t2.mat, mat * scal)
+        check areClose(t2.inv_mat, inv_mat / scal)
+        check areClose(t3.mat, mat * scal)
+        check areClose(t3.inv_mat, inv_mat / scal)
+
+    test "`/` proc":
+        let 
+            scal: float32 = 2.0
+            t2 = t1 / scal
+
+        check areClose(t2.mat, mat / scal)
+        check areClose(t2.inv_mat, inv_mat * scal)
+
+
+    test "apply on Vec4f":
+        var
+            vec: Vec4f = newVec4[float32](1, 2, 3, 0)
+            point: Vec4f = newVec4[float32](1, 2, 3, 1)
+
+        # In order to test general methods we are using translation matrices: that means that
+        # transformation acts different depending on the last vector component
+            
+        check areClose(apply(t1, vec), vec)
+        check areClose(apply(t1, point), newVec4[float32](5, 5, 2, 1))
+
+
+    test "apply on Point3D":
+        var
+            p1 = newPoint3D(0, 0, 0)
+            p2 = newPoint3D(1, 2, 3) 
+        
+        check areClose(apply(t1, p1), newPoint3D(4, 3, -1))
+        check areClose(apply(t1, p2), newPoint3D(5, 5, 2))
+    
+
+    test "apply on Vec3f":
+        var
+            p1 = newVec3[float32](0, 0, 0)
+            p2 = newVec3[float32](1, 2, 3) 
+
+        # Testing apply procedure
+        check areClose(apply(t1, p1), newVec3[float32](0, 0, 0))
+        check areClose(apply(t1, p2), newVec3[float32](1, 2, 3))
+    
+
+    test "apply on Normal":
+        var
+            n1 = newNormal(0, 0, 0)
+            n2 = newNormal(1, 0, 0)
+            n3 = newNormal(0, 3/5, 4/5)
+            m1: Mat4f = [[1, 0, 0, 0], [0, 4/5, -3/5, 0], [0, 3/5, 4/5, 0], [0, 0, 0, 1]]
+            m2: Mat4f = [[1, 0, 0, 0], [0, 4/5, 3/5, 0], [0, -3/5, 4/5, 0], [0, 0, 0, 1]]
+            t: Transformation = newTransformation(m1, m2)
+
+        check areClose(apply(t1, n1), newNormal(0, 0, 0))
+        check areClose(apply(t1, n2), newNormal(1, 0, 0))
+        check areClose(apply(t, n3), newNormal(0, 0, 1))
+
+
+
+
+suite "Derived Transformation test":
+
+    setup:
+        var
+            t1: Scaling = newScaling(2)
+            t2: Scaling = newScaling(newVec3[float32](1, 2, 3))
+            t3: Translation = newTranslation(newVec3[float32](2, 4, 1))
+
+
+    test "Scaling of Vec4f":
+        # Checking scaling of a Vec4f object
+        var vec: Vec4f = newVec4[float32](1, 2, 3, 1)
+        
+        check areClose(apply(t1, vec), newVec4[float32](2, 4, 6, 1))
+
+        check areClose(apply(t2, vec), newVec4[float32](1, 4, 9, 1))
+    
+
+    test "Scaling of Point3D":
+        # Checking scaling of a Point3D object
+        var p = newPoint3D(0, 3, 1)
+        
+        # Checking omogeneous scaling
+        check areClose(apply(t1, p), newPoint3D(0, 6, 2))
+
+        # Checking arbitrary scaling
+        check areClose(apply(t2, p), newPoint3D(0, 6, 3))
+    
+
+    test "Scaling of Vec3f":
+        # Checking scaling of a Point3D object
+        var p = newVec3[float32](0, 3, 1)
+        
+        # Checking omogeneous scaling
+        check areClose(apply(t1, p), newVec3[float32](0, 6, 2))
+
+        # Checking arbitrary scaling
+        check areClose(apply(t2, p), newVec3[float32](0, 6, 3))
+
+
+    test "Translation of Vec4f":
+        var
+            vec: Vec4f = newVec4[float32](1, 2, 3, 0)
+            point: Vec4f = newVec4[float32](1, 0, 3, 1)
+
+        # Checking apply procedure
+        check areClose(apply(t3, vec), vec)
+        check areClose(apply(t3, point), newVec4[float32](3, 4, 4, 1))
+    
+
+    test "Translation of Point3D":
+        var 
+            p1 = newPoint3D(0, 0, 0)
+            p2 = newPoint3D(0, 3, 1)
+
+        # Checking apply procedure
+        check areClose(apply(t3, p1), newPoint3D(2, 4, 1))
+        check areClose(apply(t3, p2), newPoint3D(2, 7, 2))
+
+
+    test "Rotation":
+        var
+            tx: Rotation = newRotX(180) 
+            ty: Rotation = newRotY(180) 
+            tz: Rotation = newRotZ(180) 
+            vec: Vec4f = newVec4[float32](1, 2, 3, 1)
+        
+        # check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0))
+        # check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0))
+        # check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0))

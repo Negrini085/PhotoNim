@@ -23,6 +23,7 @@ proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} 
 proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 
     for i in 0..<N: 
         if not areClose(a[i], b[i], eps): return false
+    return true
 
 
 template VecVecToVecOp(op: untyped) =
@@ -146,7 +147,7 @@ proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 
 proc toPoint3D*(a: Vec3f | Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
 proc toNormal*(a: Vec3f | Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
-proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3[float32](a[0], a[1], a[2])
+proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3(a[0], a[1], a[2])
 
 
 type
@@ -169,6 +170,7 @@ proc areClose*[M, N: static[int], V](a, b: Mat[M, N, V]; eps: V = epsilon(V)): b
     for i in 0..<M: 
         for j in 0..<N:
             if not areClose(a[i][j], b[i][j], eps): return false
+    return true    
 
 
 template MatMatToMatOp(op: untyped) =
@@ -259,9 +261,9 @@ proc newTransformation*(mat, inv_mat: Mat4f): Transformation =
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline} = newTransformation(Mat4f.id, Mat4f.id)
 
-proc `*`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat * scal)
-proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat * scal)
-proc `/`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat / scal, transf.inv_mat / scal)
+proc `*`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat / scal)
+proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat / scal)
+proc `/`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat / scal, transf.inv_mat * scal)
 
 proc `@`*(a, b: Transformation): Transformation =
     ## Compose two transformations
