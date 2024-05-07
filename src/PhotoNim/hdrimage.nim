@@ -9,9 +9,6 @@ from std/fenv import epsilon
 
 import geometry
 
-## =================================================
-## Color Type
-## =================================================
 
 type
     Color* {.borrow: `.`.} = distinct Vec3f
@@ -44,9 +41,6 @@ proc `/`*(a: Color, b: float32): Color {.borrow.}
 proc `/=`*(a: var Color, b: float32) {.borrow.}
 
 
-## =================================================
-## HdrImage Type
-## =================================================
 
 type
     HdrImage* = object
@@ -81,10 +75,6 @@ proc setPixel*(img: var HdrImage, row, col: int, color: Color) =
     img.pixels[img.pixelOffset(row, col)] = color
 
 
-## =================================================
-## HdrImage Functions
-## =================================================
-
 proc luminosity*(a: Color): float32 {.inline.} = 
     ## Return the color luminosity
     0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
@@ -106,10 +96,6 @@ proc clampImage*(img: var HdrImage) {.inline.} =
 
 
 
-## =================================================
-## Stream Float
-## =================================================
-
 proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32 = stream.readFloat32
@@ -123,10 +109,6 @@ proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = little
     else: bigEndian32(addr tmp, addr value)
     stream.write(tmp)
 
-
-## =================================================
-## PFM HdrImage Type
-## =================================================
 
 proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
     assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
