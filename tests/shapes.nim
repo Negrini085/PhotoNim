@@ -98,7 +98,7 @@ suite "Sphere":
     test "RayIntersection: with transformation":
         # Checking ray intersection procedure: we are transforming the sphere
         var
-            tr = newTranslation(newVec4[float32](10, 0, 0, 0))
+            tr = newTranslation(newVec3[float32](10, 0, 0))
 
             ray1 = newRay(newPoint3D(10, 0, 2), newVec3[float32](0, 0, -1))
             ray2 = newRay(newPoint3D(13, 0, 0), newVec3[float32](-1, 0, 0))
@@ -171,7 +171,7 @@ suite "Plane":
     test "RayIntersection: with transformation":
         # Checking ray intersection procedure on plane: a translation along the z axis is performed
         var
-            tr = newTranslation(newVec4[float32](0, 0, 3, 0))
+            tr = newTranslation(newVec3[float32](0, 0, 3))
             ray1 = newRay(newPoint3D(0, 0, 2), newVec3[float32](0, 0, -1))
             ray2 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
             ray3 = newRay(newPoint3D(1, -2, -3), newVec3[float32](0, 4/5, 3/5))
