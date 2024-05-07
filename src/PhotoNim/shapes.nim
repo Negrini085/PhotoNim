@@ -1,4 +1,4 @@
-import common, transformations, camera, geometry
+import camera, geometry
 import std/[math, options]
 
 #-------------------------------#
@@ -56,7 +56,7 @@ proc sphereNorm*(p: Point3D, dir: Vec3f): Normal =
     # compute the normal. We than just have to chose the direction: we will use the value of the dot product with ray direction
     # as a decisive criterium.
     result = newNormal(p.x, p.y, p.z)
-    if dot2(toVec3(result), dir) > 0:
+    if dot2(result.Vec3f, dir) > 0:
         result = -result
 
 
@@ -84,9 +84,9 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     # Working in the local reference system of the sphere, we now compute the possible soluzion of the equation 
     # describing the intersection event: if a parameter delta is bigger than zero we have two solutions. On the other hand, 
     # if delta is zero or negative, we won't purse a deeper analysis of the fenomenon and we will return null.
-    a = rayInv.dir.norm2()
-    b = dot2(toVec3(rayInv.start), rayInv.dir)
-    c = toVec3(rayInv.start).norm2() - 1
+    a = norm2(rayInv.dir)
+    b = dot2(rayInv.start.Vec3f, rayInv.dir)
+    c = norm2(rayInv.start.Vec3f) - 1
 
     delta_4 = pow(b, 2) - a * c
     if delta_4 < 0: return none(HitRecord)
@@ -117,9 +117,9 @@ method fastIntersection*(sphere: Sphere, ray: Ray): bool =
     rayInv = transformRay(sphere.T.inverse(), ray)
 
     # Checking for possible solution of the intersecation condition
-    a = rayInv.dir.norm2()
-    b = dot2(toVec3(rayInv.start), rayInv.dir)
-    c = toVec3(rayInv.start).norm2() - 1
+    a = norm2(rayInv.dir)
+    b = dot2(rayInv.start.Vec3f, rayInv.dir)
+    c = norm2(rayInv.start.Vec3f) - 1
 
     delta_4 = pow(b, 2) - a * c
     if delta_4 <= 0: return false

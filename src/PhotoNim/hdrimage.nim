@@ -28,7 +28,7 @@ proc `$`*(a: Color): string {.inline.} = "<" & $a.r & " " & $a.g & " " & $a.b & 
 
 
 proc `==`*(a, b: Color): bool {.borrow.}
-proc areClose*(a, b: Color): bool {.borrow.}
+proc areClose*(a, b: Color; epsilon: float32 = epsilon(float32)): bool {.borrow.}
 
 proc `+`*(a, b: Color): Color {.borrow.}
 proc `+=`*(a: var Color, b: Color) {.borrow.}

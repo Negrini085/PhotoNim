@@ -1,5 +1,4 @@
 import std/unittest
-
 import PhotoNim/geometry
 
 
@@ -107,6 +106,7 @@ suite "Vec unittest":
         let a = normalize(y)
         check a.norm == 1.0
         check areClose(a[0], 0.6) and areClose(a[1], 0.8)
+
 
 suite "distinct Vec unittest":
 
@@ -307,7 +307,6 @@ suite "Transformation unittest":
         check areClose(apply(t1, n1), newNormal(0, 0, 0))
         check areClose(apply(t1, n2), newNormal(1, 0, 0))
         check areClose(apply(t, n3), newNormal(0, 0, 1))
-
 
 
 
