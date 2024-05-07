@@ -19,6 +19,11 @@ proc newVec2*[V](x, y: V): Vec2[V] {.inline.} = newVec([x, y])
 proc newVec3*[V](x, y, z: V): Vec3[V] {.inline.} = newVec([x, y, z])
 proc newVec4*[V](x, y, z, w: V): Vec4[V] {.inline.} = newVec([x, y, z, w])
 
+proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
+proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 
+    for i in 0..<N: 
+        if not areClose(a[i], b[i], eps): return false
+
 
 template VecVecToVecOp(op: untyped) =
     proc op*[N: static[int], V](a, b: Vec[N, V]): Vec[N, V] {.inline.} =
@@ -80,12 +85,6 @@ proc dist*[N: static[int], V](`from`, to: Vec[N, V]): float32 {.inline.} = (`fro
 
 proc normalize*[N: static[int], V](a: Vec[N, V]): Vec[N, V] {.inline.} = a / a.norm
 proc dir*[N: static[int], V](at, to: Vec[N, V]): Vec[N, V] {.inline.} = (at - to).normalize
-
-proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
-
-proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 
-    for i in 0..<N: 
-        if not areClose(a[i], b[i], eps): return false
 
 
 type
@@ -166,6 +165,11 @@ proc newMat2*[V](x, y: array[2, V]): Mat2[V] {.inline.} = newMat([x, y])
 proc newMat3*[V](x, y, z: array[3, V]): Mat3[V] {.inline.} = newMat([x, y, z])
 proc newMat4*[V](x, y, z, w: array[4, V]): Mat4[V] {.inline.} = newMat([x, y, z, w])
 
+proc areClose*[M, N: static[int], V](a, b: Mat[M, N, V]; eps: V = epsilon(V)): bool = 
+    for i in 0..<M: 
+        for j in 0..<N:
+            if not areClose(a[i][j], b[i][j], eps): return false
+
 
 template MatMatToMatOp(op: untyped) =
     proc op*[M, N: static[int], V](a, b: Mat[M, N, V]): Mat[M, N, V] {.inline.} =
@@ -221,14 +225,8 @@ MatScalIncrOp(`/=`)
 proc id*[N: static[int], V](_: typedesc[SQMat[N, V]]): SQMat[N, V] {.inline.} = 
     for i in 0..<N: result[i][i] = V(1)
 
-
 proc T*[N: static[int], V](mat: Mat[1, N, V]): Vec[N, V] {.inline.} = mat[0]
 proc T*[N: static[int], V](vec: Vec[N, V]): Mat[1, N, V] {.inline.} = result[0] = vec
-
-# proc T*[M, N: static[int], V](mat: Mat[M, N, V]): Mat[N, M, V] =
-#     for j in 0..<N:
-#         for i in 0..<M: result[j][i] = mat[i][j]
-
 
 proc dot*[M, N, P: static[int], V](a: Mat[M, N, V], b: Mat[N, P, V]): Mat[M, P, V] =
     for i in 0..<M:
@@ -241,29 +239,19 @@ proc dot*[M, N: static[int], V](a: Mat[M, N, V], b: Vec[N, V]): Vec[M, V] =
 
 proc dot*[M, N: static[int], V](a: Vec[M, V], b: Mat[M, N, V]): Mat[1, N, V] {.inline.} = dot(a.T, b)
 
+
 proc dot*[V](a: Mat4[V], b: Vec3[V]): Vec3[V] =
     for i in 0..<3:
         for j in 0..<3: result[i] += a[i][j] * b[j]
 
-proc dot*[V](a: Vec3[V], b: Mat4[V]): Mat[1, 3, V] =
-    for i in 0..<3:
-        for j in 0..<3: result[i] += a[i][j] * b[j]
+proc dot*[V](n: Normal, mat: Mat4[V]): Vec3[V] {.inline.} =
+    for i in 0..<3: result[i] = n.x * mat[0][i] + n.y * mat[1][i] + n.z * mat[2][i]
 
-# proc dot*[V](a: Vec3[V], b: Mat4[V]): Vec3[V] =
-#     for i in 0..<3:
-#         for j in 0..<3: result[i] += a[i] * b[j][i]
-
-
-proc areClose*[M, N: static[int], V](a, b: Mat[M, N, V]; eps: V = epsilon(V)): bool = 
-    for i in 0..<M: 
-        for j in 0..<N:
-            if not areClose(a[i][j], b[i][j], eps): return false
 
 
 type Transformation* = object of RootObj
     mat*: Mat4f
     inv_mat*: Mat4f
-
 
 proc newTransformation*(mat, inv_mat: Mat4f): Transformation = 
     assert areClose(dot(mat, inv_mat), Mat4f.id), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
@@ -271,27 +259,9 @@ proc newTransformation*(mat, inv_mat: Mat4f): Transformation =
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline} = newTransformation(Mat4f.id, Mat4f.id)
 
-
-method apply*(trasf: Transformation, vec: Vec4f): Vec4f {.base, inline.} = dot(trasf.mat, vec) 
-method apply*(trasf: Transformation, vec: Vec3f): Vec3f {.base, inline.} = dot(trasf.mat, vec)
-
-## Here toVec4 is to substitute with two specific dot prod between Mat4 and Vec3 and viceversa
-method apply*(trasf: Transformation, pt: Point3D): Point3D {.base, inline.} = dot(trasf.mat, pt.toVec4).toPoint3D
-method apply*(trasf: Transformation, n: Normal): Normal {.base, inline.} = (dot(n.toVec4, trasf.inv_mat).T).toNormal
-
-# ## Method to apply a generic transformation to a Normal by multiply the transpose of the inverse matrix
-# var
-#     x = n.x * T.inv_mat[0][0] + n.y * T.inv_mat[1][0] + n.z * T.inv_mat[2][0]
-#     y = n.x * T.inv_mat[0][1] + n.y * T.inv_mat[1][1] + n.z * T.inv_mat[2][1]
-#     z = n.x * T.inv_mat[0][2] + n.y * T.inv_mat[1][2] + n.z * T.inv_mat[2][2]
-
-# result = newNormal(x, y, z)
-
-
 proc `*`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat * scal)
 proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat * scal)
 proc `/`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat / scal, transf.inv_mat / scal)
-
 
 proc `@`*(a, b: Transformation): Transformation =
     ## Compose two transformations
@@ -302,6 +272,12 @@ proc inverse*(transf: Transformation): Transformation {.inline.} =
     (result.mat, result.inv_mat) = (transf.inv_mat, transf.mat)
 
 
+method apply*(trasf: Transformation, vec: Vec4f): Vec4f {.base, inline.} = dot(trasf.mat, vec) 
+method apply*(trasf: Transformation, vec: Vec3f): Vec3f {.base, inline.} = dot(trasf.mat, vec)
+method apply*(trasf: Transformation, pt: Point3D): Point3D {.base, inline.} = dot(trasf.mat, pt.toVec4).toPoint3D
+method apply*(trasf: Transformation, n: Normal): Normal {.base, inline.} = dot(n, trasf.inv_mat).toNormal
+
+
 type Scaling* = object of Transformation
 
 proc newScaling*(factor: float32): Scaling =
@@ -309,7 +285,6 @@ proc newScaling*(factor: float32): Scaling =
     result.inv_mat = Mat4f.id / factor
     result.mat[3][3] = 1.0
     result.inv_mat[3][3] = 1.0
-
 
 proc newScaling*(v: Vec3f): Scaling =
     result.mat = [
@@ -426,9 +401,6 @@ proc newRotZ*(angle: float32): Rotation =
     ]
 
 
-## =================================================
-## Quat Type
-## =================================================
 
 type 
     Quat* {. borrow: `.`.} = distinct Vec4f
