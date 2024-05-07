@@ -5,6 +5,8 @@ suite "HdrImageTest":
     
     setup:
         var img: HdrImage = newHdrImage(2, 2)
+    
+    teardown:
         discard img
     
     test "newHdrImage":

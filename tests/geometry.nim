@@ -108,7 +108,8 @@ suite "Vec unittest":
         check areClose(a[0], 0.6) and areClose(a[1], 0.8)
 
 
-suite "distinct Vec unittest":
+suite "Points unittest":
+    echo "Testing the `Point2D` and `Point3D` type and its procedures."
 
     setup:
         let 
@@ -217,6 +218,7 @@ suite "Mat unittest":
 
 
 suite "Transformation unittest":
+    echo "Testing the `Transformation` types and their methods and procs."
 
     setup:
         let
@@ -311,6 +313,7 @@ suite "Transformation unittest":
 
 
 suite "Derived Transformation test":
+    echo "Testing the `Scaling`, `Translation`, `Rotation` types and their methods."
 
     setup:
         var
