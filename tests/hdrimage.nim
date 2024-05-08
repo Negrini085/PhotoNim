@@ -1,10 +1,12 @@
 import std/[unittest, streams, math]
-import PhotoNim/[common, color, hdrimage]       
+import PhotoNim/[geometry, hdrimage]
 
 suite "HdrImageTest":
     
     setup:
         var img: HdrImage = newHdrImage(2, 2)
+    
+    teardown:
         discard img
     
     test "newHdrImage":

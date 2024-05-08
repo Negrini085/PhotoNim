@@ -7,11 +7,40 @@ from std/sequtils import apply, map
 from std/math import sum, pow, log10
 from std/fenv import epsilon
 
-import color
+import geometry
 
-## =================================================
-## HdrImage Type
-## =================================================
+
+type
+    Color* {.borrow: `.`.} = distinct Vec3f
+
+proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
+
+proc r*(a: Color): float32 {.inline.} = a.Vec3f[0]
+proc g*(a: Color): float32 {.inline.} = a.Vec3f[1]
+proc b*(a: Color): float32 {.inline.} = a.Vec3f[2]
+
+proc toVec*(a: Color): Vec3f {.inline.} = newVec3(a.r, a.g, a.b)
+
+proc `$`*(a: Color): string {.inline.} = "<" & $a.r & " " & $a.g & " " & $a.b & ">"
+
+
+proc `==`*(a, b: Color): bool {.borrow.}
+proc areClose*(a, b: Color; epsilon: float32 = epsilon(float32)): bool {.borrow.}
+
+proc `+`*(a, b: Color): Color {.borrow.}
+proc `+=`*(a: var Color, b: Color) {.borrow.}
+
+proc `-`*(a, b: Color): Color {.borrow.}
+proc `-=`*(a: var Color, b: Color) {.borrow.}
+
+proc `*`*(a: Color, b: float32): Color {.borrow.}
+proc `*`*(a: float32, b: Color): Color {.borrow.}
+proc `*=`*(a: var Color, b: float32) {.borrow.}
+
+proc `/`*(a: Color, b: float32): Color {.borrow.}
+proc `/=`*(a: var Color, b: float32) {.borrow.}
+
+
 
 type
     HdrImage* = object
@@ -46,10 +75,6 @@ proc setPixel*(img: var HdrImage, row, col: int, color: Color) =
     img.pixels[img.pixelOffset(row, col)] = color
 
 
-## =================================================
-## HdrImage Functions
-## =================================================
-
 proc luminosity*(a: Color): float32 {.inline.} = 
     ## Return the color luminosity
     0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
@@ -71,10 +96,6 @@ proc clampImage*(img: var HdrImage) {.inline.} =
 
 
 
-## =================================================
-## Stream Float
-## =================================================
-
 proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32 = stream.readFloat32
@@ -88,10 +109,6 @@ proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = little
     else: bigEndian32(addr tmp, addr value)
     stream.write(tmp)
 
-
-## =================================================
-## PFM HdrImage Type
-## =================================================
 
 proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
     assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"

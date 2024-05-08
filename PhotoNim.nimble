@@ -14,8 +14,8 @@ requires "nimPNG >= 0.3"
 # Tasks
 task test, "Run the PhotoNim tests!":
   withDir "tests":
-    exec "nim c -r common.nim"    
+    exec "nim c -r geometry.nim"    
     exec "nim c -r hdrimage.nim"
-    exec "nim c -r transformations.nim"
     exec "nim c -r camera.nim"
     exec "nim c -r shapes.nim"
+    exec "rm geometry hdrimage camera shapes"
