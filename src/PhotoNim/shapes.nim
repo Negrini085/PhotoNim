@@ -6,6 +6,12 @@ import camera, geometry
 
 
 type 
+    Shape* = object of RootObj
+        transf*: Transformation
+
+    Sphere* = object of Shape
+    Plane* = object of Shape
+
     HitRecord* = object
         ray*: Ray
         t*: float32
@@ -13,12 +19,13 @@ type
         map_pt*: Point2D
         normal*: Normal
 
-    Shape* = object of RootObj
-        transf*: Transformation
+    World* = object
+        shapes*: seq[Shape]
 
-    Sphere* = object of Shape
-    Plane* = object of Shape
 
+proc newSphere*(transf: Transformation): Sphere {.inline.} = result.transf = transf
+    
+proc newPlane*(transf: Transformation): Plane {.inline.} = result.transf = transf
 
 proc newHitRecord*(ray: Ray, t: float32, hit_point: Point3D, uv: Point2D, norm: Normal): HitRecord {.inline.} =
     HitRecord(ray: ray, t: t, world_point: hit_point, map_pt: uv, normal: norm)
@@ -27,17 +34,15 @@ proc areClose*(hit1, hit2: HitRecord): bool {.inline.} =
     areClose(hit1.ray, hit2.ray) and areClose(hit1.t, hit2.t) and 
     areClose(hit1.world_point, hit2.world_point) and  areClose(hit1.map_pt, hit2.map_pt) and 
     areClose(hit1.normal, hit2.normal) 
-    
-proc newSphere*(transf: Transformation): Sphere {.inline.} = result.transf = transf
-    
-proc newPlane*(transf: Transformation): Plane {.inline.} = result.transf = transf
 
-method intersectionRay(shape: Shape, ray: Ray): Option[HitRecord] {.base} =
+proc newWorld*(): World {.inline.} = World(shapes: @[])
+
+
+method rayIntersection(shape: Shape, ray: Ray): Option[HitRecord] {.base.} =
     quit "to overload"
 
-method fastIntersection(shape: Shape, ray: Ray): bool {.base} =
+method fastIntersection(shape: Shape, ray: Ray): bool {.base.} =
     quit "to overload"
-
 
 
 proc normalOnSphere*(p: Point3D, dir: Vec3f): Normal {.inline.} = 
@@ -55,19 +60,16 @@ proc sphere_uv*(p: Point3D): Point2D =
     newPoint2D(u, arccos(p.z) / PI)
 
 
-method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
+method rayIntersection*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     ## Method to detect a ray - sphere intersection
     ## Here we create a sphere centered in (0, 0, 0) and having unitary ray.
     ## We can obtain every kind of sphere and even ellipsoids using specific transformations
 
     # First off, we have to apply the inverse transformation on the choosen ray: that's because we want to
     # treat the shape in its local reference system where the defining relation is easier to write and solve.
-    let rayInv = apply(sphere.transf.inverse(), ray)
-
-    ## Working in the local reference system of the sphere, we now compute the possible soluzion of the equation 
-    ## describing the intersection event: if a parameter delta is bigger than zero we have two solutions. 
-    ## On the other hand, if delta is zero or negative, we won't purse a deeper analysis of the fenomenon and we will return null.
     let 
+        rayInv = apply(sphere.transf.inverse(), ray)
+
         a = norm2(rayInv.dir)
         b = dot(rayInv.start.Vec3f, rayInv.dir)
         c = norm2(rayInv.start.Vec3f) - 1
@@ -76,8 +78,9 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     if delta_4 < 0: return none(HitRecord)
 
     let 
-        t_r = (b + sqrt(delta_4)) / a
-        t_l = -t_r
+        sqrt = sqrt(delta_4)
+        t_l = (-b - sqrt) / a
+        t_r = (-b + sqrt) / a
 
     ## We have found the two possible solutions: we now want to chose only the closer one to the observer, that is the one with smaller t. 
     ## We want to consider only solution caracterized by positive time, because we are not interested in shapes located behind the observer.
@@ -99,35 +102,25 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
 
 
 method fastIntersection*(sphere: Sphere, ray: Ray): bool = 
-    ## Method that simply states wether there is a intersection or not
-    var
-        t1, t2, delta_4: float32
-        a, b, c: float32
-        rayInv: Ray
+    let 
+        rayInv = apply(sphere.transf.inverse(), ray)
+        a = norm2(rayInv.dir)
+        b = dot(rayInv.start.Vec3f, rayInv.dir)
+        c = norm2(rayInv.start.Vec3f) - 1
 
-    rayInv = apply(sphere.transf.inverse(), ray)
+        delta_4 = b * b - a * c
 
-    # Checking for possible solution of the intersecation condition
-    a = norm2(rayInv.dir)
-    b = dot(rayInv.start.Vec3f, rayInv.dir)
-    c = norm2(rayInv.start.Vec3f) - 1
-
-    delta_4 = b * b - a * c
-    if delta_4 <= 0: return false
-
-    t1 = - (b + sqrt(delta_4))/a
-    t2 =  (-b + sqrt(delta_4))/a
-
-    # Time does respect the boundaries that we required on ray evolution??
-    return (rayInv.tmin < t1 and t1 < rayInv.tmax) or (rayInv.tmin < t2 and t2 < rayInv.tmax)
+    if delta_4 <= 0: false
+    else: 
+        let t = (-b + sqrt(delta_4)) / a
+        (rayInv.tmin < t and t < rayInv.tmax) or (rayInv.tmin < -t and -t < rayInv.tmax) 
 
 
-
-method intersectionRay*(plane: Plane, ray: Ray; eps: float32 = epsilon(float32)): Option[HitRecord] =
+method rayIntersection*(plane: Plane, ray: Ray): Option[HitRecord] =
     ## Method to detect a ray - plane intersection
 
     let inv_ray = apply(plane.transf.inverse(), ray)
-    if abs(inv_ray.dir[2]) < eps: return none(HitRecord)
+    if abs(inv_ray.dir[2]) < epsilon(float32): return none(HitRecord)
 
     let t = -inv_ray.start.z / inv_ray.dir[2]
     if t < inv_ray.tmin or t > inv_ray.tmax: return none(HitRecord)
@@ -141,11 +134,11 @@ method intersectionRay*(plane: Plane, ray: Ray; eps: float32 = epsilon(float32))
     some(newHitRecord(ray, t, world_pt, map_pt, normal))
 
 
-method fastIntersection*(plane: Plane, ray: Ray; eps: float32 = epsilon(float32)): bool = 
+method fastIntersection*(plane: Plane, ray: Ray): bool = 
     ## Method that simply states wether there is a intersection or not
 
     let inv_ray = apply(plane.transf.inverse, ray)
-    if abs(inv_ray.dir[2]) < eps: return false
+    if abs(inv_ray.dir[2]) < epsilon(float32): return false
 
     let t = -inv_ray.start.z / inv_ray.dir[2]
     if t < inv_ray.tmin or t > inv_ray.tmax: return false

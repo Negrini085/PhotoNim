@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(docs)* New Jekyll static site for the official PhotoNim documentation.
 - *(Plane)* Add plane fast intersection method
 - *(Plane)* Add intersectionRay method
 - *(Plane)* Add plane constructor
