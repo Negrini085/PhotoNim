@@ -47,7 +47,7 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
     let gFactor = 1 / gamma
     for y in 0..<img.height:
         for x in 0..<img.width:
-            pix = img.getPixel(x, img.height - 1 - y)
+            pix = img.getPixel(x, y)
             pixelsString[i] = (255 * pow(pix.r, gFactor)).char; i += 1
             pixelsString[i] = (255 * pow(pix.g, gFactor)).char; i += 1
             pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
