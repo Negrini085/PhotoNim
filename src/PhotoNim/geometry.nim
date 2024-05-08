@@ -282,20 +282,23 @@ proc newTransformation*(mat, inv_mat: Mat4f): Transformation =
     assert areClose(dot(mat, inv_mat), Mat4f.id), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
     (result.mat, result.inv_mat) = (mat, inv_mat)
 
-proc id*(_: typedesc[Transformation]): Transformation {.inline} = newTransformation(Mat4f.id, Mat4f.id)
+proc id*(_: typedesc[Transformation]): Transformation {.inline} =
+    (result.mat, result.inv_mat) = (Mat4f.id, Mat4f.id)
 
-proc `*`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat / scal)
-proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = newTransformation(transf.mat * scal, transf.inv_mat / scal)
-proc `/`*(transf: Transformation, scal: float32): Transformation {.inline.} = newTransformation(transf.mat / scal, transf.inv_mat * scal)
+proc `*`*(transf: Transformation, scal: float32): Transformation {.inline.} = 
+    (result.mat, result.inv_mat) = (transf.mat * scal, transf.inv_mat / scal)
+    
+proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = 
+    (result.mat, result.inv_mat) = (transf.mat * scal, transf.inv_mat / scal)
 
-proc `@`*(a, b: Transformation): Transformation =
-    ## Compose two transformations
-    result.mat = dot(a.mat, b.mat)
-    result.inv_mat = dot(b.inv_mat, a.inv_mat)
+proc `/`*(transf: Transformation, scal: float32): Transformation {.inline.} = 
+    (result.mat, result.inv_mat) = (transf.mat / scal, transf.inv_mat * scal)
+
+proc `@`*(a, b: Transformation): Transformation {.inline.} =
+    (result.mat, result.inv_mat) = (dot(a.mat, b.mat), dot(b.inv_mat, a.inv_mat))
     
 proc inverse*(transf: Transformation): Transformation {.inline.} =
     (result.mat, result.inv_mat) = (transf.inv_mat, transf.mat)
-
 
 method apply*(trasf: Transformation, vec: Vec4f): Vec4f {.base, inline.} = dot(trasf.mat, vec) 
 method apply*(trasf: Transformation, vec: Vec3f): Vec3f {.base, inline.} = dot(trasf.mat, vec)
