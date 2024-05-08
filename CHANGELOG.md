@@ -83,6 +83,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(camera)* NewCamera procs are now divided in newOrthogonalCamera and newPerspectiveCamera.
 - Change constructor porcedure
 - *(Plane)* Correct intersectionRay procedure, now using inverse transform on ray
 - *(Ray)* Change ray transform procedure
