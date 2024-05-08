@@ -79,20 +79,20 @@ suite "Sphere":
             ray2 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
             ray3 = newRay(newPoint3D(0, 0, 0), newVec3[float32](1, 0, 0))
 
-        check areClose(sphere.intersectionRay(ray1).get().world_point, newPoint3D(0, 0, 1))
-        check areClose(sphere.intersectionRay(ray1).get().normal, newNormal(0, 0, 1))
-        check areClose(sphere.intersectionRay(ray1).get().t, 1)
-        check areClose(sphere.intersectionRay(ray1).get().map_pt, newPoint2D(0, 0))
+        check areClose(sphere.rayIntersection(ray1).get().world_point, newPoint3D(0, 0, 1))
+        check areClose(sphere.rayIntersection(ray1).get().normal, newNormal(0, 0, 1))
+        check areClose(sphere.rayIntersection(ray1).get().t, 1)
+        check areClose(sphere.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
 
-        check areClose(sphere.intersectionRay(ray2).get().world_point, newPoint3D(1, 0, 0))
-        check areClose(sphere.intersectionRay(ray2).get().normal, newNormal(1, 0, 0))
-        check areClose(sphere.intersectionRay(ray2).get().t, 2)
-        check areClose(sphere.intersectionRay(ray1).get().map_pt, newPoint2D(0, 0))
+        check areClose(sphere.rayIntersection(ray2).get().world_point, newPoint3D(1, 0, 0))
+        check areClose(sphere.rayIntersection(ray2).get().normal, newNormal(1, 0, 0))
+        check areClose(sphere.rayIntersection(ray2).get().t, 2)
+        check areClose(sphere.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
 
-        check areClose(sphere.intersectionRay(ray3).get().world_point, newPoint3D(1, 0, 0))
-        check areClose(sphere.intersectionRay(ray3).get().normal, newNormal(-1, 0, 0))
-        check areClose(sphere.intersectionRay(ray3).get().t, 1)
-        check areClose(sphere.intersectionRay(ray1).get().map_pt, newPoint2D(0, 0))
+        check areClose(sphere.rayIntersection(ray3).get().world_point, newPoint3D(1, 0, 0))
+        check areClose(sphere.rayIntersection(ray3).get().normal, newNormal(-1, 0, 0))
+        check areClose(sphere.rayIntersection(ray3).get().t, 1)
+        check areClose(sphere.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
     
 
     test "RayIntersection: with transformation":
@@ -107,19 +107,19 @@ suite "Sphere":
         
         sphere.transf = tr
 
-        check areClose(sphere.intersectionRay(ray1).get().world_point, newPoint3D(10, 0, 1))
-        check areClose(sphere.intersectionRay(ray1).get().normal, newNormal(0, 0, 1))
-        check areClose(sphere.intersectionRay(ray1).get().t, 1)
-        check areClose(sphere.intersectionRay(ray1).get().map_pt, newPoint2D(0, 0))
+        check areClose(sphere.rayIntersection(ray1).get().world_point, newPoint3D(10, 0, 1))
+        check areClose(sphere.rayIntersection(ray1).get().normal, newNormal(0, 0, 1))
+        check areClose(sphere.rayIntersection(ray1).get().t, 1)
+        check areClose(sphere.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
 
-        check areClose(sphere.intersectionRay(ray2).get().world_point, newPoint3D(11, 0, 0))
-        check areClose(sphere.intersectionRay(ray2).get().normal, newNormal(1, 0, 0))
-        check areClose(sphere.intersectionRay(ray2).get().t, 2)
-        check areClose(sphere.intersectionRay(ray2).get().map_pt, newPoint2D(0, 0.5))
+        check areClose(sphere.rayIntersection(ray2).get().world_point, newPoint3D(11, 0, 0))
+        check areClose(sphere.rayIntersection(ray2).get().normal, newNormal(1, 0, 0))
+        check areClose(sphere.rayIntersection(ray2).get().t, 2)
+        check areClose(sphere.rayIntersection(ray2).get().map_pt, newPoint2D(0, 0.5))
 
         sphere.transf = Transformation.id
-        check sphere.intersectionRay(ray3).isSome
-        check not sphere.intersectionRay(ray4).isSome
+        check sphere.rayIntersection(ray3).isSome
+        check not sphere.rayIntersection(ray4).isSome
     
 
     test "FastIntersection":
@@ -155,17 +155,17 @@ suite "Plane":
             ray2 = newRay(newPoint3D(1, -2, -3), newVec3[float32](0, 4/5, 3/5))
             ray3 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
 
-        check areClose(plane.intersectionRay(ray1).get().world_point, newPoint3D(0, 0, 0))
-        check areClose(plane.intersectionRay(ray1).get().normal, newNormal(0, 0, 1))
-        check areClose(plane.intersectionRay(ray1).get().t, 2)
-        check areClose(plane.intersectionRay(ray1).get().map_pt, newPoint2D(0, 0))
+        check areClose(plane.rayIntersection(ray1).get().world_point, newPoint3D(0, 0, 0))
+        check areClose(plane.rayIntersection(ray1).get().normal, newNormal(0, 0, 1))
+        check areClose(plane.rayIntersection(ray1).get().t, 2)
+        check areClose(plane.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
 
-        check areClose(plane.intersectionRay(ray2).get().world_point, newPoint3D(1, 2, 0))
-        check areClose(plane.intersectionRay(ray2).get().normal, newNormal(0, 0, -1))
-        check areClose(plane.intersectionRay(ray2).get().t, 5)
-        check areClose(plane.intersectionRay(ray2).get().map_pt, newPoint2D(0, 0))
+        check areClose(plane.rayIntersection(ray2).get().world_point, newPoint3D(1, 2, 0))
+        check areClose(plane.rayIntersection(ray2).get().normal, newNormal(0, 0, -1))
+        check areClose(plane.rayIntersection(ray2).get().t, 5)
+        check areClose(plane.rayIntersection(ray2).get().map_pt, newPoint2D(0, 0))
 
-        check not plane.intersectionRay(ray3).isSome
+        check not plane.rayIntersection(ray3).isSome
 
 
     test "RayIntersection: with transformation":
@@ -178,13 +178,13 @@ suite "Plane":
         
         plane.transf = tr
 
-        check not plane.intersectionRay(ray1).isSome
-        check not plane.intersectionRay(ray2).isSome
+        check not plane.rayIntersection(ray1).isSome
+        check not plane.rayIntersection(ray2).isSome
 
-        check areClose(plane.intersectionRay(ray3).get().world_point, newPoint3D(1, 6, 3))
-        check areClose(plane.intersectionRay(ray3).get().normal, newNormal(0, 0, -1))
-        check areClose(plane.intersectionRay(ray3).get().t, 10)
-        check areClose(plane.intersectionRay(ray3).get().map_pt, newPoint2D(0, 0))
+        check areClose(plane.rayIntersection(ray3).get().world_point, newPoint3D(1, 6, 3))
+        check areClose(plane.rayIntersection(ray3).get().normal, newNormal(0, 0, -1))
+        check areClose(plane.rayIntersection(ray3).get().t, 10)
+        check areClose(plane.rayIntersection(ray3).get().map_pt, newPoint2D(0, 0))
     
 
     test "FastIntersection":
