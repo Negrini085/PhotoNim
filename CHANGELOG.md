@@ -128,6 +128,10 @@ All notable changes to this project will be documented in this file.
 - *(HdrImage)* Delete redundant Color implementation.
 - *(Color)* Removed min/max.
 
+### 📚 Documentation
+
+- Removed docs from master and opened a new branch only for docs.
+
 ### 🧪 Testing
 
 - *(All)* Correct test implementation
