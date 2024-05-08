@@ -14,6 +14,7 @@ let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
 
 Usage:
     ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma>]
+    ./PhotoNim demo cam = <camType>
 
 Options:
     --alpha=<alpha>     Color renormalization factor. [default: 0.18]
@@ -79,7 +80,8 @@ if args["pfm2png"]:
     
     pfm2png(fileIn, fileOut, alpha, gamma)
 
-elif args["render"]: 
-    quit "Not rendering! haahha gimme 5 bucks"
+elif args["demo"]: 
+    quit "Eh volevi"
+
 else: 
     quit "Unknown command. Available commands: convert, render."
