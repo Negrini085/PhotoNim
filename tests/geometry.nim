@@ -120,7 +120,7 @@ suite "Points unittest":
         discard p2; discard p3
 
     test "xyz access proc":
-        check p2.x == 1.0 and p2.y == 20.0
+        check p2.u == 1.0 and p2.v == 20.0
         
     test "toPoint3D proc":
         check p3.Vec3f is Vec3f

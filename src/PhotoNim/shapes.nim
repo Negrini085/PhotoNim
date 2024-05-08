@@ -40,11 +40,11 @@ method fastIntersection(shape: Shape, ray: Ray): bool {.base} =
 
 
 
-proc NormalOnSphere*(p: Point3D, dir: Vec3f): Normal {.inline.} = 
+proc normalOnSphere*(p: Point3D, dir: Vec3f): Normal {.inline.} = 
     ## Procedure to compute normal on a surface point
     ## Considering that we are working with an unitary sphere, we can simply use the point coordinates in order to compute the normal. 
     ## We than just have to chose the direction: we will use the value of the dot product with ray direction as a decisive criterium.
-    sgn(dot(p.Vec3f, dir)).float32 * newNormal(p.x, p.y, p.z)
+    - sgn(dot(p.Vec3f, dir)).float32 * newNormal(p.x, p.y, p.z)
 
 
 proc sphere_uv*(p: Point3D): Point2D = 
@@ -62,7 +62,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
 
     # First off, we have to apply the inverse transformation on the choosen ray: that's because we want to
     # treat the shape in its local reference system where the defining relation is easier to write and solve.
-    let rayInv = transformRay(sphere.transf.inverse(), ray)
+    let rayInv = apply(sphere.transf.inverse(), ray)
 
     ## Working in the local reference system of the sphere, we now compute the possible soluzion of the equation 
     ## describing the intersection event: if a parameter delta is bigger than zero we have two solutions. 
@@ -93,7 +93,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
         intersection_pt = rayInv.at(t)
         world_pt = apply(sphere.transf, intersection_pt)
         map_pt = sphere_uv(intersection_pt)
-        normal = apply(sphere.transf, NormalOnSphere(intersection_pt, rayInv.dir))
+        normal = apply(sphere.transf, normalOnSphere(intersection_pt, rayInv.dir))
 
     some(newHitRecord(ray, t, world_pt, map_pt, normal))
 
@@ -105,7 +105,7 @@ method fastIntersection*(sphere: Sphere, ray: Ray): bool =
         a, b, c: float32
         rayInv: Ray
 
-    rayInv = transformRay(sphere.transf.inverse(), ray)
+    rayInv = apply(sphere.transf.inverse(), ray)
 
     # Checking for possible solution of the intersecation condition
     a = norm2(rayInv.dir)
@@ -126,7 +126,7 @@ method fastIntersection*(sphere: Sphere, ray: Ray): bool =
 method intersectionRay*(plane: Plane, ray: Ray; eps: float32 = epsilon(float32)): Option[HitRecord] =
     ## Method to detect a ray - plane intersection
 
-    let inv_ray = transformRay(plane.transf.inverse(), ray)
+    let inv_ray = apply(plane.transf.inverse(), ray)
     if abs(inv_ray.dir[2]) < eps: return none(HitRecord)
 
     let t = -inv_ray.start.z / inv_ray.dir[2]
@@ -144,8 +144,10 @@ method intersectionRay*(plane: Plane, ray: Ray; eps: float32 = epsilon(float32))
 method fastIntersection*(plane: Plane, ray: Ray; eps: float32 = epsilon(float32)): bool = 
     ## Method that simply states wether there is a intersection or not
 
-    let inv_ray = transformRay(plane.transf.inverse, ray)
+    let inv_ray = apply(plane.transf.inverse, ray)
     if abs(inv_ray.dir[2]) < eps: return false
 
     let t = -inv_ray.start.z / inv_ray.dir[2]
     if t < inv_ray.tmin or t > inv_ray.tmax: return false
+    
+    return true

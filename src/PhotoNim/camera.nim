@@ -36,6 +36,11 @@ proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} =
     ImageTracer(image: im, camera: cam)
 
 
+
+#------------------------------------------#
+#        Ray procedure and methods         #
+#------------------------------------------#
+
 proc at*(ray: Ray, time: float32): Point3D {.inline.} = ray.start + ray.dir * time
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline} = 
@@ -49,6 +54,11 @@ proc translate*(ray: Ray, vec: Vec3f): Ray {.inline.} =
     Ray(start: ray.start + vec, dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
 
 
+
+#--------------------------------------------#
+#        Camera procedure and methods        #
+#--------------------------------------------#
+
 method fire_ray*(cam: Camera, pixel: Point2D): Ray {.base.} =
     quit "to overload"
 
@@ -59,6 +69,10 @@ method fire_ray*(cam: PerspectiveCamera, pixel: Point2D): Ray {.inline.} =
     apply(cam.transf, newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1)))
 
 
+
+#--------------------------------------------------#
+#        Image Tracer procedure and methods        #
+#--------------------------------------------------#
 
 proc fire_ray*(im_tr: ImageTracer, col, row: int, pixel: Point2D = newPoint2D(0.5, 0.5)): Ray =
     let u = (col.toFloat + pixel.u) / im_tr.image.width.toFloat

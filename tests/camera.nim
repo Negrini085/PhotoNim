@@ -22,7 +22,7 @@ suite "Ray tests":
         check areClose(ray.at(2.0), newPoint3D(3, 2, 3))
 
 
-    test "areClose":
+    test "areClose proc":
         # Checking areClose procedure
         var
             ray1 = newRay(newPoint3D(1, 2, 3), newVec3[float32](1, 0, 0))
@@ -32,24 +32,24 @@ suite "Ray tests":
         check not areClose(ray, ray2)
     
 
-    test "translateRay":
+    test "translate proc":
         # Checking ray translation procedures
         var 
             vec1 = newVec3[float32](0, 0, 0)
             vec2 = newVec3[float32](1, 2, 3)
 
-        check areClose(ray.translateRay(vec1).start, newPoint3D(1, 2, 3))
-        check areClose(ray.translateRay(vec2).start, newPoint3D(2, 4, 6))
+        check areClose(ray.translate(vec1).start, newPoint3D(1, 2, 3))
+        check areClose(ray.translate(vec2).start, newPoint3D(2, 4, 6))
     
 
-    test "transformRay":
+    test "apply proc":
         # Checking ray rotation procedures
         var 
             T1 = newTranslation(newVec3[float32](1, 2, 3))
             T2 = newRotY(180)
 
-        check areClose(transformRay(T1, ray),  newRay(newPoint3D(2, 4, 6), newVec3[float32](1, 0, 0)))
-        check areClose(transformRay(T2, ray).dir, newVec3[float32](-1, 0, 0))
+        check areClose(apply(T1, ray),  newRay(newPoint3D(2, 4, 6), newVec3[float32](1, 0, 0)))
+        check areClose(apply(T2, ray).dir, newVec3[float32](-1, 0, 0))
         #check areClose(transformRay(T2, ray),  newRay(newPoint3D(-1, 2, -3), newVec3[float32](-1, 0, 0)))
 
 
@@ -61,8 +61,8 @@ suite "Camera tests":
 
     setup:
         var 
-            oCam = newCamera(1.2)
-            pCam = newCamera(1.2, 5)
+            oCam = newOrthogonalCamera(1.2)
+            pCam = newPerspectiveCamera(1.2, 5)
 
     test "Orthogonal Contructor":
         # Testing ortogonal type constructor
@@ -82,10 +82,10 @@ suite "Camera tests":
         # Testing orthogonal fire_ray procedure: a ray is fired
 
         var 
-            ray1 = oCam.fire_ray(0, 0)
-            ray2 = oCam.fire_ray(1, 0)
-            ray3 = oCam.fire_ray(0, 1)
-            ray4 = oCam.fire_ray(1, 1)
+            ray1 = oCam.fire_ray(newPoint2D(0, 0))
+            ray2 = oCam.fire_ray(newPoint2D(1, 0))
+            ray3 = oCam.fire_ray(newPoint2D(0, 1))
+            ray4 = oCam.fire_ray(newPoint2D(1, 1))
         
         # Testing ray parallelism
         check areClose(0.0, cross(ray1.dir, ray2.dir).norm())
@@ -109,10 +109,11 @@ suite "Camera tests":
         # Testing perspective fire_ray procedure: a ray is fired
 
         var 
-            ray1 = pCam.fire_ray(0, 0)
-            ray2 = pCam.fire_ray(1, 0)
-            ray3 = pCam.fire_ray(0, 1)
-            ray4 = pCam.fire_ray(1, 1)
+            ray1 = pCam.fire_ray(newPoint2D(0, 0))
+            ray2 = pCam.fire_ray(newPoint2D(1, 0))
+            ray3 = pCam.fire_ray(newPoint2D(0, 1))
+            ray4 = pCam.fire_ray(newPoint2D(1, 1))
+
 
         # Checking wether all rays share the same origin
         check areClose(ray1.start, ray2.start)
@@ -141,14 +142,14 @@ suite "ImageTracer":
     setup:
         var 
             image: HdrImage = newHdrImage(5, 5)
-            cam: OrthogonalCamera = newCamera(1.2, Transformation.id)
+            cam: OrthogonalCamera = newOrthogonalCamera(1.2, Transformation.id)
             im_tr = newImageTracer(image, cam)
 
     test "ImageTracer index":
         # Checking image tracer type, we will have to open an issue
         var
-            ray1 = im_tr.fire_ray(0, 0, 2.5, 1.5)
-            ray2 = im_tr.fire_ray(2, 1, 0.5, 0.5)
+            ray1 = im_tr.fire_ray(0, 0, newPoint2D(2.5, 1.5))
+            ray2 = im_tr.fire_ray(2, 1, newPoint2D(0.5, 0.5))
 
         check areClose(ray1.start, ray2.start)
 
@@ -156,8 +157,8 @@ suite "ImageTracer":
     test "Camera Orientation":
 
         var
-            ray1 = im_tr.fire_ray(0, 0, 0, 0)   # Ray direct to top left corner
-            ray2 = im_tr.fire_ray(4, 4, 1, 1)   # Ray direct to bottom right corner
+            ray1 = im_tr.fire_ray(0, 0, newPoint2D(0, 0))   # Ray direct to top left corner
+            ray2 = im_tr.fire_ray(4, 4, newPoint2D(1, 1))   # Ray direct to bottom right corner
         
         check areClose(ray1.at(1.0), newPoint3D(0, 1.2, 1))
         check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
