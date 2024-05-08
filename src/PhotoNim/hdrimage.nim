@@ -1,5 +1,6 @@
 from std/strformat import fmt
 from std/strutils import split, parseInt, parseFloat
+from std/strutils import split, parseInt, parseFloat
 from std/streams import Stream, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
 
@@ -147,7 +148,7 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
 proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian) = 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
-    stream.writeLine(if endian == littleEndian: "-1.0" else: "1.0")
+    stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
 
     var c: Color
     for y in countdown(img.height - 1, 0):
