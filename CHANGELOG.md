@@ -85,6 +85,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(HdrImage)* Change endiannes evaluation
 - *(ShapeTests)* Correct shape test implementation
 - *(camera)* NewCamera procs are now divided in newOrthogonalCamera and newPerspectiveCamera.
 - Change constructor porcedure
