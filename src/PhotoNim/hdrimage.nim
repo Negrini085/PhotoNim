@@ -1,5 +1,5 @@
 from std/strformat import fmt
-from std/strutils import split, parseInt
+from std/strutils import split, parseInt, parseFloat
 from std/streams import Stream, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
 
@@ -123,10 +123,10 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
         raise newException(CatchableError, "Invalid image size specification: required 'width height' as unsigned integers")
     
     try:
-        let endianFloat = stream.readLine
-        if endianFloat == "1.0":
+        let endianFloat = parseFloat(stream.readLine)
+        if endianFloat == 1.0:
             result.endian = bigEndian
-        elif endianFloat == "-1.0":
+        elif endianFloat == -1.0:
             result.endian = littleEndian
         else:
             raise newException(CatchableError, "")
