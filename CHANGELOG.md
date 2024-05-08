@@ -84,6 +84,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(ShapeTests)* Correct shape test implementation
 - *(camera)* NewCamera procs are now divided in newOrthogonalCamera and newPerspectiveCamera.
 - Change constructor porcedure
 - *(Plane)* Correct intersectionRay procedure, now using inverse transform on ray
@@ -126,6 +127,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(All)* Correct test implementation
 - *(Plane)* Add fast intersection test
 - *(Plane)* Add intersectionRay test module 2
 - *(Plane)* Add intersectionRay procedure first module test
