@@ -91,12 +91,12 @@ type
     Point3D* {.borrow: `.`.} = distinct Vec3f
     Normal* {.borrow: `.`.} = distinct Vec3f
 
-proc newPoint2D*(x, y: float32): Point2D {.inline.} = Point2D([x, y]) 
+proc newPoint2D*(u, v: float32): Point2D {.inline.} = Point2D([u, v]) 
 proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
 proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z])
 
-proc x*(a: Point2D): float32 {.inline.} = a.Vec2f[0]
-proc y*(a: Point2D): float32 {.inline.} = a.Vec2f[1]
+proc u*(a: Point2D): float32 {.inline.} = a.Vec2f[0]
+proc v*(a: Point2D): float32 {.inline.} = a.Vec2f[1]
 
 proc x*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[0]
 proc y*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[1]
@@ -117,13 +117,13 @@ proc `-`*(a: Normal): Normal {.borrow.}
 proc `*`*(a: Normal, b: float32): Normal {.borrow.}
 proc `*`*(a: float32, b: Normal): Normal {.borrow.}
 
-proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.x + b[0], a.y + b[1])
-proc `+`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] + b.x, a[1] + b.y)
+proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.u + b[0], a.v + b[1])
+proc `+`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] + b.u, a[1] + b.v)
+proc `-`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.u - b[0], a.v - b[1])
+proc `-`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] - b.u, a[1] - b.v)
+
 proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
 proc `+`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] + b.x, a[1] + b.y, a[2] + b.z)
-
-proc `-`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.x - b[0], a.y - b[1])
-proc `-`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] - b.x, a[1] - b.y)
 proc `-`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x - b[0], a.y - b[1], a.z - b[2])
 proc `-`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] - b.x, a[1] - b.y, a[2] - b.z)
 
@@ -135,7 +135,7 @@ proc dist2*(a, b: Point3D): float32 {.borrow.}
 proc dist*(a, b: Point2D): float32 {.borrow.}    
 proc dist*(a, b: Point3D): float32 {.borrow.}
 
-proc `$`*(p: Point2D): string {.inline.} = fmt"({p.x}, {p.y})"
+proc `$`*(p: Point2D): string {.inline.} = fmt"({p.u}, {p.v})"
 proc `$`*(p: Point3D): string {.inline.} = fmt"({p.x}, {p.y}, {p.z})"
 proc `$`*(n: Normal): string {.inline.} = fmt"<{n.x}, {n.y}, {n.z}>"
 
