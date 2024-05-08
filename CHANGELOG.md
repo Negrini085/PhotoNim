@@ -74,6 +74,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(hdrimage)* Bug #25 fixed
 - Do not use newTransformation for composition and scaling existing transformations.
 - *(Transformation)* New implementation that avoids more complex abstraction layers
 - *(PhotoNim)* Removed int convertion for uint index.
