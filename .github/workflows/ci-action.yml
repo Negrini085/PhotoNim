@@ -4,6 +4,7 @@ on:
   # Runs on pushes targeting the default branch
   push:
     paths-ignore:
+      - 'docs/**'
       - 'LICENSE'
       - '*.md'
     branches: 
