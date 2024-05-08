@@ -56,7 +56,7 @@ proc sphereNorm*(p: Point3D, dir: Vec3f): Normal =
     # compute the normal. We than just have to chose the direction: we will use the value of the dot product with ray direction
     # as a decisive criterium.
     result = newNormal(p.x, p.y, p.z)
-    if dot2(result.Vec3f, dir) > 0:
+    if dot(result.Vec3f, dir) > 0:
         result = -result
 
 
@@ -85,7 +85,7 @@ method intersectionRay*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     # describing the intersection event: if a parameter delta is bigger than zero we have two solutions. On the other hand, 
     # if delta is zero or negative, we won't purse a deeper analysis of the fenomenon and we will return null.
     a = norm2(rayInv.dir)
-    b = dot2(rayInv.start.Vec3f, rayInv.dir)
+    b = dot(rayInv.start.Vec3f, rayInv.dir)
     c = norm2(rayInv.start.Vec3f) - 1
 
     delta_4 = pow(b, 2) - a * c
@@ -118,7 +118,7 @@ method fastIntersection*(sphere: Sphere, ray: Ray): bool =
 
     # Checking for possible solution of the intersecation condition
     a = norm2(rayInv.dir)
-    b = dot2(rayInv.start.Vec3f, rayInv.dir)
+    b = dot(rayInv.start.Vec3f, rayInv.dir)
     c = norm2(rayInv.start.Vec3f) - 1
 
     delta_4 = pow(b, 2) - a * c

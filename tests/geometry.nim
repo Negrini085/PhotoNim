@@ -92,7 +92,7 @@ suite "Vec unittest":
         check c[0] == -3.0 and c[1] == 6.0 and c[2] == -3.0
 
     test "dot proc":
-        check dot2(x, y) == 11.0
+        check dot(x, y) == 11.0
 
     test "norm proc":
         check x.norm2 == 5.0
@@ -380,6 +380,6 @@ suite "Derived Transformation test":
             tz: Rotation = newRotZ(180) 
             vec: Vec4f = newVec4[float32](1, 2, 3, 1)
         
-        # check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0))
-        # check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0))
-        # check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0))
+        check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0), 1e-6)
+        check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0), 1e-6)
+        check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0), 1e-6)

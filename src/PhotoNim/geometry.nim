@@ -73,13 +73,11 @@ VecScalIncrOp(`/=`)
 proc cross*[V](a, b: Vec3[V]): Vec3[V] {.inline.} =
     for i in 0..2: result[i] = a[(i + 1) mod 3] * b[(i + 2) mod 3] - a[(i + 2) mod 3] * b[(i + 1) mod 3]
 
-proc dot2*[N: static[int], V](a, b: Vec[N, V]): V {.inline.} = 
+proc dot*[N: static[int], V](a, b: Vec[N, V]): V {.inline.} = 
     for i in 0..<N: result += a[i] * b[i]
 
-proc dot*[N: static[int], V](a, b: Vec[N, V]): float32 {.inline.} = sqrt(dot2(a, b).float32)
-
-proc norm2*[N: static[int], V](a: Vec[N, V]): V {.inline.} = dot2(a, a)
-proc norm*[N: static[int], V](a: Vec[N, V]): float32 {.inline.} = dot(a, a)
+proc norm2*[N: static[int], V](a: Vec[N, V]): V {.inline.} = dot(a, a)
+proc norm*[N: static[int], V](a: Vec[N, V]): float32 {.inline.} = sqrt(dot(a, a))
 
 proc dist2*[N: static[int], V](`from`, to: Vec[N, V]): V {.inline.} = (`from` - to).norm2
 proc dist*[N: static[int], V](`from`, to: Vec[N, V]): float32 {.inline.} = (`from` - to).norm
