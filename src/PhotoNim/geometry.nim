@@ -363,6 +363,12 @@ method apply*(translate: Translation, pt: Point3D): Point3D {.inline.} =
 
 type Rotation* = object of Transformation
 
+const 
+    eX* = newVec3[float32](1, 0, 0)
+    eY* = newVec3[float32](0, 1, 0)
+    eZ* = newVec3[float32](0, 0, 1)
+
+
 proc newRotX*(angle: float32): Rotation = 
     ## Procedure that creates a new rotation around x axis: angle is given in degrees
     let
