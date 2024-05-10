@@ -1,4 +1,5 @@
 import std/unittest
+from std/math import exp, pow 
 import PhotoNim/[geometry, camera, hdrimage]
 
 #----------------------------------#
@@ -171,8 +172,8 @@ suite "ImageTracer":
         for row in 0..<im_tr.image.height:
             for col in 0..<im_tr.image.width:
                 let 
-                    col1 = col/im_tr.image.width
+                    col1 = (1 - exp(-float32(col + row)))
                     col2 = row/im_tr.image.height
-                    col3 = row*col/(im_tr.image.width * im_tr.image.height)
+                    col3 = pow((1 - col/im_tr.image.width), 2.5)
                 check areClose(im_tr.image.getPixel(row, col), newColor(col1, col2, col3))
     

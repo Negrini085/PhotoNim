@@ -1,4 +1,5 @@
 from std/fenv import epsilon 
+from std/math import exp, pow 
 import geometry, hdrimage
 
 
@@ -85,7 +86,7 @@ proc fire_all_rays*(im_tr: var ImageTracer) =
         for col in 0..<im_tr.image.width:
             discard im_tr.fire_ray(row, col)
             let 
-                    col1 = col/im_tr.image.width
+                    col1 = (1 - exp(-float32(col + row)))
                     col2 = row/im_tr.image.height
-                    col3 = row*col/(im_tr.image.width * im_tr.image.height)
+                    col3 = pow((1 - col/im_tr.image.width), 2.5)
             im_tr.image.setPixel(row, col, newColor(col1, col2, col3))
