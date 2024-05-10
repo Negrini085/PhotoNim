@@ -144,3 +144,6 @@ method fastIntersection*(plane: Plane, ray: Ray): bool =
     if t < inv_ray.tmin or t > inv_ray.tmax: return false
     
     return true
+
+proc add*(scenary: var World, shape: Shape) {.inline} = scenary.shapes.add(shape)
+    ## Procedure to add a shape to a sequence of shapes
