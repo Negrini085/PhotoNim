@@ -7,20 +7,21 @@ from std/os import splitFile
 from std/streams import Stream, newFileStream, close
 from std/strutils import parseFloat, parseInt
 from std/strformat import fmt
-from std/math import pow
+from std/math import pow, exp
 import typetraits
 
 let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
 
 Usage:
     ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma>]
-    ./PhotoNim demo (perspective|orthogonal) [<output>] [--width=<width> --height=<height>]
+    ./PhotoNim demo (perspective|orthogonal) [<output>] [--width=<width> --height=<height> --angle=<angle>]
 
 Options:
     --alpha=<alpha>     Color renormalization factor. [default: 0.18]
     --gamma=<gamma>     Gamma correction factor. [default: 1.0]
     --width=<width>     Image wisth. [default: 1600]
-    --height=<height>   Image height. [default: 1000]    
+    --height=<height>   Image height. [default: 1000]
+    --angle=<angle>     Rotation angle around z axis
     
     -h --help           Show this helper screen.
     --version           Show PhotoNim version.
@@ -60,12 +61,16 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
     echo fmt"Successfully converted {fileIn} to {fileOut}"
 
 
-proc col_pix(ray: Ray, scenary: World): Color = 
+proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, row, col: int): Color = 
     # Procedure to decide pixel color (it could be useful to check if scenary len is non zero)
     let dim = scenary.shapes.len
     for i in 0..<dim:
         if fastIntersection(scenary.get(i), ray): 
-            return newColor(1, 1, 1)
+            let 
+                col1 = (1 - exp(-float32(col + row)))
+                col2 = row/im_tr.image.height
+                col3 = pow((1 - col/im_tr.image.width), 2.5)
+            return newColor(col1, col2, col3)
 
     
 
@@ -121,8 +126,6 @@ elif args["demo"]:
     let 
         a_ratio = float32(width)/float32(height)
         trasl = newTranslation(newVec3[float32](-1, 0, 0))   # Needed in order to have screen in (-1, y, z)
-        rotz = newRotZ(10)
-        roty = newRotY(10)
         sc = newScaling(0.1)    # Scaling needed in order to have 1/10 radius -> we will compose it with s translation
         s1 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, 0.5)) @ sc)
         s2 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, -0.5)) @ sc)
@@ -137,13 +140,21 @@ elif args["demo"]:
  
     var 
         image = newHdrImage(width, height)
+        rotz: Rotation
         cam: Camera
+        ang: int = 10
+
+    if args["--angle"]:
+        try: ang = parseInt($args["--angle"]) 
+        except: echo "Warning: angle must be an integer. Default value is used."
+    
+    rotz = newRotZ(float32(ang))
     
     if args["perspective"]:
-        cam = newPerspectiveCamera(a_ratio, 1.0, trasl @ rotz @ roty)
+        cam = newPerspectiveCamera(a_ratio, 1.0, trasl @ rotz)
     else:
-        cam = newOrthogonalCamera(a_ratio, trasl @ rotz @ roty)
-        
+        cam = newOrthogonalCamera(a_ratio, trasl @ rotz)
+
     var
         tracer = newImageTracer(image, cam)
         scenary = newWorld()

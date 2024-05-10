@@ -156,4 +156,4 @@ proc fire_all_rays*(im_tr: var ImageTracer, pix_col: proc, scenary: World) =
     # a function that will enable us to set the color of a pixel
     for row in 0..<im_tr.image.height:
         for col in 0..<im_tr.image.width:
-            im_tr.image.setPixel(row, col, pix_col(im_tr.fire_ray(row, col), scenary))
+            im_tr.image.setPixel(row, col, pix_col(im_tr, im_tr.fire_ray(row, col), scenary, row, col))
