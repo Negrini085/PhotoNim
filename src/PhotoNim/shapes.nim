@@ -147,3 +147,6 @@ method fastIntersection*(plane: Plane, ray: Ray): bool =
 
 proc add*(scenary: var World, shape: Shape) {.inline} = scenary.shapes.add(shape)
     ## Procedure to add a shape to a sequence of shapes
+
+proc get*(scenary: World, ind: int): Shape {.inline.} = scenary.shapes[ind]
+    ## Procedure to get a shape which is a part of the scenary
