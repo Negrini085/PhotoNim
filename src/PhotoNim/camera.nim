@@ -1,6 +1,6 @@
 from std/fenv import epsilon 
 from std/math import exp, pow 
-import geometry, hdrimage
+import geometry, hdrimage, shapes
 
 
 type
@@ -90,3 +90,10 @@ proc fire_all_rays*(im_tr: var ImageTracer) =
                     col2 = row/im_tr.image.height
                     col3 = pow((1 - col/im_tr.image.width), 2.5)
             im_tr.image.setPixel(row, col, newColor(col1, col2, col3))
+
+proc fire_all_rays*(im_tr: var ImageTracer, pix_col: proc, scenary: World) = 
+    # Procedure to actually render an image: we will have to give as an input
+    # a function that will enable us to set the color of a pixel
+    for row in 0..<im_tr.image.height:
+        for col in 0..<im_tr.image.width:
+            im_tr.image.setPixel(row, col, pix_col(im_tr.fire_ray(row, col), scenary))
