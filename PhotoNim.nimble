@@ -18,4 +18,5 @@ task test, "Run the PhotoNim tests!":
     exec "nim c -r hdrimage.nim"
     exec "nim c -r camera.nim"
     exec "nim c -r shapes.nim"
-    exec "rm geometry hdrimage camera shapes"
+    exec "nim c -r tracer.nim"
+    exec "rm geometry hdrimage camera shapes tracer"
