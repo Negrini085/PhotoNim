@@ -6,11 +6,11 @@ import geometry, hdrimage
 type
     Camera* = object of RootObj
         aspect_ratio*: float32
+        distance*:float32
         transf*: Transformation 
 
     OrthogonalCamera* = object of Camera
     PerspectiveCamera* = object of Camera
-        distance*: float32
 
     Ray* = object
         start*: Point3D
@@ -25,10 +25,10 @@ type
 
 
 proc newOrthogonalCamera*(a: float32; transf = Transformation.id): OrthogonalCamera {.inline.} = 
-    OrthogonalCamera(aspect_ratio: a, transf: transf)
+    OrthogonalCamera(aspect_ratio: a, transf: transf, distance: Inf)
 
 proc newPerspectiveCamera*(a, d: float32; transf = Transformation.id): PerspectiveCamera {.inline.} = 
-    PerspectiveCamera(aspect_ratio: a, distance: d, transf: transf)
+    PerspectiveCamera(aspect_ratio: a, transf: transf, distance: d)
 
 proc newRay*(start: Point3D, direction: Vec3f): Ray {.inline} = 
     Ray(start: start, dir: direction, tmin: 1e-5, tmax: Inf, depth: 0)  

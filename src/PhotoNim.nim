@@ -60,6 +60,15 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
     echo fmt"Successfully converted {fileIn} to {fileOut}"
 
 
+proc col_pix(ray: Ray, scenary: World): Color = 
+    # Procedure to decide pixel color (it could be useful to check if scenary len is non zero)
+    let dim = scenary.shapes.len
+    for i in 0..<dim:
+        if fastIntersection(scenary.get(i), ray): 
+            return newColor(1, 1, 1)
+
+    
+
 let args = docopt(PhotoNimDoc, version = "PhotoNim 0.1")
 
 #-----------------------------------#
@@ -112,6 +121,8 @@ elif args["demo"]:
     let 
         a_ratio = float32(width)/float32(height)
         trasl = newTranslation(newVec3[float32](-1, 0, 0))   # Needed in order to have screen in (-1, y, z)
+        rotz = newRotZ(10)
+        roty = newRotY(10)
         sc = newScaling(0.1)    # Scaling needed in order to have 1/10 radius -> we will compose it with s translation
         s1 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, 0.5)) @ sc)
         s2 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, -0.5)) @ sc)
@@ -126,18 +137,28 @@ elif args["demo"]:
  
     var 
         image = newHdrImage(width, height)
-        cam = (if args["perspective"]: newPerspectiveCamera(a_ratio, 1.0, trasl) else: newOrthogonalCamera(a_ratio, trasl))
+        cam: Camera
+    
+    if args["perspective"]:
+        cam = newPerspectiveCamera(a_ratio, 1.0, trasl @ rotz @ roty)
+    else:
+        cam = newOrthogonalCamera(a_ratio, trasl @ rotz @ roty)
+        
+    var
         tracer = newImageTracer(image, cam)
         scenary = newWorld()
-        fileOut: string
-        pix: Color
-        pixelsString = newString(3 * width * height)
 
     scenary.add(s1); scenary.add(s2); scenary.add(s3); scenary.add(s4); scenary.add(s5)
     scenary.add(s6); scenary.add(s7); scenary.add(s8); scenary.add(s9); scenary.add(s10)
 
-    tracer.fire_all_rays()
+
+    tracer.fire_all_rays(col_pix, scenary)
     image = tracer.image
+
+    var
+        fileOut: string
+        pix: Color
+        pixelsString = newString(3 * width * height)
 
 
     if args["<output>"]: fileOut = $args["<output>"]

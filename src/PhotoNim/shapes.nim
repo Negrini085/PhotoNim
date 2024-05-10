@@ -38,10 +38,10 @@ proc areClose*(hit1, hit2: HitRecord): bool {.inline.} =
 proc newWorld*(): World {.inline.} = World(shapes: @[])
 
 
-method rayIntersection(shape: Shape, ray: Ray): Option[HitRecord] {.base.} =
+method rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] {.base.} =
     quit "to overload"
 
-method fastIntersection(shape: Shape, ray: Ray): bool {.base.} =
+method fastIntersection*(shape: Shape, ray: Ray): bool {.base.} =
     quit "to overload"
 
 
