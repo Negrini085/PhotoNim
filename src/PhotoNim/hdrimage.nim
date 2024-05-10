@@ -58,21 +58,21 @@ proc newHdrImage*(width, height: int): HdrImage =
 
 proc validPixel(img: HdrImage, row, col: int): bool {.inline.} =
     ## Check if pixel coordinates are valid in a `HdrImage`.
-    (0 <= row and row < img.width) and (0 <= col and col < img.height)
+    (0 <= row and row < img.height) and (0 <= col and col < img.width)
 
-proc pixelOffset(img: HdrImage, x, y: int): int {.inline.} =
+proc pixelOffset(img: HdrImage, row, col: int): int {.inline.} =
     ## Calculate pixel position in a `HdrImage`.
-    x + img.width * y
+    img.width * row + col
 
 
 proc getPixel*(img: HdrImage, row, col: int): Color = 
     ## Access the `Color` of pixel (row, col) in a `HdrImage`.
-    assert img.validPixel(row, col), fmt"Error! Index ({row}, {col}) out of bounds for a {img.width}x{img.height} HdrImage"
+    assert img.validPixel(row, col), fmt"Error! Index ({row}, {col}) out of bounds for a {img.height}x{img.width} HdrImage"
     img.pixels[img.pixelOffset(row, col)]
 
 proc setPixel*(img: var HdrImage, row, col: int, color: Color) = 
     ## Set the `Color` of pixel (row, col) in a `HdrImage`.
-    assert img.validPixel(row, col), fmt"Error! Index ({row}, {col}) out of bounds for a {img.width}x{img.height} HdrImage"
+    assert img.validPixel(row, col), fmt"Error! Index ({row}, {col}) out of bounds for a {img.height}x{img.width} HdrImage"
     img.pixels[img.pixelOffset(row, col)] = color
 
 
@@ -137,12 +137,12 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
     result.img = newHdrImage(width, height)
 
     var r, g, b: float32
-    for y in countdown(height - 1, 0):
-        for x in 0..<width:
+    for row in countdown(height - 1, 0):
+        for col in 0..<width:
             r = parseFloat(stream, result.endian)
             g = parseFloat(stream, result.endian)
             b = parseFloat(stream, result.endian)
-            result.img.setPixel(x, y, newColor(r, g, b))
+            result.img.setPixel(row, col, newColor(r, g, b))
 
 
 proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian) = 
@@ -151,9 +151,9 @@ proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian)
     stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
 
     var c: Color
-    for y in countdown(img.height - 1, 0):
-        for x in 0..<img.width:
-            c = img.getPixel(x, y)
+    for row in countdown(img.height - 1, 0):
+        for col in 0..<img.width:
+            c = img.getPixel(row, col)
             stream.writeFloat(c.r, endian)
             stream.writeFloat(c.g, endian)
             stream.writeFloat(c.b, endian)

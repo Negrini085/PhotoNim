@@ -74,15 +74,15 @@ method fire_ray*(cam: PerspectiveCamera, pixel: Point2D): Ray {.inline.} =
 #        Image Tracer procedure and methods        #
 #--------------------------------------------------#
 
-proc fire_ray*(im_tr: ImageTracer, col, row: int, pixel: Point2D = newPoint2D(0.5, 0.5)): Ray =
+proc fire_ray*(im_tr: ImageTracer, row, col: int, pixel: Point2D = newPoint2D(0.5, 0.5)): Ray =
     let u = (col.toFloat + pixel.u) / im_tr.image.width.toFloat
     let v = 1 - (row.toFloat + pixel.v) / im_tr.image.height.toFloat
     
     im_tr.camera.fire_ray(newPoint2D(u, v))
 
 proc fire_all_rays*(im_tr: var ImageTracer) = 
-    for i in 0..<im_tr.image.height:
-        for j in 0..<im_tr.image.width:
-            discard im_tr.fire_ray(i, j)
-            let pixColor = i * j / (im_tr.image.width * im_tr.image.height)
-            im_tr.image.setPixel(i, j, newColor(pixColor, pixColor, pixColor))
+    for row in 0..<im_tr.image.height:
+        for col in 0..<im_tr.image.width:
+            discard im_tr.fire_ray(row, col)
+            let pixColor = row * col/(im_tr.image.width * im_tr.image.height)
+            im_tr.image.setPixel(row, col, newColor(pixColor, pixColor, 0))

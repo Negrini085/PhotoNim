@@ -149,7 +149,7 @@ suite "ImageTracer":
         # Checking image tracer type, we will have to open an issue
         var
             ray1 = im_tr.fire_ray(0, 0, newPoint2D(2.5, 1.5))
-            ray2 = im_tr.fire_ray(2, 1, newPoint2D(0.5, 0.5))
+            ray2 = im_tr.fire_ray(1, 2, newPoint2D(0.5, 0.5))
 
         check areClose(ray1.start, ray2.start)
 
@@ -168,8 +168,8 @@ suite "ImageTracer":
 
         im_tr.fire_all_rays()
 
-        for i in 0..<im_tr.image.height:
-            for j in 0..<im_tr.image.width:
-                let color = i*j/(im_tr.image.width * im_tr.image.height)
-                check areClose(im_tr.image.getPixel(i, j), newColor(color, color, color))
+        for row in 0..<im_tr.image.height:
+            for col in 0..<im_tr.image.width:
+                let color = row*col/(im_tr.image.width * im_tr.image.height)
+                check areClose(im_tr.image.getPixel(row, col), newColor(color, color, 0))
     
