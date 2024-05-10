@@ -1,10 +1,10 @@
 import std/[unittest, math, options]
 import PhotoNim/[shapes, geometry, camera]
 
+
 #---------------------------------------#
 #         Hit Record type tests         #
 #---------------------------------------#
-
 suite "HitRecord":
 
     setup:
@@ -197,3 +197,22 @@ suite "Plane":
         check plane.fastIntersection(ray1)
         check not plane.fastIntersection(ray2)
         check not plane.fastIntersection(ray3)
+
+
+
+
+#---------------------------------------#
+#           World type tests            #
+#---------------------------------------#
+suite "World":
+    
+    setup:
+        var scenary = newWorld();
+    
+    test "add proc":
+        # Checking world add procedure
+        var sphere = newSphere(Transformation.id)
+
+        scenary.add(sphere)
+        check areClose(scenary.shapes[0].transf.mat, Mat4f.id)
+        check areClose(scenary.shapes[0].transf.inv_mat, Mat4f.id)
