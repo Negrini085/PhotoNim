@@ -207,12 +207,20 @@ suite "Plane":
 suite "World":
     
     setup:
-        var scenary = newWorld();
+        var 
+            scenary = newWorld()
+            sphere = newSphere(Transformation.id)
     
     test "add proc":
         # Checking world add procedure
-        var sphere = newSphere(Transformation.id)
 
         scenary.add(sphere)
         check areClose(scenary.shapes[0].transf.mat, Mat4f.id)
         check areClose(scenary.shapes[0].transf.inv_mat, Mat4f.id)
+
+    test "get proc":
+        # Checking world get procedure
+
+        scenary.add(sphere)
+        check areClose(scenary.get(0).transf.mat, Mat4f.id)
+        check areClose(scenary.get(0).transf.inv_mat, Mat4f.id)
