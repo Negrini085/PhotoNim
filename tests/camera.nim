@@ -170,6 +170,9 @@ suite "ImageTracer":
 
         for row in 0..<im_tr.image.height:
             for col in 0..<im_tr.image.width:
-                let color = row*col/(im_tr.image.width * im_tr.image.height)
-                check areClose(im_tr.image.getPixel(row, col), newColor(color, color, 0))
+                let 
+                    col1 = col/im_tr.image.width
+                    col2 = row/im_tr.image.height
+                    col3 = row*col/(im_tr.image.width * im_tr.image.height)
+                check areClose(im_tr.image.getPixel(row, col), newColor(col1, col2, col3))
     

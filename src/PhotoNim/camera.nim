@@ -84,5 +84,8 @@ proc fire_all_rays*(im_tr: var ImageTracer) =
     for row in 0..<im_tr.image.height:
         for col in 0..<im_tr.image.width:
             discard im_tr.fire_ray(row, col)
-            let pixColor = row * col/(im_tr.image.width * im_tr.image.height)
-            im_tr.image.setPixel(row, col, newColor(pixColor, pixColor, 0))
+            let 
+                    col1 = col/im_tr.image.width
+                    col2 = row/im_tr.image.height
+                    col3 = row*col/(im_tr.image.width * im_tr.image.height)
+            im_tr.image.setPixel(row, col, newColor(col1, col2, col3))
