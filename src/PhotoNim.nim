@@ -51,9 +51,9 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
     # Gamma compression
     let gFactor = 1 / gamma
     
-    for row in 0..<img.height:
-        for col in 0..<img.width:
-            pix = img.getPixel(row, col)
+    for y in 0..<img.height:
+        for x in 0..<img.width:
+            pix = img.getPixel(x, y)
             pixelsString[i] = (255 * pow(pix.r, gFactor)).char; i += 1
             pixelsString[i] = (255 * pow(pix.g, gFactor)).char; i += 1
             pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
@@ -62,16 +62,20 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
     echo fmt"Successfully converted {fileIn} to {fileOut}"
 
 
-proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, row, col: int): Color = 
+proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color = 
     # Procedure to decide pixel color (it could be useful to check if scenary len is non zero)
     let dim = scenary.shapes.len
-    for i in 0..<dim:
-        if fastIntersection(scenary.get(i), ray): 
-            let 
-                col1 = (1 - exp(-float32(col + row)))
-                col2 = row/im_tr.image.height
-                col3 = pow((1 - col/im_tr.image.width), 2.5)
-            return newColor(col1, col2, col3)
+    if dim == 0:
+        return newColor(0, 0, 0)
+    
+    else:
+        for i in 0..<dim:
+            if fastIntersection(scenary.get(i), ray): 
+                let 
+                    r = (1 - exp(-float32(x + y)))
+                    g = y/im_tr.image.height
+                    b = pow((1 - x/im_tr.image.width), 2.5)
+                return newColor(r, g, b)
 
     
 
@@ -173,13 +177,13 @@ elif args["demo"]:
 
 
     if args["<output>"]: fileOut = $args["<output>"]
-    else: fileOut = "images/demo.png"
+    else: fileOut = "demo.png"
     var i: int = 0
 
 
-    for row in 0..<height:
-        for col in 0..<width:
-            pix = image.getPixel(row, col)
+    for y in 0..<height:
+        for x in 0..<width:
+            pix = image.getPixel(x, y)
             pixelsString[i] = (255 * pix.r).char; i += 1
             pixelsString[i] = (255 * pix.g).char; i += 1
             pixelsString[i] = (255 * pix.b).char; i += 1
