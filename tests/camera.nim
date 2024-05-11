@@ -12,13 +12,13 @@ suite "Ray tests":
 
     test "newRay":
         # Checking constructor test
-        check areClose(ray.start, newPoint3D(1, 2, 3))
+        check areClose(ray.origin, newPoint3D(1, 2, 3))
         check areClose(ray.dir, newVec3[float32](1, 0, 0))
     
 
     test "at":
         # Checking at procedure
-        check areClose(ray.at(0), ray.start)
+        check areClose(ray.at(0), ray.origin)
         check areClose(ray.at(1.0), newPoint3D(2, 2, 3))
         check areClose(ray.at(2.0), newPoint3D(3, 2, 3))
 
@@ -39,8 +39,8 @@ suite "Ray tests":
             vec1 = newVec3[float32](0, 0, 0)
             vec2 = newVec3[float32](1, 2, 3)
 
-        check areClose(ray.translate(vec1).start, newPoint3D(1, 2, 3))
-        check areClose(ray.translate(vec2).start, newPoint3D(2, 4, 6))
+        check areClose(ray.translate(vec1).origin, newPoint3D(1, 2, 3))
+        check areClose(ray.translate(vec2).origin, newPoint3D(2, 4, 6))
     
 
     test "apply proc":
@@ -117,9 +117,9 @@ suite "Camera tests":
 
 
         # Checking wether all rays share the same origin
-        check areClose(ray1.start, ray2.start)
-        check areClose(ray1.start, ray3.start)
-        check areClose(ray1.start, ray4.start)
+        check areClose(ray1.origin, ray2.origin)
+        check areClose(ray1.origin, ray3.origin)
+        check areClose(ray1.origin, ray4.origin)
         
         # Checking directions
         check areClose(ray1.dir, newVec3[float32](5,  1.2, -1))
@@ -152,7 +152,7 @@ suite "ImageTracer":
             ray1 = im_tr.fire_ray(0, 0, newPoint2D(2.5, 1.5))
             ray2 = im_tr.fire_ray(1, 2, newPoint2D(0.5, 0.5))
 
-        check areClose(ray1.start, ray2.start)
+        check areClose(ray1.origin, ray2.origin)
 
 
     test "Camera Orientation":
