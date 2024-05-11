@@ -15,7 +15,7 @@ suite "HitRecord":
 
     test "newHitRecord":
         # Checking newHitRecord procedure
-        check areClose(hit1.world_point, newPoint3D(1, 2, 3))
+        check areClose(hit1.world_pt, newPoint3D(1, 2, 3))
         check areClose(hit1.map_pt, newPoint2D(1, 0))
         check areClose(hit1.normal, newNormal(1, 0, 0))
         check areClose(hit1.t, 0.5)
@@ -26,7 +26,7 @@ suite "HitRecord":
         # Checking areClose procedure for HitRecord variables
         check areClose(hit1, hit1)
 
-        check not areClose(hit1.world_point, hit2.world_point)
+        check not areClose(hit1.world_pt, hit2.world_pt)
         check not areClose(hit1.normal, hit2.normal)
         check not areClose(hit1.ray, hit2.ray)
         check not areClose(hit1.map_pt, hit2.map_pt)
@@ -58,8 +58,8 @@ suite "Sphere":
             p2 = newPoint3D(cos(PI/3), sin(PI/3) ,0)
             d = newVec3[float32](-1, 2, 0)
         
-        check areClose(normalOnSphere(p1, d), newNormal(1, 0, 0))
-        check areClose(normalOnSphere(p2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
+        check areClose(sphereNormal(p1, d), newNormal(1, 0, 0))
+        check areClose(sphereNormal(p2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
 
     
     test "(u, v) coordinates":
@@ -68,8 +68,8 @@ suite "Sphere":
             p1 = newPoint3D(1, 0, 1)
             p2 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
 
-        check areClose(sphere_uv(p1), newPoint2D(0, 0))
-        check areClose(sphere_uv(p2), newPoint2D(1/6, 1/3))
+        check areClose(spherePointToUV(p1), newPoint2D(0, 0))
+        check areClose(spherePointToUV(p2), newPoint2D(1/6, 1/3))
     
 
     test "RayIntersection: no transformation":
@@ -79,17 +79,17 @@ suite "Sphere":
             ray2 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
             ray3 = newRay(newPoint3D(0, 0, 0), newVec3[float32](1, 0, 0))
 
-        check areClose(sphere.rayIntersection(ray1).get().world_point, newPoint3D(0, 0, 1))
+        check areClose(sphere.rayIntersection(ray1).get().world_pt, newPoint3D(0, 0, 1))
         check areClose(sphere.rayIntersection(ray1).get().normal, newNormal(0, 0, 1))
         check areClose(sphere.rayIntersection(ray1).get().t, 1)
         check areClose(sphere.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
 
-        check areClose(sphere.rayIntersection(ray2).get().world_point, newPoint3D(1, 0, 0))
+        check areClose(sphere.rayIntersection(ray2).get().world_pt, newPoint3D(1, 0, 0))
         check areClose(sphere.rayIntersection(ray2).get().normal, newNormal(1, 0, 0))
         check areClose(sphere.rayIntersection(ray2).get().t, 2)
         check areClose(sphere.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
 
-        check areClose(sphere.rayIntersection(ray3).get().world_point, newPoint3D(1, 0, 0))
+        check areClose(sphere.rayIntersection(ray3).get().world_pt, newPoint3D(1, 0, 0))
         check areClose(sphere.rayIntersection(ray3).get().normal, newNormal(-1, 0, 0))
         check areClose(sphere.rayIntersection(ray3).get().t, 1)
         check areClose(sphere.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
@@ -106,16 +106,19 @@ suite "Sphere":
             ray4 = newRay(newPoint3D(-10, 0, 0), newVec3[float32](0, 0, -1))
         
         sphere.transf = tr
+        let 
+            intersect1 = sphere.rayIntersection(ray1).get
+            intersect2 = sphere.rayIntersection(ray2).get
 
-        check areClose(sphere.rayIntersection(ray1).get().world_point, newPoint3D(10, 0, 1))
-        check areClose(sphere.rayIntersection(ray1).get().normal, newNormal(0, 0, 1))
-        check areClose(sphere.rayIntersection(ray1).get().t, 1)
-        check areClose(sphere.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
+        check areClose(intersect1.world_pt, newPoint3D(10, 0, 1))
+        check areClose(intersect1.normal, newNormal(0, 0, 1))
+        check areClose(intersect1.t, 1)
+        check areClose(intersect1.map_pt, newPoint2D(0, 0))
 
-        check areClose(sphere.rayIntersection(ray2).get().world_point, newPoint3D(11, 0, 0))
-        check areClose(sphere.rayIntersection(ray2).get().normal, newNormal(1, 0, 0))
-        check areClose(sphere.rayIntersection(ray2).get().t, 2)
-        check areClose(sphere.rayIntersection(ray2).get().map_pt, newPoint2D(0, 0.5))
+        check areClose(intersect2.world_pt, newPoint3D(11, 0, 0))
+        check areClose(intersect2.normal, newNormal(1, 0, 0))
+        check areClose(intersect2.t, 2)
+        check areClose(intersect2.map_pt, newPoint2D(0, 0.5))
 
         sphere.transf = Transformation.id
         check sphere.rayIntersection(ray3).isSome
@@ -155,12 +158,12 @@ suite "Plane":
             ray2 = newRay(newPoint3D(1, -2, -3), newVec3[float32](0, 4/5, 3/5))
             ray3 = newRay(newPoint3D(3, 0, 0), newVec3[float32](-1, 0, 0))
 
-        check areClose(plane.rayIntersection(ray1).get().world_point, newPoint3D(0, 0, 0))
+        check areClose(plane.rayIntersection(ray1).get().world_pt, newPoint3D(0, 0, 0))
         check areClose(plane.rayIntersection(ray1).get().normal, newNormal(0, 0, 1))
         check areClose(plane.rayIntersection(ray1).get().t, 2)
         check areClose(plane.rayIntersection(ray1).get().map_pt, newPoint2D(0, 0))
 
-        check areClose(plane.rayIntersection(ray2).get().world_point, newPoint3D(1, 2, 0))
+        check areClose(plane.rayIntersection(ray2).get().world_pt, newPoint3D(1, 2, 0))
         check areClose(plane.rayIntersection(ray2).get().normal, newNormal(0, 0, -1))
         check areClose(plane.rayIntersection(ray2).get().t, 5)
         check areClose(plane.rayIntersection(ray2).get().map_pt, newPoint2D(0, 0))
@@ -181,7 +184,7 @@ suite "Plane":
         check not plane.rayIntersection(ray1).isSome
         check not plane.rayIntersection(ray2).isSome
 
-        check areClose(plane.rayIntersection(ray3).get().world_point, newPoint3D(1, 6, 3))
+        check areClose(plane.rayIntersection(ray3).get().world_pt, newPoint3D(1, 6, 3))
         check areClose(plane.rayIntersection(ray3).get().normal, newNormal(0, 0, -1))
         check areClose(plane.rayIntersection(ray3).get().t, 10)
         check areClose(plane.rayIntersection(ray3).get().map_pt, newPoint2D(0, 0))
@@ -200,6 +203,21 @@ suite "Plane":
 
 
 
+suite "AABox":
+
+    setup: 
+        let box = newAABox()
+
+    teardown:
+        discard box
+
+    test "fastIntersection": 
+        check fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), newVec3(float32 0.0, 0.0, 0.0)))
+        check not fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), -newVec3(float32 0.0, 0.0, 0.0)))
+        
+
+
+
 
 #---------------------------------------#
 #           World type tests            #
@@ -214,13 +232,13 @@ suite "World":
     test "add proc":
         # Checking world add procedure
 
-        scenary.add(sphere)
+        scenary.shapes.add(sphere)
         check areClose(scenary.shapes[0].transf.mat, Mat4f.id)
         check areClose(scenary.shapes[0].transf.inv_mat, Mat4f.id)
 
     test "get proc":
         # Checking world get procedure
 
-        scenary.add(sphere)
-        check areClose(scenary.get(0).transf.mat, Mat4f.id)
-        check areClose(scenary.get(0).transf.inv_mat, Mat4f.id)
+        scenary.shapes.add(sphere)
+        check areClose(scenary.shapes[0].transf.mat, Mat4f.id)
+        check areClose(scenary.shapes[0].transf.inv_mat, Mat4f.id)

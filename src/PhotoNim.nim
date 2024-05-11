@@ -66,7 +66,7 @@ proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, row, col: int): Color
     # Procedure to decide pixel color (it could be useful to check if scenary len is non zero)
     let dim = scenary.shapes.len
     for i in 0..<dim:
-        if fastIntersection(scenary.get(i), ray): 
+        if fastIntersection(scenary.shapes[i], ray): 
             let 
                 col1 = (1 - exp(-float32(col + row)))
                 col2 = row/im_tr.image.height
@@ -159,8 +159,8 @@ elif args["demo"]:
         tracer = newImageTracer(image, cam)
         scenary = newWorld()
 
-    scenary.add(s1); scenary.add(s2); scenary.add(s3); scenary.add(s4); scenary.add(s5)
-    scenary.add(s6); scenary.add(s7); scenary.add(s8); scenary.add(s9); scenary.add(s10)
+    scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
+    scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
 
 
     tracer.fire_all_rays(col_pix, scenary)
