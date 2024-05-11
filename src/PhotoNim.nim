@@ -126,7 +126,6 @@ elif args["demo"]:
     let 
         timeStart = cpuTime()
         a_ratio = float32(width)/float32(height)
-        trasl = newTranslation(newVec3[float32](-1, 0, 0))   # Needed in order to have screen in (-1, y, z)
         sc = newScaling(0.1)    # Scaling needed in order to have 1/10 radius -> we will compose it with s translation
         s1 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, 0.5)) @ sc)
         s2 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, -0.5)) @ sc)
@@ -152,9 +151,9 @@ elif args["demo"]:
     rotz = newRotZ(float32(ang))
     
     if args["perspective"]:
-        cam = newPerspectiveCamera(a_ratio, 1.0, trasl @ rotz)
+        cam = newPerspectiveCamera(a_ratio, 2.0, rotz)
     else:
-        cam = newOrthogonalCamera(a_ratio, trasl @ rotz)
+        cam = newOrthogonalCamera(a_ratio, rotz)
 
     var
         tracer = newImageTracer(image, cam)
