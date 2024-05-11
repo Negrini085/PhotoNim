@@ -197,30 +197,3 @@ suite "Plane":
         check plane.fastIntersection(ray1)
         check not plane.fastIntersection(ray2)
         check not plane.fastIntersection(ray3)
-
-
-
-
-#---------------------------------------#
-#           World type tests            #
-#---------------------------------------#
-suite "World":
-    
-    setup:
-        var 
-            scenary = newWorld()
-            sphere = newSphere(Transformation.id)
-    
-    test "add proc":
-        # Checking world add procedure
-
-        scenary.add(sphere)
-        check areClose(scenary.shapes[0].transf.mat, Mat4f.id)
-        check areClose(scenary.shapes[0].transf.inv_mat, Mat4f.id)
-
-    test "get proc":
-        # Checking world get procedure
-
-        scenary.add(sphere)
-        check areClose(scenary.get(0).transf.mat, Mat4f.id)
-        check areClose(scenary.get(0).transf.inv_mat, Mat4f.id)

@@ -70,7 +70,7 @@ proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color =
     
     else:
         for i in 0..<dim:
-            if fastIntersection(scenary.get(i), ray): 
+            if fastIntersection(scenary.shapes[i], ray): 
                 let 
                     r = (1 - exp(-float32(x + y)))
                     g = y/im_tr.image.height
@@ -129,7 +129,7 @@ elif args["demo"]:
 
     let 
         timeStart = cpuTime()
-        a_ratio = float32(width)/float32(height)
+        a_ratio = width/height
         sc = newScaling(0.1)    # Scaling needed in order to have 1/10 radius -> we will compose it with s translation
         s1 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, 0.5)) @ sc)
         s2 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, -0.5)) @ sc)
@@ -163,9 +163,8 @@ elif args["demo"]:
         tracer = newImageTracer(image, cam)
         scenary = newWorld()
 
-    scenary.add(s1); scenary.add(s2); scenary.add(s3); scenary.add(s4); scenary.add(s5)
-    scenary.add(s6); scenary.add(s7); scenary.add(s8); scenary.add(s9); scenary.add(s10)
-
+    scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
+    scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
 
     tracer.fire_all_rays(col_pix, scenary)
     image = tracer.image

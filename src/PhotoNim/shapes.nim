@@ -145,11 +145,6 @@ method fastIntersection*(plane: Plane, ray: Ray): bool =
     
     return true
 
-proc add*(scenary: var World, shape: Shape) {.inline} = scenary.shapes.add(shape)
-    ## Procedure to add a shape to a sequence of shapes
-
-proc get*(scenary: World, ind: int): Shape {.inline.} = scenary.shapes[ind]
-    ## Procedure to get a shape which is a part of the scenary
 
 proc fire_all_rays*(im_tr: var ImageTracer, pix_col: proc, scenary: World) = 
     # Procedure to actually render an image: we will have to give as an input
