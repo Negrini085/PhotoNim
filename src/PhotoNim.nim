@@ -8,6 +8,7 @@ from std/streams import Stream, newFileStream, close
 from std/strutils import parseFloat, parseInt
 from std/strformat import fmt
 from std/math import pow, exp
+from std/times import cpuTime
 import typetraits
 
 let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
@@ -105,7 +106,6 @@ if args["pfm2png"]:
 #-----------------------------#
 
 elif args["demo"]: 
-
     var 
         height = 1000
         width = 1600
@@ -124,6 +124,7 @@ elif args["demo"]:
     #----------------------------------------------#
 
     let 
+        timeStart = cpuTime()
         a_ratio = float32(width)/float32(height)
         trasl = newTranslation(newVec3[float32](-1, 0, 0))   # Needed in order to have screen in (-1, y, z)
         sc = newScaling(0.1)    # Scaling needed in order to have 1/10 radius -> we will compose it with s translation
@@ -173,7 +174,7 @@ elif args["demo"]:
 
 
     if args["<output>"]: fileOut = $args["<output>"]
-    else: fileOut = "demo.png"
+    else: fileOut = "images/demo.png"
     var i: int = 0
 
 
@@ -185,7 +186,7 @@ elif args["demo"]:
             pixelsString[i] = (255 * pix.b).char; i += 1
 
     discard savePNG24(fileOut, pixelsString, width, height)
-    echo fmt"Successfully rendered image"
+    echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
     
     
 else: 
