@@ -13,7 +13,7 @@ type
     PerspectiveCamera* = object of Camera
 
     Ray* = object
-        start*: Point3D
+        origin*: Point3D
         dir*: Vec3f
         tmin*: float32
         tmax*: float32
@@ -30,8 +30,8 @@ proc newOrthogonalCamera*(a: float32; transf = Transformation.id): OrthogonalCam
 proc newPerspectiveCamera*(a, d: float32; transf = Transformation.id): PerspectiveCamera {.inline.} = 
     PerspectiveCamera(aspect_ratio: a, transf: transf, distance: d)
 
-proc newRay*(start: Point3D, direction: Vec3f): Ray {.inline} = 
-    Ray(start: start, dir: direction, tmin: 1e-5, tmax: Inf, depth: 0)  
+proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline} = 
+    Ray(origin: origin, dir: direction, tmin: epsilon(float32), tmax: Inf, depth: 0)  
 
 proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} = 
     ImageTracer(image: im, camera: cam)
@@ -40,17 +40,17 @@ proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} =
 #        Ray procedure and methods         #
 #------------------------------------------#
 
-proc at*(ray: Ray, time: float32): Point3D {.inline.} = ray.start + ray.dir * time
+proc at*(ray: Ray, time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline} = 
-    areClose(a.start, b.start, eps) and areClose(a.dir, b.dir, eps)
+    areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
 
 
 method apply*(transf: Transformation, ray: Ray): Ray {.base, inline.} =
-    Ray(start: apply(transf, ray.start), dir: apply(transf, ray.dir), tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
+    Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
 
 proc translate*(ray: Ray, vec: Vec3f): Ray {.inline.} = 
-    Ray(start: ray.start + vec, dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
+    Ray(origin: ray.origin + vec, dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
 
 
 
@@ -73,7 +73,7 @@ method fire_ray*(cam: PerspectiveCamera, pixel: Point2D): Ray {.inline.} =
 #        Image Tracer procedure and methods        #
 #--------------------------------------------------#
 
-proc fire_ray*(im_tr: ImageTracer, row, col: int, pixel: Point2D = newPoint2D(0.5, 0.5)): Ray =
+proc fire_ray*(im_tr: ImageTracer, row, col: int, pixel = newPoint2D(0.5, 0.5)): Ray =
     let u = (col.toFloat + pixel.u) / im_tr.image.width.toFloat
     let v = 1 - (row.toFloat + pixel.v) / im_tr.image.height.toFloat
     
