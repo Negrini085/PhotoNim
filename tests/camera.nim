@@ -1,4 +1,5 @@
 import std/unittest
+from std/math import exp, pow
 import PhotoNim/[geometry, camera, hdrimage]
 
 #----------------------------------#
@@ -168,8 +169,11 @@ suite "ImageTracer":
 
         im_tr.fire_all_rays()
 
-        for i in 0..<im_tr.image.height:
-            for j in 0..<im_tr.image.width:
-                let color = i*j/(im_tr.image.width * im_tr.image.height)
-                check areClose(im_tr.image.getPixel(i, j), newColor(color, color, color))
+        for y in 0..<im_tr.image.height:
+            for x in 0..<im_tr.image.width:
+                let 
+                    r = (1 - exp(-float32(x + y)))
+                    g = y/im_tr.image.height
+                    b = pow((1 - x/im_tr.image.width), 2.5)
+                check areClose(im_tr.image.getPixel(x, y), newColor(r, g, b))
     

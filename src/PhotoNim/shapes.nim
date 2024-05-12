@@ -38,10 +38,10 @@ proc areClose*(hit1, hit2: HitRecord): bool {.inline.} =
 proc newWorld*(): World {.inline.} = World(shapes: @[])
 
 
-method rayIntersection(shape: Shape, ray: Ray): Option[HitRecord] {.base.} =
+method rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] {.base.} =
     quit "to overload"
 
-method fastIntersection(shape: Shape, ray: Ray): bool {.base.} =
+method fastIntersection*(shape: Shape, ray: Ray): bool {.base.} =
     quit "to overload"
 
 
@@ -144,3 +144,11 @@ method fastIntersection*(plane: Plane, ray: Ray): bool =
     if t < inv_ray.tmin or t > inv_ray.tmax: return false
     
     return true
+
+
+proc fire_all_rays*(im_tr: var ImageTracer, pix_col: proc, scenary: World) = 
+    # Procedure to actually render an image: we will have to give as an input
+    # a function that will enable us to set the color of a pixel
+    for y in 0..<im_tr.image.height:
+        for x in 0..<im_tr.image.width:
+            im_tr.image.setPixel(x, y, pix_col(im_tr, im_tr.fire_ray(x, y), scenary, x, y))

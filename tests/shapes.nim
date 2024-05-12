@@ -1,10 +1,10 @@
 import std/[unittest, math, options]
 import PhotoNim/[shapes, geometry, camera]
 
+
 #---------------------------------------#
 #         Hit Record type tests         #
 #---------------------------------------#
-
 suite "HitRecord":
 
     setup:

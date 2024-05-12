@@ -56,24 +56,24 @@ proc newHdrImage*(width, height: int): HdrImage =
     result.pixels = newSeq[Color](width * height)
 
 
-proc validPixel(img: HdrImage, row, col: int): bool {.inline.} =
+proc validPixel(img: HdrImage, x, y: int): bool {.inline.} =
     ## Check if pixel coordinates are valid in a `HdrImage`.
-    (0 <= row and row < img.width) and (0 <= col and col < img.height)
+    (0 <= y and y < img.height) and (0 <= x and x < img.width)
 
 proc pixelOffset(img: HdrImage, x, y: int): int {.inline.} =
     ## Calculate pixel position in a `HdrImage`.
-    x + img.width * y
+    img.width * y + x
 
 
-proc getPixel*(img: HdrImage, row, col: int): Color = 
-    ## Access the `Color` of pixel (row, col) in a `HdrImage`.
-    assert img.validPixel(row, col), fmt"Error! Index ({row}, {col}) out of bounds for a {img.width}x{img.height} HdrImage"
-    img.pixels[img.pixelOffset(row, col)]
+proc getPixel*(img: HdrImage, x, y: int): Color = 
+    ## Access the `Color` of pixel (x, y) in a `HdrImage`.
+    assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HdrImage"
+    img.pixels[img.pixelOffset(x, y)]
 
-proc setPixel*(img: var HdrImage, row, col: int, color: Color) = 
-    ## Set the `Color` of pixel (row, col) in a `HdrImage`.
-    assert img.validPixel(row, col), fmt"Error! Index ({row}, {col}) out of bounds for a {img.width}x{img.height} HdrImage"
-    img.pixels[img.pixelOffset(row, col)] = color
+proc setPixel*(img: var HdrImage, x, y: int, color: Color) = 
+    ## Set the `Color` of pixel (x, y) in a `HdrImage`.
+    assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HdrImage"
+    img.pixels[img.pixelOffset(x, y)] = color
 
 
 proc luminosity*(a: Color): float32 {.inline.} = 

@@ -1,15 +1,16 @@
 from std/fenv import epsilon 
+from std/math import exp, pow 
 import geometry, hdrimage
 
 
 type
     Camera* = object of RootObj
         aspect_ratio*: float32
+        distance*:float32
         transf*: Transformation 
 
     OrthogonalCamera* = object of Camera
     PerspectiveCamera* = object of Camera
-        distance*: float32
 
     Ray* = object
         start*: Point3D
@@ -17,25 +18,23 @@ type
         tmin*: float32
         tmax*: float32
         depth*: int
-
+    
     ImageTracer* = object
         image*: HdrImage
         camera*: Camera
 
 
 proc newOrthogonalCamera*(a: float32; transf = Transformation.id): OrthogonalCamera {.inline.} = 
-    OrthogonalCamera(aspect_ratio: a, transf: transf)
+    OrthogonalCamera(aspect_ratio: a, transf: transf, distance: Inf)
 
 proc newPerspectiveCamera*(a, d: float32; transf = Transformation.id): PerspectiveCamera {.inline.} = 
-    PerspectiveCamera(aspect_ratio: a, distance: d, transf: transf)
+    PerspectiveCamera(aspect_ratio: a, transf: transf, distance: d)
 
 proc newRay*(start: Point3D, direction: Vec3f): Ray {.inline} = 
     Ray(start: start, dir: direction, tmin: 1e-5, tmax: Inf, depth: 0)  
 
 proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} = 
     ImageTracer(image: im, camera: cam)
-
-
 
 #------------------------------------------#
 #        Ray procedure and methods         #
@@ -74,15 +73,18 @@ method fire_ray*(cam: PerspectiveCamera, pixel: Point2D): Ray {.inline.} =
 #        Image Tracer procedure and methods        #
 #--------------------------------------------------#
 
-proc fire_ray*(im_tr: ImageTracer, col, row: int, pixel: Point2D = newPoint2D(0.5, 0.5)): Ray =
-    let u = (col.toFloat + pixel.u) / im_tr.image.width.toFloat
-    let v = 1 - (row.toFloat + pixel.v) / im_tr.image.height.toFloat
+proc fire_ray*(im_tr: ImageTracer, x, y: int, pixel: Point2D = newPoint2D(0.5, 0.5)): Ray =
+    let u = (x.toFloat + pixel.u) / im_tr.image.width.toFloat
+    let v = 1 - (y.toFloat + pixel.v) / im_tr.image.height.toFloat
     
     im_tr.camera.fire_ray(newPoint2D(u, v))
 
 proc fire_all_rays*(im_tr: var ImageTracer) = 
-    for i in 0..<im_tr.image.height:
-        for j in 0..<im_tr.image.width:
-            discard im_tr.fire_ray(i, j)
-            let pixColor = i * j / (im_tr.image.width * im_tr.image.height)
-            im_tr.image.setPixel(i, j, newColor(pixColor, pixColor, pixColor))
+    for x in 0..<im_tr.image.height:
+        for y in 0..<im_tr.image.width:
+            discard im_tr.fire_ray(x, y)
+            let 
+                    r = (1 - exp(-float32(x + y)))
+                    g = y/im_tr.image.height
+                    b = pow((1 - x/im_tr.image.width), 2.5)
+            im_tr.image.setPixel(x, y, newColor(r, g, b))
