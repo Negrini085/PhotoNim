@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(ImageTracer)* Add new fire_all_rays procedure
+- *(ImageTracer)* Add different fire_all_rays implentation, now a procedure is given as imput
+- *(World)* Add get procedure
+- *(World)* Add procedure to add a shape to the scenary ro render
 - *(docs)* New Jekyll static site for the official PhotoNim documentation.
 - *(Plane)* Add plane fast intersection method
 - *(Plane)* Add intersectionRay method
@@ -136,6 +140,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(World)* Get procedure test
+- *(World)* Add procedure test
 - *(All)* Correct test implementation
 - *(Plane)* Add fast intersection test
 - *(Plane)* Add intersectionRay test module 2
