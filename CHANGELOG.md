@@ -135,6 +135,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- Update again jekyll gh pages workflow
 - Update jekyll workflow
 - New jekyll workflow
 - Updated jekyll gh-pages workflow.
