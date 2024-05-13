@@ -7,7 +7,7 @@ from std/os import splitFile
 from std/streams import Stream, newFileStream, close
 from std/strutils import parseFloat, parseInt
 from std/strformat import fmt
-from std/math import pow, exp
+from std/math import pow, exp, sin, cos, degToRad
 from std/times import cpuTime
 import typetraits
 
@@ -144,20 +144,22 @@ elif args["demo"]:
  
     var 
         image = newHdrImage(width, height)
+        trasl: Translation
         rotz: Rotation
         cam: Camera
-        ang: int = 10
+        ang: float32 = 10
 
     if args["--angle"]:
-        try: ang = parseInt($args["--angle"]) 
+        try: ang = parseFloat($args["--angle"]) 
         except: echo "Warning: angle must be an integer. Default value is used."
     
     rotz = newRotZ(float32(ang))
+    trasl = newTranslation(newVec3[float32](-1, 0, 0))
     
     if args["perspective"]:
-        cam = newPerspectiveCamera(a_ratio, 2.0, rotz)
+        cam = newPerspectiveCamera(a_ratio, 1.0, rotz @ trasl)
     else:
-        cam = newOrthogonalCamera(a_ratio, rotz)
+        cam = newOrthogonalCamera(a_ratio, rotz @ trasl)
 
     var
         tracer = newImageTracer(image, cam)
