@@ -135,6 +135,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- New jekyll workflow
 - Updated jekyll gh-pages workflow.
 - Jekyll site
 - Trying different gh actions for deploying the jekyll static site.
