@@ -5,8 +5,7 @@ import geometry, hdrimage
 
 type
     Camera* = object of RootObj
-        aspect_ratio*: float32
-        distance*:float32
+        aspect_ratio*, distance*: float32
         transf*: Transformation 
 
     OrthogonalCamera* = object of Camera

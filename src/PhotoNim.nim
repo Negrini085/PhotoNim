@@ -163,7 +163,7 @@ elif args["demo"]:
     scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
 
 
-    tracer.fire_all_rays(col_pix, scenary)
+    tracer.fire_all_rays(scenary, col_pix)
     image = tracer.image
 
     var
