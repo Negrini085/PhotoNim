@@ -135,6 +135,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- Jekyll site
 - Trying different gh actions for deploying the jekyll static site.
 - Moved jekyll-gh action workflow from master to docs branch.
 - Removed docs from master and opened a new branch only for docs.
