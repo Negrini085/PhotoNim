@@ -18,7 +18,6 @@ type
 proc newWorld*(): World {.inline.} = World(shapes: @[])
 
 proc fire_all_rays*(tracer: var ImageTracer, scenary: World, color_map: proc) = 
-    ## Procedure to actually render an image: we will have to give as an input a function that will enable us to set the color of a pixel
     for row in 0..<tracer.image.height:
         for col in 0..<tracer.image.width:
             tracer.image.setPixel(row, col, color_map(tracer, tracer.fire_ray(row, col), scenary, row, col))

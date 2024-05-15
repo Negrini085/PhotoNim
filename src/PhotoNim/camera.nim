@@ -35,9 +35,6 @@ proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline} =
 proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} = 
     ImageTracer(image: im, camera: cam)
 
-#------------------------------------------#
-#        Ray procedure and methods         #
-#------------------------------------------#
 
 proc at*(ray: Ray, time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
 
@@ -52,11 +49,6 @@ proc translate*(ray: Ray, vec: Vec3f): Ray {.inline.} =
     Ray(origin: ray.origin + vec, dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
 
 
-
-#--------------------------------------------#
-#        Camera procedure and methods        #
-#--------------------------------------------#
-
 method fire_ray*(cam: Camera, pixel: Point2D): Ray {.base.} =
     quit "to overload"
 
@@ -67,11 +59,6 @@ method fire_ray*(cam: PerspectiveCamera, pixel: Point2D): Ray {.inline.} =
     apply(cam.transf, newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1)))
 
 
-
-#--------------------------------------------------#
-#        Image Tracer procedure and methods        #
-#--------------------------------------------------#
-
 proc fire_ray*(im_tr: ImageTracer, x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray =
     let (u, v) = ((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32)
     im_tr.camera.fire_ray(newPoint2D(u, v))
@@ -81,7 +68,7 @@ proc fire_all_rays*(im_tr: var ImageTracer) =
         for y in 0..<im_tr.image.width:
             discard im_tr.fire_ray(x, y)
             let 
-                    r = (1 - exp(-float32(x + y)))
-                    g = y/im_tr.image.height
-                    b = pow((1 - x/im_tr.image.width), 2.5)
+                r = (1 - exp(-float32(x + y)))
+                g = y / im_tr.image.height
+                b = pow((1 - x / im_tr.image.width), 2.5)
             im_tr.image.setPixel(x, y, newColor(r, g, b))

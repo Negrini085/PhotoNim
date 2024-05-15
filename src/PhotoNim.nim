@@ -129,17 +129,16 @@ elif args["demo"]:
     let 
         timeStart = cpuTime()
         a_ratio = width/height
-        sc = newScaling(0.1)    # Scaling needed in order to have 1/10 radius -> we will compose it with s translation
-        s1 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, 0.5)) @ sc)
-        s2 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, -0.5)) @ sc)
-        s3 = newSphere(newTranslation(newVec3[float32](0.5, -0.5, 0.5)) @ sc)
-        s4 = newSphere(newTranslation(newVec3[float32](0.5, -0.5, -0.5)) @ sc)
-        s5 = newSphere(newTranslation(newVec3[float32](-0.5, 0.5, 0.5)) @ sc)
-        s6 = newSphere(newTranslation(newVec3[float32](-0.5, 0.5, -0.5)) @ sc)
-        s7 = newSphere(newTranslation(newVec3[float32](-0.5, -0.5, 0.5)) @ sc)
-        s8 = newSphere(newTranslation(newVec3[float32](-0.5, -0.5, -0.5)) @ sc)
-        s9 = newSphere(newTranslation(newVec3[float32](-0.5, 0.0, 0.0)) @ sc)
-        s10 = newSphere(newTranslation(newVec3[float32](0.0, 0.5, 0.0)) @ sc)   
+        s1 = newSphere(newPoint3D(0.5, 0.5, 0.5), 0.1)
+        s2 = newSphere(newPoint3D(0.5, 0.5, -0.5), 0.1)
+        s3 = newSphere(newPoint3D(0.5, -0.5, 0.5), 0.2)
+        s4 = newSphere(newPoint3D(0.5, -0.5, -0.5), 0.1)
+        s5 = newSphere(newPoint3D(-0.5, 0.5, 0.5), 0.1)
+        s6 = newSphere(newPoint3D(-0.5, 0.5, -0.5), 0.1)
+        s7 = newSphere(newPoint3D(-0.5, -0.5, 0.5), 0.4)
+        s8 = newSphere(newPoint3D(-0.5, -0.5, -0.5), 0.1)
+        s9 = newSphere(newPoint3D(-0.5, 0.0, 0.0), 0.3)
+        s10 = newSphere(newPoint3D(0.0, 0.5, 0.0), 0.1)   
  
     var 
         image = newHdrImage(width, height)
