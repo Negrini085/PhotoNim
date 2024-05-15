@@ -81,6 +81,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- Ignore docs update in git-cliff and github ci actions.
 - *(pfm2png)* Bug #26 fixed.
 - *(hdrimage)* Bug #25 fixed
 - Do not use newTransformation for composition and scaling existing transformations.
