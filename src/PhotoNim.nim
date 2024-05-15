@@ -1,4 +1,4 @@
-import PhotoNim/[geometry, hdrimage, camera, shapes]
+import PhotoNim/[geometry, hdrimage, camera, shapes, pcg]
 
 import docopt
 from nimPNG import savePNG24
