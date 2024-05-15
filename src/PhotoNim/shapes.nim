@@ -157,7 +157,7 @@ proc fastIntersection*[S: Shape](shape: S, ray: Ray): bool =
         if delta_4 <= 0: return false
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        (inv_ray.tmin < t_l and t_l < inv_ray.tmax) or (inv_ray.tmin < t_r and t_r < rayInv.tmax) 
+        (inv_ray.tmin < t_l and t_l < inv_ray.tmax) or (inv_ray.tmin < t_r and t_r < inv_ray.tmax) 
 
     elif S is Plane:
         let inv_ray = apply(plane.transf.inverse, ray)
