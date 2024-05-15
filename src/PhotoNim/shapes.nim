@@ -15,6 +15,7 @@ type
     World* = object
         shapes*: seq[Shape]
 
+
 proc newWorld*(): World {.inline.} = World(shapes: @[])
 
 proc fire_all_rays*(tracer: var ImageTracer, scenary: World, color_map: proc) = 
@@ -30,13 +31,14 @@ type
         center*: Point3D
         radius*: float32
 
+    Plane* = object of Shape
+
     Triangle* = object of Shape
         vertices*: tuple[A, B, C: Point3D]
 
-    Plane* = object of Shape
 
-
-proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1), transf = Transformation.id): AABox {.inline.} = AABox(transf: transf, aabb: some(AABB((min, max))))
+proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1), transf = Transformation.id): AABox {.inline.} = 
+    AABox(transf: transf, aabb: some(AABB((min, max))))
 
 proc newSphere*(center: Point3D, radius: float32): Sphere {.inline.} = 
     Sphere(
@@ -95,11 +97,12 @@ proc normal*[S: Shape](shape: S; pt: Point3D, dir: Vec3f): Normal =
 
     elif S is Triangle:
         let 
-            (A, B, C) = shape.verteces
-        result = cross((B - A).Vec3f, (C - A).Vec3f).toNormal
-        sgn(-dot(result.Vec3f, dir)).float32 * result
+            (A, B, C) = shape.vertices
+            cross = cross((B - A).Vec3f, (C - A).Vec3f)
+        sgn(-dot(result, dir)).float32 * cross.toNormal
         
     elif S is Sphere: sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
+
     elif S is Plane: newNormal(0, 0, sgn(-dir[2]).float32)
 
 
@@ -155,7 +158,6 @@ proc rayIntersection*[S: Shape](shape: S, ray: Ray): Option[HitRecord] =
         let 
             aabb = shape.aabb.get
             (min, max) = (aabb.min - inv_ray.origin, aabb.max - inv_ray.origin)
-
         var
             (tx_min, tx_max) = (min.x / inv_ray.dir[0], max.x / inv_ray.dir[0])
             (ty_min, ty_max) = (min.y / inv_ray.dir[1], max.y / inv_ray.dir[1])
@@ -192,7 +194,6 @@ proc rayIntersection*[S: Shape](shape: S, ray: Ray): Option[HitRecord] =
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(HitRecord)
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < inv_ray.tmin or t_hit > inv_ray.tmax: return none(HitRecord)
-
 
     let
         hit_pt = inv_ray.at(t_hit)
