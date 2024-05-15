@@ -16,11 +16,11 @@ type
         shapes*: seq[Shape]
 
     HitRecord* = object
-    ray*: Ray
-    t_hit*: float32
-    world_pt*: Point3D
-    surface_pt*: Point2D
-    normal*: Normal
+        ray*: Ray
+        t_hit*: float32
+        world_pt*: Point3D
+        surface_pt*: Point2D
+        normal*: Normal
 
 
 proc newWorld*(): World {.inline.} = World(shapes: @[])
@@ -48,7 +48,14 @@ type
     AABox* = object of Shape
 
     Sphere* = object of Shape
+        center*: Point3D
+        radius*: float32
+
+    Triangle* = object of Shape
+        vertices*: tuple[A, B, C: Point3D]
+
     Plane* = object of Shape
+
 
 proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1), transf = Transformation.id): AABox {.inline.} = AABox(transf: transf, aabb: some(AABB((min, max))))
 proc newSphere*(transf = Transformation.id): Sphere {.inline.} = Sphere(transf: transf)    
@@ -62,12 +69,12 @@ proc uv*(S: typedesc[Shape], pt: Point3D): Point2D =
         newPoint2D(u, arccos(pt.z) / PI)
 
     elif S is AABox:
-    if   pt.x == 0: return newPoint2D((1 + pt.y) / 4, (1 + pt.z) / 3)
-    elif pt.x == 1: return newPoint2D((3 + pt.x) / 4, (1 + pt.z) / 3)
-    elif pt.y == 0: return newPoint2D((2 + pt.x) / 4, (1 + pt.z) / 3)
-    elif pt.y == 1: return newPoint2D((1 - pt.x) / 4, (1 + pt.z) / 3)
-    elif pt.z == 0: return newPoint2D((1 + pt.y) / 4, (1 - pt.x) / 3)
-    elif pt.z == 1: return newPoint2D((1 + pt.y) / 4, (2 + pt.x) / 3)
+        if   pt.x == 0: return newPoint2D((1 + pt.y) / 4, (1 + pt.z) / 3)
+        elif pt.x == 1: return newPoint2D((3 + pt.x) / 4, (1 + pt.z) / 3)
+        elif pt.y == 0: return newPoint2D((2 + pt.x) / 4, (1 + pt.z) / 3)
+        elif pt.y == 1: return newPoint2D((1 - pt.x) / 4, (1 + pt.z) / 3)
+        elif pt.z == 0: return newPoint2D((1 + pt.y) / 4, (1 - pt.x) / 3)
+        elif pt.z == 1: return newPoint2D((1 + pt.y) / 4, (2 + pt.x) / 3)        
 
 
 
@@ -76,7 +83,7 @@ proc normal*(box: AABox; dir: Vec3f, t_hit: float32): Normal =
     if   t_hit == aabb.min.x or t_hit == aabb.max.x: result = newNormal(1, 0, 0)
     elif t_hit == aabb.min.y or t_hit == aabb.max.y: result = newNormal(0, 1, 0)
     elif t_hit == aabb.min.z or t_hit == aabb.max.z: result = newNormal(0, 0, 1)
-    else: quit "Something went wrong in calculating the normal on a AABox."
+    else: quit "Something went wrong in calculating the normal for an AABox."
     return sgn(-dot(result.Vec3f, dir)).float32 * result
 
 proc normal*(sphere: Sphere, pt: Point3D, dir: Vec3f): Normal {.inline.} = sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
@@ -204,13 +211,10 @@ method rayIntersection*(box: AABox, ray: Ray): Option[HitRecord] =
 
 
 
-type World* = object
-    shapes*: seq[Shape]
+type 
+    Mesh = object of Shape
+        nodes: seq[Point3D]
+        edges: seq[tuple[first, second: int]]
 
-proc newWorld*(): World {.inline.} = World(shapes: @[])
-
-proc fire_all_rays*(tracer: var ImageTracer, scenary: World, color_map: proc) = 
-    ## Procedure to actually render an image: we will have to give as an input a function that will enable us to set the color of a pixel
-    for row in 0..<tracer.image.height:
-        for col in 0..<tracer.image.width:
-            tracer.image.setPixel(row, col, color_map(tracer, tracer.fire_ray(row, col), scenary, row, col))
+proc newMesh(nodes: seq[Point3D], edges: seq[tuple[first, second: int]]): Mesh {.inline.} = Mesh(nodes: nodes, edges: edges)
+proc newTriangle*(a, b, c: Point3D): Mesh {.inline.} = newMesh(@[a, b, c], @[(0, 1), (1, 2), (2, 0)])
