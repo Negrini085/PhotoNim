@@ -162,7 +162,41 @@ method rayIntersection*(plane: Plane, ray: Ray): Option[HitRecord] =
         surface_pt = newPoint2D(intersection_pt.x - floor(intersection_pt.x), intersection_pt.y - floor(intersection_pt.y))
         normal = apply(plane.transf, newNormal(0, 0, sgn(-inv_ray.dir[2]).toFloat))
 
-    some(newHitRecord(ray, t, world_pt, map_pt, normal))
+    some(newHitRecord(ray, t, world_pt, surface_pt, normal))
+
+
+method rayIntersection*(box: AABox, ray: Ray): Option[HitRecord] =
+    let 
+        inv_ray = apply(box.transf.inverse, ray)
+        aabb = box.aabb.get
+        (min, max) = (aabb.min - ray.origin, aabb.max - ray.origin)
+        (tx_min, tx_max) = (min.x / ray.dir[0], max.x / ray.dir[0])
+        (ty_min, ty_max) = (min.y / ray.dir[1], max.y / ray.dir[1])
+   
+    if tx_min > ty_max or ty_min > tx_max: return none(HitRecord)
+
+    let (tz_min, tz_max) = (min.z / ray.dir[2], max.z / ray.dir[2])
+    var
+        t_hit_min = max(ty_min, tx_min)
+        t_hit_max = min(ty_max, tx_max)
+        
+    if t_hit_min > tz_max or tz_min > t_hit_max: return none(HitRecord)
+    
+    t_hit_min = max(t_hit_min, tz_min)
+    t_hit_max = min(t_hit_max, tz_max)
+
+    proc `<=`(a, b : Point3D): bool {.inline.} = a.x<=b.x and a.y<=b.y and a.z<=b.z
+    let t_hit = if inv_ray.origin <= aabb.max and aabb.min <= inv_ray.origin: t_hit_max else: t_hit_min
+    
+    if (t_hit < inv_ray.tmin) or (t_hit > inv_ray.tmax): return none(HitRecord)
+
+    let 
+        intersection_pt = inv_ray.at(t_hit)
+        world_pt = apply(box.transf, intersection_pt)
+        surface_pt = box.uv(intersection_pt)
+        normal = box.normal(inv_ray.dir, t_hit)
+
+    result = some(newHitRecord(ray, t_hit, world_pt, surface_pt, normal))
 
 
 type World* = object
