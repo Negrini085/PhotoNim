@@ -167,7 +167,6 @@ proc fastIntersection*[S: Shape](shape: S, ray: Ray): bool =
         if t < inv_ray.tmin or t > inv_ray.tmax: false
         else: true
 
-
 type 
     Mesh = object of Shape
         nodes: seq[Point3D]
