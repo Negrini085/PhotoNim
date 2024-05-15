@@ -28,7 +28,7 @@ type
         transf*: Transformation
         aabb*: Option[AABB] = none(AABB)
 
-method toUV(shape: Shape, pt: Point3D): Point2D {.base.} = quit "to overload"
+method uv(shape: Shape, pt: Point3D): Point2D {.base.} = quit "to overload"
 method fastIntersection*(shape: Shape, ray: Ray): bool {.base.} = quit "to overload"
 method rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] {.base.} = quit "to overload"
 
@@ -43,7 +43,7 @@ proc newSphere*(transf = Transformation.id): Sphere {.inline.} = Sphere(transf: 
 proc newPlane*(transf = Transformation.id): Plane {.inline.} = Plane(transf: transf)
 
 
-method toUV*(box: AABox, pt: Point3D): Point2D =
+method uv*(box: AABox, pt: Point3D): Point2D =
     if   pt.x == 0: return newPoint2D((1 + pt.y) / 4, (1 + pt.z) / 3)
     elif pt.x == 1: return newPoint2D((3 + pt.x) / 4, (1 + pt.z) / 3)
     elif pt.y == 0: return newPoint2D((2 + pt.x) / 4, (1 + pt.z) / 3)
@@ -51,7 +51,7 @@ method toUV*(box: AABox, pt: Point3D): Point2D =
     elif pt.z == 0: return newPoint2D((1 + pt.y) / 4, (1 - pt.x) / 3)
     elif pt.z == 1: return newPoint2D((1 + pt.y) / 4, (2 + pt.x) / 3)
 
-method toUV*(sphere: Sphere, pt: Point3D): Point2D = 
+method uv*(sphere: Sphere, pt: Point3D): Point2D = 
     var u = arctan2(pt.y, pt.x) / (2 * PI)
     if u < 0.0: u += 1.0
     newPoint2D(u, arccos(pt.z) / PI)
