@@ -96,8 +96,8 @@ method fastIntersection*(sphere: Sphere, ray: Ray): bool =
 
     if delta_4 <= 0: return false
 
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        (rayInv.tmin < t_l and t_l < rayInv.tmax) or (rayInv.tmin < t_r and t_r < rayInv.tmax) 
+    let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
+    (rayInv.tmin < t_l and t_l < rayInv.tmax) or (rayInv.tmin < t_r and t_r < rayInv.tmax) 
 
 method fastIntersection*(plane: Plane, ray: Ray): bool = 
     let inv_ray = apply(plane.transf.inverse, ray)
@@ -110,12 +110,6 @@ method fastIntersection*(plane: Plane, ray: Ray): bool =
 
 
 method rayIntersection*(sphere: Sphere, ray: Ray): Option[HitRecord] =
-    ## Method to detect a ray - sphere intersection
-    ## Here we create a sphere centered in (0, 0, 0) and having unitary ray.
-    ## We can obtain every kind of sphere and even ellipsoids using specific transformations
-
-    # First off, we have to apply the inverse transformation on the choosen ray: that's because we want to
-    # treat the shape in its local reference system where the defining relation is easier to write and solve.
     let 
         rayInv = apply(sphere.transf.inverse, ray)
 
@@ -126,19 +120,14 @@ method rayIntersection*(sphere: Sphere, ray: Ray): Option[HitRecord] =
 
     if delta_4 < 0: return none(HitRecord)
 
-    let 
-        t_l = (-b - sqrt(delta_4)) / a
-        t_r = (-b + sqrt(delta_4)) / a
 
     ## We have found the two possible solutions: we now want to chose only the closer one to the observer, that is the one with smaller t. 
     ## We want to consider only solution caracterized by positive time, because we are not interested in shapes located behind the observer.
     var t: float32
-    if t_l > rayInv.tmin and t_l < rayInv.tmax:
-        t = t_l
-    elif t_r > rayInv.tmin and t_r < rayInv.tmax:
-        t = t_r
-    else:
-        return none(HitRecord)
+    let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
+    if t_l > rayInv.tmin and t_l < rayInv.tmax: t = t_l
+    elif t_r > rayInv.tmin and t_r < rayInv.tmax: t = t_r
+    else: return none(HitRecord)
     
     let 
         intersection_pt = rayInv.at(t)
