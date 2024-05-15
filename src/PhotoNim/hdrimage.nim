@@ -11,8 +11,7 @@ from std/fenv import epsilon
 import geometry
 
 
-type
-    Color* {.borrow: `.`.} = distinct Vec3f
+type Color* {.borrow: `.`.} = distinct Vec3f
 
 proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
 
@@ -43,11 +42,10 @@ proc `/=`*(a: var Color, b: float32) {.borrow.}
 
 
 
-type
-    HdrImage* = object
-        ## `HdrImage` represents an HDR image as a sequence of `Color` associated with each pixel in (width, height)
-        width*, height*: int
-        pixels*: seq[Color]
+type HdrImage* = object
+    ## `HdrImage` represents an HDR image as a sequence of `Color` associated with each pixel in (width, height)
+    width*, height*: int
+    pixels*: seq[Color]
 
 
 proc newHdrImage*(width, height: int): HdrImage = 
