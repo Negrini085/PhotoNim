@@ -1,13 +1,18 @@
 import std/[unittest, math, options]
 import PhotoNim/[shapes, geometry, camera]
 
+proc areClose*(a, b: HitRecord): bool {.inline.} = 
+    areClose(a.ray, b.ray) and areClose(a.t_hit, b.t_hit) and 
+    areClose(a.world_pt, b.world_pt) and areClose(a.surface_pt, b.surface_pt) and 
+    areClose(a.normal, b.normal) 
+
 
 suite "HitRecord":
 
     setup:
         var 
-            hit1 = newHitRecord(newRay(newPoint3D(0, 0, 0), newVec3[float32](0, 1, 0)), float32(0.5), newPoint3D(1, 2, 3), newPoint2D(1, 0), newNormal(1, 0, 0))
-            hit2 = newHitRecord(newRay(newPoint3D(0, 0, 2), newVec3[float32](1, 1, 0)), float32(0.6), newPoint3D(1, 0, 0), newPoint2D(0.5, 0.5), newNormal(0, 1, 0))
+            hit1 = HitRecord(ray: newRay(newPoint3D(0, 0, 0), newVec3[float32](0, 1, 0)), t_hit: float32(0.5), world_pt: newPoint3D(1, 2, 3), surface_pt: newPoint2D(1, 0), normal: newNormal(1, 0, 0))
+            hit2 = HitRecord(ray: newRay(newPoint3D(0, 0, 2), newVec3[float32](1, 1, 0)), t_hit: float32(0.6), world_pt: newPoint3D(1, 0, 0), surface_pt: newPoint2D(0.5, 0.5), normal: newNormal(0, 1, 0))
 
     teardown:
         discard hit1; discard hit2

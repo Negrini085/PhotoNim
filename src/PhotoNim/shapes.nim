@@ -32,15 +32,6 @@ proc fire_all_rays*(tracer: var ImageTracer, scenary: World, color_map: proc) =
             tracer.image.setPixel(row, col, color_map(tracer, tracer.fire_ray(row, col), scenary, row, col))
 
 
-proc newHitRecord*(ray: Ray, t: float32, hit_point: Point3D, uv: Point2D, normal: Normal): HitRecord {.inline.} =
-    HitRecord(ray: ray, t_hit: t, world_pt: hit_point, surface_pt: uv, normal: normal)
-
-proc areClose*(a, b: HitRecord): bool {.inline.} = 
-    areClose(a.ray, b.ray) and areClose(a.t_hit, b.t_hit) and 
-    areClose(a.world_pt, b.world_pt) and areClose(a.surface_pt, b.surface_pt) and 
-    areClose(a.normal, b.normal) 
-
-
 method fastIntersection*(shape: Shape, ray: Ray): bool {.base.} = quit "to overload"
 method rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] {.base.} = quit "to overload"
 
