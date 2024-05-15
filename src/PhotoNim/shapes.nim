@@ -9,15 +9,15 @@ type HitRecord* = object
     ray*: Ray
     t_hit*: float32
     world_pt*: Point3D
-    map_pt*: Point2D
+    surface_pt*: Point2D
     normal*: Normal
 
 proc newHitRecord*(ray: Ray, t: float32, hit_point: Point3D, uv: Point2D, normal: Normal): HitRecord {.inline.} =
-    HitRecord(ray: ray, t_hit: t, world_pt: hit_point, map_pt: uv, normal: normal)
+    HitRecord(ray: ray, t_hit: t, world_pt: hit_point, surface_pt: uv, normal: normal)
 
 proc areClose*(a, b: HitRecord): bool {.inline.} = 
     areClose(a.ray, b.ray) and areClose(a.t_hit, b.t_hit) and 
-    areClose(a.world_pt, b.world_pt) and areClose(a.map_pt, b.map_pt) and 
+    areClose(a.world_pt, b.world_pt) and areClose(a.surface_pt, b.surface_pt) and 
     areClose(a.normal, b.normal) 
 
 
@@ -142,10 +142,10 @@ method rayIntersection*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     let 
         intersection_pt = rayInv.at(t)
         world_pt = apply(sphere.transf, intersection_pt)
-        map_pt = sphere.toUV(intersection_pt)
-        normal = apply(sphere.transf, sphereNormal(intersection_pt, rayInv.dir))
+        surface_pt = sphere.uv(intersection_pt)
+        normal = apply(sphere.transf, sphere.normal(intersection_pt, rayInv.dir))
 
-    some(newHitRecord(ray, t, world_pt, map_pt, normal))
+    some(newHitRecord(ray, t, world_pt, surface_pt, normal))
 
 
 method rayIntersection*(plane: Plane, ray: Ray): Option[HitRecord] =
@@ -158,7 +158,7 @@ method rayIntersection*(plane: Plane, ray: Ray): Option[HitRecord] =
     let 
         intersection_pt = inv_ray.at(t)
         world_pt = apply(plane.transf, intersection_pt)
-        map_pt = newPoint2D(intersection_pt.x - floor(intersection_pt.x), intersection_pt.y - floor(intersection_pt.y))
+        surface_pt = newPoint2D(intersection_pt.x - floor(intersection_pt.x), intersection_pt.y - floor(intersection_pt.y))
         normal = apply(plane.transf, newNormal(0, 0, sgn(-inv_ray.dir[2]).toFloat))
 
     some(newHitRecord(ray, t, world_pt, map_pt, normal))
