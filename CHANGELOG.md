@@ -81,6 +81,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- Ignore docs update in git-cliff and github ci actions.
 - *(pfm2png)* Bug #26 fixed.
 - *(hdrimage)* Bug #25 fixed
 - Do not use newTransformation for composition and scaling existing transformations.
@@ -139,6 +140,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- New site structure with roadmap and examples.
 - See if workflow starts.
 - Update again jekyll gh pages workflow
 - Update jekyll workflow

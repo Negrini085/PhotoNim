@@ -3,12 +3,12 @@ name: Continuous Integration tests.
 on:
   # Runs on pushes targeting the default branch
   push:
+    branches: 
+      - master
     paths-ignore:
       - 'docs/**'
       - 'LICENSE'
       - '*.md'
-    branches: 
-      - master
 
   pull_request:
     paths-ignore:
