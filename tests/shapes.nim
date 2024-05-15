@@ -1,7 +1,7 @@
 import std/[unittest, math, options]
 import PhotoNim/[shapes, geometry, camera]
 
-proc areClose*(a, b: HitRecord): bool {.inline.} = 
+proc areClose(a, b: HitRecord): bool {.inline.} = 
     areClose(a.ray, b.ray) and areClose(a.t_hit, b.t_hit) and 
     areClose(a.world_pt, b.world_pt) and areClose(a.surface_pt, b.surface_pt) and 
     areClose(a.normal, b.normal) 
@@ -72,8 +72,8 @@ suite "Sphere":
             p1 = newPoint3D(1, 0, 1)
             p2 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
 
-        check areClose(Sphere.uv(p1), newPoint2D(0, 0))
-        check areClose(Sphere.uv(p2), newPoint2D(1/6, 1/3))
+        check areClose(sphere.uv(p1), newPoint2D(0, 0))
+        check areClose(sphere.uv(p2), newPoint2D(1/6, 1/3))
     
 
     test "RayIntersection: no transformation":
