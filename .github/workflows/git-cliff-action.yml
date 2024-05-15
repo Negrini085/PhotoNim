@@ -3,8 +3,11 @@ name: CHANGELOG automation with git-cliff
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["master"]
-    
+    branches: 
+      - "master"
+    paths-ignore:
+      - 'docs/**'
+      
 jobs:
   changelog:
     name: Generate changelog
