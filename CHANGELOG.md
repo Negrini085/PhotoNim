@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(Pcg)* Add rand procedure
+- *(Pcg)* Add newPcg procedure
+- *(Pcg)* Add Pcg type
 - *(ImageTracer)* Add new fire_all_rays procedure
 - *(ImageTracer)* Add different fire_all_rays implentation, now a procedure is given as imput
 - *(World)* Add get procedure
@@ -90,6 +93,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(Pcg)* Change random procedure to rand
 - Correct demo mode
 - *(HdrImage)* Change endiannes evaluation
 - *(ShapeTests)* Correct shape test implementation
@@ -147,6 +151,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(Pcg)* Add rand procedure test
+- *(Pcg)* Add newPcg procedure test
 - *(World)* Get procedure test
 - *(World)* Add procedure test
 - *(All)* Correct test implementation
