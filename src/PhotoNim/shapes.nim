@@ -135,7 +135,7 @@ proc rayIntersection*[S: Shape](shape: S, ray: Ray): Option[HitRecord] =
 proc fastIntersection*[S: Shape](shape: S, ray: Ray): bool =
     when S is AABox:
         let 
-            aabb = box.aabb.get
+            aabb = shape.aabb.get
             (min, max) = (aabb.min - ray.origin, aabb.max - ray.origin)
             (tx_min, tx_max) = (min.x / ray.dir[0], max.x / ray.dir[0])
             (ty_min, ty_max) = (min.y / ray.dir[1], max.y / ray.dir[1])
@@ -160,7 +160,7 @@ proc fastIntersection*[S: Shape](shape: S, ray: Ray): bool =
         (inv_ray.tmin < t_l and t_l < inv_ray.tmax) or (inv_ray.tmin < t_r and t_r < inv_ray.tmax) 
 
     elif S is Plane:
-        let inv_ray = apply(plane.transf.inverse, ray)
+        let inv_ray = apply(shape.transf.inverse, ray)
         if abs(inv_ray.dir[2]) < epsilon(float32): return false
 
         let t = -inv_ray.origin.z / inv_ray.dir[2]
