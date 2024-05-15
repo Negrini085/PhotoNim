@@ -7,7 +7,7 @@ from std/os import splitFile
 from std/streams import Stream, newFileStream, close
 from std/strutils import parseFloat, parseInt
 from std/strformat import fmt
-from std/math import pow, exp
+from std/math import pow, exp, sin, cos, degToRad
 from std/times import cpuTime
 import typetraits
 
@@ -51,9 +51,9 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
     # Gamma compression
     let gFactor = 1 / gamma
     
-    for row in 0..<img.height:
-        for col in 0..<img.width:
-            pix = img.getPixel(row, col)
+    for y in 0..<img.height:
+        for x in 0..<img.width:
+            pix = img.getPixel(x, y)
             pixelsString[i] = (255 * pow(pix.r, gFactor)).char; i += 1
             pixelsString[i] = (255 * pow(pix.g, gFactor)).char; i += 1
             pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
@@ -62,17 +62,20 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32) =
     echo fmt"Successfully converted {fileIn} to {fileOut}"
 
 
-proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, row, col: int): Color = 
+proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color = 
     # Procedure to decide pixel color (it could be useful to check if scenary len is non zero)
     let dim = scenary.shapes.len
-    for i in 0..<dim:
-        if fastIntersection(scenary.shapes[i], ray): 
-            let 
-                col1 = (1 - exp(-float32(col + row)))
-                col2 = row/im_tr.image.height
-                col3 = pow((1 - col/im_tr.image.width), 2.5)
-            return newColor(col1, col2, col3)
-
+    if dim == 0:
+        return newColor(0, 0, 0)
+    
+    else:
+        for i in 0..<dim:
+            if fastIntersection(scenary.shapes[i], ray): 
+                let 
+                    r = (1 - exp(-float32(x + y)))
+                    g = y/im_tr.image.height
+                    b = pow((1 - x/im_tr.image.width), 2.5)
+                return newColor(r, g, b)
     
 
 let args = docopt(PhotoNimDoc, version = "PhotoNim 0.1")
@@ -125,7 +128,7 @@ elif args["demo"]:
 
     let 
         timeStart = cpuTime()
-        a_ratio = float32(width)/float32(height)
+        a_ratio = width/height
         sc = newScaling(0.1)    # Scaling needed in order to have 1/10 radius -> we will compose it with s translation
         s1 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, 0.5)) @ sc)
         s2 = newSphere(newTranslation(newVec3[float32](0.5, 0.5, -0.5)) @ sc)
@@ -140,20 +143,22 @@ elif args["demo"]:
  
     var 
         image = newHdrImage(width, height)
+        trasl: Translation
         rotz: Rotation
         cam: Camera
-        ang: int = 10
+        ang: float32 = 10
 
     if args["--angle"]:
-        try: ang = parseInt($args["--angle"]) 
+        try: ang = parseFloat($args["--angle"]) 
         except: echo "Warning: angle must be an integer. Default value is used."
     
     rotz = newRotZ(float32(ang))
+    trasl = newTranslation(newVec3[float32](-1, 0, 0))
     
     if args["perspective"]:
-        cam = newPerspectiveCamera(a_ratio, 2.0, rotz)
+        cam = newPerspectiveCamera(a_ratio, 1.0, rotz @ trasl)
     else:
-        cam = newOrthogonalCamera(a_ratio, rotz)
+        cam = newOrthogonalCamera(a_ratio, rotz @ trasl)
 
     var
         tracer = newImageTracer(image, cam)
@@ -161,7 +166,6 @@ elif args["demo"]:
 
     scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
     scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
-
 
     tracer.fire_all_rays(scenary, col_pix)
     image = tracer.image
@@ -173,13 +177,13 @@ elif args["demo"]:
 
 
     if args["<output>"]: fileOut = $args["<output>"]
-    else: fileOut = "images/demo.png"
+    else: fileOut = "demo.png"
     var i: int = 0
 
 
-    for row in 0..<height:
-        for col in 0..<width:
-            pix = image.getPixel(row, col)
+    for y in 0..<height:
+        for x in 0..<width:
+            pix = image.getPixel(x, y)
             pixelsString[i] = (255 * pix.r).char; i += 1
             pixelsString[i] = (255 * pix.g).char; i += 1
             pixelsString[i] = (255 * pix.b).char; i += 1

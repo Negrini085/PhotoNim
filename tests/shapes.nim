@@ -203,7 +203,6 @@ suite "Plane":
         check not plane.fastIntersection(ray3)
 
 
-
 suite "AABB":
     test "AABB constructor": 
         let 

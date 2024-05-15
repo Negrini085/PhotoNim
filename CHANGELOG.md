@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(Pcg)* Add rand procedure
+- *(Pcg)* Add newPcg procedure
+- *(Pcg)* Add Pcg type
+- *(ImageTracer)* Add new fire_all_rays procedure
+- *(ImageTracer)* Add different fire_all_rays implentation, now a procedure is given as imput
+- *(World)* Add get procedure
+- *(World)* Add procedure to add a shape to the scenary ro render
 - *(docs)* New Jekyll static site for the official PhotoNim documentation.
 - *(Plane)* Add plane fast intersection method
 - *(Plane)* Add intersectionRay method
@@ -86,6 +93,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(Pcg)* Change random procedure to rand
+- Correct demo mode
 - *(HdrImage)* Change endiannes evaluation
 - *(ShapeTests)* Correct shape test implementation
 - *(camera)* NewCamera procs are now divided in newOrthogonalCamera and newPerspectiveCamera.
@@ -130,12 +139,22 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- See if workflow starts.
+- Update again jekyll gh pages workflow
+- Update jekyll workflow
+- New jekyll workflow
+- Updated jekyll gh-pages workflow.
+- Jekyll site
 - Trying different gh actions for deploying the jekyll static site.
 - Moved jekyll-gh action workflow from master to docs branch.
 - Removed docs from master and opened a new branch only for docs.
 
 ### 🧪 Testing
 
+- *(Pcg)* Add rand procedure test
+- *(Pcg)* Add newPcg procedure test
+- *(World)* Get procedure test
+- *(World)* Add procedure test
 - *(All)* Correct test implementation
 - *(Plane)* Add fast intersection test
 - *(Plane)* Add intersectionRay test module 2
