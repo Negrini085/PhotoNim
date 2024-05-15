@@ -46,9 +46,19 @@ suite "HitRecord":
 suite "Sphere":
 
     setup:
-        var sphere = newSphere(Transformation.id)
+        var sphere = newUnitarySphere(newPoint3D(0, 0, 0))
+        var sphere1 = newSphere(newPoint3D(0, 1, 0), 3.0)
 
-    test "SphereConstructor":
+    teardown: 
+        discard sphere; discard sphere1
+
+    test "newSphere proc":
+        check sphere1.radius == 3.0
+        check sphere1.center == newPoint3D(0, 1, 0)
+        check areClose(sphere1.transf.mat, (newTranslation(newVec3(float32 0, 1, 0)) @ newScaling(3.0)).mat)
+
+
+    test "newUnitarySphere proc":
         # Checking sphere constructor procedure
 
         check areClose(sphere.transf.mat, Mat4f.id)
@@ -207,7 +217,7 @@ suite "AABB":
     test "AABB constructor": 
         let 
             box = newAABox()
-            sphere = newSphere()
+            sphere = newUnitarySphere(newPoint3D(0, 0, 0))
             plane = newPlane()
 
         check box.aabb.isSome
@@ -233,7 +243,7 @@ suite "World":
     setup:
         var 
             scenary = newWorld()
-            sphere = newSphere(Transformation.id)
+            sphere = newUnitarySphere(newPoint3D(0, 0, 0))
     
     test "add proc":
         # Checking world add procedure
