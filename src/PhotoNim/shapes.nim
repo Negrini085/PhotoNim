@@ -57,14 +57,15 @@ method uv*(sphere: Sphere, pt: Point3D): Point2D =
     newPoint2D(u, arccos(pt.z) / PI)
 
 
-proc boxNormal*(box: AABox; dir: Vec3f, t_hit: float32): Normal =
+proc normal*(box: AABox; dir: Vec3f, t_hit: float32): Normal =
     let aabb = box.aabb.get
-    let sgn = sgn(-dot(result.Vec3f, dir)).float32
-    if   t_hit == aabb.min.x or t_hit == aabb.max.x: return sgn * newNormal(1, 0, 0)
-    elif t_hit == aabb.min.y or t_hit == aabb.max.y: return sgn * newNormal(0, 1, 0)
-    elif t_hit == aabb.min.z or t_hit == aabb.max.z: return sgn * newNormal(0, 0, 1)
+    if   t_hit == aabb.min.x or t_hit == aabb.max.x: result = newNormal(1, 0, 0)
+    elif t_hit == aabb.min.y or t_hit == aabb.max.y: result = newNormal(0, 1, 0)
+    elif t_hit == aabb.min.z or t_hit == aabb.max.z: result = newNormal(0, 0, 1)
+    else: quit "Something went wrong in calculating the normal on a AABox."
+    return sgn(-dot(result.Vec3f, dir)).float32 * result
 
-proc sphereNormal*(pt: Point3D, dir: Vec3f): Normal {.inline.} = sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
+proc normal*(sphere: Sphere, pt: Point3D, dir: Vec3f): Normal {.inline.} = sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
 
 
 method fastIntersection*(box: AABox, ray: Ray): bool =
@@ -89,12 +90,12 @@ method fastIntersection*(sphere: Sphere, ray: Ray): bool =
         rayInv = apply(sphere.transf.inverse, ray)
         a = norm2(rayInv.dir)
         b = dot(rayInv.origin.Vec3f, rayInv.dir)
-        c = norm2(rayInv.origin.Vec3f) - 1
+        c = norm2(rayInv.origin.Vec3f) - 1.0
 
         delta_4 = b * b - a * c
 
-    if delta_4 <= 0: false
-    else: 
+    if delta_4 <= 0: return false
+
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
         (rayInv.tmin < t_l and t_l < rayInv.tmax) or (rayInv.tmin < t_r and t_r < rayInv.tmax) 
 
