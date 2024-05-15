@@ -18,9 +18,9 @@ type
 proc newWorld*(): World {.inline.} = World(shapes: @[])
 
 proc fire_all_rays*(tracer: var ImageTracer, scenary: World, color_map: proc) = 
-    for row in 0..<tracer.image.height:
-        for col in 0..<tracer.image.width:
-            tracer.image.setPixel(row, col, color_map(tracer, tracer.fire_ray(row, col), scenary, row, col))
+    for y in 0..<tracer.image.height:
+        for x in 0..<tracer.image.width:
+            tracer.image.setPixel(x, y, color_map(tracer, tracer.fire_ray(x, y), scenary, x, y))
 
 
 type
