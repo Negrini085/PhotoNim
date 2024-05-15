@@ -73,9 +73,7 @@ method fire_ray*(cam: PerspectiveCamera, pixel: Point2D): Ray {.inline.} =
 #--------------------------------------------------#
 
 proc fire_ray*(im_tr: ImageTracer, row, col: int, pixel = newPoint2D(0.5, 0.5)): Ray =
-    let u = (col.toFloat + pixel.u) / im_tr.image.width.toFloat
-    let v = 1 - (row.toFloat + pixel.v) / im_tr.image.height.toFloat
-    
+    let (u, v) = ((col.float32 + pixel.u) / im_tr.image.width.float32, 1 - (row.float32 + pixel.v) / im_tr.image.height.float32)
     im_tr.camera.fire_ray(newPoint2D(u, v))
 
 proc fire_all_rays*(im_tr: var ImageTracer) = 
