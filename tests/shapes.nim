@@ -67,8 +67,8 @@ suite "Sphere":
             p1 = newPoint3D(1, 0, 1)
             p2 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
 
-        check areClose(sphere.uv(p1), newPoint2D(0, 0))
-        check areClose(sphere.uv(p2), newPoint2D(1/6, 1/3))
+        check areClose(Sphere.uv(p1), newPoint2D(0, 0))
+        check areClose(Sphere.uv(p2), newPoint2D(1/6, 1/3))
     
 
     test "RayIntersection: no transformation":

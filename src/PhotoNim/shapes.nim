@@ -5,12 +5,32 @@ import std/options
 import camera, geometry
 
 
-type HitRecord* = object
+type
+    AABB* = tuple[min, max: Point3D]
+
+    Shape* = object of RootObj
+        transf*: Transformation
+        aabb*: Option[AABB] = none(AABB)
+
+    World* = object
+        shapes*: seq[Shape]
+
+    HitRecord* = object
     ray*: Ray
     t_hit*: float32
     world_pt*: Point3D
     surface_pt*: Point2D
     normal*: Normal
+
+
+proc newWorld*(): World {.inline.} = World(shapes: @[])
+
+proc fire_all_rays*(tracer: var ImageTracer, scenary: World, color_map: proc) = 
+    ## Procedure to actually render an image: we will have to give as an input a function that will enable us to set the color of a pixel
+    for row in 0..<tracer.image.height:
+        for col in 0..<tracer.image.width:
+            tracer.image.setPixel(row, col, color_map(tracer, tracer.fire_ray(row, col), scenary, row, col))
+
 
 proc newHitRecord*(ray: Ray, t: float32, hit_point: Point3D, uv: Point2D, normal: Normal): HitRecord {.inline.} =
     HitRecord(ray: ray, t_hit: t, world_pt: hit_point, surface_pt: uv, normal: normal)
@@ -21,20 +41,12 @@ proc areClose*(a, b: HitRecord): bool {.inline.} =
     areClose(a.normal, b.normal) 
 
 
-type
-    AABB* = tuple[min, max: Point3D]
-
-    Shape* = object of RootObj
-        transf*: Transformation
-        aabb*: Option[AABB] = none(AABB)
-
-method uv(shape: Shape, pt: Point3D): Point2D {.base.} = quit "to overload"
 method fastIntersection*(shape: Shape, ray: Ray): bool {.base.} = quit "to overload"
 method rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] {.base.} = quit "to overload"
 
-
 type
     AABox* = object of Shape
+
     Sphere* = object of Shape
     Plane* = object of Shape
 
@@ -43,7 +55,13 @@ proc newSphere*(transf = Transformation.id): Sphere {.inline.} = Sphere(transf: 
 proc newPlane*(transf = Transformation.id): Plane {.inline.} = Plane(transf: transf)
 
 
-method uv*(box: AABox, pt: Point3D): Point2D =
+proc uv*(S: typedesc[Shape], pt: Point3D): Point2D = 
+    when S is Sphere:
+        var u = arctan2(pt.y, pt.x) / (2 * PI)
+        if u < 0.0: u += 1.0
+        newPoint2D(u, arccos(pt.z) / PI)
+
+    elif S is AABox:
     if   pt.x == 0: return newPoint2D((1 + pt.y) / 4, (1 + pt.z) / 3)
     elif pt.x == 1: return newPoint2D((3 + pt.x) / 4, (1 + pt.z) / 3)
     elif pt.y == 0: return newPoint2D((2 + pt.x) / 4, (1 + pt.z) / 3)
@@ -51,10 +69,6 @@ method uv*(box: AABox, pt: Point3D): Point2D =
     elif pt.z == 0: return newPoint2D((1 + pt.y) / 4, (1 - pt.x) / 3)
     elif pt.z == 1: return newPoint2D((1 + pt.y) / 4, (2 + pt.x) / 3)
 
-method uv*(sphere: Sphere, pt: Point3D): Point2D = 
-    var u = arctan2(pt.y, pt.x) / (2 * PI)
-    if u < 0.0: u += 1.0
-    newPoint2D(u, arccos(pt.z) / PI)
 
 
 proc normal*(box: AABox; dir: Vec3f, t_hit: float32): Normal =
@@ -132,7 +146,7 @@ method rayIntersection*(sphere: Sphere, ray: Ray): Option[HitRecord] =
     let 
         intersection_pt = rayInv.at(t)
         world_pt = apply(sphere.transf, intersection_pt)
-        surface_pt = sphere.uv(intersection_pt)
+        surface_pt = Sphere.uv(intersection_pt)
         normal = apply(sphere.transf, sphere.normal(intersection_pt, rayInv.dir))
 
     some(newHitRecord(ray, t, world_pt, surface_pt, normal))
@@ -174,7 +188,7 @@ method rayIntersection*(box: AABox, ray: Ray): Option[HitRecord] =
     t_hit_min = max(t_hit_min, tz_min)
     t_hit_max = min(t_hit_max, tz_max)
 
-    proc `<=`(a, b : Point3D): bool {.inline.} = a.x<=b.x and a.y<=b.y and a.z<=b.z
+    proc `<=`(a, b: Point3D): bool {.inline.} = a.x <= b.x and a.y <= b.y and a.z <= b.z
     let t_hit = if inv_ray.origin <= aabb.max and aabb.min <= inv_ray.origin: t_hit_max else: t_hit_min
     
     if (t_hit < inv_ray.tmin) or (t_hit > inv_ray.tmax): return none(HitRecord)
@@ -182,10 +196,12 @@ method rayIntersection*(box: AABox, ray: Ray): Option[HitRecord] =
     let 
         intersection_pt = inv_ray.at(t_hit)
         world_pt = apply(box.transf, intersection_pt)
-        surface_pt = box.uv(intersection_pt)
+        surface_pt = AABox.uv(intersection_pt)
         normal = box.normal(inv_ray.dir, t_hit)
 
-    result = some(newHitRecord(ray, t_hit, world_pt, surface_pt, normal))
+    some(newHitRecord(ray, t_hit, world_pt, surface_pt, normal))
+
+
 
 
 type World* = object
