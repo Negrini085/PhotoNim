@@ -53,6 +53,7 @@ proc newUnitarySphere*(center: Point3D): Sphere {.inline.} =
     )
 
 proc newPlane*(transf = Transformation.id): Plane {.inline.} = Plane(transf: transf)
+proc newTriangle*(a, b, c: Point3D): Triangle {.inline.} = Triangle(vertices: (a, b, c))
 
 
 proc uv*[S: Shape](shape: S, pt: Point3D): Point2D = 
@@ -62,8 +63,19 @@ proc uv*[S: Shape](shape: S, pt: Point3D): Point2D =
         elif pt.y == 0: return newPoint2D((2 + pt.x) / 4, (1 + pt.z) / 3)
         elif pt.y == 1: return newPoint2D((1 - pt.x) / 4, (1 + pt.z) / 3)
         elif pt.z == 0: return newPoint2D((1 + pt.y) / 4, (1 - pt.x) / 3)
-        elif pt.z == 1: return newPoint2D((1 + pt.y) / 4, (2 + pt.x) / 3)        
+        elif pt.z == 1: return newPoint2D((1 + pt.y) / 4, (2 + pt.x) / 3)   
 
+    elif S is Triangle:
+        let 
+            (A, B, C) = shape.verteces
+            u_num = (pt.x - A.x)*(C.y - A.y) - (pt.y - A.y)*(C.x - A.x)
+            u_den = (B.x - A.x)*(C.y - A.y) - (B.y - A.y)*(C.x - A.x)
+            u = u_num / u_den
+            v_num = (pt.x - A.x)*(B.y - A.y) - (pt.y - A.y)*(B.x - A.x)
+            v_den = (C.x - A.x)*(B.y - A.y) - (C.y - A.y)*(B.x - A.x)
+            v = v_num / v_den
+        newPoint2D(u, v)
+        
     elif S is Sphere:
         var u = arctan2(pt.y, pt.x) / (2 * PI)
         if u < 0.0: u += 1.0
@@ -79,6 +91,12 @@ proc normal*[S: Shape](shape: S; pt: Point3D, dir: Vec3f): Normal =
         elif pt.y == aabb.min.y or pt.y == aabb.max.y: result = newNormal(0, 1, 0)
         elif pt.z == aabb.min.z or pt.z == aabb.max.z: result = newNormal(0, 0, 1)
         else: quit "Something went wrong in calculating the normal for an AABox."
+        sgn(-dot(result.Vec3f, dir)).float32 * result
+
+    elif S is Triangle:
+        let 
+            (A, B, C) = shape.verteces
+        result = cross((B - A).Vec3f, (C - A).Vec3f).toNormal
         sgn(-dot(result.Vec3f, dir)).float32 * result
         
     elif S is Sphere: sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
@@ -134,17 +152,23 @@ proc rayIntersection*[S: Shape](shape: S, ray: Ray): Option[HitRecord] =
     var t_hit: float32
 
     when S is AABox:
-        let
+        let 
             aabb = shape.aabb.get
             (min, max) = (aabb.min - inv_ray.origin, aabb.max - inv_ray.origin)
+
+        var
             (tx_min, tx_max) = (min.x / inv_ray.dir[0], max.x / inv_ray.dir[0])
             (ty_min, ty_max) = (min.y / inv_ray.dir[1], max.y / inv_ray.dir[1])
+
+        if tx_min > tx_max: swap(tx_min, tx_max)
+        if ty_min > ty_max: swap(ty_min, ty_max)
     
         if tx_min > ty_max or ty_min > tx_max: return none(HitRecord)
 
-        let (tz_min, tz_max) = (min.z / inv_ray.dir[2], max.z / inv_ray.dir[2])
+        var (tz_min, tz_max) = (min.z / inv_ray.dir[2], max.z / inv_ray.dir[2])
+        if tz_min > tz_max: swap(tz_min, tz_max)
+
         var (t_hit_min, t_hit_max) = (max(ty_min, tx_min), min(ty_max, tx_max))
-            
         if t_hit_min > tz_max or tz_min > t_hit_max: return none(HitRecord)
         
         (t_hit_min, t_hit_max) = (max(t_hit_min, tz_min), min(t_hit_max, tz_max))
@@ -170,12 +194,11 @@ proc rayIntersection*[S: Shape](shape: S, ray: Ray): Option[HitRecord] =
         if t_hit < inv_ray.tmin or t_hit > inv_ray.tmax: return none(HitRecord)
 
 
-    let 
+    let
         hit_pt = inv_ray.at(t_hit)
-        world_pt = apply(shape.transf, hit_pt)
-        normal = apply(shape.transf, shape.normal(hit_pt, inv_ray.dir)).normalize
+        normal = shape.normal(hit_pt, inv_ray.dir) 
     
-    some(HitRecord(ray: ray, t_hit: t_hit, world_pt: world_pt, surface_pt: shape.uv(hit_pt), normal: normal))
+    some(HitRecord(ray: ray, t_hit: t_hit, world_pt: apply(shape.transf, hit_pt), surface_pt: shape.uv(hit_pt), normal: apply(shape.transf, normal).normalize))
 
 
 type 
@@ -184,4 +207,3 @@ type
         edges: seq[tuple[first, second: int]]
 
 proc newMesh(nodes: seq[Point3D], edges: seq[tuple[first, second: int]]): Mesh {.inline.} = Mesh(nodes: nodes, edges: edges)
-proc newTriangle*(a, b, c: Point3D): Mesh {.inline.} = newMesh(@[a, b, c], @[(0, 1), (1, 2), (2, 0)])
