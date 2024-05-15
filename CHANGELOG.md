@@ -139,6 +139,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- New site structure with roadmap and examples.
 - See if workflow starts.
 - Update again jekyll gh pages workflow
 - Update jekyll workflow
