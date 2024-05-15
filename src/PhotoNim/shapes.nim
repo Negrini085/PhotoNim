@@ -201,6 +201,25 @@ proc rayIntersection*[S: Shape](shape: S, ray: Ray): Option[HitRecord] =
     
     some(HitRecord(ray: ray, t_hit: t_hit, world_pt: apply(shape.transf, hit_pt), surface_pt: shape.uv(hit_pt), normal: apply(shape.transf, normal).normalize))
 
+proc rayIntersection*(triangle: Triangle, ray: Ray): Option[HitRecord] =
+    let 
+        (A, B, C) = triangle.vertices
+        min = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
+        max = [
+            [B.x-A.x, C.x-A.x, -ray.dir[0]], 
+            [B.y-A.y, C.y-A.y, -ray.dir[1]], 
+            [B.z-A.z, C.z-A.z, -ray.dir[2]]
+        ]
+        
+        w = solve(min.T, max.T)
+        (u, v, t_hit) = (w[0], w[1], w[2])
+
+    if ray.tmin > t_hit or t_hit > ray.tmax: return none(HitRecord)
+    if u < 0.0 or v < 0.0 or u > 1 or v > 1: return none(HitRecord)
+
+    let hit_pt = ray.at(t_hit)
+    some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: newPoint2D(u, v), normal: triangle.normal(hit_pt, ray.dir)))
+
 
 type 
     Mesh = object of Shape
