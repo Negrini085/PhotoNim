@@ -2,7 +2,7 @@ type Pcg* = object
     state*: uint64
     inc*: uint64
 
-proc rand(gen: var Pcg): uint32 =
+proc rand*(gen: var Pcg): uint32 =
     # Random number generation procedure
     var 
         oldstate: uint64 = gen.state
