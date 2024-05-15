@@ -64,8 +64,8 @@ proc fire_ray*(im_tr: ImageTracer, x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray
     im_tr.camera.fire_ray(newPoint2D(u, v))
 
 proc fire_all_rays*(im_tr: var ImageTracer) = 
-    for x in 0..<im_tr.image.height:
-        for y in 0..<im_tr.image.width:
+    for y in 0..<im_tr.image.height:
+        for x in 0..<im_tr.image.width:
             discard im_tr.fire_ray(x, y)
             let 
                 r = (1 - exp(-float32(x + y)))
