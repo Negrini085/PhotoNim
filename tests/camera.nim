@@ -143,7 +143,7 @@ suite "ImageTracer":
     setup:
         var 
             image: HdrImage = newHdrImage(5, 5)
-            cam: OrthogonalCamera = newOrthogonalCamera(1.2, Transformation.id)
+            cam = newOrthogonalCamera(1.2, Transformation.id)
             im_tr = newImageTracer(image, cam)
 
     test "ImageTracer index":
