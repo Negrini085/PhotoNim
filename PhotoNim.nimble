@@ -22,6 +22,7 @@ task test, "Run the PhotoNim tests!":
     exec "rm geometry hdrimage camera shapes pcg"
 
 
-task examples, "Compile the examples!":
-  withDir "examples":
-    exec "nim c triangle.nim"
+task triangle, "Run the triangle example":
+  exec "nim c -r examples/triangle.nim"
+  exec "rm examples/triangle"
+  exec "./PhotoNim pfm2png images/triangle.pfm images/triangle.png"

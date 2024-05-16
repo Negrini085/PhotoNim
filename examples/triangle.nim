@@ -1,22 +1,21 @@
 import PhotoNim/[hdrimage, geometry, shapes, camera]
+import std/[math, streams, options]
 from std/times import cpuTime
 from std/strformat import fmt
 from nimPNG import savePNG24
-import std/math
 
 
 let 
     timeStart = cpuTime()
     (width, height) = (1600, 900)
-    fileOut = "examples/triangle.png"
+    fileOut = "images/triangle.pfm"
 
 var 
-    image = newHdrImage(width, height)
-    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -1, 0, 0)))
-    tracer = newImageTracer(image, cam)
+    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -2, 0, 0)))
+    tracer = newImageTracer(newHdrImage(width, height), cam)
     world = newWorld()
 
-world.shapes.add(newTriangle(newPoint3D(1.0, 2.0, 3.0), newPoint3D(-1.0, 2.0, -3.0), newPoint3D(-3.0, -2.0, 1.0)))
+world.shapes.add(newTriangle(newPoint3D(0.0, 1.0, 2.0), newPoint3D(0.0, -1.0, 2.0), newPoint3D(1.0, -1.0, 1.0)))
 
 
 proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color = 
@@ -27,7 +26,7 @@ proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color =
     
     else:
         for i in 0..<dim:
-            if fastIntersection(scenary.shapes[i], ray): 
+            if rayIntersection(scenary.shapes[i], ray).isSome: 
                 let 
                     r = (1 - exp(-float32(x + y)))
                     g = y/im_tr.image.height
@@ -35,19 +34,8 @@ proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color =
                 return newColor(r, g, b)
     
 tracer.fire_all_rays(world, col_pix)
-image = tracer.image
 
-var
-    i: int = 0
-    pix: Color
-    pixelsString = newString(3 * width * height)
+var stream = newFileStream(fileOut, fmWrite)
+stream.writePFM(tracer.image)
 
-for y in 0..<height:
-    for x in 0..<width:
-        pix = image.getPixel(x, y)
-        pixelsString[i] = (255 * pix.r).char; i += 1
-        pixelsString[i] = (255 * pix.g).char; i += 1
-        pixelsString[i] = (255 * pix.b).char; i += 1
-
-discard savePNG24(fileOut, pixelsString, width, height)
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."

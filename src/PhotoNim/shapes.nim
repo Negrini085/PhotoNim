@@ -87,14 +87,11 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
 
     of skTriangle:
         let 
-            (A, B, C) = shape.vertices
-            u_num = (pt.x - A.x)*(C.y - A.y) - (pt.y - A.y)*(C.x - A.x)
-            u_den = (B.x - A.x)*(C.y - A.y) - (B.y - A.y)*(C.x - A.x)
-            u = u_num / u_den
-            v_num = (pt.x - A.x)*(B.y - A.y) - (pt.y - A.y)*(B.x - A.x)
-            v_den = (C.x - A.x)*(B.y - A.y) - (C.y - A.y)*(B.x - A.x)
-            v = v_num / v_den
-        return newPoint2D(u, v)
+            (x_ptA, x_BA, x_CA) = ((pt.x - shape.vertices.A.x), (shape.vertices.B.x - shape.vertices.A.x), (shape.vertices.C.x - shape.vertices.A.x))
+            (y_ptA, y_BA, y_CA) = ((pt.y - shape.vertices.A.y), (shape.vertices.B.y - shape.vertices.A.y), (shape.vertices.C.y - shape.vertices.A.y))
+            (u_num, u_den) = (x_ptA * y_CA - y_ptA * x_CA, xBA * y_CA - y_BA * x_CA)
+            (v_num, v_den) = (x_ptA * y_BA - y_ptA * xBA, x_CA * y_BA - y_CA * xBA)
+        return newPoint2D(u_num / u_den, v_num / v_den)
         
     of skSphere:
         var u = arctan2(pt.y, pt.x) / (2 * PI)
@@ -132,8 +129,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
     case shape.kind
     of skAABox:
         let 
-            aabb = shape.aabb.get
-            (min, max) = (aabb.min - ray.origin, aabb.max - ray.origin)
+            (min, max) = (shape.min - ray.origin, shape.max - ray.origin)
             (tx_min, tx_max) = (min.x / ray.dir[0], max.x / ray.dir[0])
             (ty_min, ty_max) = (min.y / ray.dir[1], max.y / ray.dir[1])
     
@@ -191,20 +187,20 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     of skTriangle:
         let 
             (A, B, C) = shape.vertices
-            min = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
-            max = [
-                [B.x-A.x, C.x-A.x, -ray.dir[0]], 
-                [B.y-A.y, C.y-A.y, -ray.dir[1]], 
-                [B.z-A.z, C.z-A.z, -ray.dir[2]]
+            mat = [
+                [B.x - A.x, C.x - A.x, -ray.dir[0]], 
+                [B.y - A.y, C.y - A.y, -ray.dir[1]], 
+                [B.z - A.z, C.z - A.z, -ray.dir[2]]
             ]
+            vec = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
             
-            w = solve(max, min)
+            sol = solve(mat, vec)
 
-        t_hit = w[2]
+        t_hit = sol[2]
         if ray.tmin > t_hit or t_hit > ray.tmax: return none(HitRecord)
 
-        let (u, v) = (w[0], w[1])
-        if u < 0.0 or v < 0.0 or u > 1.0 or v > 1.0: return none(HitRecord)
+        let (u, v) = (sol[0], sol[1])
+        if u < 0.0 or v < 0.0 or u + v > 1.0: return none(HitRecord)
 
         hit_pt = ray.at(t_hit)
         surf_pt = newPoint2D(u, v)
