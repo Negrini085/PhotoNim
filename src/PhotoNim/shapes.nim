@@ -142,14 +142,6 @@ proc fastIntersection*[S: Shape](shape: S, ray: Ray): bool =
         else: true
 
 
-    #     (u, v, t_hit) = (w[0], w[1], w[2])
-
-    # if ray.tmin > t_hit or t_hit > ray.tmax: return none(HitRecord)
-    # if u < 0.0 or v < 0.0 or u > 1 or v > 1: return none(HitRecord)
-
-    # let hit_pt = ray.at(t_hit)
-    # some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: newPoint2D(u, v), normal: triangle.normal(hit_pt, ray.dir)))
-
 type
     HitRecord* = object
         ray*: Ray

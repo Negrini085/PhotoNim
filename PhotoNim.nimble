@@ -20,3 +20,8 @@ task test, "Run the PhotoNim tests!":
     exec "nim c -r shapes.nim"
     exec "nim c -r random.nim"
     exec "rm geometry hdrimage camera shapes random"
+
+
+task examples, "Compile the examples!":
+  withDir "examples":
+    exec "nim c triangle.nim"
