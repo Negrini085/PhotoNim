@@ -141,6 +141,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- Documenting PhotoNim CLI
 - New site structure with roadmap and examples.
 - See if workflow starts.
 - Update again jekyll gh pages workflow
