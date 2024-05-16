@@ -93,7 +93,7 @@ type
 
 proc newPoint2D*(u, v: float32): Point2D {.inline.} = Point2D([u, v]) 
 proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
-proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z])
+proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z].normalize)
 
 proc u*(a: Point2D): float32 {.inline.} = a.Vec2f[0]
 proc v*(a: Point2D): float32 {.inline.} = a.Vec2f[1]
