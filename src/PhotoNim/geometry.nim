@@ -274,6 +274,26 @@ proc det*[N: static[int], V](m: SQMat[N, V]): V =
         quit "Determinant is only implemented for matrices at most 4x4."
 
 
+proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
+    let det = mat.det
+    if det == 0.0: raise newException(ValueError, "Matrix is not invertible.")
+    
+    # Create matrices for each variable by replacing the corresponding column
+    var matX = mat
+    var matY = mat
+    var matZ = mat
+
+    for i in 0..<3:
+        matX[i][0] = vec[i]
+        matY[i][1] = vec[i]
+        matZ[i][2] = vec[i]
+
+    # Solve for each variable
+    result[0] = matX.det / det
+    result[1] = matY.det / det
+    result[2] = matZ.det / det
+
+
 type Transformation* = object of RootObj
     mat*: Mat4f
     inv_mat*: Mat4f
