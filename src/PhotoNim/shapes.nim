@@ -179,12 +179,16 @@ type
         normal*: Normal
 
 proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
+    var 
+        t_hit: float32
+        hit_pt: Point3D
+        surf_pt: Point2D
+        normal: Normal
+
     let inv_ray = apply(shape.transf.inverse, ray)
-    var t_hit: float32
 
     case shape.kind
     of skTriangle:
-        discard
         let 
             (A, B, C) = shape.vertices
             min = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
@@ -200,11 +204,13 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if ray.tmin > t_hit or t_hit > ray.tmax: return none(HitRecord)
 
         let (u, v) = (w[0], w[1])
-        if u < 0.0 or v < 0.0 or u > 1 or v > 1: return none(HitRecord)
+        if u < 0.0 or v < 0.0 or u > 1.0 or v > 1.0: return none(HitRecord)
 
-        let hit_pt = ray.at(t_hit)
-        return some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: newPoint2D(u, v), normal: shape.normal(hit_pt, ray.dir)))
+        hit_pt = ray.at(t_hit)
+        surf_pt = newPoint2D(u, v)
+        normal = shape.normal(hit_pt, ray.dir)
 
+        return some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: surf_pt, normal: normal))
 
     of skAABox:
         let 
@@ -237,20 +243,21 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if delta_4 < 0: return none(HitRecord)
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > inv_ray.tmin and t_l < inv_ray.tmax: t_hit = t_l
-        elif t_r > inv_ray.tmin and t_r < inv_ray.tmax: t_hit = t_r
+        if t_l > ray.tmin and t_l < ray.tmax: t_hit = t_l
+        elif t_r > ray.tmin and t_r < ray.tmax: t_hit = t_r
         else: return none(HitRecord)
 
     of skPlane:
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(HitRecord)
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
-        if t_hit < inv_ray.tmin or t_hit > inv_ray.tmax: return none(HitRecord)
+        if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
 
-    let
-        hit_pt = inv_ray.at(t_hit)
-        normal = shape.normal(hit_pt, inv_ray.dir) 
-    
-    some(HitRecord(ray: ray, t_hit: t_hit, world_pt: apply(shape.transf, hit_pt), surface_pt: shape.uv(hit_pt), normal: apply(shape.transf, normal).normalize))
+
+    hit_pt = inv_ray.at(t_hit)
+    surf_pt = shape.uv(hit_pt)
+    normal = shape.normal(hit_pt, inv_ray.dir) 
+
+    some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal)))
 
 
 type 
