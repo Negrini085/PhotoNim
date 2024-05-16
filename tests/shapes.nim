@@ -1,5 +1,5 @@
 import std/[unittest, math, options]
-import PhotoNim/[shapes, geometry, camera]
+import PhotoNim
 
 proc areClose(a, b: HitRecord): bool {.inline.} = 
     areClose(a.ray, b.ray) and areClose(a.t_hit, b.t_hit) and 

@@ -1,5 +1,5 @@
 import std/unittest
-import PhotoNim/geometry
+import PhotoNim
 
 
 suite "Vec unittest":

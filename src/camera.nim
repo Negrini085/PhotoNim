@@ -1,6 +1,63 @@
+from std/strformat import fmt
 from std/fenv import epsilon 
-from std/math import exp, pow 
-import geometry, hdrimage
+from std/math import sum, pow, exp, log10
+from std/sequtils import apply, map
+
+import geometry
+
+
+type Color* {.borrow: `.`.} = distinct Vec3f
+
+proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
+
+proc r*(a: Color): float32 {.inline.} = a.Vec3f[0]
+proc g*(a: Color): float32 {.inline.} = a.Vec3f[1]
+proc b*(a: Color): float32 {.inline.} = a.Vec3f[2]
+
+proc areClose*(a, b: Color; epsilon = epsilon(float32)): bool {.borrow.}
+
+proc `+`*(a, b: Color): Color {.borrow.}
+proc `+=`*(a: var Color, b: Color) {.borrow.}
+proc `-`*(a, b: Color): Color {.borrow.}
+proc `-=`*(a: var Color, b: Color) {.borrow.}
+
+proc `*`*(a: Color, b: float32): Color {.borrow.}
+proc `*`*(a: float32, b: Color): Color {.borrow.}
+proc `*=`*(a: var Color, b: float32) {.borrow.}
+proc `/`*(a: Color, b: float32): Color {.borrow.}
+proc `/=`*(a: var Color, b: float32) {.borrow.}
+
+proc luminosity*(a: Color): float32 {.inline.} = 0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
+
+
+type HdrImage* = object
+    width*, height*: int
+    pixels*: seq[Color]
+
+proc newHdrImage*(width, height: int): HdrImage = 
+    (result.width, result.height) = (width, height)
+    result.pixels = newSeq[Color](width * height)
+
+proc validPixel(img: HdrImage; x, y: int): bool {.inline.} = (0 <= y and y < img.height) and (0 <= x and x < img.width)
+proc pixelOffset(img: HdrImage; x, y: int): int {.inline.} = x + img.width * y
+
+proc getPixel*(img: HdrImage; x, y: int): Color {.inline.} = 
+    assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HdrImage"
+    img.pixels[img.pixelOffset(x, y)]
+
+proc setPixel*(img: var HdrImage; x, y: int, color: Color) {.inline.} = 
+    assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HdrImage"
+    img.pixels[img.pixelOffset(x, y)] = color
+
+proc averageLuminosity*(img: HdrImage; eps = epsilon(float32)): float32 {.inline.} =
+    pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
+
+proc toneMapping*(img: var HdrImage; alpha, gamma: float32) = 
+    let lum = img.averageLuminosity
+    img.pixels.apply(proc(pix: Color): Color = pix * (alpha / lum))
+
+    proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
+    img.pixels.apply(proc(pix: Color): Color = newColor(clamp(pix.r), clamp(pix.g), clamp(pix.b)))
 
 
 type Ray* = object

@@ -2,7 +2,7 @@ from std/fenv import epsilon
 from std/math import sgn, floor, sqrt, arccos, arctan2, PI
 import std/options
 
-import camera, geometry
+import geometry, camera
 
 
 type
@@ -193,13 +193,17 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
                 [B.z - A.z, C.z - A.z, -ray.dir[2]]
             ]
             vec = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
-            
-            sol = solve(mat, vec)
+        
+        var solution: Vec3f
+        try:
+            solution = solve(mat, vec)
+        except ValueError:
+            return none(HitRecord)
 
-        t_hit = sol[2]
+        t_hit = solution[2]
         if ray.tmin > t_hit or t_hit > ray.tmax: return none(HitRecord)
 
-        let (u, v) = (sol[0], sol[1])
+        let (u, v) = (solution[0], solution[1])
         if u < 0.0 or v < 0.0 or u + v > 1.0: return none(HitRecord)
 
         hit_pt = ray.at(t_hit)
