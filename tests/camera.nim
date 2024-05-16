@@ -261,9 +261,9 @@ suite "ImageTracer":
 
     setup:
         var 
-            image: HdrImage = newHdrImage(5, 5)
+            image = newHdrImage(5, 5)
             cam = newOrthogonalCamera(1.2, Transformation.id)
-            im_tr = newImageTracer(image, cam)
+            im_tr = ImageTracer(image: image, camera: cam)
 
     test "ImageTracer index":
         # Checking image tracer type, we will have to open an issue

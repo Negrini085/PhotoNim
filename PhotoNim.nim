@@ -205,7 +205,6 @@ when isMainModule:
             s10 = newSphere(newPoint3D(0.0, 0.5, 0.0), 0.1)   
 
         var 
-            image = newHdrImage(width, height)
             trasl: Translation
             rotz: Rotation
             cam: Camera
@@ -224,14 +223,13 @@ when isMainModule:
             cam = newOrthogonalCamera(a_ratio, rotz @ trasl)
 
         var
-            tracer = newImageTracer(image, cam)
+            tracer = ImageTracer(image: newHdrImage(width, height), camera: cam)
             scenary = newWorld()
 
         scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
         scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
 
         tracer.fire_all_rays(scenary, col_pix)
-        image = tracer.image
 
         var
             fileOut: string
@@ -246,7 +244,7 @@ when isMainModule:
 
         for y in 0..<height:
             for x in 0..<width:
-                pix = image.getPixel(x, y)
+                pix = tracer.image.getPixel(x, y)
                 pixelsString[i] = (255 * pix.r).char; i += 1
                 pixelsString[i] = (255 * pix.g).char; i += 1
                 pixelsString[i] = (255 * pix.b).char; i += 1

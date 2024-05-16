@@ -109,10 +109,6 @@ type ImageTracer* = object
     image*: HdrImage
     camera*: Camera
 
-
-proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} = ImageTracer(image: im, camera: cam)
-
-
 proc fire_ray*(im_tr: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray {.inline.} =
     im_tr.camera.fire_ray(newPoint2D((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32))
 

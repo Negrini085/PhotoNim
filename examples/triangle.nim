@@ -12,12 +12,13 @@ let
     filePFM = "images/triangle.pfm"
 
 var 
-    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -3, 0, 0)))
-    tracer = newImageTracer(newHdrImage(width, height), cam)
+    tracer = ImageTracer(
+        image: newHdrImage(width, height), 
+        camera: newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -3, 0, 0)))
+    )
     world = newWorld()
 
 world.shapes.add(newTriangle(newPoint3D(2.0, 1.0, 0.0), newPoint3D(0.0, 2.0, 2.0), newPoint3D(0.0, -1.0, -1.0)))
-
 
 proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color =
     # Procedure to decide pixel color (it could be useful to check if scenary len is non zero)
