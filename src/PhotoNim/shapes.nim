@@ -35,7 +35,7 @@ type
 
 proc newWorld*(): World {.inline.} = World(shapes: @[])
 
-proc fire_all_rays*(tracer: var ImageTracer, scenary: World, color_map: proc) = 
+proc fire_all_rays*(tracer: var ImageTracer; scenary: World, color_map: proc) = 
     for y in 0..<tracer.image.height:
         for x in 0..<tracer.image.width:
             tracer.image.setPixel(x, y, color_map(tracer, tracer.fire_ray(x, y), scenary, x, y))
@@ -75,7 +75,7 @@ proc newPlane*(transf = Transformation.id): Shape {.inline.} =
 
 
 
-proc uv*(shape: Shape, pt: Point3D): Point2D = 
+proc uv*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
     of skAABox:
         if   pt.x == 0: return newPoint2D((1 + pt.y) / 4, (1 + pt.z) / 3)

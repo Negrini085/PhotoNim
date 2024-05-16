@@ -62,12 +62,12 @@ proc pixelOffset(img: HdrImage, x, y: int): int {.inline.} =
     img.width * y + x
 
 
-proc getPixel*(img: HdrImage, x, y: int): Color = 
+proc getPixel*(img: HdrImage; x, y: int): Color = 
     ## Access the `Color` of pixel (x, y) in a `HdrImage`.
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HdrImage"
     img.pixels[img.pixelOffset(x, y)]
 
-proc setPixel*(img: var HdrImage, x, y: int, color: Color) = 
+proc setPixel*(img: var HdrImage; x, y: int, color: Color) = 
     ## Set the `Color` of pixel (x, y) in a `HdrImage`.
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HdrImage"
     img.pixels[img.pixelOffset(x, y)] = color
@@ -77,11 +77,11 @@ proc luminosity*(a: Color): float32 {.inline.} =
     ## Return the color luminosity
     0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
 
-proc averageLuminosity*(img: HdrImage, eps: float32 = epsilon(float32)): float32 {.inline.} =
+proc averageLuminosity*(img: HdrImage; eps: float32 = epsilon(float32)): float32 {.inline.} =
     ## Return the HdrImage avarage luminosity
     pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
 
-proc normalizeImage*(img: var HdrImage, alpha: float32) =
+proc normalizeImage*(img: var HdrImage; alpha: float32) =
     ## Normalizing pixel values
     let lum = img.averageLuminosity
     img.pixels.apply(proc(pix: Color): Color = pix * (alpha / lum))
@@ -94,13 +94,13 @@ proc clampImage*(img: var HdrImage) {.inline.} =
 
 
 
-proc parseFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
+proc parseFloat*(stream: Stream; endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32 = stream.readFloat32
     if endianness == littleEndian: littleEndian32(addr result, addr tmp)
     else: bigEndian32(addr result, addr tmp)
 
-proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
+proc writeFloat*(stream: Stream; value: float32, endianness: Endianness = littleEndian) = 
     ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32
     if endianness == littleEndian: littleEndian32(addr tmp, addr value)
@@ -142,7 +142,7 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
             result.img.setPixel(x, y, newColor(r, g, b))
 
 
-proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian) = 
+proc writePFM*(stream: Stream; img: HdrImage, endian: Endianness = littleEndian) = 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
     stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)

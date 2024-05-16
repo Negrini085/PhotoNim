@@ -36,7 +36,7 @@ proc newImageTracer*(im: HdrImage, cam: Camera): ImageTracer {.inline.} =
     ImageTracer(image: im, camera: cam)
 
 
-proc at*(ray: Ray, time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
+proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline} = 
     areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
@@ -49,17 +49,17 @@ proc translate*(ray: Ray, vec: Vec3f): Ray {.inline.} =
     Ray(origin: ray.origin + vec, dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
 
 
-method fire_ray*(cam: Camera, pixel: Point2D): Ray {.base.} =
+method fire_ray*(cam: Camera; pixel: Point2D): Ray {.base.} =
     quit "to overload"
 
-method fire_ray*(cam: OrthogonalCamera, pixel: Point2D): Ray {.inline.} = 
+method fire_ray*(cam: OrthogonalCamera; pixel: Point2D): Ray {.inline.} = 
     apply(cam.transf, newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX))
 
-method fire_ray*(cam: PerspectiveCamera, pixel: Point2D): Ray {.inline.} = 
+method fire_ray*(cam: PerspectiveCamera; pixel: Point2D): Ray {.inline.} = 
     apply(cam.transf, newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1)))
 
 
-proc fire_ray*(im_tr: ImageTracer, x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray =
+proc fire_ray*(im_tr: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray =
     let (u, v) = ((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32)
     im_tr.camera.fire_ray(newPoint2D(u, v))
 
