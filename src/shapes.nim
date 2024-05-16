@@ -78,7 +78,13 @@ proc newPlane*(transf = Transformation.id): Shape {.inline.} =
     Shape(kind: skPlane, transf: transf)
 
 proc newMesh*(nodes: seq[Point3D], edges: seq[tuple[left, right: int]], transf = Transformation.id): Shape {.inline.} = 
-    Shape(kind: skMesh, transf: transf, nodes: nodes, edges: edges)
+    Shape(
+        kind: skMesh,
+        transf: transf,
+        # aabb: some((min(nodes), max(nodes))),
+        nodes: nodes,
+        edges: edges
+    )
 
 
 proc uv*(shape: Shape; pt: Point3D): Point2D = 
@@ -221,7 +227,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
 
         return some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: surf_pt, normal: normal))
 
-    of skMesh: discard
+    of skMesh: discard            
 
     of skAABox:
         let 
