@@ -94,6 +94,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(CLI)* Help command and demo proc.
 - Pcg -> PCG, random.nim -> pcg.nim
 - *(Pcg)* Change random procedure to rand
 - Correct demo mode
