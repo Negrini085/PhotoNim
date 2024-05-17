@@ -35,10 +35,18 @@ The operations of addition and subtraction between colors, as well as multiplica
     <span style="color: blue; font-size: 24px;"> HdrImage </span>
 </div>
 
-The images we are interested in are matrices of pixels, each of which has its own color. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors, each uniquely associated with a particular pixel that can be determined by providing an x-coordinate index and a y-coordinate index. The values of x and y are constrained by
-$$
-\begin{align}
-    0 \leq x < \text{image.width} \\
-    0 \leq y < \text{image.height} 
-\end{align}
-$$
+The images we are interested in are matrices of pixels, each of which has its own color. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors. 
+
+```nim
+type HdrImage* = object
+    width*, height*: int
+    pixels*: seq[Color]
+```
+
+Each color is uniquely associated with a particular pixel, which can be determined via providing an x-coordinate index and a y-coordinate index. The values of x and y are constrained by image width and image height respectively.
+Given that the image is two-dimensional, while sequences are one-dimensional, it is necessary to have a procedure that allows accessing the sequence of colors correctly and efficiently: pixelOffset does just that, returning the index of the memory cell dedicated to a particular pixel.
+
+``` nim
+proc pixelOffset(img: HdrImage; x, y: int): int {.inline.} = x + img.width * y
+```
+
