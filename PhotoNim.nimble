@@ -18,5 +18,5 @@ task test, "Run the PhotoNim tests!":
     exec "nim c -r hdrimage.nim"
     exec "nim c -r camera.nim"
     exec "nim c -r shapes.nim"
-    exec "nim c -r random.nim"
-    exec "rm geometry hdrimage camera shapes random"
+    exec "nim c -r pcg.nim"
+    exec "rm geometry hdrimage camera shapes pcg"
