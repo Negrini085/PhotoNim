@@ -28,3 +28,17 @@ echo col.g
 echo col.b
 ```
 What you should see on your terminal are the three values that you used in the previous initialization.
+The operations of addition and subtraction between colors, as well as multiplication and division by a scalar, are defined.
+
+
+<div style="text-align: center;">
+    <span style="color: blue; font-size: 24px;"> HdrImage </span>
+</div>
+
+The images we are interested in are matrices of pixels, each of which has its own color. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors, each uniquely associated with a particular pixel that can be determined by providing an x-coordinate index and a y-coordinate index. The values of x and y are constrained by
+$$
+\begin{enum}
+    & 0 \leq x \l image.width \\
+    & 0 \leq y \l image.height 
+\end{enum}
+$$ 
