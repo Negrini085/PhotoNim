@@ -42,12 +42,8 @@ The process to use the PhotoNim CLI is quite simple:
 
 ### The `pfm2png` command
 Using PhotoNim's `pfm2png` it is possible to convert an HDR image stored in a PFM format to a PNG.
-This can be achieved in two ways: using PhotoNim CLI or by calling the `pfm2png` proc directly from your Nim code.
-
-you can run it by specifing the command `pfm2png`, followed by its arguments. 
 
 For this example we will use the [memorial.pfm](https://www.pauldebevec.com/Research/HDR/PFM/) image.
-<!-- ### PhotoNim CLI -->
 
 ### The `demo` command
 
