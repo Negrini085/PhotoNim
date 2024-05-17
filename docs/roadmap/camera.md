@@ -37,8 +37,8 @@ The operations of addition and subtraction between colors, as well as multiplica
 
 The images we are interested in are matrices of pixels, each of which has its own color. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors, each uniquely associated with a particular pixel that can be determined by providing an x-coordinate index and a y-coordinate index. The values of x and y are constrained by
 $$
-\begin{enum}
-    & 0 \leq x \l image.width \\
-    & 0 \leq y \l image.height 
-\end{enum}
-$$ 
+\begin{align}
+    0 \leq x < \text{image.width} \\
+    0 \leq y < \text{image.height} 
+\end{align}
+$$
