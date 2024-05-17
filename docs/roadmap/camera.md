@@ -50,3 +50,25 @@ Given that the image is two-dimensional, while sequences are one-dimensional, it
 proc pixelOffset(img: HdrImage; x, y: int): int {.inline.} = x + img.width * y
 ```
 
+Appropriate functionalities are available for setting or retrieving the color of a pixel: equally fundamental are the procedures that allow for tone mapping, ensuring the rendering of images with correct management of brightness and colors. You can read or write a .pfm file by using appropriate procedure implemented in PhotoNim.nim file.
+
+<div style="text-align: left;">
+    <span style="color: blue; font-size: 15px;"> Example </span>
+</div>
+
+```nim
+# Defining a HdrImage variable
+var im = newHdrImage(2, 2)
+
+# Setting pixel value
+im.setPixel(1, 1, newColor(0.1, 0.3, 0.1))
+
+# Getting pixel value
+echo im.getPixel(0, 0)
+
+# Computing avarage luminosity
+echo im.averageLuminosity()
+
+# Tone Mapping, crucial for production of images with proper color management.
+im.toneMapping(1, 0.23)
+```
