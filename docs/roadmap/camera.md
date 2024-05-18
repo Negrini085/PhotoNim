@@ -72,3 +72,60 @@ echo im.averageLuminosity()
 # Tone Mapping, crucial for production of images with proper color management.
 im.toneMapping(1, 0.23)
 ```
+
+<div style="text-align: center;">
+    <span style="color: blue; font-size: 24px;"> Ray </span>
+</div>
+
+What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenary. The first tool we need to develop is a type that allows us to uniquely characterize a ray:
+
+```nim
+type Ray* = object
+    origin*: Point3D
+    dir*: Vec3f
+    tmin*: float32
+    tmax*: float32
+    depth*: int
+```
+
+To describe a light ray, we need to specify the point where it was emitted and the direction of propagation. We also provide the temporal limits of the ray's propagation and the number of reflections it has undergone within the simulated region.
+The following features are fundamental
+```nim
+
+method apply*(transf: Transformation, ray: Ray): Ray {.base, inline.} =
+    Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
+
+proc translate*(ray: Ray, vec: Vec3f): Ray {.inline.} = 
+    Ray(origin: ray.origin + vec, dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
+
+```
+because they allow for applying generic transformations to the ray, and this step is essential for evaluating intersections with shapes in their local reference system.
+If you want to evaluate ray position at a certain time t, you just have to use ```at``` procedure.
+
+<div style="text-align: left;">
+    <span style="color: blue; font-size: 15px;"> Example </span>
+</div>
+
+```nim
+let
+    trans = newTranslation(newVec3[float32](2, 0, 0))
+
+var 
+    origin = newPoint3D(0, 0, 0)        # Ray starting point
+    dir = newVec3[float32](1, 0, 0)     # Ray direction (along x-axis)
+    ray = newRay(origin, dir)           # tmin, tmax and depth have default values
+
+# Printing ray variable content
+echo ray
+
+# Transforming ray (we are applying a translation, only ray.origin will change)
+ray = trans.apply(ray)
+echo ray.origin         # Here you should have (2, 0, 0)
+
+# Checking ray position at unitary time
+# Ray is starting in (2, 0, 0)
+# Ray is propagating along x-axis (1, 0, 0)
+# You should be in (3, 0, 0) after one second of evolution
+echo ray.at(1)
+```
+
