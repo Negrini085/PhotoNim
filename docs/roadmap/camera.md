@@ -35,7 +35,7 @@ The operations of addition and subtraction between colors, as well as multiplica
     <span style="color: blue; font-size: 24px;"> HdrImage </span>
 </div>
 
-The images we are interested in are matrices of pixels, each of which has its own color. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors. 
+The images we are interested in are matrices of pixels. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors. 
 
 ```nim
 type HdrImage* = object
