@@ -245,3 +245,27 @@ Here we are creating a colormap associating each pixel with a color depending on
 <div style="text-align: left;">
     <span style="color: blue; font-size: 15px;"> Example </span>
 </div>
+
+```nim
+let
+    trans = newTranslation(newVec3[float32](-1, 0, 0))  # Transformation to apply to camera
+
+var
+    ray: Ray
+    img = newHdrImage(5, 5)
+    pcam = newPerspectiveCamera(1, 1, trans)
+    im_tr = ImageTracer(image: img, camera: pcam)   # ImageTracer initialization
+
+
+# Procedure to fire a single ray
+# We are choosing middle pixel
+# Ray direction must be along x-axis
+ray = im_tr.fire_ray(2, 2)
+echo ray.origin             # Should be (-2, 0, 0)
+echo ray.dir                # Should be (1, 0, 0)
+
+# Procedure to fire all rays, HdrImage elements will change value
+# We are going to check using echo, we find no initialization value (0, 0, 0)
+im_tr.fire_all_rays()
+echo getPixel(im_tr.image, 2, 2)
+```
