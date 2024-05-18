@@ -77,7 +77,7 @@ im.toneMapping(1, 0.23)
     <span style="color: blue; font-size: 24px;"> Ray </span>
 </div>
 
-What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenary. The first tool we need to develop is a type that allows us to uniquely characterize a ray:
+What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenary. PhotoNim is a backward ray tracer, meaning that we are tracing rays from the camera to the light sources. The first tool we need to develop is indeed a type that allows us to uniquely characterize a ray:
 
 ```nim
 type Ray* = object
@@ -129,3 +129,75 @@ echo ray.origin         # Here you should have (2, 0, 0)
 echo ray.at(1)
 ```
 
+<div style="text-align: center;">
+    <span style="color: blue; font-size: 24px;"> Camera </span>
+</div>
+
+Rays are employed for image reconstruction, a task which, within PhotoNim, can be executed through two distinct modalities:
+1. orthogonal
+2. perspective
+To implement a projection, it is necessary to define the position of the observer and the direction in which they are looking. Typically, this involves defining a screen for which the aspect ratio must be specified. The distance between the screen and the observer is finite in the case of a perspective projection, otherwise it is infinite. The screen demarcates the visible space region, that will then be rendered. To cast a ray at a specific screen position, it is necessary to provide two coordinates, denoted as (u, v), which determine the light ray direction as follows:
+
+![uv_mapping](https://github.com/Negrini085/PhotoNim/assets/139368862/ac218938-49b2-4b51-ae1c-1b81eaced050)
+
+In PhotoNim we used ```enum``` in order to define different kind of cameras: as you can see, a further data member it's needed for perspective camera in order to specify the distance between the observer and the screen.
+```nim
+type
+    CameraKind* = enum
+        ckOrthogonal, ckPerspective
+
+    Camera* = object of RootObj
+        transf*: Transformation
+        aspect_ratio*: float32
+
+        case kind: CameraKind
+        of ckOrthogonal: discard
+        of ckPerspective: 
+            distance: float32 
+```
+We need to associate a transformation to a camera variable in order to place it in space as we wish. The only procedure needed other than constructors
+
+```nim
+# Create a new orthogonal camera variable with given parameters
+proc newOrthogonalCamera*(a: float32; transf = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckOrthogonal, transf: transf, aspect_ratio: a)
+
+# Create a new perspective camera varible with given parameters
+proc newPerspectiveCamera*(a, d: float32; transf = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckPerspective, transf: transf, aspect_ratio: a, distance: d)
+```
+
+is the one that enables the user to fire rays at a specific screen location: clearly this differs between different kinds of camera.
+
+```nim
+proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
+    case cam.kind
+    of ckOrthogonal:
+        apply(cam.transf, newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX))
+    of ckPerspective:
+        apply(cam.transf, newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1)))
+```
+
+Both cameras are initialized such that the observer is positioned along the negative x-axis, and the screen lies on the xy-plane. The ray direction is perpendicular to the screen in the case of orthogonal projection, while it depends on the coordinates (u, v) otherwise. The returned ray in both cases is transformed to account for the actual arrangement of the camera in space.
+
+<div style="text-align: left;">
+    <span style="color: blue; font-size: 15px;"> Example </span>
+</div>
+
+```nim
+let 
+    # transformation to be associated with the chosen camera
+    trans = newTranslation(newVec3[float32](-1, 0, 0))
+
+var
+    ray: Ray                                # Ray variable to store rays fired
+    uv = newPoint2D(0.5, 0.5)               # (u, v) coordinates: we are firing right at the center of the screen
+    pCam = newPerspectiveCamera(1.2, 1, trans)
+
+# Firing ray, we need to give (u, v) coordinates as input
+ray = pCam.fire_ray(uv)
+# Printing ray: it should have
+#          ---> ray.origin = (-2, 0, 0)
+#          ---> ray.dir    = (1, 0, 0)
+echo ray
+```
