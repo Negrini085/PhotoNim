@@ -8,9 +8,11 @@ nav_order: 1
 
 The ray tracing code "PhotoNim" facilitates the conversion of images from .pfm to .png format and the rendering of intricate scenes composed of geometric figures. Consequently, it is essential to implement types and functionalities that enable efficient image processing. 
 
+
 <div style="text-align: center;">
-    <span style="color: blue; font-size: 24px;"> Color </span>
+    <span style="color: blue; font-size: 28px;"> Color </span>
 </div>
+
 
 Within this code, we employ RGB color encoding: Color type is a ```distinct Vec3f``` because we need to store the triplet of numbers that defines the color of a pixel. 
 If you want to create a new Color variable, you should specify r, g and b values such as following:
@@ -32,8 +34,9 @@ The operations of addition and subtraction between colors, as well as multiplica
 
 
 <div style="text-align: center;">
-    <span style="color: blue; font-size: 24px;"> HdrImage </span>
+    <span style="color: blue; font-size: 28px;"> HdrImage </span>
 </div>
+
 
 The images we are interested in are matrices of pixels. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors. 
 
@@ -73,9 +76,11 @@ echo im.averageLuminosity()
 im.toneMapping(1, 0.23)
 ```
 
+
 <div style="text-align: center;">
-    <span style="color: blue; font-size: 24px;"> Ray </span>
+    <span style="color: blue; font-size: 28px;"> Ray </span>
 </div>
+
 
 What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenary. PhotoNim is a backward ray tracer, meaning that we are tracing rays from the camera to the light sources. The first tool we need to develop is indeed a type that allows us to uniquely characterize a ray:
 
@@ -90,6 +95,7 @@ type Ray* = object
 
 To describe a light ray, we need to specify the point where it was emitted and the direction of propagation. We also provide the temporal limits of the ray's propagation and the number of reflections it has undergone within the simulated region.
 The following features are fundamental
+
 ```nim
 
 method apply*(transf: Transformation, ray: Ray): Ray {.base, inline.} =
@@ -99,6 +105,7 @@ proc translate*(ray: Ray, vec: Vec3f): Ray {.inline.} =
     Ray(origin: ray.origin + vec, dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
 
 ```
+
 because they allow for applying generic transformations to the ray, and this step is essential for evaluating intersections with shapes in their local reference system.
 If you want to evaluate ray position at a certain time t, you just have to use ```at``` procedure.
 
@@ -129,20 +136,21 @@ echo ray.origin         # Here you should have (2, 0, 0)
 echo ray.at(1)
 ```
 
+
 <div style="text-align: center;">
-    <span style="color: blue; font-size: 24px;"> Camera </span>
+    <span style="color: blue; font-size: 28px;"> Camera </span>
 </div>
+
 
 Rays are employed for image reconstruction, a task which, within PhotoNim, can be executed through two distinct modalities:
 1. orthogonal
 2. perspective
 To implement a projection, it is necessary to define the position of the observer and the direction in which they are looking. Typically, this involves defining a screen for which the aspect ratio must be specified. The distance between the screen and the observer is finite in the case of a perspective projection, otherwise it is infinite. The screen demarcates the visible space region, that will then be rendered. To cast a ray at a specific screen position, it is necessary to provide two coordinates, denoted as (u, v), which determine the light ray direction as follows:
 
-<center>
-
+<div style="text-align: center;">
+    
 ![uv_mapping](https://github.com/Negrini085/PhotoNim/assets/139368862/ac218938-49b2-4b51-ae1c-1b81eaced050)
-
-</center>
+</div>
 
 In PhotoNim we used ```enum``` in order to define different kind of cameras: as you can see, a further data member it's needed for perspective camera in order to specify the distance between the observer and the screen.
 ```nim
@@ -206,9 +214,11 @@ ray = pCam.fire_ray(uv)
 echo ray
 ```
 
+
 <div style="text-align: center;">
-    <span style="color: blue; font-size: 24px;"> ImageTracer </span>
+    <span style="color: blue; font-size: 28px;"> ImageTracer </span>
 </div>
+
 
 We now need to bind the HdrImage type to one of the camera kinds in order to render scenarios: the ```ImageTracer``` type is exactly what we are looking for considering that its data members are an ```HdrImage``` variable and a ```Camera``` one.
 
