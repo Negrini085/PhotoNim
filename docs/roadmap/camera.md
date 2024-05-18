@@ -138,7 +138,11 @@ Rays are employed for image reconstruction, a task which, within PhotoNim, can b
 2. perspective
 To implement a projection, it is necessary to define the position of the observer and the direction in which they are looking. Typically, this involves defining a screen for which the aspect ratio must be specified. The distance between the screen and the observer is finite in the case of a perspective projection, otherwise it is infinite. The screen demarcates the visible space region, that will then be rendered. To cast a ray at a specific screen position, it is necessary to provide two coordinates, denoted as (u, v), which determine the light ray direction as follows:
 
+<center>
+
 ![uv_mapping](https://github.com/Negrini085/PhotoNim/assets/139368862/ac218938-49b2-4b51-ae1c-1b81eaced050)
+
+</center>
 
 In PhotoNim we used ```enum``` in order to define different kind of cameras: as you can see, a further data member it's needed for perspective camera in order to specify the distance between the observer and the screen.
 ```nim
@@ -201,3 +205,43 @@ ray = pCam.fire_ray(uv)
 #          ---> ray.dir    = (1, 0, 0)
 echo ray
 ```
+
+<div style="text-align: center;">
+    <span style="color: blue; font-size: 24px;"> ImageTracer </span>
+</div>
+
+We now need to bind the HdrImage type to one of the camera kinds in order to render scenarios: the ```ImageTracer``` type is exactly what we are looking for considering that its data members are an ```HdrImage``` variable and a ```Camera``` one.
+
+```nim
+type ImageTracer* = object
+    image*: HdrImage
+    camera*: Camera
+```
+
+ImageTracer is responsible for casting rays to the various image pixels, working with row and column indices that allow access to specific memory cells in the color sequence. We have implemented two functionalities, which enable casting a ray to a specific pixel on the screen or to all pixels present. The first one compute index conversion such as
+
+```nim
+proc fire_ray*(im_tr: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray {.inline.} =
+    im_tr.camera.fire_ray(newPoint2D((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32))
+```
+
+As we transition from continuous (u, v) to discrete (x, y), we also need to decide which region of the pixel to hit, hence one of the inputs is Point2D labeled as pixel. By default, we work by hitting the center, meaning passing a tuple with both entries initialized to 0.5.
+To shoot rays at all the pixels on the screen, one simply needs to iterate over the row and column indices.
+
+```nim
+proc fire_all_rays*(im_tr: var ImageTracer) = 
+    for x in 0..<im_tr.image.height:
+        for y in 0..<im_tr.image.width:
+            discard im_tr.fire_ray(x, y)
+            let 
+                r = (1 - exp(-float32(x + y)))
+                g = y / im_tr.image.height
+                b = pow((1 - x / im_tr.image.width), 2.5)
+            im_tr.image.setPixel(x, y, newColor(r, g, b))
+```
+
+Here we are creating a colormap associating each pixel with a color depending on the row and column index.
+
+<div style="text-align: left;">
+    <span style="color: blue; font-size: 15px;"> Example </span>
+</div>
