@@ -147,10 +147,7 @@ Rays are employed for image reconstruction, a task which, within PhotoNim, can b
 2. perspective
 To implement a projection, it is necessary to define the position of the observer and the direction in which they are looking. Typically, this involves defining a screen for which the aspect ratio must be specified. The distance between the screen and the observer is finite in the case of a perspective projection, otherwise it is infinite. The screen demarcates the visible space region, that will then be rendered. To cast a ray at a specific screen position, it is necessary to provide two coordinates, denoted as (u, v), which determine the light ray direction as follows:
 
-<div style="text-align: center;">
-    
-![uv_mapping](https://github.com/Negrini085/PhotoNim/assets/139368862/ac218938-49b2-4b51-ae1c-1b81eaced050)
-</div>
+![uv_mapping](https://github.com/Negrini085/PhotoNim/assets/139368862/8ef9c30f-7143-43ab-975b-50025c7c04c3)
 
 In PhotoNim we used ```enum``` in order to define different kind of cameras: as you can see, a further data member it's needed for perspective camera in order to specify the distance between the observer and the screen.
 ```nim
