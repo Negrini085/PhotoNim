@@ -1,5 +1,6 @@
 from std/fenv import epsilon
 from std/math import sgn, floor, sqrt, arccos, arctan2, PI
+from std/algorithm import sort, sorted
 import std/options
 
 import geometry, camera
@@ -498,7 +499,57 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         
         return some(appo)
     
-    of skCSGDiff: discard
+    of skCSGDiff: 
+        if shape.sh.len == 0: return none(HitRecord)
+
+        # If i miss the first shape, I don't want to have a hit
+        if not fastIntersection(shape.sh[0], inv_ray): return none(HitRecord)
+        # If we have just one shape, we will use rayIntersection procedure
+        if shape.sh.len == 1: return rayIntersection(shape.sh[0], inv_ray)
+        
+        var 
+            tmax: float32                                               # Variable to last check
+            hit0 = allHitTimes(shape.sh[0], inv_ray).get().sorted()     # All hit times on shape 0
+            hit1: seq[float32]                                          # Container for other hits
+            ind: int                                                    # Index to understand wether you are in or out
+            appo: Shape                                                 # I need to store Shape in order to compute correct HitRecord
+        
+        tmax = min(hit0)
+        # Checking bigger second hit time in shape.sh population 
+        for i in shape.sh:
+            # Checking if we have hit with second shape
+            if fastIntersection(i, inv_ray):
+                # If we have hit, but after shape one we are not interested
+                if not (hit0[0] < rayIntersection(i, inv_ray).get.t_hit):
+                    hit1 = allHitTimes(i, inv_ray).get().sorted()
+                    if hit1[1] > tmax:
+                        tmax = hit1[1]
+                        appo = i
+        
+        # If tmax didn't change, we just return a none(HitRecord)
+        # That means that all shapes are external to shape.sh[0]
+        if tmax == min(hit0): return none(HitRecord)
+        
+        # We now have to understand wether we want to use shape 0 or i to HitRecord
+        # If shape 0 is completely within i, we just return a none(HitRecord)
+        if tmax > max(hit0): return none(HitRecord)
+
+        # Cheking which is the limiting time hit on shape 0
+        for j in 0..<hit0.len:
+            if hit0[j] > tmax:
+                ind = j
+                break
+                    
+        # If j is even, ray is exiting shape and we have to chose point on shape i
+        if (ind mod 2) == 0:
+            t_hit = tmax
+        # If j is odd, ray is entering shape and we have to chose point on shape 0
+        else:
+            appo = shape.sh[0]
+            t_hit = hit0[ind]
+        
+        return some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: appo.uv(ray.at(t_hit)), world_pt: apply(appo.transf, ray.at(t_hit)), normal: apply(appo.transf, appo.normal(ray.at(t_hit), inv_ray.dir) )))
+                    
         
 
     hit_pt = inv_ray.at(t_hit)
