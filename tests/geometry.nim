@@ -137,6 +137,18 @@ suite "Points unittest":
 
     test "`$` proc":
         check $p2 == "(1.0, 20.0)"
+    
+    test "min proc":
+        var
+            a = newPoint3D(1, 2, 3)
+            b = newPoint3D(-1, 2, 5)
+            c = newPoint3D(1, -2, 4)
+            
+            s1 = @[a]
+            s2 = @[a, b, c]
+
+        check areClose(min(s1), newPoint3D(1, 2, 3))
+        check areClose(min(s2), newPoint3D(-1, -2, 3))
 
 
 suite "Mat unittest":
