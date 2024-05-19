@@ -24,6 +24,15 @@ suite "Vec unittest":
         let f = newVec4(-1, -4, 5, 2)
         check f.N == 4 and f.V is int
 
+        let g = newVec2f(1, 2)
+        check areClose(g, newVec2f(1, 2))
+
+        let h = newVec3f(1, 2, 3)
+        check areClose(h, newVec3f(1, 2, 3))
+
+        let i = newVec4f(1, 2, 3, 4)
+        check areClose(i, newVec4f(1, 2, 3, 4))
+
 
     setup:
         let 
@@ -106,7 +115,7 @@ suite "Vec unittest":
         let a = normalize(y)
         check a.norm == 1.0
         check areClose(a[0], 0.6) and areClose(a[1], 0.8)
-
+    
 
 suite "Points unittest":
     echo "Testing the `Point2D` and `Point3D` type and its procedures."
