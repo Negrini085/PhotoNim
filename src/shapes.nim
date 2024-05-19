@@ -254,86 +254,6 @@ type
         surface_pt*: Point2D
         normal*: Normal
 
-#------------------------------------------------#
-#   Procedure to determine all RayIntersection   #
-#------------------------------------------------#
-proc allRayIntersection*(shape: Shape, ray: Ray): Option[seq[HitRecord]] =
-    var 
-        t_hit: float32
-        hit_pt: Point3D
-        surf_pt: Point2D
-        normal: Normal
-
-    let inv_ray = apply(shape.transf.inverse, ray)
-
-    case shape.kind
-    of skTriangle:
-        let 
-            (A, B, C) = shape.vertices
-            mat = [
-                [B.x - A.x, C.x - A.x, -ray.dir[0]], 
-                [B.y - A.y, C.y - A.y, -ray.dir[1]], 
-                [B.z - A.z, C.z - A.z, -ray.dir[2]]
-            ]
-            vec = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
-        
-        var solution: Vec3f
-        try:
-            solution = solve(mat, vec)
-        except ValueError:
-            return none(seq[HitRecord])
-
-        t_hit = solution[2]
-        if ray.tmin > t_hit or t_hit > ray.tmax: return none(seq[HitRecord])
-
-        let (u, v) = (solution[0], solution[1])
-        if u < 0.0 or v < 0.0 or u + v > 1.0: return none(seq[HitRecord])
-
-        hit_pt = ray.at(t_hit)
-        surf_pt = newPoint2D(u, v)
-        normal = shape.normal(hit_pt, ray.dir)
-
-        return some(@[HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: surf_pt, normal: normal)])
-
-    of skTriangularMesh: discard            
-
-    of skAABox: discard
-
-    of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
-        let delta_4 = b * b - a * c
-        if delta_4 < 0: return none(seq[HitRecord])
-
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
-            return some(@[
-                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(ray.at(t_l)), world_pt: apply(shape.transf, ray.at(t_l)), normal: apply(shape.transf, shape.normal(ray.at(t_l), inv_ray.dir) )),
-                HitRecord(ray: ray, t_hit: t_r, surface_pt: shape.uv(ray.at(t_r)), world_pt: apply(shape.transf, ray.at(t_r)), normal: apply(shape.transf, shape.normal(ray.at(t_l), inv_ray.dir) ))
-                ])
-        elif t_l > ray.tmin and t_l < ray.tmax:
-            return some(@[HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(ray.at(t_l)), world_pt: apply(shape.transf, ray.at(t_l)), normal: apply(shape.transf, shape.normal(ray.at(t_l), inv_ray.dir) ))])
-        elif t_r > ray.tmin and t_r < ray.tmax:
-            return some(@[HitRecord(ray: ray, t_hit: t_r, surface_pt: shape.uv(ray.at(t_r)), world_pt: apply(shape.transf, ray.at(t_r)), normal: apply(shape.transf, shape.normal(ray.at(t_l), inv_ray.dir) ))])
-        return none(seq[HitRecord])
-
-        
-
-    of skPlane:
-        if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[HitRecord])
-        t_hit = -inv_ray.origin.z / inv_ray.dir[2]
-        if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[HitRecord])
-        
-        hit_pt = inv_ray.at(t_hit)
-        surf_pt = shape.uv(hit_pt)
-        normal = shape.normal(hit_pt, inv_ray.dir) 
-
-        return some(@[HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal))])
-    
-    of skCSGUnion: discard
-    
-    of skCSGDiff: discard
-
-
 #-------------------------------------------------#
 #  Procedure to determine all intersection times  #
 #-------------------------------------------------#
@@ -342,29 +262,7 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
     let inv_ray = apply(shape.transf.inverse, ray)
 
     case shape.kind
-    of skTriangle:
-        let 
-            (A, B, C) = shape.vertices
-            mat = [
-                [B.x - A.x, C.x - A.x, -ray.dir[0]], 
-                [B.y - A.y, C.y - A.y, -ray.dir[1]], 
-                [B.z - A.z, C.z - A.z, -ray.dir[2]]
-            ]
-            vec = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
-        
-        var solution: Vec3f
-        try:
-            solution = solve(mat, vec)
-        except ValueError:
-            return none(seq[float32])
-
-        t_hit = solution[2]
-        if ray.tmin > t_hit or t_hit > ray.tmax: return none(seq[float32])
-
-        let (u, v) = (solution[0], solution[1])
-        if u < 0.0 or v < 0.0 or u + v > 1.0: return none(seq[float32])
-
-        return some(@[t_hit])
+    of skTriangle: discard
 
     of skTriangularMesh: discard            
 
@@ -391,7 +289,7 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
 
-        return some(@[t_hit])
+        return some(@[t_hit, Inf])
     
     of skCSGUnion: discard
     
