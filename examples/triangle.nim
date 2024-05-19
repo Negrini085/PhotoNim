@@ -3,7 +3,6 @@ import PhotoNim
 import std/[streams, options]
 from std/times import cpuTime
 from std/strformat import fmt
-from nimPNG import savePNG24
 
 
 let 
