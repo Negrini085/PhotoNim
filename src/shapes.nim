@@ -275,3 +275,35 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     normal = shape.normal(hit_pt, inv_ray.dir) 
 
     some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal)))
+
+
+
+#----------------------------------------------------------------#
+#               Csg: constructive solid geometry                 #
+#----------------------------------------------------------------#
+proc unionCSG*(sh: seq[Shape], ray: Ray): Option[HitRecord] = 
+    # Procedure to compute the union of different shapes: everytime we check for 
+    # intersection and we give as output the HitRecord characterized by the smaller t
+
+    if sh.len == 0: return none(HitRecord)
+
+    else:
+
+        var 
+            appo: HitRecord
+            hitr: seq[HitRecord]
+
+        for i in 0..<sh.len:
+            
+            # Checking for intersection with i-th sequence shape
+            if fastIntersection(sh[i], ray):
+                hitr.add(rayIntersection(sh[i], ray).get)
+        
+        if hitr.len == 0: return none(HitRecord)
+        else:
+            appo = hitr[0]
+            for j in 0..<hitr.len:
+                if hitr[j].t_hit < appo.t_hit:
+                    appo = hitr[j]
+            
+            return some(appo)
