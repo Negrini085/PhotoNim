@@ -9,7 +9,7 @@ type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh
+        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh, skCSGUnion
 
     Shape* = object of RootObj
         transf*: Transformation
@@ -31,6 +31,9 @@ type
             radius*: float32
 
         of skPlane: discard
+
+        of skCSGUnion:
+            shapes*: seq[Shape]
 
 
     World* = object
@@ -84,6 +87,14 @@ proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transforma
         aabb: some((min(nodes), max(nodes))),
         nodes: nodes,
         triang: triang
+    )
+
+proc newCSGUnion*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
+    Shape(
+        kind: skCSGUnion,
+        transf: transf,
+        #aabb: to implement
+        shapes: shapes
     )
 
 
