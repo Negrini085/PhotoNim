@@ -126,6 +126,8 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
     of skPlane: 
         return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
+    of skCSGUnion: discard
+
 
 proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
     case shape.kind
@@ -150,6 +152,8 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
     of skPlane: 
         return newNormal(0, 0, sgn(-dir[2]).float32)
+
+    of skCSGUnion: discard
 
 
 proc fastIntersection*(shape: Shape, ray: Ray): bool =
@@ -189,6 +193,15 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
 
         let t = -inv_ray.origin.z / inv_ray.dir[2]
         return if t < inv_ray.tmin or t > inv_ray.tmax: false else: true
+
+    of skCSGUnion:
+        if shape.shapes.len == 0: return false
+
+        let inv_ray = apply(shape.transf.inverse, ray)
+        # Testing wether there is at least an intersection with one of shapes
+        for i in shape.shapes:
+            if fastIntersection(i, inv_ray): return true
+        return false
 
 
 
@@ -279,6 +292,8 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(HitRecord)
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
+    
+    of skCSGUnion: discard
 
 
     hit_pt = inv_ray.at(t_hit)
