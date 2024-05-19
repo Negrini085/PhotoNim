@@ -9,7 +9,7 @@ type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh, skCSGUnion
+        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh, skCSGUnion, skCSGDiff
 
     Shape* = object of RootObj
         transf*: Transformation
@@ -33,6 +33,9 @@ type
         of skPlane: discard
 
         of skCSGUnion:
+            shapes*: seq[Shape]
+        
+        of skCSGDiff:
             shapes*: seq[Shape]
 
 
@@ -96,6 +99,15 @@ proc newCSGUnion*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {
         #aabb: to implement
         shapes: shapes
     )
+
+proc newCSGDiff*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.inline.} = 
+    Shape(
+        kind: skCSGDiff,
+        transf: transf,
+        #aabb: to implement
+        shapes: shapes
+    )
+
 
 
 proc uv*(shape: Shape; pt: Point3D): Point2D = 
