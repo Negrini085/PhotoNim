@@ -293,7 +293,23 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
     
-    of skCSGUnion: discard
+    of skCSGUnion:  
+        if shape.shapes.len == 0: return none(HitRecord)
+
+        else:
+            var 
+                t_hit = Inf 
+                appo: HitRecord
+
+            for i in 0..<shape.shapes.len:
+            
+                # Checking for intersection with i-th sequence shape
+                if fastIntersection(shape.shapes[i], inv_ray):          
+                    if rayIntersection(shape.shapes[i], inv_ray).get.t_hit < t_hit:
+                        appo = rayIntersection(shape.shapes[i], inv_ray).get
+                        t_hit = appo.t_hit
+        
+            if t_hit == Inf: return none(HitRecord)
 
 
     hit_pt = inv_ray.at(t_hit)
@@ -301,35 +317,3 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     normal = shape.normal(hit_pt, inv_ray.dir) 
 
     some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal)))
-
-
-
-#----------------------------------------------------------------#
-#               Csg: constructive solid geometry                 #
-#----------------------------------------------------------------#
-proc unionCSG*(sh: seq[Shape], ray: Ray): Option[HitRecord] = 
-    # Procedure to compute the union of different shapes: everytime we check for 
-    # intersection and we give as output the HitRecord characterized by the smaller t
-
-    if sh.len == 0: return none(HitRecord)
-
-    else:
-
-        var 
-            appo: HitRecord
-            hitr: seq[HitRecord]
-
-        for i in 0..<sh.len:
-            
-            # Checking for intersection with i-th sequence shape
-            if fastIntersection(sh[i], ray):
-                hitr.add(rayIntersection(sh[i], ray).get)
-        
-        if hitr.len == 0: return none(HitRecord)
-        else:
-            appo = hitr[0]
-            for j in 0..<hitr.len:
-                if hitr[j].t_hit < appo.t_hit:
-                    appo = hitr[j]
-            
-            return some(appo)
