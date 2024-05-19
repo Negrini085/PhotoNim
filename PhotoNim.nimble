@@ -28,7 +28,7 @@ task test, "Run the PhotoNim tests!":
 task triangle, "Run the triangle example":
   exec "nim c -r examples/triangle.nim"
   exec "rm examples/triangle"
-  exec "./PhotoNim pfm2png images/triangle.pfm images/triangle.png"
+  exec "./PhotoNim pfm2png images/triangle.pfm images/triangle.png --avlum 0.1"
   exec "open images/triangle.png"
 
 task csg, "Run the csg example":

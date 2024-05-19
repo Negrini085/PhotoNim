@@ -8,6 +8,7 @@ from std/strutils import split, parseInt, parseFloat
 from std/endians import littleEndian32, bigEndian32
 from std/math import sum, pow, exp, log10, sin, cos, degToRad
 from std/times import cpuTime
+import std/options
 
 import docopt
 from nimPNG import savePNG24
@@ -16,12 +17,13 @@ from nimPNG import savePNG24
 let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
 
 Usage:
-    ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma>]
+    ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma> --avlum=<avlum>]
     ./PhotoNim demo (perspective|orthogonal) [<output>] [--width=<width> --height=<height> --angle=<angle>]
 
 Options:
     --alpha=<alpha>     Color renormalization factor. [default: 0.18]
     --gamma=<gamma>     Gamma correction factor. [default: 1.0]
+    --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images
     --width=<width>     Image wisth. [default: 1600]
     --height=<height>   Image height. [default: 1000]
     --angle=<angle>     Rotation angle around z axis
@@ -93,7 +95,7 @@ proc writePFM*(stream: Stream; img: HdrImage, endian: Endianness = littleEndian)
             stream.writeFloat(c.b, endian)
 
 
-proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32) =
+proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum: Option[float32]) =
     var 
         img: HdrImage
         inFS = newFileStream(fileIn, fmRead)
@@ -104,7 +106,7 @@ proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32) =
     finally:
         inFS.close
    
-    img.toneMapping(alpha, gamma)
+    img.toneMapping(alpha, gamma, avlum)
 
     var 
         i: int
@@ -152,6 +154,7 @@ when isMainModule:
         var 
             fileOut: string
             alpha, gamma: float
+            avlum: Option[float32] = none(float32)
 
         if args["--alpha"]: 
             try: alpha = parseFloat($args["--alpha"]) 
@@ -161,12 +164,17 @@ when isMainModule:
             try: gamma = parseFloat($args["--gamma"]) 
             except: echo "Warning: gamma flag must be a float. Default value is used."
 
+        if args["--avlum"]: 
+            try: avlum = some(float32(parseFloat($args["--avlum"]))) 
+            except: echo "Warning: gamma flag must be a float. Default value is used."
+
         if args["<output>"]: fileOut = $args["<output>"]
         else: 
             let (dir, name, _) = splitFile(fileIn)
             fileOut = dir & '/' & name & "_a" & $alpha & "_g" & $gamma & ".png"
-        
-        pfm2png(fileIn, fileOut, alpha, gamma)
+
+
+        pfm2png(fileIn, fileOut, alpha, gamma, avlum)
 
     #-----------------------------#
     #       Demo executable       #
