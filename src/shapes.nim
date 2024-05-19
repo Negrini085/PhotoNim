@@ -89,7 +89,7 @@ proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transforma
         triang: triang
     )
 
-proc newCSGUnion*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
+proc newCSGUnion*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.inline.} = 
     Shape(
         kind: skCSGUnion,
         transf: transf,
@@ -174,7 +174,30 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         return if t_hit_min > tz_max or tz_min > t_hit_max: false else: true
 
     of skTriangularMesh: discard
-    of skTriangle: discard
+    
+    of skTriangle: 
+        let 
+            (A, B, C) = shape.vertices
+            mat = [
+                [B.x - A.x, C.x - A.x, -ray.dir[0]], 
+                [B.y - A.y, C.y - A.y, -ray.dir[1]], 
+                [B.z - A.z, C.z - A.z, -ray.dir[2]]
+            ]
+            vec = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
+        
+        var solution: Vec3f
+        try:
+            solution = solve(mat, vec)
+        except ValueError:
+            return false
+
+        var t_hit = solution[2]
+        if ray.tmin > t_hit or t_hit > ray.tmax: return false
+
+        let (u, v) = (solution[0], solution[1])
+        if u < 0.0 or v < 0.0 or u + v > 1.0: return false
+
+        return true
 
     of skSphere: 
         let 
