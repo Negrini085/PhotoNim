@@ -81,7 +81,7 @@ proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transforma
     Shape(
         kind: skTriangularMesh,
         transf: transf,
-        #aabb: some((min(nodes), max(nodes))),
+        aabb: some((min(nodes), max(nodes))),
         nodes: nodes,
         triang: triang
     )
