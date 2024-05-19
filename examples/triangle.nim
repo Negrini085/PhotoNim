@@ -3,6 +3,7 @@ import PhotoNim
 import std/[streams, options]
 from std/times import cpuTime
 from std/strformat import fmt
+from math import pow, exp
 
 
 let 
@@ -19,11 +20,18 @@ var
 
 world.shapes.add(newTriangle(newPoint3D(2.0, 1.0, 0.0), newPoint3D(0.0, 2.0, 2.0), newPoint3D(0.0, -1.0, -1.0)))
 
-proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color =
+proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color = 
     # Procedure to decide pixel color (it could be useful to check if scenary len is non zero)
-    for i in 0..<scenary.shapes.len:
-        if rayIntersection(scenary.shapes[i], ray).isSome: 
-            return newColor(7, 2, 4)
+    let dim = scenary.shapes.len
+    if dim == 0: return newColor(0, 0, 0)
+    for i in 0..<dim:
+        if fastIntersection(scenary.shapes[i], ray): 
+            let 
+                r = (1 - exp(-float32(x + y)))
+                g = y/im_tr.image.height
+                b = pow((1 - x/im_tr.image.width), 2.5)
+            return newColor(r, g, b)
+
     
 tracer.fire_all_rays(world, col_pix)
 
