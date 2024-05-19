@@ -10,10 +10,13 @@ requires "nim >= 2.0"
 requires "docopt >= 0.6"
 requires "nimPNG >= 0.3"
 
+
+#---------------------------------#
+#              Tasks              #
+#---------------------------------#
 task build, "Build the PhotoNim executable":
   exec "nim c PhotoNim.nim"
 
-# Tasks
 task test, "Run the PhotoNim tests!":
   withDir "tests":
     exec "nim c -r geometry.nim"    
@@ -27,3 +30,9 @@ task triangle, "Run the triangle example":
   exec "rm examples/triangle"
   exec "./PhotoNim pfm2png images/triangle.pfm images/triangle.png"
   exec "open images/triangle.png"
+
+task csg, "Run the csg example":
+  exec "nim c -r examples/csg.nim"
+  exec "rm examples/csg"
+  exec "./PhotoNim pfm2png images/csg.pfm images/csg.png"
+  exec "open images/csg.png"
