@@ -139,6 +139,24 @@ proc dist2*(a, b: Point3D): float32 {.borrow.}
 proc dist*(a, b: Point2D): float32 {.borrow.}    
 proc dist*(a, b: Point3D): float32 {.borrow.}
 
+proc min*(cont: seq[Point3D]): Point3D = 
+    # Procedure that returns a vector with components equal to the minimum 
+    # of the components of the elements of the sequence
+
+    if cont.len() == 1: return cont[0]
+    else:
+        var 
+            x: seq[float32]
+            y: seq[float32]
+            z: seq[float32]
+    
+        for i in 0..<cont.len:
+            x.add(cont[i].x)
+            y.add(cont[i].y)
+            z.add(cont[i].z)
+
+        result = newPoint3D(min(x), min(y), min(z))
+
 proc `$`*(p: Point2D): string {.inline.} = fmt"({p.u}, {p.v})"
 proc `$`*(p: Point3D): string {.inline.} = fmt"({p.x}, {p.y}, {p.z})"
 proc `$`*(n: Normal): string {.inline.} = fmt"<{n.x}, {n.y}, {n.z}>"
