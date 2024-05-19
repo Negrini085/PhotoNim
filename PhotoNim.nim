@@ -195,13 +195,13 @@ when isMainModule:
             a_ratio = width/height
             s1 = newSphere(newPoint3D(0.5, 0.5, 0.5), 0.1)
             s2 = newSphere(newPoint3D(0.5, 0.5, -0.5), 0.1)
-            s3 = newSphere(newPoint3D(0.5, -0.5, 0.5), 0.2)
+            s3 = newSphere(newPoint3D(0.5, -0.5, 0.5), 0.1)
             s4 = newSphere(newPoint3D(0.5, -0.5, -0.5), 0.1)
             s5 = newSphere(newPoint3D(-0.5, 0.5, 0.5), 0.1)
             s6 = newSphere(newPoint3D(-0.5, 0.5, -0.5), 0.1)
-            s7 = newSphere(newPoint3D(-0.5, -0.5, 0.5), 0.4)
+            s7 = newSphere(newPoint3D(-0.5, -0.5, 0.5), 0.1)
             s8 = newSphere(newPoint3D(-0.5, -0.5, -0.5), 0.1)
-            s9 = newSphere(newPoint3D(-0.5, 0.0, 0.0), 0.3)
+            s9 = newSphere(newPoint3D(-0.5, 0.0, 0.0), 0.1)
             s10 = newSphere(newPoint3D(0.0, 0.5, 0.0), 0.1)   
 
         var 
