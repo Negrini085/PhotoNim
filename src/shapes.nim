@@ -9,7 +9,7 @@ type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skMesh
+        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh
 
     Shape* = object of RootObj
         transf*: Transformation
@@ -22,9 +22,9 @@ type
         of skTriangle: 
             vertices*: tuple[A, B, C: Point3D]
 
-        of skMesh:
+        of skTriangularMesh:
             nodes*: seq[Point3D]
-            edges*: seq[tuple[left, right: int]]
+            triang*: seq[Vec3[int32]]
 
         of skSphere:
             center*: Point3D
@@ -77,13 +77,13 @@ proc newTriangle*(a, b, c: Point3D): Shape {.inline.} =
 proc newPlane*(transf = Transformation.id): Shape {.inline.} = 
     Shape(kind: skPlane, transf: transf)
 
-proc newMesh*(nodes: seq[Point3D], edges: seq[tuple[left, right: int]], transf = Transformation.id): Shape {.inline.} = 
+proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transformation.id): Shape {.inline.} = 
     Shape(
-        kind: skMesh,
+        kind: skTriangularMesh,
         transf: transf,
-        # aabb: some((min(nodes), max(nodes))),
+        #aabb: some((min(nodes), max(nodes))),
         nodes: nodes,
-        edges: edges
+        triang: triang
     )
 
 
@@ -105,7 +105,7 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
             (v_num, v_den) = (x_ptA * y_BA - y_ptA * xBA, x_CA * y_BA - y_CA * xBA)
         return newPoint2D(u_num / u_den, v_num / v_den)
 
-    of skMesh: discard
+    of skTriangularMesh: discard
         
     of skSphere:
         var u = arctan2(pt.y, pt.x) / (2 * PI)
@@ -132,7 +132,7 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
             cross = cross((B - A).Vec3f, (C - A).Vec3f)
         return sgn(-dot(cross, dir)).float32 * cross.toNormal
         
-    of skMesh: discard
+    of skTriangularMesh: discard
 
     of skSphere: 
         return sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
@@ -158,7 +158,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
             
         return if t_hit_min > tz_max or tz_min > t_hit_max: false else: true
 
-    of skMesh: discard
+    of skTriangularMesh: discard
     of skTriangle: discard
 
     of skSphere: 
@@ -227,7 +227,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
 
         return some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: surf_pt, normal: normal))
 
-    of skMesh: discard            
+    of skTriangularMesh: discard            
 
     of skAABox:
         let 
