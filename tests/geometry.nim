@@ -2,6 +2,7 @@ import std/unittest
 import PhotoNim
 
 
+
 suite "Vec unittest":
     echo "Testing the `Vec` type and its procedures."
 
@@ -117,6 +118,7 @@ suite "Vec unittest":
         check areClose(a[0], 0.6) and areClose(a[1], 0.8)
     
 
+
 suite "Points unittest":
     echo "Testing the `Point2D` and `Point3D` type and its procedures."
 
@@ -149,6 +151,19 @@ suite "Points unittest":
 
         check areClose(min(s1), newPoint3D(1, 2, 3))
         check areClose(min(s2), newPoint3D(-1, -2, 3))
+    
+    test "max proc":
+        var
+            a = newPoint3D(1, 2, 3)
+            b = newPoint3D(-1, 2, 5)
+            c = newPoint3D(1, -2, 4)
+            
+            s1 = @[a]
+            s2 = @[a, b, c]
+
+        check areClose(max(s1), newPoint3D(1, 2, 3))
+        check areClose(max(s2), newPoint3D(1, 2, 5))
+
 
 
 suite "Mat unittest":
