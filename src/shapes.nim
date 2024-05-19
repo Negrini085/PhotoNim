@@ -36,7 +36,7 @@ type
             shapes*: seq[Shape]
         
         of skCSGDiff:
-            shapes*: seq[Shape]
+            sh*: seq[Shape]
 
 
     World* = object
@@ -105,7 +105,7 @@ proc newCSGDiff*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.
         kind: skCSGDiff,
         transf: transf,
         #aabb: to implement
-        shapes: shapes
+        sh: shapes
     )
 
 
@@ -139,6 +139,7 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
         return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
     of skCSGUnion: discard
+    of skCSGDiff: discard
 
 
 proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
@@ -166,6 +167,7 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
         return newNormal(0, 0, sgn(-dir[2]).float32)
 
     of skCSGUnion: discard
+    of skCSGDiff: discard
 
 
 proc fastIntersection*(shape: Shape, ray: Ray): bool =
@@ -237,6 +239,8 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         for i in shape.shapes:
             if fastIntersection(i, inv_ray): return true
         return false
+
+    of skCSGDiff: discard
 
 
 
@@ -331,20 +335,23 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     of skCSGUnion:  
         if shape.shapes.len == 0: return none(HitRecord)
 
-        else:
-            var 
+        var 
                 t_hit = Inf 
                 appo: HitRecord
 
-            for i in 0..<shape.shapes.len:
+        for i in 0..<shape.shapes.len:
             
-                # Checking for intersection with i-th sequence shape
-                if fastIntersection(shape.shapes[i], inv_ray):          
-                    if rayIntersection(shape.shapes[i], inv_ray).get.t_hit < t_hit:
-                        appo = rayIntersection(shape.shapes[i], inv_ray).get
-                        t_hit = appo.t_hit
+            # Checking for intersection with i-th sequence shape
+            if fastIntersection(shape.shapes[i], inv_ray):          
+                if rayIntersection(shape.shapes[i], inv_ray).get.t_hit < t_hit:
+                    appo = rayIntersection(shape.shapes[i], inv_ray).get
+                    t_hit = appo.t_hit
         
-            if t_hit == Inf: return none(HitRecord)
+        if t_hit == Inf: return none(HitRecord)
+        
+        return some(appo)
+    
+    of skCSGDiff: discard
 
 
     hit_pt = inv_ray.at(t_hit)
