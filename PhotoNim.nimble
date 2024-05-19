@@ -34,5 +34,5 @@ task triangle, "Run the triangle example":
 task csg, "Run the csg example":
   exec "nim c -r examples/csg.nim"
   exec "rm examples/csg"
-  exec "./PhotoNim pfm2png images/csg.pfm images/csg.png"
+  exec "./PhotoNim pfm2png images/csg.pfm images/csg.png --avlum 0.1"
   exec "open images/csg.png"
