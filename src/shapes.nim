@@ -105,6 +105,7 @@ proc newCSGDiff*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.
         kind: skCSGDiff,
         transf: transf,
         #aabb: to implement
+        # The first shape is the one from which we will subtract the others.
         sh: shapes
     )
 
@@ -252,6 +253,89 @@ type
         surface_pt*: Point2D
         normal*: Normal
 
+#------------------------------------------------#
+#   Procedure to determine all RayIntersection   #
+#------------------------------------------------#
+proc allRayIntersection*(shape: Shape, ray: Ray): Option[seq[HitRecord]] =
+    var 
+        t_hit: float32
+        hit_pt: Point3D
+        surf_pt: Point2D
+        normal: Normal
+
+    let inv_ray = apply(shape.transf.inverse, ray)
+
+    case shape.kind
+    of skTriangle:
+        let 
+            (A, B, C) = shape.vertices
+            mat = [
+                [B.x - A.x, C.x - A.x, -ray.dir[0]], 
+                [B.y - A.y, C.y - A.y, -ray.dir[1]], 
+                [B.z - A.z, C.z - A.z, -ray.dir[2]]
+            ]
+            vec = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
+        
+        var solution: Vec3f
+        try:
+            solution = solve(mat, vec)
+        except ValueError:
+            return none(seq[HitRecord])
+
+        t_hit = solution[2]
+        if ray.tmin > t_hit or t_hit > ray.tmax: return none(seq[HitRecord])
+
+        let (u, v) = (solution[0], solution[1])
+        if u < 0.0 or v < 0.0 or u + v > 1.0: return none(seq[HitRecord])
+
+        hit_pt = ray.at(t_hit)
+        surf_pt = newPoint2D(u, v)
+        normal = shape.normal(hit_pt, ray.dir)
+
+        return some(@[HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: surf_pt, normal: normal)])
+
+    of skTriangularMesh: discard            
+
+    of skAABox: discard
+
+    of skSphere:
+        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
+        let delta_4 = b * b - a * c
+        if delta_4 < 0: return none(seq[HitRecord])
+
+        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
+        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
+            return some(@[
+                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(ray.at(t_l)), world_pt: apply(shape.transf, ray.at(t_l)), normal: apply(shape.transf, shape.normal(ray.at(t_l), inv_ray.dir) )),
+                HitRecord(ray: ray, t_hit: t_r, surface_pt: shape.uv(ray.at(t_r)), world_pt: apply(shape.transf, ray.at(t_r)), normal: apply(shape.transf, shape.normal(ray.at(t_l), inv_ray.dir) ))
+                ])
+        elif t_l > ray.tmin and t_l < ray.tmax:
+            return some(@[HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(ray.at(t_l)), world_pt: apply(shape.transf, ray.at(t_l)), normal: apply(shape.transf, shape.normal(ray.at(t_l), inv_ray.dir) ))])
+        elif t_r > ray.tmin and t_r < ray.tmax:
+            return some(@[HitRecord(ray: ray, t_hit: t_r, surface_pt: shape.uv(ray.at(t_r)), world_pt: apply(shape.transf, ray.at(t_r)), normal: apply(shape.transf, shape.normal(ray.at(t_l), inv_ray.dir) ))])
+        return none(seq[HitRecord])
+
+        
+
+    of skPlane:
+        if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[HitRecord])
+        t_hit = -inv_ray.origin.z / inv_ray.dir[2]
+        if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[HitRecord])
+        
+        hit_pt = inv_ray.at(t_hit)
+        surf_pt = shape.uv(hit_pt)
+        normal = shape.normal(hit_pt, inv_ray.dir) 
+
+        return some(@[HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal))])
+    
+    of skCSGUnion: discard
+    
+    of skCSGDiff: discard
+
+
+#------------------------------------------------#
+#           Procedure to get closer hit          #
+#------------------------------------------------#
 proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     var 
         t_hit: float32
@@ -351,8 +435,16 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         
         return some(appo)
     
-    of skCSGDiff: discard
+    of skCSGDiff: 
+        if shape.sh.len == 0: return none(HitRecord)
 
+        # If i miss the first shape, I don't want to have a hit
+        if not fastIntersection(shape.sh[0], inv_ray): return none(HitRecord)
+        
+        var appo = rayIntersection(shape.sh[0], inv_ray).get
+        # If HitRecord with first shape has t_hit < t_hit of HitRecord with other shape we want to have it
+        if appo.t_hit < rayIntersection(shape.sh[1], inv_ray).get.t_hit: 
+            return 
 
     hit_pt = inv_ray.at(t_hit)
     surf_pt = shape.uv(hit_pt)
