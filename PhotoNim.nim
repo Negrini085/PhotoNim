@@ -11,7 +11,7 @@ from std/os import splitFile
 from std/osproc import execCmd
 
 from std/strutils import split, parseFloat, parseInt
-from std/streams import Stream, newFileStream, close, write, writeLine, readLine, readFloat32
+from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
 
 from std/math import pow, exp, sin, cos, degToRad
@@ -31,7 +31,7 @@ proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = little
     stream.write(tmp)
 
 
-proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
+proc readPFM*(stream: FileStream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
     assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
     let sizes = stream.readLine.split(" ")
     assert sizes.len == 2, "Invalid image size specification: required 'width height'."
@@ -64,7 +64,7 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
             b = readFloat(stream, result.endian)
             result.img.setPixel(x, y, newColor(r, g, b))
 
-proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian) = 
+proc writePFM*(stream: FileStream, img: HdrImage, endian: Endianness = littleEndian) = 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
     stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
@@ -139,8 +139,12 @@ Options:
 """
 
 proc demo*(width, height: int, camera: Camera): HdrImage =
-    let 
-        timeStart = cpuTime()
+    let timeStart = cpuTime()
+    var 
+        tracer = ImageTracer(image: newHdrImage(width, height), camera: camera)
+        scenary = newWorld()
+
+    let
         s1 = newSphere(newPoint3D(0.5, 0.5, 0.5), 0.1)
         s2 = newSphere(newPoint3D(0.5, 0.5, -0.5), 0.1)
         s3 = newSphere(newPoint3D(0.5, -0.5, 0.5), 0.1)
@@ -152,18 +156,14 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
         s9 = newSphere(newPoint3D(-0.5, 0.0, 0.0), 0.1)
         s10 = newSphere(newPoint3D(0.0, 0.5, 0.0), 0.1)   
 
-    var 
-        tracer = ImageTracer(image: newHdrImage(width, height), camera: camera)
-        scenary = newWorld()
-
     scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
     scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
 
-    proc col_pix(tracer: ImageTracer, ray: Ray, scenary: World, x, y: int): Color = 
+    proc col_pix(tracer: ImageTracer, scenary: World, x, y: int): Color = 
         let dim = scenary.shapes.len
         if dim == 0: return newColor(0, 0, 0)
         for i in 0..<dim:
-            if fastIntersection(scenary.shapes[i], ray): 
+            if fastIntersection(scenary.shapes[i], tracer.fire_ray(x, y)): 
                 let 
                     r = (1 - exp(-float32(x + y)))
                     g = y / tracer.image.height
@@ -264,19 +264,3 @@ proc main(clp: seq[string]) =
 when isMainModule: 
     from std/cmdline import commandLineParams
     main(commandLineParams())
-
-
-#     import src/[geometry, camera, shapes, pcg]
-# export geometry, camera, shapes, pcg
-
-# from std/strformat import fmt
-# from std/os import splitFile
-# from std/streams import Stream, newFileStream, write, writeLine, readLine, readFloat32, close
-# from std/strutils import split, parseInt, parseFloat
-# from std/endians import littleEndian32, bigEndian32
-# from std/math import sum, pow, exp, log10, sin, cos, degToRad
-# from std/times import cpuTime
-# import std/options
-
-# import docopt
-# from nimPNG import savePNG24

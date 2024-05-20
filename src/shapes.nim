@@ -1,7 +1,8 @@
 from std/fenv import epsilon
 from std/math import sgn, floor, sqrt, arccos, arctan2, PI
-from std/algorithm import sort, sorted
 import std/options
+import std/terminal
+import std/strutils
 
 import geometry, camera
 
@@ -11,8 +12,10 @@ type
 
     ShapeKind* = enum
         skAABox, skTriangle, skSphere, skPlane, skTriangularMesh
+        
     Shape* = object of RootObj
         transf*: Transformation
+        material*: Material
         aabb*: Option[AABB] = none(AABB)
 
         case kind*: ShapeKind 
@@ -39,48 +42,58 @@ type
 
 proc newWorld*(): World {.inline.} = World(shapes: @[])
 
+
 proc fire_all_rays*(tracer: var ImageTracer; scenary: World, color_map: proc) = 
     for y in 0..<tracer.image.height:
-        for x in 0..<tracer.image.width:
-            tracer.image.setPixel(x, y, color_map(tracer, tracer.fire_ray(x, y), scenary, x, y))
+        stdout.styledWriteLine(fgRed, "0% ", fgWhite, '#'.repeat y div 10, if y > tracer.image.height div 2: fgGreen else: fgYellow, fmt" {int(100 * y / tracer.image.height)}%")
 
+        for x in 0..<tracer.image.width: tracer.image.setPixel(x, y, color_map(tracer, scenary, x, y))
+        cursorUp 1
+        eraseLine
 
-proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1), transf = Transformation.id): Shape {.inline.} =
+    stdout.resetAttributes
+
+proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1), transf = Transformation.id, material: Material = newMaterial()): Shape {.inline.} =
     Shape(
         kind: skAABox, 
         transf: transf, 
+        material: material,
         aabb: some(AABB((min, max))), 
         min: min, max: max
     )
 
-proc newSphere*(center: Point3D, radius: float32): Shape {.inline.} = 
+proc newSphere*(center: Point3D, radius: float32; material: Material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skSphere,
         transf: newTranslation(center.Vec3f) @ newScaling(radius), 
+        material: material,
         center: center, radius: radius
     )
 
-proc newUnitarySphere*(center: Point3D): Shape {.inline.} = 
+proc newUnitarySphere*(center: Point3D; material: Material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skSphere,
         transf: newTranslation(center.Vec3f), 
+        material: material,
         center: center, radius: 1.0
     )
 
-proc newTriangle*(a, b, c: Point3D): Shape {.inline.} = 
+proc newTriangle*(a, b, c: Point3D; material: Material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skTriangle, 
         transf: Transformation.id,
+        material: material,
         vertices: (a, b, c)
     )
 
-proc newPlane*(transf = Transformation.id): Shape {.inline.} = 
-    Shape(kind: skPlane, transf: transf)
+proc newPlane*(transf = Transformation.id, material: Material = newMaterial()): Shape {.inline.} = 
+    Shape(kind: skPlane, transf: transf, material: material)
 
-proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transformation.id): Shape {.inline.} = 
+proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transformation.id, material: Material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skTriangularMesh,
         transf: transf,
+        material: material,
         aabb: some((min(nodes), max(nodes))),
         nodes: nodes,
         triang: triang
@@ -141,9 +154,6 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
         return newNormal(0, 0, sgn(-dir[2]).float32)
 
 
-#-------------------------------------------------#
-#  Procedure to determine all intersection times  #
-#-------------------------------------------------#
 proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
     var t_hit: float32
     let inv_ray = apply(shape.transf.inverse, ray)
@@ -168,8 +178,6 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
         elif t_r > ray.tmin and t_r < ray.tmax:
             return some(@[t_r])
         return none(seq[float32])
-
-        
 
     of skPlane:
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[float32])
@@ -239,7 +247,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         if abs(inv_ray.dir[2]) < epsilon(float32): return false
 
         let t = -inv_ray.origin.z / inv_ray.dir[2]
-        return if t < inv_ray.tmin or t > inv_ray.tmax: false else: true
+        return (if t < inv_ray.tmin or t > inv_ray.tmax: false else: true)
                     
 
 
@@ -250,10 +258,9 @@ type
         world_pt*: Point3D
         surface_pt*: Point2D
         normal*: Normal
+        material*: Material
 
-#------------------------------------------------#
-#           Procedure to get closer hit          #
-#------------------------------------------------#
+
 proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     var 
         t_hit: float32
@@ -290,7 +297,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         surf_pt = newPoint2D(u, v)
         normal = shape.normal(hit_pt, ray.dir)
 
-        return some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: surf_pt, normal: normal))
+        return some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: surf_pt, normal: normal, material: shape.material))
 
     of skTriangularMesh: discard            
 
@@ -339,4 +346,4 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     surf_pt = shape.uv(hit_pt)
     normal = shape.normal(hit_pt, inv_ray.dir) 
 
-    some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal)))
+    some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal), material: shape.material))

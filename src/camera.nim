@@ -10,6 +10,10 @@ type Color* {.borrow: `.`.} = distinct Vec3f
 
 proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
 
+const 
+    WHITE* = newColor(1, 1, 1)
+    BLACK* = newColor(0, 0, 0) 
+
 proc r*(a: Color): float32 {.inline.} = a.Vec3f[0]
 proc g*(a: Color): float32 {.inline.} = a.Vec3f[1]
 proc b*(a: Color): float32 {.inline.} = a.Vec3f[2]
@@ -52,11 +56,12 @@ proc setPixel*(img: var HdrImage; x, y: int, color: Color) {.inline.} =
 proc averageLuminosity*(img: HdrImage; eps = epsilon(float32)): float32 {.inline.} =
     pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
 
+
+proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
+
 proc toneMapping*(img: var HdrImage; alpha, gamma, avLum: float32) = 
     let lum = if avLum == 0.0: img.averageLuminosity else: avLum
     img.pixels.apply(proc(pix: Color): Color = pix * (alpha / lum))
-
-    proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
     img.pixels.apply(proc(pix: Color): Color = newColor(clamp(pix.r), clamp(pix.g), clamp(pix.b)))
 
 
@@ -67,9 +72,13 @@ type Ray* = object
     tmax*: float32
     depth*: int
 
-proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline} = Ray(origin: origin, dir: direction, tmin: epsilon(float32), tmax: Inf, depth: 0)  
+proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline} = 
+    Ray(origin: origin, dir: direction, tmin: epsilon(float32), tmax: Inf, depth: 0) 
+
+proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline} = 
+    areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
+
 proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
-proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline} = areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
 
 method apply*(transf: Transformation, ray: Ray): Ray {.base, inline.} =
     Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
@@ -91,10 +100,10 @@ type
         of ckPerspective: 
             distance: float32 
 
-proc newOrthogonalCamera*(a: float32; transf = Transformation.id): Camera {.inline.} = 
+proc newOrthogonalCamera*(a: float32, transf = Transformation.id): Camera {.inline.} = 
     Camera(kind: ckOrthogonal, transf: transf, aspect_ratio: a)
 
-proc newPerspectiveCamera*(a, d: float32; transf = Transformation.id): Camera {.inline.} = 
+proc newPerspectiveCamera*(a, d: float32, transf = Transformation.id): Camera {.inline.} = 
     Camera(kind: ckPerspective, transf: transf, aspect_ratio: a, distance: d)
 
 proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
@@ -104,7 +113,7 @@ proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} =
     of ckPerspective:
         apply(cam.transf, newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1)))
 
-    
+
 type ImageTracer* = object
     image*: HdrImage
     camera*: Camera
@@ -113,9 +122,10 @@ proc fire_ray*(im_tr: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray
     im_tr.camera.fire_ray(newPoint2D((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32))
 
 proc fire_all_rays*(im_tr: var ImageTracer) = 
+    echo "hello there"
     for x in 0..<im_tr.image.height:
         for y in 0..<im_tr.image.width:
-            discard im_tr.fire_ray(x, y)
+            # discard im_tr.fire_ray(x, y)
             let 
                 r = (1 - exp(-float32(x + y)))
                 g = y / im_tr.image.height
@@ -176,11 +186,11 @@ type
             threshold_angle: float32
 
 
-proc newDiffuseBRDF*(pigment = newUniformPigment(newColor(1, 1, 1)), reflectance = 1.0): BRDF {.inline.} =
+proc newDiffuseBRDF*(pigment = newUniformPigment(WHITE), reflectance = 1.0): BRDF {.inline.} =
     BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
 
-proc newSpecularBRDF*(pigment = newUniformPigment(newColor(1, 1, 1)), angle = 180.0): BRDF {.inline.} =
-    BRDF(kind: SpecularBRDF, pigment: pigment, threshold_angle: (degToRad(angle) * 0.1).float32) 
+proc newSpecularBRDF*(pigment = newUniformPigment(WHITE), angle = 180.0): BRDF {.inline.} =
+    BRDF(kind: SpecularBRDF, pigment: pigment, threshold_angle: (0.1 * degToRad(angle)).float32) 
 
 
 proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Color {.inline.} =
@@ -192,3 +202,10 @@ proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Col
         return 
             if abs(arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))) < brdf.threshold_angle: brdf.pigment.getColor(uv)
             else: newColor(0.0, 0.0, 0.0)
+
+
+type Material* = object
+    brdf*: BRDF
+    radiance*: Pigment
+
+proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(BLACK)): Material {.inline.} = Material(brdf: brdf, radiance: pigment) 

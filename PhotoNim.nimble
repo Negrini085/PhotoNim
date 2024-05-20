@@ -28,3 +28,9 @@ task triangle, "Run the triangle example":
   exec "rm examples/triangle"
   exec "./PhotoNim pfm2png images/triangle.pfm images/triangle.png --avlum 0.1"
   exec "open images/triangle.png"
+
+task earth, "Run the earth example":
+  exec "nim c -r -d:release examples/earth.nim"
+  exec "rm examples/earth"
+  exec "./PhotoNim pfm2png images/earth.pfm images/earth.png --avlum 0.1"
+  exec "open images/earth.png"

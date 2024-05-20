@@ -20,16 +20,16 @@ var
 
 world.shapes.add(newTriangle(newPoint3D(0.0, 2.0, 3.0), newPoint3D(0.0, -2.0, 2.0), newPoint3D(0.0, -1.0, -1.0)))
 
-proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color = 
+proc col_pix(tracer: ImageTracer, scenary: World, x, y: int): Color = 
     # Procedure to decide pixel color (it could be useful to check if scenary len is non zero)
     let dim = scenary.shapes.len
     if dim == 0: return newColor(0, 0, 0)
     for i in 0..<dim:
-        if fastIntersection(scenary.shapes[i], ray): 
+        if fastIntersection(scenary.shapes[i], tracer.fire_ray(x, y)): 
             let 
                 r = (1 - exp(-float32(x + y)))
-                g = y/im_tr.image.height
-                b = pow((1 - x/im_tr.image.width), 2.5)
+                g = y / tracer.image.height
+                b = pow((1 - x / tracer.image.width), 2.5)
             return newColor(r, g, b)
 
     
