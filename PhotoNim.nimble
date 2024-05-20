@@ -11,9 +11,7 @@ requires "docopt >= 0.6"
 requires "nimPNG >= 0.3"
 
 
-#---------------------------------#
-#              Tasks              #
-#---------------------------------#
+# Tasks
 task build, "Build the PhotoNim executable":
   exec "nim c PhotoNim.nim"
 

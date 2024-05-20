@@ -3,8 +3,8 @@ layout: home
 title: Home
 nav_order: 0
 ---
-
 # PhotoNim - a CPU RayTracer written in Nim
+---
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Negrini085/PhotoNim/ci-action.yml)
 ![GitHub License](https://img.shields.io/github/license/Negrini085/PhotoNim)
 ![GitHub Release](https://img.shields.io/github/v/release/Negrini085/PhotoNim)

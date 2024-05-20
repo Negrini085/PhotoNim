@@ -94,6 +94,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(CLI)* Help command and demo proc.
+- Pcg -> PCG, random.nim -> pcg.nim
 - *(Pcg)* Change random procedure to rand
 - Correct demo mode
 - *(HdrImage)* Change endiannes evaluation
@@ -140,6 +142,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- Documenting PhotoNim CLI
 - New site structure with roadmap and examples.
 - See if workflow starts.
 - Update again jekyll gh pages workflow
