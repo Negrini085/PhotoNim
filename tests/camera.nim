@@ -281,21 +281,7 @@ suite "ImageTracer unittest":
             ray2 = im_tr.fire_ray(4, 4, newPoint2D(1, 1))   # Ray direct to bottom right corner
         
         check areClose(ray1.at(1.0), newPoint3D(0, 1.2, 1))
-        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
-
-
-    test "ImageTracer fire_all_rays":
-
-        im_tr.fire_all_rays()
-
-        for y in 0..<im_tr.image.height:
-            for x in 0..<im_tr.image.width:
-                let 
-                    r = (1 - exp(-float32(x + y)))
-                    g = y/im_tr.image.height
-                    b = pow((1 - x/im_tr.image.width), 2.5)
-                check areClose(im_tr.image.getPixel(x, y), newColor(r, g, b))
-    
+        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))    
 
 
 suite "Pigment unittest":

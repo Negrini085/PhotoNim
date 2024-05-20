@@ -121,17 +121,6 @@ type ImageTracer* = object
 proc fire_ray*(im_tr: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray {.inline.} =
     im_tr.camera.fire_ray(newPoint2D((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32))
 
-proc fire_all_rays*(im_tr: var ImageTracer) = 
-    echo "hello there"
-    for x in 0..<im_tr.image.height:
-        for y in 0..<im_tr.image.width:
-            # discard im_tr.fire_ray(x, y)
-            let 
-                r = (1 - exp(-float32(x + y)))
-                g = y / im_tr.image.height
-                b = pow((1 - x / im_tr.image.width), 2.5)
-            im_tr.image.setPixel(x, y, newColor(r, g, b))
-
 
 type
     PigmentKind* = enum
