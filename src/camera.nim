@@ -158,8 +158,8 @@ proc getColor*(pigment: Pigment; uv: Point2D): Color =
         return pigment.texture.getPixel(col, row)
 
     of pkCheckered:
-        let (u, v) = (floor(uv.u * pigment.nsteps.float32).int, floor(uv.v * pigment.nsteps.float32).int)
-        return (if (u mod 2) == (v mod 2): pigment.color1 else: pigment.color2)
+        let (col, row) = (floor(uv.u * pigment.nsteps.float32).int, floor(uv.v * pigment.nsteps.float32).int)
+        return (if (col mod 2) == (row mod 2): pigment.color1 else: pigment.color2)
 
 
 type 
@@ -176,7 +176,7 @@ type
             threshold_angle: float32
 
 
-proc newDiffuseBRDF*(pigment = newUniformPigment(newColor(1, 1, 1)), reflectance: float32 = 1.0): BRDF {.inline.} =
+proc newDiffuseBRDF*(pigment = newUniformPigment(newColor(1, 1, 1)), reflectance = 1.0): BRDF {.inline.} =
     BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
 
 proc newSpecularBRDF*(pigment = newUniformPigment(newColor(1, 1, 1)), angle = 180.0): BRDF {.inline.} =
@@ -189,5 +189,6 @@ proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Col
         return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
 
     of SpecularBRDF: 
-        let delta_theta = arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))
-        return (if abs(delta_theta) < brdf.threshold_angle: brdf.pigment.getColor(uv) else: newColor(0.0, 0.0, 0.0))
+        return 
+            if abs(arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))) < brdf.threshold_angle: brdf.pigment.getColor(uv)
+            else: newColor(0.0, 0.0, 0.0)
