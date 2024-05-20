@@ -1,6 +1,6 @@
 from std/strformat import fmt
 from std/fenv import epsilon 
-from std/math import sum, pow, exp, log10
+from std/math import sum, pow, exp, log10, floor
 from std/sequtils import apply, map
 
 import geometry
@@ -121,3 +121,42 @@ proc fire_all_rays*(im_tr: var ImageTracer) =
                 g = y / im_tr.image.height
                 b = pow((1 - x / im_tr.image.width), 2.5)
             im_tr.image.setPixel(x, y, newColor(r, g, b))
+
+
+type
+    PigmentKind* = enum
+        pkUniform, pkTexture, pkCheckered
+
+    Pigment* = object of RootObj
+        case kind*: PigmentKind
+        of pkUniform: 
+            color*: Color
+
+        of pkTexture: 
+            texture*: HdrImage
+
+        of pkCheckered:
+            color1*: Color
+            color2*: Color
+            nsteps*: int
+
+proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
+proc newTexturePigment*(texture: HdrImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: texture)
+proc newCheckeredPigment*(color1, color2: Color, nsteps: int): Pigment {.inline.} = 
+    Pigment(kind: pkCheckered, color1: color1, color2: color2, nsteps: nsteps)
+
+proc getColor*(pigment: Pigment; uv: Point2D): Color =
+    case pigment.kind: 
+    of pkUniform: 
+        return pigment.color
+
+    of pkTexture: 
+        var (col, row) = (floor(uv.u * pigment.texture.width.float32).int, floor(uv.v * pigment.texture.height.float32).int)
+        if col >= pigment.texture.width: col = pigment.texture.width - 1
+        if row >= pigment.texture.height: row = pigment.texture.height - 1
+
+        return pigment.texture.getPixel(col, row)
+
+    of pkCheckered:
+        let (u, v) = (floor(uv.u * pigment.nsteps.float32).int, floor(uv.v * pigment.nsteps.float32).int)
+        return (if (u mod 2) == (v mod 2): pigment.color1 else: pigment.color2)
