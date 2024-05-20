@@ -6,9 +6,33 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(CSGDiff)* Add CSGDiff fast intersection procedure
+- *(CSGDiff)* Add rayIntersection procedure
+- *(Shape)* Add allHitTimes procedure
+- *(Shape)* Add allRayIntersection procedure necessary to CSG Difference
+- *(CSG)* Add CSGDifference kind
+- *(Triangle)* Add fast intersection procedure
+- *(CSGUnion)* Add CSGUnion ray intersection procedure
+- *(CSGUnion)* New fast intersection method
+- *(Shape)* New kind of shape CSGUnion
+- *(CSG)* New example file
+- *(Shape)* Add CSG union method
+- *(Point3D)* Add max procedure for Point3D sequences
+- *(Point3D)* Add min procedure for Point3D sequence
+- *(Geometry)* Add VecNf type constructor
+- *(ShapeKind)* New skMesh ShapeKind.
+- *(Camera)* New CameraKind (ckOrthogonal, ckPerspective).
+- Triangle example
+- NewNormal procedure normalize the normal. Maybe this is only a slow proc.
+- RayIntersection for skTriangle using Mat3 solve.
+- Solve mat3 using Cramer's rule
+- RayIntersection for Triangle. ToDo: implement solve proc for matrix equations.
+- NewSphere and newUnitarySphere constructor that use Sphere attributes to define the Shape.Transformation
 - *(Pcg)* Add rand procedure
 - *(Pcg)* Add newPcg procedure
 - *(Pcg)* Add Pcg type
+- Mesh type implementation
+- RayIntersection for box
 - *(ImageTracer)* Add new fire_all_rays procedure
 - *(ImageTracer)* Add different fire_all_rays implentation, now a procedure is given as imput
 - *(World)* Add get procedure
@@ -81,6 +105,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- Test newNormal(0, 0, 0) has norm 0 so it is not Normal.
+- Shape child were losing their type info when passed in World's seq[Shape], thus provoking no fastIntersection calculations.
 - Ignore docs update in git-cliff and github ci actions.
 - *(pfm2png)* Bug #26 fixed.
 - *(hdrimage)* Bug #25 fixed
@@ -94,10 +120,45 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- Removed unused imports.
+- *(CSG)* Delete all CSG types and procedures
 - *(CLI)* Help command and demo proc.
+- *(Shape)* Delete allRayIntersection procedures
+- *(CSGUnion)* Change rayIntersection procedure
+- *(csg.nim)* Correct CSG examplee
+- *(Example)* Change PhotoNim, now it's possible to give avlum as option
+- *(HdrImage)* Change toneMapping procedure, sometimes we need to give avlum value as external input
+- *(CSGUnionEx)* Correct CSGUnion example
+- *(TriangleEx)* Change triangle example
+- *(triangle.nim)* Remove unnecessary PNG file handler
+- *(PhotoNim.nim)* Correct sphere radius
+- *(Shape)* Add aabb to skTriangularMesh
+- Change skMesh in skTriangularMesh
+- Stop gitignoring images
+- Removed newImageTracer proc
+- Hdrimage.nim is now moved to camera.nim. The PhotoNim.nim is moved to the root directory and export all the src files and usefull procs.
+- RayIntersection proc
+- Some ';' when the first procedure argument is the one who call the proc.
+- Follow master ordering.
+- More order in shapes.nim to better implement more complex shapes such as boxes, triangles and meshes.
 - Pcg -> PCG, random.nim -> pcg.nim
+- *(ImageTracer)* Correct fire_all_rays bug
+- Correct ImageTracer fire_ray procedure
 - *(Pcg)* Change random procedure to rand
 - Correct demo mode
+- Spelling error
+- Better proc for uv, normal, rayIntersection and fastIntersection using  when statements and generic types.
+- Deprecated newHitRecord proc and moved areClose proc in test file.
+- Uv is now a single proc that handles the typedesc of the shape.
+- Float32 better convertion
+- Changes to names of procs and attributes in tests.
+- ShapeNormal procs are now called normal(shape, ...).
+- Renamed toUV proc to uv.
+- Renamed map_pt to surface_pt
+- More order in shapes.nim to better implement more complex shapes such as boxes, triangles and meshes.
+- Remove duplicated std/strutils imports.
+- Ray test updated after renaming starting point of the ray from start to origin
+- *(Ray)* Start is now called origin, the initial tmin is set to epsilon(f32).
 - *(HdrImage)* Change endiannes evaluation
 - *(ShapeTests)* Correct shape test implementation
 - *(camera)* NewCamera procs are now divided in newOrthogonalCamera and newPerspectiveCamera.
@@ -142,7 +203,20 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- *(camera.nim)* End camera.nim documentation
+- *(ImageTracer)* Imagetracer documentation
+- *(Camera)* Final camera documentation
+- *(HdrImage)* Small refactor
+- *(Ray)* Add ray documentation
+- *(Camera)* End HdrImage documentation
+- *(Camera)* Change formula
+- *(Camera)* Add HdrImage beginning
+- *(Camera)* Small change in text format
+- *(Camera)* Small change in text format
+- *(Camera)* Add Color part
+- *(Camera)* Start Camera documentation
 - Documenting PhotoNim CLI
+- Add examples task and dir.
 - New site structure with roadmap and examples.
 - See if workflow starts.
 - Update again jekyll gh pages workflow
@@ -156,6 +230,9 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(Point3D)* Add max procedure test
+- *(Point3D)* Add min proc test
+- *(Sphere)* NewSphere and newUnitarySphere procs tested.
 - *(Pcg)* Add rand procedure test
 - *(Pcg)* Add newPcg procedure test
 - *(World)* Get procedure test
@@ -203,6 +280,10 @@ All notable changes to this project will be documented in this file.
 - *(Common)* Add element wise Mat operations tests
 - *(Common)* Add Mat type constructor test
 - Nimble Test Task.
+
+### Todo
+
+- Add AABB to mesh by taking the min and max from the seq of Point3D. This needs boolean operators for Vec.
 
 ## [0.1.0] - 2024-03-28
 

@@ -1,20 +1,18 @@
+let PhotoNimVersion* = "PhotoNim 0.1"
+
 import src/[geometry, camera, shapes, pcg]
 export geometry, camera, shapes, pcg
 
-from std/strformat import fmt
 from std/times import cpuTime
-
-import docopt
-from nimPNG import savePNG24
+from std/strformat import fmt
 
 from std/os import splitFile
-from std/osproc import execCmd
-
 from std/strutils import split, parseFloat, parseInt
 from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
+from nimPNG import savePNG24
 
-from std/math import pow, exp, sin, cos, degToRad
+from std/math import pow, exp
 
 
 proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
@@ -78,7 +76,7 @@ proc writePFM*(stream: FileStream, img: HdrImage, endian: Endianness = littleEnd
             stream.writeFloat(c.b, endian)
 
 
-let pfm2pngDoc = """
+let pfm2pngDoc* = """
 PhotoNim `pfm2png` command:
 
 Usage: 
@@ -92,7 +90,7 @@ Options:
     --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images.
 """
 
-proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
+proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     var 
         img: HdrImage
         inFS = newFileStream(fileIn, fmRead)
@@ -125,7 +123,7 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
 
 
 
-let demoDoc = """
+let demoDoc* = """
 PhotoNim `demo` command:
 
 Usage:
@@ -176,9 +174,12 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
     tracer.image
 
 
-let PhotoNimVersion = "PhotoNim 0.1"
+when isMainModule: 
+    import docopt
+    from std/cmdline import commandLineParams
+    from std/osproc import execCmd
 
-let PhotoNimDoc = """
+    let PhotoNimDoc = """
 Usage:
     ./PhotoNim (-h | --help) --version
     ./PhotoNim help <command>
@@ -186,8 +187,7 @@ Usage:
     ./PhotoNim demo (p | o) [<output>] [--width=<width> --height=<height> --angle=<angle>]
 """
 
-proc main(clp: seq[string]) =
-    let args = docopt(PhotoNimDoc, argv=clp, version=PhotoNimVersion)
+    let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
 
     if args["help"]:
         let command = $args["<command>"]
@@ -251,16 +251,11 @@ proc main(clp: seq[string]) =
             transf = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
             camera = if args["p"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
 
-        let stream = newFileStream(pfmOut, fmWrite)    
+        let stream = newFileStream(pfmOut, fmWrite) 
+        defer: stream.close 
         stream.writePFM(demo(width, height, camera))
-        stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
         discard execCmd fmt"open {pngOut}"
 
     else: quit PhotoNimDoc
-
-
-when isMainModule: 
-    from std/cmdline import commandLineParams
-    main(commandLineParams())
