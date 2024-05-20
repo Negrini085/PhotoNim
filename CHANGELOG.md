@@ -120,6 +120,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- Removed unused imports.
 - *(CSG)* Delete all CSG types and procedures
 - *(CLI)* Help command and demo proc.
 - *(Shape)* Delete allRayIntersection procedures
