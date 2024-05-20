@@ -1,20 +1,18 @@
+let PhotoNimVersion* = "PhotoNim 0.1"
+
 import src/[geometry, camera, shapes, pcg]
 export geometry, camera, shapes, pcg
 
-from std/strformat import fmt
 from std/times import cpuTime
-
-import docopt
-from nimPNG import savePNG24
+from std/strformat import fmt
 
 from std/os import splitFile
-from std/osproc import execCmd
-
 from std/strutils import split, parseFloat, parseInt
 from std/streams import Stream, newFileStream, close, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
+from nimPNG import savePNG24
 
-from std/math import pow, exp, sin, cos, degToRad
+from std/math import pow, exp
 
 
 proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
@@ -78,7 +76,7 @@ proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian)
             stream.writeFloat(c.b, endian)
 
 
-let pfm2pngDoc = """
+let pfm2pngDoc* = """
 PhotoNim `pfm2png` command:
 
 Usage: 
@@ -92,7 +90,7 @@ Options:
     --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images.
 """
 
-proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
+proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     var 
         img: HdrImage
         inFS = newFileStream(fileIn, fmRead)
@@ -125,7 +123,7 @@ proc pfm2png(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
 
 
 
-let demoDoc = """
+let demoDoc* = """
 PhotoNim `demo` command:
 
 Usage:
@@ -139,8 +137,12 @@ Options:
 """
 
 proc demo*(width, height: int, camera: Camera): HdrImage =
-    let 
-        timeStart = cpuTime()
+    let timeStart = cpuTime()
+    var 
+        tracer = ImageTracer(image: newHdrImage(width, height), camera: camera)
+        scenary = newWorld()
+
+    let     
         s1 = newSphere(newPoint3D(0.5, 0.5, 0.5), 0.1)
         s2 = newSphere(newPoint3D(0.5, 0.5, -0.5), 0.1)
         s3 = newSphere(newPoint3D(0.5, -0.5, 0.5), 0.1)
@@ -151,10 +153,6 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
         s8 = newSphere(newPoint3D(-0.5, -0.5, -0.5), 0.1)
         s9 = newSphere(newPoint3D(-0.5, 0.0, 0.0), 0.1)
         s10 = newSphere(newPoint3D(0.0, 0.5, 0.0), 0.1)   
-
-    var 
-        tracer = ImageTracer(image: newHdrImage(width, height), camera: camera)
-        scenary = newWorld()
 
     scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
     scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
@@ -176,9 +174,12 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
     tracer.image
 
 
-let PhotoNimVersion = "PhotoNim 0.1"
+when isMainModule: 
+    import docopt
+    from std/cmdline import commandLineParams
+    from std/osproc import execCmd
 
-let PhotoNimDoc = """
+    let PhotoNimDoc = """
 Usage:
     ./PhotoNim (-h | --help) --version
     ./PhotoNim help <command>
@@ -186,8 +187,7 @@ Usage:
     ./PhotoNim demo (p | o) [<output>] [--width=<width> --height=<height> --angle=<angle>]
 """
 
-proc main(clp: seq[string]) =
-    let args = docopt(PhotoNimDoc, argv=clp, version=PhotoNimVersion)
+    let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
 
     if args["help"]:
         let command = $args["<command>"]
@@ -251,32 +251,11 @@ proc main(clp: seq[string]) =
             transf = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
             camera = if args["p"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
 
-        let stream = newFileStream(pfmOut, fmWrite)    
+        let stream = newFileStream(pfmOut, fmWrite) 
+        defer: stream.close 
         stream.writePFM(demo(width, height, camera))
-        stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
         discard execCmd fmt"open {pngOut}"
 
     else: quit PhotoNimDoc
-
-
-when isMainModule: 
-    from std/cmdline import commandLineParams
-    main(commandLineParams())
-
-
-#     import src/[geometry, camera, shapes, pcg]
-# export geometry, camera, shapes, pcg
-
-# from std/strformat import fmt
-# from std/os import splitFile
-# from std/streams import Stream, newFileStream, write, writeLine, readLine, readFloat32, close
-# from std/strutils import split, parseInt, parseFloat
-# from std/endians import littleEndian32, bigEndian32
-# from std/math import sum, pow, exp, log10, sin, cos, degToRad
-# from std/times import cpuTime
-# import std/options
-
-# import docopt
-# from nimPNG import savePNG24

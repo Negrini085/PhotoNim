@@ -1,6 +1,5 @@
 from std/fenv import epsilon
 from std/math import sgn, floor, sqrt, arccos, arctan2, PI
-from std/algorithm import sort, sorted
 import std/options
 
 import geometry, camera
