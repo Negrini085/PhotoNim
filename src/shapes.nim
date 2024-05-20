@@ -10,8 +10,7 @@ type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh, skCSGUnion, skCSGDiff
-
+        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh
     Shape* = object of RootObj
         transf*: Transformation
         aabb*: Option[AABB] = none(AABB)
@@ -32,12 +31,6 @@ type
             radius*: float32
 
         of skPlane: discard
-
-        of skCSGUnion:
-            shapes*: seq[Shape]
-        
-        of skCSGDiff:
-            sh*: seq[Shape]
 
 
     World* = object
@@ -93,24 +86,6 @@ proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transforma
         triang: triang
     )
 
-proc newCSGUnion*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.inline.} = 
-    Shape(
-        kind: skCSGUnion,
-        transf: transf,
-        #aabb: to implement
-        shapes: shapes
-    )
-
-proc newCSGDiff*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.inline.} = 
-    Shape(
-        kind: skCSGDiff,
-        transf: transf,
-        #aabb: to implement
-        # The first shape is the one from which we will subtract the others.
-        sh: shapes
-    )
-
-
 
 proc uv*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
@@ -140,9 +115,6 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
     of skPlane: 
         return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
-    of skCSGUnion: discard
-    of skCSGDiff: discard
-
 
 proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
     case shape.kind
@@ -167,10 +139,6 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
     of skPlane: 
         return newNormal(0, 0, sgn(-dir[2]).float32)
-
-    of skCSGUnion: discard
-    of skCSGDiff: discard
-
 
 
 #-------------------------------------------------#
@@ -209,10 +177,6 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
 
         return some(@[t_hit, Inf])
-    
-    of skCSGUnion: discard
-    
-    of skCSGDiff: discard
 
 
 
@@ -276,51 +240,6 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
 
         let t = -inv_ray.origin.z / inv_ray.dir[2]
         return if t < inv_ray.tmin or t > inv_ray.tmax: false else: true
-
-    of skCSGUnion:
-        if shape.shapes.len == 0: return false
-
-        let inv_ray = apply(shape.transf.inverse, ray)
-        # Testing wether there is at least an intersection with one of shapes
-        for i in shape.shapes:
-            if fastIntersection(i, inv_ray): return true
-        return false
-
-    of skCSGDiff: 
-        if shape.sh.len == 0: return false
-
-        let inv_ray = apply(shape.transf.inverse, ray)
-        # If i miss the first shape, I don't want to have a hit
-        if not fastIntersection(shape.sh[0], inv_ray): return false
-        # If we have just one shape, we will use rayIntersection procedure
-        if shape.sh.len == 1: return true
-        
-        var 
-            tmax: float32                                               # Variable to last check
-            hit0 = allHitTimes(shape.sh[0], inv_ray).get().sorted()     # All hit times on shape 0
-            hit1: seq[float32]                                          # Container for other hits
-            appo: Shape                                                 # I need to store Shape in order to compute correct HitRecord
-        
-        tmax = min(hit0)
-        # Checking bigger second hit time in shape.sh population 
-        for i in shape.sh:
-            # Checking if we have hit with second shape
-            if fastIntersection(i, inv_ray):
-                # If we have hit, but after shape one we are not interested
-                if not (hit0[0] < allHitTimes(i, inv_ray).get().sorted()[0]):
-                    hit1 = allHitTimes(i, inv_ray).get().sorted()
-                    if hit1[1] > tmax:
-                        tmax = hit1[1]
-                        appo = i
-        
-        # If tmax didn't change, we just return a none(HitRecord)
-        # That means that all shapes are external to shape.sh[0]
-        if tmax == min(hit0): return false
-        
-        # We now have to understand wether we want to use shape 0 or i to HitRecord
-        # If shape 0 is completely within i, we just return a none(HitRecord)
-        if tmax > max(hit0): return false
-        return true
                     
 
 
@@ -414,77 +333,6 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(HitRecord)
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
-    
-    of skCSGUnion:  
-        if shape.shapes.len == 0: return none(HitRecord)
-
-        var 
-                t_hit = Inf 
-                appo: HitRecord
-
-        for i in 0..<shape.shapes.len:
-            
-            # Checking for intersection with i-th sequence shape
-            if fastIntersection(shape.shapes[i], inv_ray):          
-                if rayIntersection(shape.shapes[i], inv_ray).get.t_hit < t_hit:
-                    appo = rayIntersection(shape.shapes[i], inv_ray).get
-                    t_hit = appo.t_hit
-        
-        if t_hit == Inf: return none(HitRecord)
-        
-        return some(appo)
-    
-    of skCSGDiff: 
-        if shape.sh.len == 0: return none(HitRecord)
-
-        # If i miss the first shape, I don't want to have a hit
-        if not fastIntersection(shape.sh[0], inv_ray): return none(HitRecord)
-        # If we have just one shape, we will use rayIntersection procedure
-        if shape.sh.len == 1: return rayIntersection(shape.sh[0], inv_ray)
-        
-        var 
-            tmax: float32                                               # Variable to last check
-            hit0 = allHitTimes(shape.sh[0], inv_ray).get().sorted()     # All hit times on shape 0
-            hit1: seq[float32]                                          # Container for other hits
-            ind: int                                                    # Index to understand wether you are in or out
-            appo: Shape                                                 # I need to store Shape in order to compute correct HitRecord
-        
-        tmax = min(hit0)
-        # Checking bigger second hit time in shape.sh population 
-        for i in shape.sh:
-            # Checking if we have hit with second shape
-            if fastIntersection(i, inv_ray):
-                # If we have hit, but after shape one we are not interested
-                if not (hit0[0] < rayIntersection(i, inv_ray).get.t_hit):
-                    hit1 = allHitTimes(i, inv_ray).get().sorted()
-                    if hit1[1] > tmax:
-                        tmax = hit1[1]
-                        appo = i
-        
-        # If tmax didn't change, we just return a none(HitRecord)
-        # That means that all shapes are external to shape.sh[0]
-        if tmax == min(hit0): return none(HitRecord)
-        
-        # We now have to understand wether we want to use shape 0 or i to HitRecord
-        # If shape 0 is completely within i, we just return a none(HitRecord)
-        if tmax > max(hit0): return none(HitRecord)
-
-        # Cheking which is the limiting time hit on shape 0
-        for j in 0..<hit0.len:
-            if hit0[j] > tmax:
-                ind = j
-                break
-                    
-        # If j is even, ray is exiting shape and we have to chose point on shape i
-        if (ind mod 2) == 0:
-            t_hit = tmax
-        # If j is odd, ray is entering shape and we have to chose point on shape 0
-        else:
-            appo = shape.sh[0]
-            t_hit = hit0[ind]
-        
-        return some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: appo.uv(ray.at(t_hit)), world_pt: apply(appo.transf, ray.at(t_hit)), normal: apply(appo.transf, appo.normal(ray.at(t_hit), inv_ray.dir) )))
-                    
         
 
     hit_pt = inv_ray.at(t_hit)
