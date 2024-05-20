@@ -1,6 +1,6 @@
 from std/strformat import fmt
 from std/fenv import epsilon 
-from std/math import sum, pow, exp, log10, floor
+from std/math import sum, pow, exp, log10, floor, arccos, degToRad, PI
 from std/sequtils import apply, map
 
 import geometry
@@ -160,3 +160,34 @@ proc getColor*(pigment: Pigment; uv: Point2D): Color =
     of pkCheckered:
         let (u, v) = (floor(uv.u * pigment.nsteps.float32).int, floor(uv.v * pigment.nsteps.float32).int)
         return (if (u mod 2) == (v mod 2): pigment.color1 else: pigment.color2)
+
+
+type 
+    BRDFKind* = enum 
+        DiffuseBRDF, SpecularBRDF
+
+    BRDF* = object of RootObj
+        pigment*: Pigment
+
+        case kind*: BRDFKind
+        of DiffuseBRDF:
+            reflectance*: float32
+        of SpecularBRDF:
+            threshold_angle: float32
+
+
+proc newDiffuseBRDF*(pigment = newUniformPigment(newColor(1, 1, 1)), reflectance: float32 = 1.0): BRDF {.inline.} =
+    BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
+
+proc newSpecularBRDF*(pigment = newUniformPigment(newColor(1, 1, 1)), angle = 180.0): BRDF {.inline.} =
+    BRDF(kind: SpecularBRDF, pigment: pigment, threshold_angle: (degToRad(angle) * 0.1).float32) 
+
+
+proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Color {.inline.} =
+    case brdf.kind: 
+    of DiffuseBRDF: 
+        return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
+
+    of SpecularBRDF: 
+        let delta_theta = arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))
+        return (if abs(delta_theta) < brdf.threshold_angle: brdf.pigment.getColor(uv) else: newColor(0.0, 0.0, 0.0))
