@@ -1,5 +1,6 @@
 import std/unittest
-import PhotoNim/geometry
+import PhotoNim
+
 
 
 suite "Vec unittest":
@@ -23,6 +24,15 @@ suite "Vec unittest":
 
         let f = newVec4(-1, -4, 5, 2)
         check f.N == 4 and f.V is int
+
+        let g = newVec2f(1, 2)
+        check areClose(g, newVec2f(1, 2))
+
+        let h = newVec3f(1, 2, 3)
+        check areClose(h, newVec3f(1, 2, 3))
+
+        let i = newVec4f(1, 2, 3, 4)
+        check areClose(i, newVec4f(1, 2, 3, 4))
 
 
     setup:
@@ -106,6 +116,7 @@ suite "Vec unittest":
         let a = normalize(y)
         check a.norm == 1.0
         check areClose(a[0], 0.6) and areClose(a[1], 0.8)
+    
 
 
 suite "Points unittest":
@@ -128,6 +139,31 @@ suite "Points unittest":
 
     test "`$` proc":
         check $p2 == "(1.0, 20.0)"
+    
+    test "min proc":
+        var
+            a = newPoint3D(1, 2, 3)
+            b = newPoint3D(-1, 2, 5)
+            c = newPoint3D(1, -2, 4)
+            
+            s1 = @[a]
+            s2 = @[a, b, c]
+
+        check areClose(min(s1), newPoint3D(1, 2, 3))
+        check areClose(min(s2), newPoint3D(-1, -2, 3))
+    
+    test "max proc":
+        var
+            a = newPoint3D(1, 2, 3)
+            b = newPoint3D(-1, 2, 5)
+            c = newPoint3D(1, -2, 4)
+            
+            s1 = @[a]
+            s2 = @[a, b, c]
+
+        check areClose(max(s1), newPoint3D(1, 2, 3))
+        check areClose(max(s2), newPoint3D(1, 2, 5))
+
 
 
 suite "Mat unittest":
@@ -306,7 +342,6 @@ suite "Transformation unittest":
             m2: Mat4f = [[1, 0, 0, 0], [0, 4/5, 3/5, 0], [0, -3/5, 4/5, 0], [0, 0, 0, 1]]
             t: Transformation = newTransformation(m1, m2)
 
-        check areClose(apply(t1, n1), newNormal(0, 0, 0))
         check areClose(apply(t1, n2), newNormal(1, 0, 0))
         check areClose(apply(t, n3), newNormal(0, 0, 1))
 

@@ -1,3 +1,2 @@
-images/
-./PhotoNim
-docs/_site
+docs/_site/
+docs/Gemfile.lock
