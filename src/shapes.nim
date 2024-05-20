@@ -172,6 +172,50 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
     of skCSGDiff: discard
 
 
+
+#-------------------------------------------------#
+#  Procedure to determine all intersection times  #
+#-------------------------------------------------#
+proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
+    var t_hit: float32
+    let inv_ray = apply(shape.transf.inverse, ray)
+
+    case shape.kind
+    of skTriangle: discard
+
+    of skTriangularMesh: discard            
+
+    of skAABox: discard
+
+    of skSphere:
+        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
+        let delta_4 = b * b - a * c
+        if delta_4 < 0: return none(seq[float32])
+
+        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
+        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
+            return some(@[t_l, t_r])
+        elif t_l > ray.tmin and t_l < ray.tmax:
+            return some(@[t_l])
+        elif t_r > ray.tmin and t_r < ray.tmax:
+            return some(@[t_r])
+        return none(seq[float32])
+
+        
+
+    of skPlane:
+        if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[float32])
+        t_hit = -inv_ray.origin.z / inv_ray.dir[2]
+        if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
+
+        return some(@[t_hit, Inf])
+    
+    of skCSGUnion: discard
+    
+    of skCSGDiff: discard
+
+
+
 proc fastIntersection*(shape: Shape, ray: Ray): bool =
     case shape.kind
     of skAABox:
@@ -242,8 +286,42 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
             if fastIntersection(i, inv_ray): return true
         return false
 
-    of skCSGDiff: discard
+    of skCSGDiff: 
+        if shape.sh.len == 0: return false
 
+        let inv_ray = apply(shape.transf.inverse, ray)
+        # If i miss the first shape, I don't want to have a hit
+        if not fastIntersection(shape.sh[0], inv_ray): return false
+        # If we have just one shape, we will use rayIntersection procedure
+        if shape.sh.len == 1: return true
+        
+        var 
+            tmax: float32                                               # Variable to last check
+            hit0 = allHitTimes(shape.sh[0], inv_ray).get().sorted()     # All hit times on shape 0
+            hit1: seq[float32]                                          # Container for other hits
+            appo: Shape                                                 # I need to store Shape in order to compute correct HitRecord
+        
+        tmax = min(hit0)
+        # Checking bigger second hit time in shape.sh population 
+        for i in shape.sh:
+            # Checking if we have hit with second shape
+            if fastIntersection(i, inv_ray):
+                # If we have hit, but after shape one we are not interested
+                if not (hit0[0] < allHitTimes(i, inv_ray).get().sorted()[0]):
+                    hit1 = allHitTimes(i, inv_ray).get().sorted()
+                    if hit1[1] > tmax:
+                        tmax = hit1[1]
+                        appo = i
+        
+        # If tmax didn't change, we just return a none(HitRecord)
+        # That means that all shapes are external to shape.sh[0]
+        if tmax == min(hit0): return false
+        
+        # We now have to understand wether we want to use shape 0 or i to HitRecord
+        # If shape 0 is completely within i, we just return a none(HitRecord)
+        if tmax > max(hit0): return false
+        return true
+                    
 
 
 type
@@ -253,47 +331,6 @@ type
         world_pt*: Point3D
         surface_pt*: Point2D
         normal*: Normal
-
-#-------------------------------------------------#
-#  Procedure to determine all intersection times  #
-#-------------------------------------------------#
-proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
-    var t_hit: float32
-    let inv_ray = apply(shape.transf.inverse, ray)
-
-    case shape.kind
-    of skTriangle: discard
-
-    of skTriangularMesh: discard            
-
-    of skAABox: discard
-
-    of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
-        let delta_4 = b * b - a * c
-        if delta_4 < 0: return none(seq[float32])
-
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
-            return some(@[t_l, t_r])
-        elif t_l > ray.tmin and t_l < ray.tmax:
-            return some(@[t_l])
-        elif t_r > ray.tmin and t_r < ray.tmax:
-            return some(@[t_r])
-        return none(seq[float32])
-
-        
-
-    of skPlane:
-        if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[float32])
-        t_hit = -inv_ray.origin.z / inv_ray.dir[2]
-        if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
-
-        return some(@[t_hit, Inf])
-    
-    of skCSGUnion: discard
-    
-    of skCSGDiff: discard
 
 #------------------------------------------------#
 #           Procedure to get closer hit          #
