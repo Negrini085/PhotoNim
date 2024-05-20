@@ -28,7 +28,7 @@ suite "HdrImageTest":
         check areClose(img.getPixel(1, 1).g, 2.0)
         check areClose(img.getPixel(1, 1).b, 3.0)
 
-    test "write/parseFloat":
+    test "write/readFloat":
         var stream = newFileStream("files/wpFloat.txt", fmWrite)
 
         stream.writeFloat(float32(1.0), bigEndian)
@@ -36,7 +36,7 @@ suite "HdrImageTest":
         stream.close
 
         stream = openFileStream("files/wpFloat.txt", fmRead)
-        check areClose(stream.parseFloat(bigEndian), float32(1.0))
+        check areClose(stream.readFloat(bigEndian), float32(1.0))
         check "1.0" == stream.readLine
         stream.close
     

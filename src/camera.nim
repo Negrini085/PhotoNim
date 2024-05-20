@@ -1,4 +1,3 @@
-import std/options
 from std/strformat import fmt
 from std/fenv import epsilon 
 from std/math import sum, pow, exp, log10
@@ -53,13 +52,8 @@ proc setPixel*(img: var HdrImage; x, y: int, color: Color) {.inline.} =
 proc averageLuminosity*(img: HdrImage; eps = epsilon(float32)): float32 {.inline.} =
     pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
 
-proc toneMapping*(img: var HdrImage; alpha, gamma: float32, avlum: Option[float32] = none(float32)) = 
-    var lum: float32
-    
-    # Choose whether to use given luminosity or avarage one
-    if avlum.isSome: lum = avlum.get
-    else: lum = img.averageLuminosity
-
+proc toneMapping*(img: var HdrImage; alpha, gamma, avLum: float32) = 
+    let lum = if avLum == 0.0: img.averageLuminosity else: avLum
     img.pixels.apply(proc(pix: Color): Color = pix * (alpha / lum))
 
     proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
