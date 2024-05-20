@@ -21,7 +21,8 @@ proc col_pix(im_tr: ImageTracer, ray: Ray, scenary: World, x, y: int): Color =
 let 
     timeStart = cpuTime()
     (width, height) = (1600, 1000)
-    filePFM = "images/csg.pfm"
+    filePFM1 = "images/CSGUnion.pfm"
+    filePFM2 = "images/CSGDiff.pfm"
 
     # Shapes to add to CSGUnion
     s1 = newSphere(newPoint3D(0, 0, 0), 0.5)
@@ -39,6 +40,12 @@ var
     )
     world = newWorld()
     union = newCSGUnion()
+    diff = newCSGDiff()
+
+
+#--------------------------------------------#
+#                 CSG Union                  #
+#--------------------------------------------#     
 
 union.shapes.add(s1); union.shapes.add(s2); union.shapes.add(s3);
 union.shapes.add(s4); union.shapes.add(s5); union.shapes.add(s6);
@@ -48,6 +55,25 @@ world.shapes.add(union);
 
 tracer.fire_all_rays(world, col_pix)
 
-var stream = newFileStream(filePFM, fmWrite)
-stream.writePFM(tracer.image)
+var stream = newFileStream(filePFM1, fmWrite)
+stream.writePFM(tracer.image); stream.close()
+
+
+
+
+#--------------------------------------------#
+#                 CSG Union                  #
+#--------------------------------------------#   
+
+var
+    a1 = newSphere(newPoint3D(-0.3, 0, 0), 0.5)
+    a2 = newSphere(newPoint3D(0.3, 0, 0), 0.5)
+
+diff.sh.add(a1); diff.sh.add(a2);
+world.shapes = @[diff]
+
+tracer.fire_all_rays(world, col_pix)
+
+stream = newFileStream(filePFM2, fmWrite)
+stream.writePFM(tracer.image); stream.close()
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
