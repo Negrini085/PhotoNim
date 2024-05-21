@@ -1,22 +1,21 @@
-from std/fenv import epsilon
-from std/math import sgn, floor, sqrt, arccos, arctan2, PI
+import geometry
+
 import std/options
-
-import geometry, camera
-
+from std/math import sgn, floor, arccos, arctan2, PI
 
 type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
         skAABox, skTriangle, skSphere, skPlane, skTriangularMesh
+        
     Shape* = object of RootObj
         transf*: Transformation
         aabb*: Option[AABB] = none(AABB)
 
         case kind*: ShapeKind 
         of skAABox: 
-            min, max: Point3D
+            min*, max*: Point3D
 
         of skTriangle: 
             vertices*: tuple[A, B, C: Point3D]
@@ -37,11 +36,6 @@ type
 
 
 proc newWorld*(): World {.inline.} = World(shapes: @[])
-
-proc fire_all_rays*(tracer: var ImageTracer; scenary: World, color_map: proc) = 
-    for y in 0..<tracer.image.height:
-        for x in 0..<tracer.image.width:
-            tracer.image.setPixel(x, y, color_map(tracer, tracer.fire_ray(x, y), scenary, x, y))
 
 
 proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1), transf = Transformation.id): Shape {.inline.} =
