@@ -260,13 +260,22 @@ type
         normal*: Normal
         material*: Material
 
+proc newHitRecord*(ray: Ray, t_hit: float32, shape: Shape): HitRecord =
+    let hit_pt = ray.at(t_hit)
+    HitRecord(
+        ray: ray, 
+        t_hit: t_hit, 
+        world_pt: apply(shape.transf, hit_pt),
+        surface_pt: shape.uv(hit_pt),
+        normal: apply(shape.transf, shape.normal(hit_pt, ray.dir)),
+        material: shape.material
+    )
+
 
 proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     var 
         t_hit: float32
         hit_pt: Point3D
-        surf_pt: Point2D
-        normal: Normal
 
     let inv_ray = apply(shape.transf.inverse, ray)
 
@@ -294,10 +303,14 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if u < 0.0 or v < 0.0 or u + v > 1.0: return none(HitRecord)
 
         hit_pt = ray.at(t_hit)
-        surf_pt = newPoint2D(u, v)
-        normal = shape.normal(hit_pt, ray.dir)
-
-        return some(HitRecord(ray: ray, t_hit: t_hit, world_pt: hit_pt, surface_pt: surf_pt, normal: normal, material: shape.material))
+        return some(HitRecord(
+            ray: ray, 
+            t_hit: t_hit, 
+            world_pt: hit_pt, 
+            surface_pt: newPoint2D(u, v), 
+            normal: shape.normal(hit_pt, ray.dir), 
+            material: shape.material)
+        )
 
     of skTriangularMesh: discard            
 
@@ -341,9 +354,4 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
         
-
-    hit_pt = inv_ray.at(t_hit)
-    surf_pt = shape.uv(hit_pt)
-    normal = shape.normal(hit_pt, inv_ray.dir) 
-
-    some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal), material: shape.material))
+    some(newHitRecord(inv_ray, t_hit, shape))

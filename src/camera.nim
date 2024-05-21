@@ -188,13 +188,15 @@ proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Col
         return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
 
     of SpecularBRDF: 
-        return 
-            if abs(arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))) < brdf.threshold_angle: brdf.pigment.getColor(uv)
-            else: newColor(0.0, 0.0, 0.0)
+        if abs(arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))) < brdf.threshold_angle: 
+            return brdf.pigment.getColor(uv)
+        else: 
+            return newColor(0.0, 0.0, 0.0)
 
 
 type Material* = object
     brdf*: BRDF
     radiance*: Pigment
 
-proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(BLACK)): Material {.inline.} = Material(brdf: brdf, radiance: pigment) 
+proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(BLACK)): Material {.inline.} = 
+    Material(brdf: brdf, radiance: pigment) 
