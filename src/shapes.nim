@@ -200,50 +200,6 @@ proc in_shape*(shape: Shape; pt: Point3D): bool =
 
 
 
-#-------------------------------------------------#
-#  Procedure to determine all intersection times  #
-#-------------------------------------------------#
-proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
-    var t_hit: float32
-    let inv_ray = apply(shape.transf.inverse, ray)
-
-    case shape.kind
-    of skTriangle: discard
-
-    of skTriangularMesh: discard            
-
-    of skAABox: discard
-
-    of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
-        let delta_4 = b * b - a * c
-        if delta_4 < 0: return none(seq[float32])
-
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
-            return some(@[t_l, t_r])
-        elif t_l > ray.tmin and t_l < ray.tmax:
-            return some(@[t_l])
-        elif t_r > ray.tmin and t_r < ray.tmax:
-            return some(@[t_r])
-        return none(seq[float32])
-
-        
-
-    of skPlane:
-        if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[float32])
-        t_hit = -inv_ray.origin.z / inv_ray.dir[2]
-        if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
-
-        return some(@[t_hit, Inf])
-
-    of skCSGUnion: discard
-    of skCSGDiff: discard
-    of skCSGInt: discard
-
-
-
-
 proc fastIntersection*(shape: Shape, ray: Ray): bool =
     case shape.kind
     of skAABox:
