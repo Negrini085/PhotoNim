@@ -242,7 +242,7 @@ suite "CSG":
     setup:
         let 
             s1 = newSphere(newPoint3D(0.5, 0, 0), 0.5)
-            s2 = newSphere(newPoint3D(0, 0, 0), 0.5)
+            s2 = newSphere(newPoint3D(0, 0, 0), 0.2)
             csg_un = newCSGUnion(@[s1, s2])
             csg_diff = newCSGDiff(@[s1, s2])
             csg_int = newCSGInt(@[s1, s2])
@@ -259,6 +259,22 @@ suite "CSG":
         check csg_un.kind == skCSGUnion
         check csg_diff.kind == skCSGDiff
         check csg_int.kind == skCSGInt
+
+        check areClose(csg_un.shapes[0].center, newPoint3D(0.5, 0, 0))
+        check areClose(csg_diff.shapes[0].center, newPoint3D(0.5, 0, 0))
+        check areClose(csg_int.shapes[0].center, newPoint3D(0.5, 0, 0))
+
+        check areClose(csg_un.shapes[0].radius, 0.5)
+        check areClose(csg_diff.shapes[0].radius, 0.5)
+        check areClose(csg_int.shapes[0].radius, 0.5)
+
+        check areClose(csg_un.shapes[1].center, newPoint3D(0, 0, 0))
+        check areClose(csg_diff.shapes[1].center, newPoint3D(0, 0, 0))
+        check areClose(csg_int.shapes[1].center, newPoint3D(0, 0, 0))
+
+        check areClose(csg_un.shapes[1].radius, 0.2)
+        check areClose(csg_diff.shapes[1].radius, 0.2)
+        check areClose(csg_int.shapes[1].radius, 0.2)
 
 suite "World":
     
