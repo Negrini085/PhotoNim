@@ -104,7 +104,7 @@ proc newCSGDiff*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline
 
 proc newCSGInt*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
     Shape(
-        kind: skCSGDiff,
+        kind: skCSGInt,
         shapes: shapes, 
         transf: transf
     )

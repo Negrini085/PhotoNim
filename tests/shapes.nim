@@ -237,6 +237,28 @@ suite "AABox":
         check not fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), -newVec3(float32 0.0, 0.0, 0.0)))
         
 
+suite "CSG":
+
+    setup:
+        let 
+            s1 = newSphere(newPoint3D(0.5, 0, 0), 0.5)
+            s2 = newSphere(newPoint3D(0, 0, 0), 0.5)
+            csg_un = newCSGUnion(@[s1, s2])
+            csg_diff = newCSGDiff(@[s1, s2])
+            csg_int = newCSGInt(@[s1, s2])
+        
+    teardown:
+        discard s1
+        discard s2
+        discard csg_un
+        discard csg_diff
+        discard csg_int
+
+    test "constructor proc":
+
+        check csg_un.kind == skCSGUnion
+        check csg_diff.kind == skCSGDiff
+        check csg_int.kind == skCSGInt
 
 suite "World":
     
