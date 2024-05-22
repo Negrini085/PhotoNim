@@ -285,6 +285,47 @@ type
         surface_pt*: Point2D
         normal*: Normal
 
+
+#------------------------------------------------#
+#            Procedure to get all hits           #
+#------------------------------------------------#
+proc allRayIntersections*(shape: Shape, ray: Ray): Option[seq[HitRecord]] =
+
+    let inv_ray = apply(shape.transf.inverse, ray)
+
+    case shape.kind
+
+    of skTriangle: discard
+    of skTriangularMesh: discard            
+    of skAABox: discard
+
+    of skSphere:
+        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
+        let delta_4 = b * b - a * c
+        if delta_4 < 0: return none(seq[HitRecord])
+
+        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
+        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
+            return some(@[ 
+                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(inv_ray.at(t_l)), world_pt: apply(shape.transf, inv_ray.at(t_l)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), inv_ray.dir))),
+                HitRecord(ray: ray, t_hit: t_r, surface_pt: shape.uv(inv_ray.at(t_r)), world_pt: apply(shape.transf, inv_ray.at(t_r)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_r), inv_ray.dir)))
+                ])
+        elif t_l > ray.tmin and t_l < ray.tmax:
+            return some(@[
+                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(inv_ray.at(t_l)), world_pt: apply(shape.transf, inv_ray.at(t_l)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), inv_ray.dir)))
+                ])
+        elif t_r > ray.tmin and t_r < ray.tmax:
+            return some(@[
+                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(inv_ray.at(t_l)), world_pt: apply(shape.transf, inv_ray.at(t_l)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), inv_ray.dir)))
+                ])
+        else: return none(seq[HitRecord])
+
+    of skPlane: discard
+    of skCSGUnion: discard
+    of skCSGDiff: discard       
+    of skCSGInt: discard
+
+
 #------------------------------------------------#
 #           Procedure to get closer hit          #
 #------------------------------------------------#
@@ -376,6 +417,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
             appo: HitRecord
             hits: seq[HitRecord]
 
+        # I feel like you could be doing it without using hits sequence
         for i in shape.shapes:
             if fastIntersection(i, inv_ray):
                 hits.add(rayIntersection(i, inv_ray).get)
@@ -391,9 +433,64 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
                 tmin = i.t_hit
                 appo = i
         
+        discard hits
         return some(appo)
 
-    of skCSGDiff: discard       
+    of skCSGDiff: 
+        if shape.shapes.len == 0: return none(HitRecord)
+
+        var
+            tmin, tmax: float32
+            appo: HitRecord
+            hits: Option[seq[HitRecord]]
+            cand, in_hit: seq[HitRecord]
+
+        # Checking if there is intersection with first shape
+        if fastIntersection(shape.shapes[0], inv_ray):
+            for i in shape.shapes:
+                if fastIntersection(i, inv_ray):
+                    
+                    # Computing all ray intersections with i-th shape
+                    hits = allRayIntersections(i, ray)
+                    if hits.isSome:
+                        for i in hits.get:
+                            # Checking which point are in first shape
+                            if in_shape(shape.shapes[0], i.world_pt):
+                                in_hit.add(i)
+
+                        if in_hit.len != 0:
+
+                            #Checking which candidate is good
+                            tmin = in_hit[0].t_hit
+                            appo = in_hit[0]
+
+                            #Checking which is first
+                            for i in in_hit:
+                                if i.t_hit < tmin:
+                                    tmin = i.t_hit
+                                    appo = i
+                            
+                            in_hit = @[]
+                            hits = none(seq[Hitrecord])
+
+                            # Adding new HitRecord candidate
+                            cand.add(appo)
+            
+            if cand.len != 0:
+                tmax = cand[0].t_hit
+                appo = cand[0]
+
+                for i in cand:
+                    if i.t_hit > tmax:
+                        tmax = i.t_hit
+                        appo = i
+                
+                return some(appo)
+            
+        return none(HitRecord)
+
+
+
     of skCSGInt: discard
 
     hit_pt = inv_ray.at(t_hit)
@@ -401,44 +498,3 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     normal = shape.normal(hit_pt, inv_ray.dir) 
 
     some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal)))
-
-
-
-#------------------------------------------------#
-#            Procedure to get all hits           #
-#------------------------------------------------#
-proc allRayIntersections*(shape: Shape, ray: Ray): Option[seq[HitRecord]] =
-
-    let inv_ray = apply(shape.transf.inverse, ray)
-
-    case shape.kind
-
-    of skTriangle: discard
-    of skTriangularMesh: discard            
-    of skAABox: discard
-
-    of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
-        let delta_4 = b * b - a * c
-        if delta_4 < 0: return none(seq[HitRecord])
-
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
-            return some(@[ 
-                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(inv_ray.at(t_l)), world_pt: apply(shape.transf, inv_ray.at(t_l)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), inv_ray.dir))),
-                HitRecord(ray: ray, t_hit: t_r, surface_pt: shape.uv(inv_ray.at(t_r)), world_pt: apply(shape.transf, inv_ray.at(t_r)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_r), inv_ray.dir)))
-                ])
-        elif t_l > ray.tmin and t_l < ray.tmax:
-            return some(@[
-                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(inv_ray.at(t_l)), world_pt: apply(shape.transf, inv_ray.at(t_l)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), inv_ray.dir)))
-                ])
-        elif t_r > ray.tmin and t_r < ray.tmax:
-            return some(@[
-                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(inv_ray.at(t_l)), world_pt: apply(shape.transf, inv_ray.at(t_l)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), inv_ray.dir)))
-                ])
-        else: return none(seq[HitRecord])
-
-    of skPlane: discard
-    of skCSGUnion: discard
-    of skCSGDiff: discard       
-    of skCSGInt: discard
