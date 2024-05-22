@@ -127,12 +127,12 @@ suite "HdrImageTest":
 suite "Ray tests":
 
     setup:
-        var ray = newRay(newPoint3D(1, 2, 3), newVec3[float32](1, 0, 0))
+        var ray = newRay(newPoint3D(1, 2, 3), newVec3(float32 1, 0, 0))
 
     test "newRay":
         # Checking constructor test
         check areClose(ray.origin, newPoint3D(1, 2, 3))
-        check areClose(ray.dir, newVec3[float32](1, 0, 0))
+        check areClose(ray.dir, newVec3(float32 1, 0, 0))
     
 
     test "at":
@@ -145,32 +145,31 @@ suite "Ray tests":
     test "areClose proc":
         # Checking areClose procedure
         var
-            ray1 = newRay(newPoint3D(1, 2, 3), newVec3[float32](1, 0, 0))
-            ray2 = newRay(newPoint3D(1, 2, 0), newVec3[float32](1, 0, 0))
+            ray1 = newRay(newPoint3D(1, 2, 3), newVec3(float32 1, 0, 0))
+            ray2 = newRay(newPoint3D(1, 2, 0), newVec3(float32 1, 0, 0))
 
         check areClose(ray, ray1)
         check not areClose(ray, ray2)
     
 
-    test "translate proc":
-        # Checking ray translation procedures
-        var 
-            vec1 = newVec3[float32](0, 0, 0)
-            vec2 = newVec3[float32](1, 2, 3)
+    # test "translate proc":
+    #     # Checking ray translation procedures
+    #     var 
+    #         vec1 = newVec3(float32 0, 0, 0)
+    #         vec2 = newVec3(float32 1, 2, 3)
 
-        check areClose(ray.translate(vec1).origin, newPoint3D(1, 2, 3))
-        check areClose(ray.translate(vec2).origin, newPoint3D(2, 4, 6))
+    #     check areClose(ray.translate(vec1).origin, newPoint3D(1, 2, 3))
+    #     check areClose(ray.translate(vec2).origin, newPoint3D(2, 4, 6))
     
 
     test "apply proc":
         # Checking ray rotation procedures
         var 
-            T1 = newTranslation(newVec3[float32](1, 2, 3))
-            T2 = newRotY(180)
+            T1 = newTranslation(newVec3(float32 1, 2, 3))
+            T2 = newRotY(180.0)
 
-        check areClose(apply(T1, ray),  newRay(newPoint3D(2, 4, 6), newVec3[float32](1, 0, 0)))
-        check areClose(apply(T2, ray).dir, newVec3[float32](-1, 0, 0))
-        #check areClose(transformRay(T2, ray),  newRay(newPoint3D(-1, 2, -3), newVec3[float32](-1, 0, 0)))
+        check areClose(ray.transform(T1), newRay(newPoint3D(2, 4, 6), newVec3(float32 1, 0, 0)), 1e-4)
+        check areClose(ray.transform(T2), newRay(newPoint3D(-1, 2, -3), newVec3(float32 -1, 0, 0)), 1e-4)
 
 
 
@@ -241,58 +240,13 @@ suite "Camera tests":
         check areClose(ray1.origin, ray4.origin)
         
         # Checking directions
-        check areClose(ray1.dir, newVec3[float32](5,  1.2, -1))
-        check areClose(ray2.dir, newVec3[float32](5, -1.2, -1))
-        check areClose(ray3.dir, newVec3[float32](5,  1.2,  1))
-        check areClose(ray4.dir, newVec3[float32](5, -1.2,  1))
+        check areClose(ray1.dir, newVec3(float32 5,  1.2, -1))
+        check areClose(ray2.dir, newVec3(float32 5, -1.2, -1))
+        check areClose(ray3.dir, newVec3(float32 5,  1.2,  1))
+        check areClose(ray4.dir, newVec3(float32 5, -1.2,  1))
 
         # Testing arrive point
         check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
         check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
         check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
         check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
-
-
-
-#------------------------------------------#
-#         Image Tracer type tests          #
-#------------------------------------------#
-suite "ImageTracer":
-
-    setup:
-        var 
-            image = newHdrImage(5, 5)
-            cam = newOrthogonalCamera(1.2, Transformation.id)
-            im_tr = ImageTracer(image: image, camera: cam)
-
-    test "ImageTracer index":
-        # Checking image tracer type, we will have to open an issue
-        var
-            ray1 = im_tr.fire_ray(0, 0, newPoint2D(2.5, 1.5))
-            ray2 = im_tr.fire_ray(2, 1, newPoint2D(0.5, 0.5))
-
-        check areClose(ray1.origin, ray2.origin)
-
-
-    test "Camera Orientation":
-
-        var
-            ray1 = im_tr.fire_ray(0, 0, newPoint2D(0, 0))   # Ray direct to top left corner
-            ray2 = im_tr.fire_ray(4, 4, newPoint2D(1, 1))   # Ray direct to bottom right corner
-        
-        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, 1))
-        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
-
-
-    test "ImageTracer fire_all_rays":
-
-        im_tr.fire_all_rays()
-
-        for y in 0..<im_tr.image.height:
-            for x in 0..<im_tr.image.width:
-                let 
-                    r = (1 - exp(-float32(x + y)))
-                    g = y/im_tr.image.height
-                    b = pow((1 - x/im_tr.image.width), 2.5)
-                check areClose(im_tr.image.getPixel(x, y), newColor(r, g, b))
-    

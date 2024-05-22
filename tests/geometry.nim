@@ -352,17 +352,16 @@ suite "Derived Transformation test":
 
     setup:
         var
-            t1: Scaling = newScaling(2)
-            t2: Scaling = newScaling(newVec3[float32](1, 2, 3))
-            t3: Translation = newTranslation(newVec3[float32](2, 4, 1))
+            t1 = newScaling(2.0)
+            t2 = newScaling(newVec3[float32](1, 2, 3))
+            t3 = newTranslation(newVec3[float32](2, 4, 1))
 
 
     test "Scaling of Vec4f":
         # Checking scaling of a Vec4f object
-        var vec: Vec4f = newVec4[float32](1, 2, 3, 1)
-        
-        check areClose(apply(t1, vec), newVec4[float32](2, 4, 6, 1))
+        let vec = newVec4(float32 1, 2, 3, 1)
 
+        check areClose(apply(t1, vec), newVec4[float32](2, 4, 6, 1))
         check areClose(apply(t2, vec), newVec4[float32](1, 4, 9, 1))
     
 
@@ -410,10 +409,10 @@ suite "Derived Transformation test":
 
     test "Rotation":
         var
-            tx: Rotation = newRotX(180) 
-            ty: Rotation = newRotY(180) 
-            tz: Rotation = newRotZ(180) 
-            vec: Vec4f = newVec4[float32](1, 2, 3, 1)
+            tx = newRotX(180) 
+            ty = newRotY(180) 
+            tz = newRotZ(180) 
+            vec = newVec4[float32](1, 2, 3, 1)
         
         check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0), 1e-6)
         check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0), 1e-6)

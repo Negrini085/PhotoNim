@@ -1,15 +1,16 @@
-import geometry
+import geometry, camera
 
 import std/options
-from std/math import sgn, floor, arccos, arctan2, PI
+from std/fenv import epsilon
+from std/math import sgn, floor, arccos, arctan2, PI, sqrt
 
 type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
         skAABox, skTriangle, skSphere, skPlane, skTriangularMesh
-        
-    Shape* = object of RootObj
+
+    Shape* = object
         transf*: Transformation
         aabb*: Option[AABB] = none(AABB)
 
@@ -139,7 +140,7 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 #-------------------------------------------------#
 proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
     var t_hit: float32
-    let inv_ray = apply(shape.transf.inverse, ray)
+    let inv_ray = ray.transform(shape.transf.inverse)
 
     case shape.kind
     of skTriangle: discard
@@ -218,7 +219,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
 
     of skSphere: 
         let 
-            inv_ray = apply(shape.transf.inverse, ray)
+            inv_ray = ray.transform(shape.transf.inverse)
             (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1.0)
             delta_4 = b * b - a * c
 
@@ -228,7 +229,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         return (inv_ray.tmin < t_l and t_l < inv_ray.tmax) or (inv_ray.tmin < t_r and t_r < inv_ray.tmax) 
 
     of skPlane:
-        let inv_ray = apply(shape.transf.inverse, ray)
+        let inv_ray = ray.transform(shape.transf.inverse)
         if abs(inv_ray.dir[2]) < epsilon(float32): return false
 
         let t = -inv_ray.origin.z / inv_ray.dir[2]
@@ -254,7 +255,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         surf_pt: Point2D
         normal: Normal
 
-    let inv_ray = apply(shape.transf.inverse, ray)
+    let inv_ray = ray.transform(shape.transf.inverse)
 
     case shape.kind
     of skTriangle:
@@ -326,10 +327,22 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(HitRecord)
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
-        
 
+
+    # let hit = hit_pt
+    # echo "hello"
+
+    # echo dot(shape.transf.mat, hit.toVec4)
+    # echo dot(shape.transf.mat, hit.toVec4).toPoint3D
+    # echo "why!"
+    # echo newPoint3D(hit.x + shape.transf.mat[0][3], hit.y + shape.transf.mat[1][3], hit.z + shape.transf.mat[2][3])
+    # echo "this is why!"
+    # echo apply(shape.transf, hit_pt)
+    # echo "nooooo"
+    # echo apply(shape.transf, newPoint3D(0,0,0))
+    
     hit_pt = inv_ray.at(t_hit)
     surf_pt = shape.uv(hit_pt)
-    normal = shape.normal(hit_pt, inv_ray.dir) 
+    normal = shape.normal(hit_pt, ray.dir)
 
     some(HitRecord(ray: ray, t_hit: t_hit, surface_pt: surf_pt, world_pt: apply(shape.transf, hit_pt), normal: apply(shape.transf, normal)))
