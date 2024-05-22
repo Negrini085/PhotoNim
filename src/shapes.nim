@@ -1,5 +1,5 @@
 from std/fenv import epsilon
-from std/math import sgn, floor, sqrt, arccos, arctan2, PI
+from std/math import sgn, floor, sqrt, arccos, arctan2, PI, pow
 import std/options
 
 import geometry, camera
@@ -88,21 +88,21 @@ proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transforma
         triang: triang
     )
 
-proc newCSGUnion*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
+proc newCSGUnion*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.inline.} = 
     Shape(
         kind: skCSGUnion,
         shapes: shapes, 
         transf: transf
     )
 
-proc newCSGDiff*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
+proc newCSGDiff*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.inline.} = 
     Shape(
         kind: skCSGDiff,
         shapes: shapes, 
         transf: transf
     )
 
-proc newCSGInt*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
+proc newCSGInt*(shapes: seq[Shape] = @[], transf = Transformation.id): Shape {.inline.} = 
     Shape(
         kind: skCSGInt,
         shapes: shapes, 
@@ -168,6 +168,31 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
     of skPlane: 
         return newNormal(0, 0, sgn(-dir[2]).float32)
+
+    of skCSGUnion: discard
+    of skCSGDiff: discard
+    of skCSGInt: discard
+
+
+
+proc in_shape*(shape: Shape; pt: Point3D): bool = 
+    case shape.kind
+    of skAABox:
+        if (shape.min.x <= pt.x) and (pt.x <= shape.max.x) and 
+        (shape.min.y <= pt.y) and (pt.y <= shape.max.y) and
+        (shape.min.z <= pt.z) and (pt.z <= shape.max.z):
+            return true
+        return false 
+
+    of skTriangle: discard
+    of skTriangularMesh: discard
+
+    of skSphere: 
+        if (pow(pt.x - shape.center.x, 2) + pow(pt.y - shape.center.y, 2) + pow(pt.z - shape.center.z, 2)) < pow(shape.radius, 2):
+            return true
+        return false
+
+    of skPlane: discard
 
     of skCSGUnion: discard
     of skCSGDiff: discard
