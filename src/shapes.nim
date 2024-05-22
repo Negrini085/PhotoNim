@@ -9,7 +9,7 @@ type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh, skCSGUnion, skCSGDiff
+        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh, skCSGUnion, skCSGDiff, skCSGInt
     Shape* = object of RootObj
         transf*: Transformation
         aabb*: Option[AABB] = none(AABB)
@@ -31,11 +31,8 @@ type
 
         of skPlane: discard
 
-        of skCSGUnion:
+        of skCSGUnion, skCSGDiff, skCSGInt:
             shapes*: seq[Shape]
-
-        of skCSGDiff:
-            sh*: seq[Shape]
 
 
     World* = object
@@ -101,7 +98,14 @@ proc newCSGUnion*(shapes: seq[Shape], transf = Transformation.id): Shape {.inlin
 proc newCSGDiff*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
     Shape(
         kind: skCSGDiff,
-        sh: shapes, 
+        shapes: shapes, 
+        transf: transf
+    )
+
+proc newCSGInt*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
+    Shape(
+        kind: skCSGDiff,
+        shapes: shapes, 
         transf: transf
     )
 
@@ -135,6 +139,7 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
 
     of skCSGUnion: discard
     of skCSGDiff: discard
+    of skCSGInt: discard
 
 
 proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
@@ -163,6 +168,8 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
     of skCSGUnion: discard
     of skCSGDiff: discard
+    of skCSGInt: discard
+
 
 
 #-------------------------------------------------#
@@ -204,6 +211,8 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
 
     of skCSGUnion: discard
     of skCSGDiff: discard
+    of skCSGInt: discard
+
 
 
 
@@ -270,6 +279,8 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
     
     of skCSGUnion: discard
     of skCSGDiff: discard
+    of skCSGInt: discard
+
 
 
 type
@@ -364,7 +375,8 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
 
     of skCSGUnion: discard
-    of skCSGDiff: discard        
+    of skCSGDiff: discard       
+    of skCSGInt: discard
 
     hit_pt = inv_ray.at(t_hit)
     surf_pt = shape.uv(hit_pt)
