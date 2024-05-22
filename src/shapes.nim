@@ -109,6 +109,8 @@ proc newCSGInt*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.
         transf: transf
     )
 
+
+
 proc uv*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
     of skAABox:
@@ -140,6 +142,7 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
     of skCSGUnion: discard
     of skCSGDiff: discard
     of skCSGInt: discard
+
 
 
 proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
@@ -374,7 +377,31 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
 
-    of skCSGUnion: discard
+    of skCSGUnion:
+        if shape.shapes.len == 0: return none(HitRecord)
+
+        var 
+            tmin: float32
+            appo: HitRecord
+            hits: seq[HitRecord]
+
+        for i in shape.shapes:
+            if fastIntersection(i, inv_ray):
+                hits.add(rayIntersection(i, inv_ray).get)
+        
+        if hits.len == 0: return none(HitRecord)
+
+        #Choosing closer hit
+        tmin = hits[0].t_hit
+        appo = hits[0]
+
+        for i in hits:
+            if i.t_hit < tmin:
+                tmin = i.t_hit
+                appo = i
+        
+        return some(appo)
+
     of skCSGDiff: discard       
     of skCSGInt: discard
 
