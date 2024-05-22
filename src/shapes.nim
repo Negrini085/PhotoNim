@@ -188,7 +188,7 @@ proc in_shape*(shape: Shape; pt: Point3D): bool =
     of skTriangularMesh: discard
 
     of skSphere: 
-        if (pow(pt.x - shape.center.x, 2) + pow(pt.y - shape.center.y, 2) + pow(pt.z - shape.center.z, 2)) < pow(shape.radius, 2):
+        if (pow(pt.x - shape.center.x, 2) + pow(pt.y - shape.center.y, 2) + pow(pt.z - shape.center.z, 2)) <= pow(shape.radius, 2):
             return true
         return false
 

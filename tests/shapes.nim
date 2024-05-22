@@ -76,7 +76,7 @@ suite "Sphere":
         check areClose(sphere.normal(p2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
 
     
-    test "(u, v) coordinates":
+    test "(u, v) mapping proc":
         # Checking (u, v) coordinates computation
         var
             p1 = newPoint3D(1, 0, 1)
@@ -84,6 +84,23 @@ suite "Sphere":
 
         check areClose(sphere.uv(p1), newPoint2D(0, 0))
         check areClose(sphere.uv(p2), newPoint2D(1/6, 1/3))
+
+    
+    test "in_shape proc":
+        # in_shape test
+        var
+            p1 = newPoint3D(1, 0, 0)
+            p2 = newPoint3D(0, 0, 0.5)
+            p3 = newPoint3D(0, 2, 0)
+
+        check sphere.in_shape(p1)
+        check sphere.in_shape(p2)
+        check not sphere.in_shape(p3)
+
+        check sphere1.in_shape(p1)
+        check sphere1.in_shape(p2)
+        check sphere1.in_shape(p3)
+    
     
 
     test "RayIntersection: no transformation":
