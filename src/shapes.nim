@@ -280,7 +280,17 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         let t = -inv_ray.origin.z / inv_ray.dir[2]
         return if t < inv_ray.tmin or t > inv_ray.tmax: false else: true
     
-    of skCSGUnion: discard
+    of skCSGUnion:  
+        if shape.shapes.len == 0: return false
+
+        let inv_ray = apply(shape.transf.inverse, ray)
+
+        for i in shape.shapes:
+            if fastIntersection(i, inv_ray):
+                return true
+        
+        return false
+
     of skCSGDiff: discard
     of skCSGInt: discard
 
