@@ -499,15 +499,15 @@ proc apply*[T](transf: Transformation, x: T): T =
 
 
 proc `*`*(transf: Transformation, scal: float32): Transformation {.inline.} = 
-    result.kind = transf.kind
+    result.kind = if transf.kind == tkIdentity: tkGeneric else: transf.kind
     (result.mat, result.inv_mat) = (transf.mat * scal, transf.inv_mat / scal)
     
 proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} =
-    result.kind = transf.kind
+    result.kind = if transf.kind == tkIdentity: tkGeneric else: transf.kind
     (result.mat, result.inv_mat) = (transf.mat * scal, transf.inv_mat / scal)
 
 proc `/`*(transf: Transformation, scal: float32): Transformation {.inline.} = 
-    result.kind = transf.kind
+    result.kind = if transf.kind == tkIdentity: tkGeneric else: transf.kind
     (result.mat, result.inv_mat) = (transf.mat / scal, transf.inv_mat * scal)
 
 proc `@`*(a, b: Transformation): Transformation {.inline.} =
