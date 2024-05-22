@@ -9,7 +9,7 @@ type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh
+        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh, skCSGUnion, skCSGDiff
     Shape* = object of RootObj
         transf*: Transformation
         aabb*: Option[AABB] = none(AABB)
@@ -30,6 +30,12 @@ type
             radius*: float32
 
         of skPlane: discard
+
+        of skCSGUnion:
+            shapes*: seq[Shape]
+
+        of skCSGDiff:
+            sh*: seq[Shape]
 
 
     World* = object
@@ -85,6 +91,19 @@ proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transforma
         triang: triang
     )
 
+proc newCSGUnion*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
+    Shape(
+        kind: skCSGUnion,
+        shapes: shapes, 
+        transf: transf
+    )
+
+proc newCSGDiff*(shapes: seq[Shape], transf = Transformation.id): Shape {.inline.} = 
+    Shape(
+        kind: skCSGDiff,
+        sh: shapes, 
+        transf: transf
+    )
 
 proc uv*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
@@ -114,6 +133,9 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
     of skPlane: 
         return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
+    of skCSGUnion: discard
+    of skCSGDiff: discard
+
 
 proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
     case shape.kind
@@ -138,6 +160,9 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
     of skPlane: 
         return newNormal(0, 0, sgn(-dir[2]).float32)
+
+    of skCSGUnion: discard
+    of skCSGDiff: discard
 
 
 #-------------------------------------------------#
@@ -176,6 +201,9 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
 
         return some(@[t_hit, Inf])
+
+    of skCSGUnion: discard
+    of skCSGDiff: discard
 
 
 
@@ -239,7 +267,9 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
 
         let t = -inv_ray.origin.z / inv_ray.dir[2]
         return if t < inv_ray.tmin or t > inv_ray.tmax: false else: true
-                    
+    
+    of skCSGUnion: discard
+    of skCSGDiff: discard
 
 
 type
@@ -332,7 +362,9 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(HitRecord)
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
-        
+
+    of skCSGUnion: discard
+    of skCSGDiff: discard        
 
     hit_pt = inv_ray.at(t_hit)
     surf_pt = shape.uv(hit_pt)
