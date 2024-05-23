@@ -19,9 +19,20 @@ proc fire_ray*(tracer: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ra
     tracer.camera.fire_ray(newPoint2D((x.float32 + pixel.u) / tracer.image.width.float32, 1 - (y.float32 + pixel.v) / tracer.image.height.float32))
 
 
+proc displayProgress(current, total: int) =
+    let
+        percentage = int(100 * current / total)
+        barWidth = 50
+        progress = barWidth * current div total
+        bar = "[" & "#".repeat(progress) & "-".repeat(barWidth - progress) & "]"
+        color = if percentage <= 50: fgYellow else: fgGreen
+
+    stdout.eraseLine
+    stdout.styledWrite(fgRed, "0% ", fgWhite, bar, color, fmt" {percentage}%")
+    stdout.flushFile
+
 proc fire_all_rays*(tracer: var ImageTracer; scenary: World, color_map: proc(ray: Ray): Color) = 
     for y in 0..<tracer.image.height:
-        stdout.styledWriteLine(fgRed, "0% ", fgWhite, '#'.repeat y div 10, if y > tracer.image.height div 2: fgGreen else: fgYellow, fmt" {int(100 * y / tracer.image.height)}%")
         for x in 0..<tracer.image.width:
             if tracer.sideSamples > 0:
                 var color = newColor(0, 0, 0)
@@ -45,7 +56,7 @@ proc fire_all_rays*(tracer: var ImageTracer; scenary: World, color_map: proc(ray
             else:
                 tracer.image.setPixel(x, y, color_map(tracer.fire_ray(x, y)))
 
-        cursorUp 1
-        eraseLine
-
+        displayProgress(y + 1, tracer.image.height)
+    
+    stdout.eraseLine
     stdout.resetAttributes
