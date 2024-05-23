@@ -407,32 +407,29 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if shape.shapes.len == 0: return none(HitRecord)
 
         var 
-            tmin: float32
+            tmin: float32 = Inf
             appo: HitRecord
-            hits: seq[HitRecord]
+            hit = none(HitRecord)
 
-        # I feel like you could be doing it without using hits sequence
+        # Checking over shapes
         for i in shape.shapes:
-            if fastIntersection(i, inv_ray):
-                hits.add(rayIntersection(i, inv_ray).get)
-        
-        if hits.len == 0: return none(HitRecord)
+            if fastIntersection(i, ray):
+                appo = rayIntersection(i, ray).get
 
-        #Choosing closer hit
-        tmin = hits[0].t_hit
-        appo = hits[0]
+                #Checking which is first
+                if appo.t_hit < tmin:
+                    tmin = appo.t_hit
+                    hit = some(appo)
 
-        for i in hits:
-            if i.t_hit < tmin:
-                tmin = i.t_hit
-                appo = i
-        
-        discard hits
-        return some(appo)
+        discard appo  
+        return hit
 
     of skCSGDiff: 
         if shape.shapes.len == 0: return none(HitRecord)
-
+        elif shape.shapes.len == 1:
+             if not fastIntersection(shape.shapes[0], ray): return none(HitRecord)
+             return rayIntersection(shape.shapes[0], ray)
+        
         var
             tmin, tmax: float32
             appo: HitRecord
@@ -440,17 +437,18 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
             cand, in_hit: seq[HitRecord]
 
         # Checking if there is intersection with first shape
-        if fastIntersection(shape.shapes[0], inv_ray):
-            for i in shape.shapes:
-                if fastIntersection(i, inv_ray):
+        if fastIntersection(shape.shapes[0], ray):
+            for i in 1..<shape.shapes.len:
+                # Clearly we need to have intersection with other shape
+                if fastIntersection(shape.shapes[i], ray):
                     
                     # Computing all ray intersections with i-th shape
-                    hits = allRayIntersections(i, ray)
+                    hits = allRayIntersections(shape.shapes[i], ray)
                     if hits.isSome:
-                        for i in hits.get:
+                        for j in hits.get:
                             # Checking which point are in first shape
-                            if in_shape(shape.shapes[0], i.world_pt):
-                                in_hit.add(i)
+                            if in_shape(shape.shapes[0], j.world_pt):
+                                in_hit.add(j)
 
                         if in_hit.len != 0:
 
@@ -459,10 +457,10 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
                             appo = in_hit[0]
 
                             #Checking which is first
-                            for i in in_hit:
-                                if i.t_hit < tmin:
-                                    tmin = i.t_hit
-                                    appo = i
+                            for j in in_hit:
+                                if j.t_hit < tmin:
+                                    tmin = j.t_hit
+                                    appo = j
                             
                             in_hit = @[]
                             hits = none(seq[Hitrecord])

@@ -75,4 +75,4 @@ stream = newFileStream(filePFM2, fmWrite)
 stream.writePFM(tracer.image); stream.close()
 
 
-echo fmt"Successfully rendered CSG Union image in {cpuTime()- appo} seconds."
+echo fmt"Successfully rendered CSG Diff image in {cpuTime()- appo} seconds."
