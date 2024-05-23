@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- New demo with antialiasing
 - New Transformations
 - *(ImageTracer)* ImageTracer implementation moved to imagetracer.nim. ImageTracer supports now stratified sampling as MC antialias strategy.
 - *(PCG)* Old rand proc is now called random, new rand proc now return a float32 in [0, 1] range.
