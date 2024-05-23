@@ -2,7 +2,7 @@ import geometry, camera
 
 import std/options
 from std/fenv import epsilon
-from std/math import sgn, floor, arccos, arctan2, PI, sqrt
+from std/math import sgn, floor, arccos, arctan2, PI, sqrt, pow
 
 type
     AABB* = tuple[min, max: Point3D]
@@ -258,7 +258,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
     of skCSGUnion:  
         if shape.shapes.len == 0: return false
 
-        let inv_ray = apply(shape.transf.inverse, ray)
+        let inv_ray = ray.transform(shape.transf.inverse)
 
         for i in shape.shapes:
             if fastIntersection(i, inv_ray):
@@ -285,7 +285,7 @@ type
 #------------------------------------------------#
 proc allRayIntersections*(shape: Shape, ray: Ray): Option[seq[HitRecord]] =
 
-    let inv_ray = apply(shape.transf.inverse, ray)
+    let inv_ray = ray.transform(shape.transf.inverse)
 
     case shape.kind
 
