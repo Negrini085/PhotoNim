@@ -13,18 +13,24 @@ requires "nimPNG >= 0.3"
 
 # Tasks
 task build, "Build the PhotoNim executable":
-  exec "nim c PhotoNim.nim"
+  exec "nim c -d:release PhotoNim.nim"
 
 task test, "Run the PhotoNim tests!":
   withDir "tests":
-    exec "nim c -r geometry.nim"    
-    exec "nim c -r camera.nim"
-    exec "nim c -r shapes.nim"
-    exec "nim c -r pcg.nim"
+    exec "nim c -d:release --hints:off -r geometry.nim"    
+    exec "nim c -d:release --hints:off -r camera.nim"
+    exec "nim c -d:release --hints:off -r shapes.nim"
+    exec "nim c -d:release --hints:off -r pcg.nim"
     exec "rm geometry camera shapes pcg"
 
 task triangle, "Run the triangle example":
-  exec "nim c -r examples/triangle.nim"
+  exec "nim c -d:release -r examples/triangle.nim"
   exec "rm examples/triangle"
   exec "./PhotoNim pfm2png images/triangle.pfm images/triangle.png --avlum 0.1"
   exec "open images/triangle.png"
+
+task sphere, "Run the sphere example":
+  exec "nim c -d:release -r examples/sphere.nim"
+  exec "rm examples/sphere"
+  exec "./PhotoNim pfm2png images/sphere.pfm images/sphere.png --avlum 0.1"
+  exec "open images/sphere.png"
