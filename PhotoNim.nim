@@ -1,12 +1,11 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, camera, shapes, pcg]
-export geometry, camera, shapes, pcg
+import src/[geometry, camera, shapes, pcg, tracer]
+export geometry, camera, shapes, pcg, tracer
 
 from std/times import cpuTime
 from std/strformat import fmt
 
-from std/os import splitFile
 from std/strutils import split, parseFloat, parseInt
 from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
@@ -138,9 +137,6 @@ Options:
 
 proc demo*(width, height: int, camera: Camera): HdrImage =
     let timeStart = cpuTime()
-    var 
-        tracer = ImageTracer(image: newHdrImage(width, height), camera: camera)
-        scenary = newWorld()
 
     let
         s1 = newSphere(newPoint3D(0.5, 0.5, 0.5), 0.1)
@@ -154,21 +150,13 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
         s9 = newSphere(newPoint3D(-0.5, 0.0, 0.0), 0.1)
         s10 = newSphere(newPoint3D(0.0, 0.5, 0.0), 0.1)   
 
+    var scenary = newWorld()
     scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
     scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
 
-    proc col_pix(tracer: ImageTracer, scenary: World, x, y: int): Color = 
-        let dim = scenary.shapes.len
-        if dim == 0: return newColor(0, 0, 0)
-        for i in 0..<dim:
-            if fastIntersection(scenary.shapes[i], tracer.fire_ray(x, y)): 
-                let 
-                    r = (1 - exp(-float32(x + y)))
-                    g = y / tracer.image.height
-                    b = pow((1 - x / tracer.image.width), 2.5)
-                return newColor(r, g, b)
-
-    tracer.fire_all_rays(scenary, col_pix)
+    var tracer = newImageTracer(width, height, camera, sideSamples=4)
+    tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
+    
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
     tracer.image
@@ -178,6 +166,7 @@ when isMainModule:
     import docopt
     from std/cmdline import commandLineParams
     from std/osproc import execCmd
+    from std/os import splitFile
 
     let PhotoNimDoc = """
 Usage:
@@ -251,9 +240,9 @@ Usage:
             transf = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
             camera = if args["p"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
 
-        let stream = newFileStream(pfmOut, fmWrite) 
-        defer: stream.close 
+        var stream = newFileStream(pfmOut, fmWrite) 
         stream.writePFM(demo(width, height, camera))
+        stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
         discard execCmd fmt"open {pngOut}"

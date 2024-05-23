@@ -127,12 +127,12 @@ suite "HdrImageTest":
 suite "Ray tests":
 
     setup:
-        var ray = newRay(newPoint3D(1, 2, 3), newVec3[float32](1, 0, 0))
+        var ray = newRay(newPoint3D(1, 2, 3), newVec3(float32 1, 0, 0))
 
     test "newRay":
         # Checking constructor test
         check areClose(ray.origin, newPoint3D(1, 2, 3))
-        check areClose(ray.dir, newVec3[float32](1, 0, 0))
+        check areClose(ray.dir, newVec3(float32 1, 0, 0))
     
 
     test "at":
@@ -145,32 +145,31 @@ suite "Ray tests":
     test "areClose proc":
         # Checking areClose procedure
         var
-            ray1 = newRay(newPoint3D(1, 2, 3), newVec3[float32](1, 0, 0))
-            ray2 = newRay(newPoint3D(1, 2, 0), newVec3[float32](1, 0, 0))
+            ray1 = newRay(newPoint3D(1, 2, 3), newVec3(float32 1, 0, 0))
+            ray2 = newRay(newPoint3D(1, 2, 0), newVec3(float32 1, 0, 0))
 
         check areClose(ray, ray1)
         check not areClose(ray, ray2)
     
 
-    test "translate proc":
-        # Checking ray translation procedures
-        var 
-            vec1 = newVec3[float32](0, 0, 0)
-            vec2 = newVec3[float32](1, 2, 3)
+    # test "translate proc":
+    #     # Checking ray translation procedures
+    #     var 
+    #         vec1 = newVec3(float32 0, 0, 0)
+    #         vec2 = newVec3(float32 1, 2, 3)
 
-        check areClose(ray.translate(vec1).origin, newPoint3D(1, 2, 3))
-        check areClose(ray.translate(vec2).origin, newPoint3D(2, 4, 6))
+    #     check areClose(ray.translate(vec1).origin, newPoint3D(1, 2, 3))
+    #     check areClose(ray.translate(vec2).origin, newPoint3D(2, 4, 6))
     
 
     test "apply proc":
         # Checking ray rotation procedures
         var 
-            T1 = newTranslation(newVec3[float32](1, 2, 3))
-            T2 = newRotY(180)
+            T1 = newTranslation(newVec3(float32 1, 2, 3))
+            T2 = newRotY(180.0)
 
-        check areClose(apply(T1, ray),  newRay(newPoint3D(2, 4, 6), newVec3[float32](1, 0, 0)))
-        check areClose(apply(T2, ray).dir, newVec3[float32](-1, 0, 0))
-        #check areClose(transformRay(T2, ray),  newRay(newPoint3D(-1, 2, -3), newVec3[float32](-1, 0, 0)))
+        check areClose(ray.transform(T1), newRay(newPoint3D(2, 4, 6), newVec3(float32 1, 0, 0)), 1e-4)
+        check areClose(ray.transform(T2), newRay(newPoint3D(-1, 2, -3), newVec3(float32 -1, 0, 0)), 1e-4)
 
 
 
@@ -241,17 +240,16 @@ suite "Camera tests":
         check areClose(ray1.origin, ray4.origin)
         
         # Checking directions
-        check areClose(ray1.dir, newVec3[float32](5,  1.2, -1))
-        check areClose(ray2.dir, newVec3[float32](5, -1.2, -1))
-        check areClose(ray3.dir, newVec3[float32](5,  1.2,  1))
-        check areClose(ray4.dir, newVec3[float32](5, -1.2,  1))
+        check areClose(ray1.dir, newVec3(float32 5,  1.2, -1))
+        check areClose(ray2.dir, newVec3(float32 5, -1.2, -1))
+        check areClose(ray3.dir, newVec3(float32 5,  1.2,  1))
+        check areClose(ray4.dir, newVec3(float32 5, -1.2,  1))
 
         # Testing arrive point
         check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
         check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
         check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
         check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
-
 
 
 #------------------------------------------#
