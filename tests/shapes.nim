@@ -55,7 +55,10 @@ suite "Sphere":
     test "newSphere proc":
         check sphere1.radius == 3.0
         check sphere1.center == newPoint3D(0, 1, 0)
-        check areClose(sphere1.transf.mat, (newTranslation(newVec3(float32 0, 1, 0)) @ newScaling(3.0)).mat)
+
+        check sphere1.transf.kind == tkComposition
+        check sphere1.transf.transformations[0].mat == newTranslation(newVec3(float32 0, 1, 0)).mat
+        check sphere1.transf.transformations[1].mat == newScaling(3.0).mat
 
 
     test "newUnitarySphere proc":
@@ -161,10 +164,7 @@ suite "Plane":
         var plane = newPlane(Transformation.id)
 
     test "PlaneConstructor":
-        # Checking plane constructor procedure
-
-        check areClose(plane.transf.mat, Mat4f.id)
-        check areClose(plane.transf.inv_mat, Mat4f.id)
+        check plane.transf.kind == tkIdentity
 
     
     test "RayIntersection: no transformation":

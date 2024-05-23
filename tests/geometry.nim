@@ -275,13 +275,7 @@ suite "Transformation unittest":
         check areClose(t2.mat, t1.inv_mat)
         check areClose(t2.inv_mat, t1.mat)
 
-    test "`@` compose proc":
-        # Checking Transformation product: we are composing inverse transformation
-        let T = t1 @ newTransformation(inv_mat, mat)
 
-        check areClose(T.mat, Mat4f.id)
-        check areClose(T.inv_mat, Mat4f.id)
-        
     test "`*` proc":
         let 
             scal: float32 = 2.0

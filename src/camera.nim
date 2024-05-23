@@ -80,7 +80,7 @@ proc transform*(ray: Ray; transf: Transformation): Ray {.inline.} =
     of tkIdentity: return ray
     of tkTranslation, tkScaling: 
         return Ray(origin: apply(transf, ray.origin), dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
-    of tkRotation, tkComposition, tkGeneric:
+    of tkGeneric, tkRotation, tkComposition:
         return Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
 
 
