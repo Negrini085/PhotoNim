@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- New Transformations
+- *(ImageTracer)* ImageTracer implementation moved to imagetracer.nim. ImageTracer supports now stratified sampling as MC antialias strategy.
+- *(PCG)* Old rand proc is now called random, new rand proc now return a float32 in [0, 1] range.
 - *(CSGDiff)* Add CSGDiff fast intersection procedure
 - *(CSGDiff)* Add rayIntersection procedure
 - *(Shape)* Add allHitTimes procedure
@@ -120,6 +123,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- Comments removed
 - Removed unused imports.
 - *(CSG)* Delete all CSG types and procedures
 - *(CLI)* Help command and demo proc.

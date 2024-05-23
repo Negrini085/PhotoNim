@@ -13,9 +13,9 @@ suite "PCG":
         check gen.inc == uint64(109)
     
 
-    test "rand proc":
+    test "random proc":
         # Checking PCG rand procedure
         var test = [uint32(2707161783), uint32(2068313097), uint32(3122475824), uint32(2211639955), uint32(3215226955), uint32(3421331566)]
 
         for i in test:
-            check gen.rand() == i
+            check gen.random == i
