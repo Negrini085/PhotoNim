@@ -135,9 +135,6 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
         return newNormal(0, 0, sgn(-dir[2]).float32)
 
 
-#-------------------------------------------------#
-#  Procedure to determine all intersection times  #
-#-------------------------------------------------#
 proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
     var t_hit: float32
     let inv_ray = ray.transform(shape.transf.inverse)
@@ -245,9 +242,7 @@ type
         surface_pt*: Point2D
         normal*: Normal
 
-#------------------------------------------------#
-#           Procedure to get closer hit          #
-#------------------------------------------------#
+
 proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     var 
         t_hit: float32
@@ -327,19 +322,6 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(HitRecord)
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(HitRecord)
-
-
-    # let hit = hit_pt
-    # echo "hello"
-
-    # echo dot(shape.transf.mat, hit.toVec4)
-    # echo dot(shape.transf.mat, hit.toVec4).toPoint3D
-    # echo "why!"
-    # echo newPoint3D(hit.x + shape.transf.mat[0][3], hit.y + shape.transf.mat[1][3], hit.z + shape.transf.mat[2][3])
-    # echo "this is why!"
-    # echo apply(shape.transf, hit_pt)
-    # echo "nooooo"
-    # echo apply(shape.transf, newPoint3D(0,0,0))
     
     hit_pt = inv_ray.at(t_hit)
     surf_pt = shape.uv(hit_pt)
