@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- New texture images as pfm and png
 - New demo with antialiasing
 - New Transformations
 - *(ImageTracer)* ImageTracer implementation moved to imagetracer.nim. ImageTracer supports now stratified sampling as MC antialias strategy.
