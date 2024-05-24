@@ -62,33 +62,86 @@ nimble test
 ```
 
 # Usage
-```bash
-./PhotoNim --help
-PhotoNim: a CPU raytracer written in Nim.
 
-Usage:
-    ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma>]
-    ./PhotoNim demo (perspective|orthogonal) [<output>] [--width=<width> --height=<height> --angle=<angle>]
-
-Options:
-    --alpha=<alpha>     Color renormalization factor. [default: 0.18]
-    --gamma=<gamma>     Gamma correction factor. [default: 1.0]
-    --width=<width>     Image wisth. [default: 1600]
-    --height=<height>   Image height. [default: 1000]
-    --angle=<angle>     Rotation angle around z axis
-    
-    -h --help           Show this helper screen.
-    --version           Show PhotoNim version.
+## PhotoNim CLI
+To use PhotoNim CLI you will first need to build the project executable. \
+You can do it from the root directory in different ways:
+- using nimble build command
+```sh
+nimble build
+```
+- or explicitly compiling the source code
+```sh
+nim c -d:release PhotoNim.nim
 ```
 
-## Examples
+Both these commands will generate an executable, called `PhotoNim` and located in the root directory. 
+You are now ready to use PhotoNim CLI: run the executable to see displayed the list of all commands
+```sh
+./PhotoNim
+```
+```sh
+Usage:
+    ./PhotoNim help [<command>]
+    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
+    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+```
 
-### pfm2png image converter
-By varying Alpha and Gamma you can produce visually different images. You can find the .pfm file to give as an input [here](https://www.pauldebevec.com/Research/HDR/PFM/).
-|| $\alpha = 0.15$ | $\alpha = 0.30$ | $\alpha = 0.45$ |
-| --- |--- |--- |--- |
-| $\gamma = 1.0$ |![Image](https://github.com/Negrini085/PhotoNim/assets/139368862/047ab8b0-3588-4b8c-84c0-5d74ca29637c) |![Image2](https://github.com/Negrini085/PhotoNim/assets/139368862/f0cd8aef-1b6a-4d6a-9418-2c3a2dac11c0) |![Image3](https://github.com/Negrini085/PhotoNim/assets/139368862/7c836355-cad9-4977-a295-543cd296be1b)
-| $\gamma = 2.0$ |![Image](https://github.com/Negrini085/PhotoNim/assets/139368862/c019dee6-f286-4b23-9693-67b169c87deb) |![Image](https://github.com/Negrini085/PhotoNim/assets/139368862/db5cdbf4-c0ea-474c-91bb-154cd80cc990) |![Image](https://github.com/Negrini085/PhotoNim/assets/139368862/b9f21c8e-2d2d-4d5b-a7c9-5e0d3b2e8534)
+### The `help` command
+You can use the `help` command to inspect a specific command helper screen:
+```sh
+./PhotoNim help demo
+```
+
+```sh
+PhotoNim CLI `demo` command:
+
+Usage:
+    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+
+Options:
+    persp | ortho       Perspective or Orthogonal Camera kinds.
+    <output>            Path to the output HDRImage. [default: "images/demo.pfm"]
+    --w=<width>         Image width. [default: 1600]
+    --h=<height>        Image height. [default: 900]
+    --angle=<angle>     Rotation angle around z axis. [default: 10]
+```
+
+You can also use `help` without passing any command to see displayed the full PhotoNim CLI helper screen 
+(this works in the same ways as passing `(-h | --help)` flags).
+
+### The `pfm2png` command
+Using the `pfm2png` command it is possible to convert an High Dynamic Range (HDR) image stored in a [PFM](https://www.pauldebevec.com/Research/HDR/PFM/) (Portable Float Map) format to an Low Dynamic Range (LDR) in the widely-used [PNG](https://en.wikipedia.org/wiki/PNG) (Portable Network Graphics) format. This conversion process involves the application of a tone mapping algorithm, a technique used to compresses the dynamic range while preserving important visual details. This process makes the HDR image viewable on standard displays without losing the essence of its high dynamic range.
+
+```sh
+./PhotoNim help pfm2png
+```
+
+```sh
+PhotoNim CLI `pfm2png` command:
+
+Usage: 
+    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
+
+Options:
+    <input>             Path to the HDRImage to be converted from PFM to PNG. 
+    <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "alpha_gamma" & ".png"]
+    --a=<alpha>         Color renormalization factor. [default: 0.18]
+    --g=<gamma>         Gamma correction factor. [default: 1.0]
+    --lum=<avlum>       Average image luminosity. 
+```
+
+For this example we will use the [memorial.pfm](https://www.pauldebevec.com/Research/HDR/PFM/) image and convert it with `pfm2png`:
+```sh
+wget https://www.pauldebevec.com/Research/HDR/memorial.pfm
+./PhotoNim pfm2png memorial.pfm --a=0.30 --g=2.0
+```
+By varying the parameters alpha and gamma, you can produce visually different images without having to render them again:
+|-| $\alpha = 0.15$ | $\alpha = 0.30$ | $\alpha = 0.45$ |
+|--- | --- | --- | ---|
+| $\gamma = 1.0$ | ![ImageA](assets/images/pfm2png/memorial_a0.15_g1.0.png) | ![ImageB](assets/images/pfm2png/memorial_a0.3_g1.0.png) | ![ImageC](assets/images/pfm2png/memorial_a0.45_g1.0.png) |
+| $\gamma = 2.0$ | ![ImageD](assets/images/pfm2png/memorial_a0.15_g2.0.png) | ![ImageE](assets/images/pfm2png/memorial_a0.3_g2.0.png) | ![ImageF](assets/images/pfm2png/memorial_a0.45_g2.0.png) |
+
 
 ### demo command
 By using demo mode, you can produce a complex figure of different spheres located in different spatial positions. You can specify image resolution and at which angle you want to see the scenary: in order to produce the following gif you just have to type

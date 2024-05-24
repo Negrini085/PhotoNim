@@ -74,13 +74,16 @@ Options:
 ```
 
 
-For this example we will use the [memorial.pfm](https://www.pauldebevec.com/Research/HDR/PFM/) image.
-
-By varying Alpha and Gamma you can produce visually different images. You can find the .pfm file to give as an input [here](https://www.pauldebevec.com/Research/HDR/PFM/).
+For this example we will use the [memorial.pfm](https://www.pauldebevec.com/Research/HDR/PFM/) image and convert it with `pfm2png`:
+```sh
+wget https://www.pauldebevec.com/Research/HDR/memorial.pfm
+./PhotoNim pfm2png memorial.pfm --a=0.30 --g=2.0
+```
+By varying the parameters alpha and gamma, you can produce visually different images without having to render them again:
 |-| $\alpha = 0.15$ | $\alpha = 0.30$ | $\alpha = 0.45$ |
 |--- | --- | --- | ---|
-| $\gamma = 1.0$ | ![ImageA](../assets/images/pfm2png/memorial_a0.15_g1.0.png) | ![ImageB](../assets/images/pfm2png/memorial_a0.30_g1.0.png) | ![ImageC](../assets/images/pfm2png/memorial_a0.45_g1.0.png) |
-| $\gamma = 2.0$ | ![ImageD](../assets/images/pfm2png/memorial_a0.15_g2.0.png) | ![ImageE](../assets/images/pfm2png/memorial_a0.30_g2.0.png) | ![ImageF](../assets/images/pfm2png/memorial_a0.45_g2.0.png) |
+| $\gamma = 1.0$ | ![ImageA](../assets/images/pfm2png/memorial_a0.15_g1.0.png) | ![ImageB](../assets/images/pfm2png/memorial_a0.3_g1.0.png) | ![ImageC](../assets/images/pfm2png/memorial_a0.45_g1.0.png) |
+| $\gamma = 2.0$ | ![ImageD](../assets/images/pfm2png/memorial_a0.15_g2.0.png) | ![ImageE](../assets/images/pfm2png/memorial_a0.3_g2.0.png) | ![ImageF](../assets/images/pfm2png/memorial_a0.45_g2.0.png) |
 
 
 ### The `demo` command
