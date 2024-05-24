@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(HitRecord)* NewHitRecord proc to ease the code.
+- BRDF type, BRDFKinds (DiffuseBRDF, SpecularBRDF) and eval proc implementation.
+- *(Pigment)* Pigment type with PigmentKinds (pkUniform, pkTexture, pkCheckered), constructors and getColor proc.
 - New texture images as pfm and png
 - New demo with antialiasing
 - New Transformations
@@ -125,6 +128,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- Removed unused fire_all_rays proc with no arguments.
 - Comments removed
 - Removed unused imports.
 - *(CSG)* Delete all CSG types and procedures
@@ -238,6 +242,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(Pigment)* Tested newUniformPigment, newTexturePigment, newCheckeredPigment.
 - *(Point3D)* Add max procedure test
 - *(Point3D)* Add min proc test
 - *(Sphere)* NewSphere and newUnitarySphere procs tested.
