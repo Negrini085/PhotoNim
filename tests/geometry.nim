@@ -319,12 +319,12 @@ suite "Transformation unittest":
 
     test "apply on Vec3f":
         var
-            p1 = newVec3[float32](0, 0, 0)
-            p2 = newVec3[float32](1, 2, 3) 
+            p1 = newVec3(float32 0, 0, 0)
+            p2 = newVec3(float32 1, 2, 3) 
 
         # Testing apply procedure
-        check areClose(apply(t1, p1), newVec3[float32](0, 0, 0))
-        check areClose(apply(t1, p2), newVec3[float32](1, 2, 3))
+        check areClose(apply(t1, p1), newVec3(float32 0, 0, 0))
+        check areClose(apply(t1, p2), newVec3(float32 1, 2, 3))
     
 
     test "apply on Normal":
@@ -347,8 +347,8 @@ suite "Derived Transformation test":
     setup:
         var
             t1 = newScaling(2.0)
-            t2 = newScaling(newVec3[float32](1, 2, 3))
-            t3 = newTranslation(newVec3[float32](2, 4, 1))
+            t2 = newScaling(newVec3(float32 1, 2, 3))
+            t3 = newTranslation(newVec3(float32 2, 4, 1))
 
 
     test "Scaling of Vec4f":
@@ -372,13 +372,13 @@ suite "Derived Transformation test":
 
     test "Scaling of Vec3f":
         # Checking scaling of a Point3D object
-        var p = newVec3[float32](0, 3, 1)
+        var p = newVec3(float32 0, 3, 1)
         
         # Checking omogeneous scaling
-        check areClose(apply(t1, p), newVec3[float32](0, 6, 2))
+        check areClose(apply(t1, p), newVec3(float32 0, 6, 2))
 
         # Checking arbitrary scaling
-        check areClose(apply(t2, p), newVec3[float32](0, 6, 3))
+        check areClose(apply(t2, p), newVec3(float32 0, 6, 3))
 
 
     test "Translation of Vec4f":

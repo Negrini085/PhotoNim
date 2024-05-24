@@ -141,40 +141,20 @@ proc dist*(a, b: Point2D): float32 {.borrow.}
 proc dist*(a, b: Point3D): float32 {.borrow.}
 
 proc min*(cont: seq[Point3D]): Point3D = 
-    # Procedure that returns a vector with components equal to the minimum 
-    # of the components of the elements of the sequence
+    # Procedure that returns a vector with components equal to the minimum of the components of the elements of the sequence
+    if cont.len == 1: return cont[0]
 
-    if cont.len() == 1: return cont[0]
-    else:
-        var 
-            x: seq[float32]
-            y: seq[float32]
-            z: seq[float32]
-    
-        for i in 0..<cont.len:
-            x.add(cont[i].x)
-            y.add(cont[i].y)
-            z.add(cont[i].z)
-
-        result = newPoint3D(min(x), min(y), min(z))
+    var x, y, z = newSeq[float32](cont.len)
+    for i in 0..<cont.len: x[i] = cont[i].x; y[i] = cont[i].y; z[i] = cont[i].z
+    newPoint3D(x.min, y.min, z.min)
 
 proc max*(cont: seq[Point3D]): Point3D = 
-    # Procedure that returns a vector with components equal to the maximum
-    # of the components of the elements of the sequence
+    # Procedure that returns a vector with components equal to the maximum of the components of the elements of the sequence
+    if cont.len == 1: return cont[0]
 
-    if cont.len() == 1: return cont[0]
-    else:
-        var 
-            x: seq[float32]
-            y: seq[float32]
-            z: seq[float32]
-    
-        for i in 0..<cont.len:
-            x.add(cont[i].x)
-            y.add(cont[i].y)
-            z.add(cont[i].z)
-
-        result = newPoint3D(max(x), max(y), max(z))
+    var x, y, z = newSeq[float32](cont.len)
+    for i in 0..<cont.len: x[i] = cont[i].x; y[i] = cont[i].y; z[i] = cont[i].z
+    newPoint3D(x.max, y.max, z.max)
 
 
 proc `$`*(p: Point2D): string {.inline.} = fmt"({p.u}, {p.v})"
@@ -321,14 +301,8 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
     if det == 0.0: raise newException(ValueError, "Matrix is not invertible.")
     
     # Create matrices for each variable by replacing the corresponding column
-    var matX = mat
-    var matY = mat
-    var matZ = mat
-
-    for i in 0..<3:
-        matX[i][0] = vec[i]
-        matY[i][1] = vec[i]
-        matZ[i][2] = vec[i]
+    var matX, matY, matZ = mat
+    for i in 0..<3: (matX[i][0], matY[i][1], matZ[i][2]) = (vec[i], vec[i], vec[i])
 
     # Solve for each variable
     result[0] = matX.det / det
@@ -337,9 +311,9 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
 
 
 const 
-    eX* = newVec3[float32](1, 0, 0)
-    eY* = newVec3[float32](0, 1, 0)
-    eZ* = newVec3[float32](0, 0, 1)
+    eX* = newVec3(float32 1, 0, 0)
+    eY* = newVec3(float32 0, 1, 0)
+    eZ* = newVec3(float32 0, 0, 1)
 
 
 type 
@@ -409,8 +383,7 @@ proc newScaling*[T](x: T): Transformation =
 proc newRotX*(angle: SomeNumber): Transformation = 
     let
         theta = degToRad(when angle is float32: angle else: angle.float32)
-        c = cos(theta)
-        s = sin(theta)
+        (c, s) = (cos(theta), sin(theta))
 
     Transformation(
         kind: tkRotation,
@@ -432,8 +405,7 @@ proc newRotX*(angle: SomeNumber): Transformation =
 proc newRotY*(angle: SomeNumber): Transformation = 
     let
         theta = degToRad(when angle is float32: angle else: angle.float32)
-        c = cos(theta)
-        s = sin(theta)
+        (c, s) = (cos(theta), sin(theta))
 
     Transformation(
         kind: tkRotation, 
@@ -455,8 +427,7 @@ proc newRotY*(angle: SomeNumber): Transformation =
 proc newRotZ*(angle: SomeNumber): Transformation = 
     let
         theta = degToRad(when angle is float32: angle else: angle.float32)
-        c = cos(theta)
-        s = sin(theta)
+        (c, s) = (cos(theta), sin(theta))
 
     Transformation(
         kind: tkRotation,
@@ -528,7 +499,7 @@ proc apply*[T](transf: Transformation, x: T): T =
 
 
 proc `@`*(a, b: Transformation): Transformation =
-    var transfs = newSeq[Transformation]()
+    var transfs: seq[Transformation]
 
     if a.kind == tkComposition:
         if b.kind == tkComposition: 
@@ -553,11 +524,9 @@ proc inverse*(transf: Transformation): Transformation =
     of tkIdentity: return Transformation.id
     of tkComposition: 
         var transfs = newSeq[Transformation](transf.transformations.len)
-        for t in transf.transformations: transfs.add t.inverse
+        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i].inverse
         return Transformation(kind: kind, transformations: transfs)
 
-        # result.transformations = newSeq[Transformation](transf.transformations.len)
-        # for t in transf.transformations: result.transformations.add t.inverse
     of tkGeneric, tkTranslation, tkScaling, tkRotation: 
         return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
 
@@ -571,7 +540,7 @@ proc `*`*(transf: Transformation, scal: float32): Transformation =
         return Transformation(kind: kind, mat: transf.mat * scal, inv_mat: transf.inv_mat / scal)
     of tkComposition:
         var transfs = newSeq[Transformation](transf.transformations.len)
-        for t in transf.transformations: transfs.add t * scal
+        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] * scal
         return Transformation(kind: tkComposition, transformations: transfs)
     
 proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = transf * scal
@@ -585,7 +554,7 @@ proc `/`*(transf: Transformation, scal: float32): Transformation =
         return Transformation(kind: kind, mat: transf.mat / scal, inv_mat: transf.inv_mat * scal)
     of tkComposition:
         var transfs = newSeq[Transformation](transf.transformations.len)
-        for t in transf.transformations: transfs.add t / scal
+        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] / scal
         return Transformation(kind: tkComposition, transformations: transfs)
 
 
