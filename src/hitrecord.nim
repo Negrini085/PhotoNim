@@ -17,6 +17,9 @@ type
         normal*: Normal
 
 
+#---------------------------------------------------------#
+#      allHitTimes --> procedure to get all hit times     #
+#---------------------------------------------------------#
 proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
     var t_hit: float32
     let inv_ray = ray.transform(shape.transf.inverse)
@@ -50,6 +53,10 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
         return some(@[t_hit, Inf])
 
 
+
+#--------------------------------------------------------------------------------------#
+#      fastIntersection -->  procedure to check wether there is intersection or not    #
+#--------------------------------------------------------------------------------------#
 proc fastIntersection*(shape: Shape, ray: Ray): bool =
     case shape.kind
     of skAABox:
@@ -111,6 +118,12 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         let t = -inv_ray.origin.z / inv_ray.dir[2]
         return (if t < inv_ray.tmin or t > inv_ray.tmax: false else: true)
 
+
+
+#--------------------------------------------------------------------------------------#
+#      fastIntersection -->  procedure to check wether there is intersection or not    #
+#                            with all shapes of world                                  #
+#--------------------------------------------------------------------------------------#
 proc fastIntersection*(world: World, ray: Ray): bool =
     # Procedure to check fast intersection with all shapes making a world
     for i in world.shapes:
@@ -118,6 +131,11 @@ proc fastIntersection*(world: World, ray: Ray): bool =
 
     return false 
 
+
+
+#--------------------------------------------------------------------#
+#     rayIntersection --> procedure to get closest hit to observer   #
+#--------------------------------------------------------------------#
 proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     var 
         t_hit: float32
@@ -217,3 +235,26 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
             normal: apply(shape.transf, shape.normal(hit_pt, ray.dir))
         )
     )
+
+
+
+#------------------------------------------------------------------------------------#
+#     rayIntersection --> procedure to get closest hit to observer in world shapes   #
+#------------------------------------------------------------------------------------#
+proc rayIntersection*(world: World, ray: Ray): Option[HitRecord] =
+    var 
+        appo: Option[HitRecord]
+        hit: Option[HitRecord] = none(HitRecord)
+
+    for i in world.shapes:
+        appo = rayIntersection(i, ray)
+
+        if appo.isNone:
+            continue
+
+        if hit.isNone or (appo.get.t < hit.get.t):
+            hit = appo
+        
+    return hit
+
+
