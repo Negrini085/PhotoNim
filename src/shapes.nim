@@ -36,7 +36,7 @@ type
         shapes*: seq[Shape]
 
 
-proc newWorld*(): World {.inline.} = World(shapes: @[])
+proc newWorld*(scenery: seq[Shape] = @[]): World {.inline.} = World(shapes: scenery)
 
 
 proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1); 
