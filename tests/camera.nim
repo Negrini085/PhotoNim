@@ -339,3 +339,23 @@ suite "BRDF":
         check areClose(spe.pigment.color.g, 2)
         check areClose(spe.pigment.color.b, 3)
         check areClose(spe.threshold_angle, 0.1 * degToRad(110.0).float32)
+    
+    test "eval proc":
+
+        var
+            norm = newNormal(1, 0, 0)
+            in_dir = newVec3f(1, 2, -1)
+            out_dir = newVec3f(1, 2, 1)
+            uv = newPoint2D(0.3, 0.5)
+            appo: Color
+        
+        appo = dif.eval(norm, in_dir, out_dir, uv)
+        check areClose(appo.r, 1 * 0.2/PI)
+        check areClose(appo.g, 2 * 0.2/PI)
+        check areClose(appo.b, 3 * 0.2/PI)
+
+        appo = spe.eval(norm, in_dir, out_dir, uv)
+        check areClose(appo.r, 1)
+        check areClose(appo.g, 2)
+        check areClose(appo.b, 3)
+
