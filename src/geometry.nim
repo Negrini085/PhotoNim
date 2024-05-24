@@ -589,6 +589,10 @@ proc `/`*(transf: Transformation, scal: float32): Transformation =
         return Transformation(kind: tkComposition, transformations: transfs)
 
 
+type ONB* = object
+    vec: array[3, Vec3f]
+
+
 type 
     Quat* {. borrow: `.`.} = distinct Vec4f
 
