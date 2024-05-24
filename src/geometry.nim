@@ -595,10 +595,10 @@ proc `/`*(transf: Transformation, scal: float32): Transformation =
 #-------------------------------------#
 
 type Onb* = object
-    vec*: array[3, Vec3f]
+    base*: array[3, Vec3f]
 
 proc newONB*(e1: Vec3f = eX, e2: Vec3f = eY, e3: Vec3f = eZ): Onb {.inline.} =
-    Onb(vec: [e1, e2, e3])
+    Onb(base: [e1, e2, e3])
 
 
 proc create_onb*(norm: Normal): Onb = 

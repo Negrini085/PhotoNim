@@ -433,10 +433,34 @@ suite "OrthoNormal Basis":
     
     test "newONB proc":
         # Checkig newONB proc
-        check areClose(onb.vec[0], eX)
-        check areClose(onb.vec[1], eY)
-        check areClose(onb.vec[2], eZ)
+        check areClose(onb.base[0], eX)
+        check areClose(onb.base[1], eY)
+        check areClose(onb.base[2], eZ)
 
-        check areClose(onb1.vec[0], newVec3f(sqrt(2.0), sqrt(2.0), 0))
-        check areClose(onb1.vec[1], newVec3f(sqrt(2.0), -sqrt(2.0), 0))
-        check areClose(onb1.vec[2], eZ)
+        check areClose(onb1.base[0], newVec3f(sqrt(2.0), sqrt(2.0), 0))
+        check areClose(onb1.base[1], newVec3f(sqrt(2.0), -sqrt(2.0), 0))
+        check areClose(onb1.base[2], eZ)
+    
+    test "create_onb proc":
+        # Checking Duff et al. algorithm
+        # We are gonna random test it, so we will check random normals as input
+        var 
+            pcg = newPCG()
+            normal: Normal
+
+
+        for i in 0..<1000:
+            normal = newNormal(pcg.rand(), pcg.rand(), pcg.rand()).normalize
+            onb = create_onb(normal)
+
+            check areClose(onb.base[2], normal.toVec3)
+
+            check areClose(dot(onb.base[0], onb.base[1]), 0, eps = 1e-6)
+            check areClose(dot(onb.base[1], onb.base[2]), 0, eps = 1e-6)
+            check areClose(dot(onb.base[2], onb.base[0]), 0, eps = 1e-6)
+
+            check areClose(onb.base[0].norm, 1, eps = 1e-6)
+            check areClose(onb.base[1].norm, 1, eps = 1e-6)
+            check areClose(onb.base[2].norm, 1, eps = 1e-6)
+            
+        discard pcg
