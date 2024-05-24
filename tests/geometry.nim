@@ -1,4 +1,5 @@
 import std/unittest
+from math import sqrt
 import PhotoNim
 
 
@@ -411,3 +412,31 @@ suite "Derived Transformation test":
         check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0), 1e-6)
         check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0), 1e-6)
         check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0), 1e-6)
+
+
+#--------------------------------------------#
+#         OrthoNormal Basis tests            #
+#--------------------------------------------#
+suite "OrthoNormal Basis":
+
+    setup:
+        var 
+            onb = newONB()
+            onb1 = newONB(newVec3f(sqrt(2.0), sqrt(2.0), 0), 
+                          newVec3f(sqrt(2.0), -sqrt(2.0), 0),
+                          newVec3f(0, 0, 1)
+                         )
+    
+    teardown:
+        discard onb
+        discard onb1
+    
+    test "newONB proc":
+        # Checkig newONB proc
+        check areClose(onb.vec[0], eX)
+        check areClose(onb.vec[1], eY)
+        check areClose(onb.vec[2], eZ)
+
+        check areClose(onb1.vec[0], newVec3f(sqrt(2.0), sqrt(2.0), 0))
+        check areClose(onb1.vec[1], newVec3f(sqrt(2.0), -sqrt(2.0), 0))
+        check areClose(onb1.vec[2], eZ)
