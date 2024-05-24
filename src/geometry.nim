@@ -337,9 +337,9 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
 
 
 const 
-    eX* = newVec3[float32](1, 0, 0)
-    eY* = newVec3[float32](0, 1, 0)
-    eZ* = newVec3[float32](0, 0, 1)
+    eX* = newVec3f(1, 0, 0)
+    eY* = newVec3f(0, 1, 0)
+    eZ* = newVec3f(0, 0, 1)
 
 
 type 
@@ -589,9 +589,11 @@ proc `/`*(transf: Transformation, scal: float32): Transformation =
         return Transformation(kind: tkComposition, transformations: transfs)
 
 
-type ONB* = object
-    vec: array[3, Vec3f]
+type Onb* = object
+    vec*: array[3, Vec3f]
 
+proc newONB*(e1: Vec3f = eX, e2: Vec3f = eY, e3: Vec3f = eZ): Onb {.inline.} =
+    Onb(vec: [e1, e2, e3])
 
 type 
     Quat* {. borrow: `.`.} = distinct Vec4f
