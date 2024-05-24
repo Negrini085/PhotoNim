@@ -247,13 +247,25 @@ suite "World":
     
     setup:
         var 
-            scenary = newWorld()
+            s1 = newSphere(newPoint3D(1, 1, 0), 1)
+            s2 = newSphere(newPoint3D(1, 0, 1), 0.5)
+            scenery = newWorld(@[s1, s2])
 
     teardown: 
-        discard scenary
+        discard scenery
             
     
     test "add/get proc":
-        scenary.shapes.add newUnitarySphere(newPoint3D(0, 0, 0))
-        check areClose(scenary.shapes[0].transf.mat, Mat4f.id)
-        check areClose(scenary.shapes[0].transf.inv_mat, Mat4f.id)
+
+        scenery.shapes.add newUnitarySphere(newPoint3D(0, 0, 0))
+        check areClose(scenery.shapes[2].transf.mat, Mat4f.id)
+        check areClose(scenery.shapes[2].transf.inv_mat, Mat4f.id)
+
+    test "fastIntersection proc":
+        var
+            ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
+            ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
+        
+        check fastIntersection(scenery, ray1)
+        check not fastIntersection(scenery, ray2)
+            
