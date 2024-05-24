@@ -10,13 +10,16 @@ PhotoNim is available and tested for Linux, MacOSX and Windows machines.
 To install it you can choose which approach you find the most fitting for you. 
 
 ## Prerequisites
-To use PhotoNim you must have installed the [Nim](https://github.com/nim-lang/Nim) programming language (version 2.0 or higher) on your machine. \
+To use PhotoNim you must have installed the [Nim](https://github.com/nim-lang/Nim) programming language (version 2.0 or higher) on your machine.
 To install the latest version on Unix you could run the following command:
 ```sh
 curl https://nim-lang.org/choosenim/init.sh -sSf | sh
 ```
 To install it on other OSs or to install previous versions, please refer to the [Nim installation guide](https://nim-lang.org/install.html).
-
+Most of Nim installation already install the official Nim package manager [Nimble](https://github.com/nim-lang/nimble). You can verify it by running:
+```sh
+which nimble
+```
 
 ### Installing from Git
 Choose the appropriate protocol (HTTPS or SSH) and clone the [PhotoNim repository](https://github.com/Negrini085/PhotoNim) using the command
@@ -26,13 +29,13 @@ git clone git@github.com:Negrini085/PhotoNim.git        # for SSH
 ```
 
 ### Installing from Tarball
-Download the latest tarball from [here](https://github.com/Negrini085/PhotoNim/releases) and extract the tarball by running
+Download the latest tarball from [here](https://github.com/Negrini085/PhotoNim/releases) and extract the tarball by running the command
 ```sh
 tar -xzf PhotoNim-<version>.tar.gz
 ```
 
 ### Installing using Nimble
-Install PhotoNim using [Nimble](https://github.com/nim-lang/nimble), the official Nim package manager:
+Install PhotoNim using nimble by running
 ```sh
 nimble install PhotoNim
 ```
@@ -53,11 +56,10 @@ Other dependencies are used to generate animations:
 
 
 ## Verifying the Installation
-After installing PhotoNim and its dependencies, you can verify the installation using Nimble by running PhotoNim test suites:
+After installing PhotoNim and its dependencies, you can verify the installation by running PhotoNim test suites using Nimble:
 ```sh
 nimble test
 ```
-
 
 # Usage
 ```bash
