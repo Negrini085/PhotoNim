@@ -210,6 +210,7 @@ All notable changes to this project will be documented in this file.
 ### 📚 Documentation
 
 - Installation page
+- Installation page
 - *(camera.nim)* End camera.nim documentation
 - *(ImageTracer)* Imagetracer documentation
 - *(Camera)* Final camera documentation
