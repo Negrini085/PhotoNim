@@ -128,6 +128,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- New assets folder
 - Removed unused fire_all_rays proc with no arguments.
 - Comments removed
 - Removed unused imports.
