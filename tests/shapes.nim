@@ -11,7 +11,7 @@ suite "HitRecord":
 
     setup:
         var 
-            hit1 = HitRecord(ray: newRay(newPoint3D(0, 0, 0), newVec3(float32 0, 1, 0)), t: float32(0.5), world_pt: newPoint3D(1, 2, 3), surface_pt: newPoint2D(1, 0), normal: newNormal(1, 0, 0))
+            hit1 = HitRecord(ray: newRay(ORIGIN3D, newVec3(float32 0, 1, 0)), t: float32(0.5), world_pt: newPoint3D(1, 2, 3), surface_pt: newPoint2D(1, 0), normal: newNormal(1, 0, 0))
             hit2 = HitRecord(ray: newRay(newPoint3D(0, 0, 2), newVec3(float32 1, 1, 0)), t: float32(0.6), world_pt: newPoint3D(1, 0, 0), surface_pt: newPoint2D(0.5, 0.5), normal: newNormal(0, 1, 0))
 
     teardown:
@@ -23,7 +23,7 @@ suite "HitRecord":
         check areClose(hit1.surface_pt, newPoint2D(1, 0))
         check areClose(hit1.normal, newNormal(1, 0, 0))
         check areClose(hit1.t, 0.5)
-        check areClose(hit1.ray, newRay(newPoint3D(0, 0, 0), newVec3(float32 0, 1, 0)))
+        check areClose(hit1.ray, newRay(ORIGIN3D, newVec3(float32 0, 1, 0)))
 
 
     test "areClose":
@@ -46,27 +46,24 @@ suite "HitRecord":
 suite "Sphere":
 
     setup:
-        var sphere = newUnitarySphere(newPoint3D(0, 0, 0))
+        var sphere = newUnitarySphere(ORIGIN3D)
         var sphere1 = newSphere(newPoint3D(0, 1, 0), 3.0)
 
     teardown: 
         discard sphere; discard sphere1
 
+    test "newUnitarySphere proc":
+        check sphere.transform.kind == tkIdentity
+        check sphere.radius == 1.0
+
     test "newSphere proc":
         check sphere1.radius == 3.0
         check sphere1.center == newPoint3D(0, 1, 0)
 
-        check sphere1.transf.kind == tkComposition
-        check sphere1.transf.transformations[0].mat == newTranslation(newVec3(float32 0, 1, 0)).mat
-        check sphere1.transf.transformations[1].mat == newScaling(3.0).mat
+        check sphere1.transform.kind == tkComposition
+        check sphere1.transform.transformations[0].mat == newTranslation(newVec3(float32 0, 1, 0)).mat
+        check sphere1.transform.transformations[1].mat == newScaling(3.0).mat
 
-
-    test "newUnitarySphere proc":
-        # Checking sphere constructor procedure
-
-        check areClose(sphere.transf.mat, Mat4f.id)
-        check areClose(sphere.transf.inv_mat, Mat4f.id)
-    
 
     test "Surface Normal":
         # Checking sphere normal computation method
@@ -94,7 +91,7 @@ suite "Sphere":
         var
             ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
             ray2 = newRay(newPoint3D(3, 0, 0), newVec3(float32 -1, 0, 0))
-            ray3 = newRay(newPoint3D(0, 0, 0), newVec3(float32 1, 0, 0))
+            ray3 = newRay(ORIGIN3D, newVec3(float32 1, 0, 0))
 
         let 
             hit1 = sphere.rayIntersection(ray1).get
@@ -127,7 +124,7 @@ suite "Sphere":
             ray3 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
             ray4 = newRay(newPoint3D(-10, 0, 0), newVec3(float32 0, 0, -1))
         
-        sphere.transf = tr
+        sphere.transform = tr
         let 
             intersect1 = sphere.rayIntersection(ray1).get
             intersect2 = sphere.rayIntersection(ray2).get
@@ -142,7 +139,7 @@ suite "Sphere":
         check areClose(intersect2.t, 2)
         check areClose(intersect2.surface_pt, newPoint2D(0, 0.5))
 
-        sphere.transf = Transformation.id
+        sphere.transform = Transformation.id
         check sphere.rayIntersection(ray3).isSome
         check not sphere.rayIntersection(ray4).isSome
     
@@ -164,7 +161,7 @@ suite "Plane":
         var plane = newPlane(Transformation.id)
 
     test "PlaneConstructor":
-        check plane.transf.kind == tkIdentity
+        check plane.transform.kind == tkIdentity
 
     
     test "RayIntersection: no transformation":
@@ -174,7 +171,7 @@ suite "Plane":
             ray2 = newRay(newPoint3D(1, -2, -3), newVec3(float32 0, 4/5, 3/5))
             ray3 = newRay(newPoint3D(3, 0, 0), newVec3(float32 -1, 0, 0))
 
-        check areClose(plane.rayIntersection(ray1).get.world_pt, newPoint3D(0, 0, 0))
+        check areClose(plane.rayIntersection(ray1).get.world_pt, ORIGIN3D)
         check areClose(plane.rayIntersection(ray1).get.normal, newNormal(0, 0, 1))
         check areClose(plane.rayIntersection(ray1).get.t, 2)
         check areClose(plane.rayIntersection(ray1).get.surface_pt, newPoint2D(0, 0))
@@ -195,7 +192,7 @@ suite "Plane":
             ray2 = newRay(newPoint3D(3, 0, 0), newVec3(float32 -1, 0, 0))
             ray3 = newRay(newPoint3D(1, -2, -3), newVec3(float32 0, 4/5, 3/5))
         
-        plane.transf = tr
+        plane.transform = tr
 
         check not plane.rayIntersection(ray1).isSome
         check not plane.rayIntersection(ray2).isSome
@@ -218,17 +215,6 @@ suite "Plane":
         check not plane.fastIntersection(ray3)
 
 
-suite "AABB":
-    test "AABB constructor": 
-        let 
-            box = newAABox()
-            sphere = newUnitarySphere(newPoint3D(0, 0, 0))
-            plane = newPlane()
-
-        check box.aabb.isSome
-        check sphere.aabb.isNone and plane.aabb.isNone
-
-
 suite "AABox":
 
     setup: 
@@ -238,9 +224,7 @@ suite "AABox":
         discard box
 
     test "fastIntersection": 
-        check fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), newVec3(float32 0.0, 0.0, 0.0)))
-        check not fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), -newVec3(float32 0.0, 0.0, 0.0)))
-        
+        check fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), newVec3(float32 0.0, 0.0, 0.0)))       
 
 
 suite "World":
@@ -252,8 +236,6 @@ suite "World":
     teardown: 
         discard scenary
             
-    
     test "add/get proc":
-        scenary.shapes.add newUnitarySphere(newPoint3D(0, 0, 0))
-        check areClose(scenary.shapes[0].transf.mat, Mat4f.id)
-        check areClose(scenary.shapes[0].transf.inv_mat, Mat4f.id)
+        scenary.shapes.add newUnitarySphere(ORIGIN3D)
+        check scenary.shapes[0].transform.kind == tkIdentity

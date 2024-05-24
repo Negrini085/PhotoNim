@@ -187,14 +187,14 @@ suite "Camera tests":
         # Testing ortogonal type constructor
         
         check areClose(oCam.aspect_ratio, 1.2)
-        check areClose(apply(oCam.transf, newVec4[float32](0, 0, 0, 1)), newVec4[float32](0, 0, 0, 1))
+        check areClose(apply(oCam.transform, newVec4[float32](0, 0, 0, 1)), newVec4[float32](0, 0, 0, 1))
 
     
     test "Orthogonal Contructor":
         # Testing ortogonal type constructor
         
         check areClose(pCam.aspect_ratio, 1.2)
-        check areClose(apply(pCam.transf, newVec4[float32](0, 0, 0, 1)), newVec4[float32](0, 0, 0, 1))
+        check areClose(apply(pCam.transform, newVec4[float32](0, 0, 0, 1)), newVec4[float32](0, 0, 0, 1))
     
 
     test "Orthogonal Fire Ray":

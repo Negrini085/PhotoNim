@@ -310,7 +310,7 @@ suite "Transformation unittest":
 
     test "apply on Point3D":
         var
-            p1 = newPoint3D(0, 0, 0)
+            p1 = ORIGIN3D
             p2 = newPoint3D(1, 2, 3) 
         
         check areClose(apply(t1, p1), newPoint3D(4, 3, -1))
@@ -393,7 +393,7 @@ suite "Derived Transformation test":
 
     test "Translation of Point3D":
         var 
-            p1 = newPoint3D(0, 0, 0)
+            p1 = ORIGIN3D
             p2 = newPoint3D(0, 3, 1)
 
         # Checking apply procedure

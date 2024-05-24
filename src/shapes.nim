@@ -1,18 +1,16 @@
 import geometry, camera
 
-import std/options
 from std/math import sgn, floor, arccos, arctan2, PI
 
 type
     AABB* = tuple[min, max: Point3D]
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh
+        skAABox, skTriangle, skSphere, skPlane, skTriangularMesh, skCylinder
         
     Shape* = object
-        transf*: Transformation
+        transform*: Transformation
         material*: Material
-        aabb*: Option[AABB] = none(AABB)
 
         case kind*: ShapeKind 
         of skAABox: 
@@ -29,6 +27,10 @@ type
             center*: Point3D
             radius*: float32
 
+        of skCylinder:
+            R*: float32
+            limits*: tuple[zmin, zmax, phimax: float32]
+
         of skPlane: discard
 
 
@@ -39,20 +41,22 @@ type
 proc newWorld*(): World {.inline.} = World(shapes: @[])
 
 
-proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1); 
-                transf = Transformation.id, material = newMaterial()): Shape {.inline.} =
+proc newAABox*(min = ORIGIN3D, max = newPoint3D(1, 1, 1); 
+                transform = Transformation.id, material = newMaterial()): Shape {.inline.} =
     Shape(
         kind: skAABox, 
-        transf: transf, 
+        transform: transform, 
         material: material,
-        aabb: some(AABB((min, max))), 
         min: min, max: max
     )
 
 proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Shape {.inline.} = 
+    var transform = Transformation.id
+    if center != ORIGIN3D: transform = newTranslation(center.Vec3f)
+    if radius != 1.0: transform = transform @ newScaling(radius)
     Shape(
         kind: skSphere,
-        transf: newTranslation(center.Vec3f) @ newScaling(radius), 
+        transform: transform,
         material: material,
         center: center, radius: radius
     )
@@ -60,28 +64,36 @@ proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Sha
 proc newUnitarySphere*(center: Point3D; material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skSphere,
-        transf: newTranslation(center.Vec3f), 
+        transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: Transformation.id, 
         material: material,
         center: center, radius: 1.0
     )
 
-proc newTriangle*(a, b, c: Point3D; material = newMaterial()): Shape {.inline.} = 
+proc newTriangle*(a, b, c: Point3D; transform = Transformation.id, material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skTriangle, 
-        transf: Transformation.id,
+        transform: transform,
         material: material,
         vertices: (a, b, c)
     )
 
-proc newPlane*(transf = Transformation.id, material = newMaterial()): Shape {.inline.} = 
-    Shape(kind: skPlane, transf: transf, material: material)
+proc newPlane*(transform = Transformation.id, material = newMaterial()): Shape {.inline.} = 
+    Shape(kind: skPlane, transform: transform, material: material)
 
-proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transf = Transformation.id, material = newMaterial()): Shape {.inline.} = 
+proc newCylinder*(r: float32 = 1.0, z_min: float32 = 0.0, z_max: float32 = 1.0, phi_max: float32 = 2.0 * PI; 
+                    transform = Transformation.id, material = newMaterial()): Shape {.inline.} =
+    Shape(
+        kind: skCylinder,
+        transform: transform,
+        material: material,
+        R: r, limits: (z_min, z_max, phi_max)
+    )
+
+proc newMesh*(nodes: seq[Point3D], triang: seq[Vec3[int32]], transform = Transformation.id, material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skTriangularMesh,
-        transf: transf,
+        transform: transform,
         material: material,
-        aabb: some((min(nodes), max(nodes))),
         nodes: nodes,
         triang: triang
     )
@@ -112,6 +124,11 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
         if u < 0.0: u += 1.0
         return newPoint2D(u, arccos(pt.z) / PI)
 
+    of skCylinder:
+        var phi = arctan2(pt.y, pt.x)
+        if phi < 0.0: phi += 2.0 * PI
+        return newPoint2D(phi / shape.limits.phimax, (pt.z - shape.limits.zmin) / (shape.limits.zmax - shape.limits.zmin))
+
     of skPlane: 
         return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
@@ -119,10 +136,9 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
 proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
     case shape.kind
     of skAABox:
-        let aabb = shape.aabb.get
-        if   pt.x == aabb.min.x or pt.x == aabb.max.x: result = newNormal(1, 0, 0)
-        elif pt.y == aabb.min.y or pt.y == aabb.max.y: result = newNormal(0, 1, 0)
-        elif pt.z == aabb.min.z or pt.z == aabb.max.z: result = newNormal(0, 0, 1)
+        if   areClose(pt.x, shape.min.x, 1e-6) or areClose(pt.x, shape.max.x, 1e-6): result = newNormal(1, 0, 0)
+        elif areClose(pt.y, shape.min.y, 1e-6) or areClose(pt.y, shape.max.y, 1e-6): result = newNormal(0, 1, 0)
+        elif areClose(pt.z, shape.min.z, 1e-6) or areClose(pt.z, shape.max.z, 1e-6): result = newNormal(0, 0, 1)
         else: quit "Something went wrong in calculating the normal for an AABox."
         return sgn(-dot(result.Vec3f, dir)).float32 * result
 
@@ -136,6 +152,9 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
     of skSphere: 
         return sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
+
+    of skCylinder:
+        return newNormal(pt.x, pt.y, 0.0)
 
     of skPlane: 
         return newNormal(0, 0, sgn(-dir[2]).float32)

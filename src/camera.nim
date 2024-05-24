@@ -94,7 +94,7 @@ type
         ckOrthogonal, ckPerspective
 
     Camera* = object
-        transf*: Transformation
+        transform*: Transformation
         aspect_ratio*: float32
 
         case kind: CameraKind
@@ -102,11 +102,11 @@ type
         of ckPerspective: 
             distance: float32 
 
-proc newOrthogonalCamera*(a: float32, transf = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckOrthogonal, transf: transf, aspect_ratio: a)
+proc newOrthogonalCamera*(a: float32, transform = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckOrthogonal, transform: transform, aspect_ratio: a)
 
-proc newPerspectiveCamera*(a, d: float32, transf = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckPerspective, transf: transf, aspect_ratio: a, distance: d)
+proc newPerspectiveCamera*(a, d: float32, transform = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckPerspective, transform: transform, aspect_ratio: a, distance: d)
 
 proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
     var ray: Ray
@@ -116,7 +116,7 @@ proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} =
     of ckPerspective:
         ray = newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1))
 
-    ray.transform(cam.transf)
+    ray.transform(cam.transform)
 
 
 type ImageTracer* = object

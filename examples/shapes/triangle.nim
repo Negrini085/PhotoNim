@@ -17,6 +17,7 @@ var
     scenary = newWorld()
 
 scenary.shapes.add newTriangle(newPoint3D(0.0, 2.0, 3.0), newPoint3D(0.0, -2.0, 2.0), newPoint3D(0.0, -1.0, -1.0))
+scenary.shapes.add newUnitarySphere(ORIGIN3D)
 
 tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
 

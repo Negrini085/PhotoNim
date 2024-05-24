@@ -251,8 +251,8 @@ Options:
             
         let
             a_ratio = width / height
-            transf = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
-            camera = if args["persp"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
+            transform = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
+            camera = if args["persp"]: newPerspectiveCamera(a_ratio, 1.0, transform) else: newOrthogonalCamera(a_ratio, transform)
 
         var stream = newFileStream(pfmOut, fmWrite) 
         stream.writePFM(demo(width, height, camera))

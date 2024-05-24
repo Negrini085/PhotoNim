@@ -115,11 +115,11 @@ If you want to evaluate ray position at a certain time t, you just have to use `
 
 ```nim
 let
-    trans = newTranslation(newVec3[float32](2, 0, 0))
+    trans = newTranslation(newVec3(float32 2, 0, 0))
 
 var 
-    origin = newPoint3D(0, 0, 0)        # Ray starting point
-    dir = newVec3[float32](1, 0, 0)     # Ray direction (along x-axis)
+    origin = ORIGIN3D        # Ray starting point
+    dir = newVec3(float32 1, 0, 0)     # Ray direction (along x-axis)
     ray = newRay(origin, dir)           # tmin, tmax and depth have default values
 
 # Printing ray variable content
@@ -182,9 +182,9 @@ is the one that enables the user to fire rays at a specific screen location: cle
 proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
     case cam.kind
     of ckOrthogonal:
-        apply(cam.transf, newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX))
+        apply(cam.transform, newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX))
     of ckPerspective:
-        apply(cam.transf, newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1)))
+        apply(cam.transform, newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1)))
 ```
 
 Both cameras are initialized such that the observer is positioned along the negative x-axis, and the screen lies on the xy-plane. The ray direction is perpendicular to the screen in the case of orthogonal projection, while it depends on the coordinates (u, v) otherwise. The returned ray in both cases is transformed to account for the actual arrangement of the camera in space.
@@ -196,7 +196,7 @@ Both cameras are initialized such that the observer is positioned along the nega
 ```nim
 let 
     # transformation to be associated with the chosen camera
-    trans = newTranslation(newVec3[float32](-1, 0, 0))
+    trans = newTranslation(newVec3(float32 -1, 0, 0))
 
 var
     ray: Ray                                # Ray variable to store rays fired
@@ -255,7 +255,7 @@ Here we are creating a colormap associating each pixel with a color depending on
 
 ```nim
 let
-    trans = newTranslation(newVec3[float32](-1, 0, 0))  # Transformation to apply to camera
+    trans = newTranslation(newVec3(float32 -1, 0, 0))  # Transformation to apply to camera
 
 var
     ray: Ray

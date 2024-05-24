@@ -100,6 +100,14 @@ proc newPoint2D*(u, v: float32): Point2D {.inline.} = Point2D([u, v])
 proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
 proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z].normalize)
 
+
+const 
+    ORIGIN2D* = newPoint2D(0, 0)
+    ORIGIN3D* = newPoint3D(0, 0, 0)
+    eX* = newVec3f(1, 0, 0)
+    eY* = newVec3f(0, 1, 0)
+    eZ* = newVec3f(0, 0, 1)
+
 proc u*(a: Point2D): float32 {.inline.} = a.Vec2f[0]
 proc v*(a: Point2D): float32 {.inline.} = a.Vec2f[1]
 
@@ -310,12 +318,6 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
     result[2] = matZ.det / det
 
 
-const 
-    eX* = newVec3(float32 1, 0, 0)
-    eY* = newVec3(float32 0, 1, 0)
-    eZ* = newVec3(float32 0, 0, 1)
-
-
 type 
     TransformationKind* = enum
         tkIdentity, tkGeneric, tkTranslation, tkScaling, tkRotation, tkComposition
@@ -446,6 +448,68 @@ proc newRotZ*(angle: SomeNumber): Transformation =
     )
 
 
+proc `@`*(a, b: Transformation): Transformation =
+    if a.kind == tkIdentity: return b
+    if b.kind == tkIdentity: return a
+
+    var transforms: seq[Transformation]
+    if a.kind == tkComposition:
+        if b.kind == tkComposition: 
+            transforms = concat(a.transformations, b.transformations)
+        else: 
+            transforms = a.transformations
+            transforms.add b
+
+    elif b.kind == tkComposition: 
+        transforms = b.transformations
+        transforms.insert(a, 0)        
+
+    else: 
+        transforms.add a; transforms.add b
+
+    Transformation(kind: tkComposition, transformations: transforms)
+
+
+proc inverse*(transf: Transformation): Transformation =
+    let kind = transf.kind
+    case kind
+    of tkIdentity: return Transformation.id
+    of tkComposition: 
+        var transfs = newSeq[Transformation](transf.transformations.len)
+        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i].inverse
+        return Transformation(kind: kind, transformations: transfs)
+
+    of tkGeneric, tkTranslation, tkScaling, tkRotation: 
+        return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
+
+
+proc `*`*(transf: Transformation, scal: float32): Transformation = 
+    let kind = transf.kind
+    case kind:
+    of tkIdentity: 
+        return Transformation(kind: tkGeneric, mat: Mat4f.id * scal, inv_mat: Mat4f.id / scal)
+    of tkGeneric, tkTranslation, tkScaling, tkRotation:
+        return Transformation(kind: kind, mat: transf.mat * scal, inv_mat: transf.inv_mat / scal)
+    of tkComposition:
+        var transfs = newSeq[Transformation](transf.transformations.len)
+        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] * scal
+        return Transformation(kind: tkComposition, transformations: transfs)
+    
+proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = transf * scal
+
+proc `/`*(transf: Transformation, scal: float32): Transformation = 
+    let kind = transf.kind
+    case kind:
+    of tkIdentity: 
+        return Transformation(kind: tkGeneric, mat: Mat4f.id / scal, inv_mat: Mat4f.id * scal)
+    of tkGeneric, tkTranslation, tkScaling, tkRotation:
+        return Transformation(kind: kind, mat: transf.mat / scal, inv_mat: transf.inv_mat * scal)
+    of tkComposition:
+        var transfs = newSeq[Transformation](transf.transformations.len)
+        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] / scal
+        return Transformation(kind: tkComposition, transformations: transfs)
+
+
 proc apply*[T](transf: Transformation, x: T): T =
     case transf.kind
     of tkIdentity: return x
@@ -496,66 +560,6 @@ proc apply*[T](transf: Transformation, x: T): T =
 
             elif T is Vec3f: 
                 return dot(mat, x) 
-
-
-proc `@`*(a, b: Transformation): Transformation =
-    var transfs: seq[Transformation]
-
-    if a.kind == tkComposition:
-        if b.kind == tkComposition: 
-            transfs = concat(a.transformations, b.transformations)
-        else: 
-            transfs = a.transformations
-            transfs.add b
-
-    elif b.kind == tkComposition: 
-        transfs = b.transformations
-        transfs.insert(a, 0)        
-
-    else: 
-        transfs.add a; transfs.add b
-
-    Transformation(kind: tkComposition, transformations: transfs)
-
-
-proc inverse*(transf: Transformation): Transformation =
-    let kind = transf.kind
-    case kind
-    of tkIdentity: return Transformation.id
-    of tkComposition: 
-        var transfs = newSeq[Transformation](transf.transformations.len)
-        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i].inverse
-        return Transformation(kind: kind, transformations: transfs)
-
-    of tkGeneric, tkTranslation, tkScaling, tkRotation: 
-        return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
-
-
-proc `*`*(transf: Transformation, scal: float32): Transformation = 
-    let kind = transf.kind
-    case kind:
-    of tkIdentity: 
-        return Transformation(kind: tkGeneric, mat: Mat4f.id * scal, inv_mat: Mat4f.id / scal)
-    of tkGeneric, tkTranslation, tkScaling, tkRotation:
-        return Transformation(kind: kind, mat: transf.mat * scal, inv_mat: transf.inv_mat / scal)
-    of tkComposition:
-        var transfs = newSeq[Transformation](transf.transformations.len)
-        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] * scal
-        return Transformation(kind: tkComposition, transformations: transfs)
-    
-proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = transf * scal
-
-proc `/`*(transf: Transformation, scal: float32): Transformation = 
-    let kind = transf.kind
-    case kind:
-    of tkIdentity: 
-        return Transformation(kind: tkGeneric, mat: Mat4f.id / scal, inv_mat: Mat4f.id * scal)
-    of tkGeneric, tkTranslation, tkScaling, tkRotation:
-        return Transformation(kind: kind, mat: transf.mat / scal, inv_mat: transf.inv_mat * scal)
-    of tkComposition:
-        var transfs = newSeq[Transformation](transf.transformations.len)
-        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] / scal
-        return Transformation(kind: tkComposition, transformations: transfs)
 
 
 type 
