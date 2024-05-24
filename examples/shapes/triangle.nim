@@ -13,10 +13,10 @@ let
 
 var 
     cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -3, 0, 0)))
-    tracer = newImageTracer(width, height, cam, sideSamples=2)
+    tracer = newImageTracer(width, height, cam, sideSamples = 2)
     scenary = newWorld()
 
-scenary.shapes.add(newTriangle(newPoint3D(0.0, 2.0, 3.0), newPoint3D(0.0, -2.0, 2.0), newPoint3D(0.0, -1.0, -1.0)))
+scenary.shapes.add newTriangle(newPoint3D(0.0, 2.0, 3.0), newPoint3D(0.0, -2.0, 2.0), newPoint3D(0.0, -1.0, -1.0))
 
 tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
 

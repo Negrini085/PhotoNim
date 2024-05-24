@@ -139,24 +139,23 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
     let timeStart = cpuTime()
 
     let
-        s1 = newSphere(newPoint3D(0.5, 0.5, 0.5), 0.1)
-        s2 = newSphere(newPoint3D(0.5, 0.5, -0.5), 0.1)
-        s3 = newSphere(newPoint3D(0.5, -0.5, 0.5), 0.1)
-        s4 = newSphere(newPoint3D(0.5, -0.5, -0.5), 0.1)
-        s5 = newSphere(newPoint3D(-0.5, 0.5, 0.5), 0.1)
-        s6 = newSphere(newPoint3D(-0.5, 0.5, -0.5), 0.1)
-        s7 = newSphere(newPoint3D(-0.5, -0.5, 0.5), 0.1)
-        s8 = newSphere(newPoint3D(-0.5, -0.5, -0.5), 0.1)
-        s9 = newSphere(newPoint3D(-0.5, 0.0, 0.0), 0.1)
-        s10 = newSphere(newPoint3D(0.0, 0.5, 0.0), 0.1)   
+        s0 = newSphere(center = newPoint3D( 0.5,  0.5,  0.5), radius = 0.1)
+        s1 = newSphere(center = newPoint3D( 0.5,  0.5, -0.5), radius = 0.1)
+        s2 = newSphere(center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1)
+        s3 = newSphere(center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1)
+        s4 = newSphere(center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1)
+        s5 = newSphere(center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1)
+        s6 = newSphere(center = newPoint3D(-0.5, -0.5,  0.5), radius = 0.1)
+        s7 = newSphere(center = newPoint3D(-0.5, -0.5, -0.5), radius = 0.1)
+        s8 = newSphere(center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1)
+        s9 = newSphere(center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1)   
 
-    var scenary = newWorld()
-    scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
-    scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
+    var 
+        scenary = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+        tracer = newImageTracer(width, height, camera, sideSamples = 4)
 
-    var tracer = newImageTracer(width, height, camera, sideSamples=4)
     tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
-    
+
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
     tracer.image
@@ -165,7 +164,6 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
 when isMainModule: 
     import docopt
     from std/cmdline import commandLineParams
-    from std/osproc import execCmd
     from std/os import splitFile
 
     let PhotoNimDoc = """
@@ -259,6 +257,5 @@ Options:
         stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
-        # discard execCmd fmt"open {pngOut}"
 
     else: quit PhotoNimDoc
