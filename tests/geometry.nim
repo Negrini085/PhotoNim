@@ -330,7 +330,6 @@ suite "Transformation unittest":
 
     test "apply on Normal":
         var
-            n1 = newNormal(0, 0, 0)
             n2 = newNormal(1, 0, 0)
             n3 = newNormal(0, 3/5, 4/5)
             m1: Mat4f = [[1, 0, 0, 0], [0, 4/5, -3/5, 0], [0, 3/5, 4/5, 0], [0, 0, 0, 1]]
