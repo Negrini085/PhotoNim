@@ -214,6 +214,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- PhotoNim CLI in README.md
 - Installation page
 - Installation page
 - *(camera.nim)* End camera.nim documentation
