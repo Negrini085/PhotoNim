@@ -74,7 +74,7 @@ type
         case kind*: RendererKind
         of FlatRenderer, PathTracer: discard 
         of OnOffRenderer:
-            hit_col: Color
+            hit_col*: Color
 
-proc newOnOffRenderer(world: World, back_col:Color = newColor(0, 0, 0), hit_col: Color = newColor(1,1,1)): Renderer {.inline.} =
+proc newOnOffRenderer*(world: World, back_col:Color = newColor(0, 0, 0), hit_col: Color = newColor(1,1,1)): Renderer {.inline.} =
     Renderer(kind: OnOffRenderer, world: world, back_col: back_col, hit_col: hit_col)

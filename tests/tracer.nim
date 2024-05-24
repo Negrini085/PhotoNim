@@ -1,5 +1,6 @@
 import std/unittest
 import PhotoNim
+from math import exp, pow
 
 #------------------------------------------#
 #         Image Tracer type tests          #
@@ -28,15 +29,33 @@ suite "ImageTracer":
         check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
 
 
-    # test "ImageTracer fire_all_rays":
+#--------------------------------------------#
+#         Renderer kinds test suite          #
+#--------------------------------------------#
 
-    #     tracer.fire_all_rays()
+suite "Renderer":
 
-    #     for y in 0..<tracer.image.height:
-    #         for x in 0..<tracer.image.width:
-    #             let 
-    #                 r = (1 - exp(-float32(x + y)))
-    #                 g = y/tracer.image.height
-    #                 b = pow((1 - x/tracer.image.width), 2.5)
-    #             check areClose(tracer.image.getPixel(x, y), newColor(r, g, b))
+    setup:
+        var 
+            world = newWorld(@[
+                newSphere(newPoint3D(1, 0, 0), 0.5),
+                newSphere(newPoint3D(1, 2, -1), 0.2)
+            ])
+            oftrace = newOnOffRenderer(world, newColor(1, 2, 3), newColor(3, 2, 1))
     
+    teardown:
+        discard world
+        discard oftrace
+
+    test "constructor proc":
+
+        # On-Off Renderer
+        check oftrace.kind == OnOffRenderer
+
+        check areClose(oftrace.world.shapes[0].radius, 0.5)
+        check areClose(oftrace.world.shapes[1].radius, 0.2)
+        check areClose(oftrace.world.shapes[0].center, newPoint3D(1, 0, 0))
+        check areClose(oftrace.world.shapes[1].center, newPoint3D(1, 2, -1))
+
+        check areClose(oftrace.back_col, newColor(1, 2, 3))
+        check areClose(oftrace.hit_col, newColor(3, 2, 1))
