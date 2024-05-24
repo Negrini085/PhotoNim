@@ -1,6 +1,5 @@
 import std/[unittest, streams, math, sequtils]
 import PhotoNim
-from math import degToRad
 
 suite "HdrImageTest":
     
@@ -329,6 +328,7 @@ suite "BRDF":
         discard dif
         discard spe
 
+
     test "newBRDF proc":
         check areClose(dif.pigment.color.r, 1)
         check areClose(dif.pigment.color.g, 2)
@@ -340,6 +340,7 @@ suite "BRDF":
         check areClose(spe.pigment.color.b, 3)
         check areClose(spe.threshold_angle, 0.1 * degToRad(110.0).float32)
     
+
     test "eval proc":
 
         var
@@ -359,3 +360,34 @@ suite "BRDF":
         check areClose(appo.g, 2)
         check areClose(appo.b, 3)
 
+
+    test "scatter_ray proc":
+
+        var
+            pcg = newPCG()
+            pcg1 = newPCG()
+            appo: Ray
+            norm = newNormal(0, 0, 1)
+            in_dir = newVec3f(-1, 0, -1)
+            int_point = newPoint3D(0, 0, 0)
+            cos2 = pcg1.rand
+            c = sqrt(cos2)
+            s = sqrt(1 - cos2)
+            phi = 2 * PI * pcg1.rand
+
+        appo = dif.scatter_ray(pcg, in_dir, int_point, norm, 0)
+        check areClose(appo, 
+            newRay(
+                int_point, eX * cos(phi)*c + eY * sin(phi) * c + eZ * s,
+                1e-3, Inf, 0
+                )
+        )
+
+        appo = spe.scatter_ray(pcg, in_dir, int_point, norm, 0)
+        check areClose(appo,
+            newRay(
+                int_point, 
+                in_dir.normalize-2*dot(norm.normalize.toVec3, in_dir.normalize)*norm.normalize.toVec3,
+                1e-3, Inf, 0
+            )
+        )

@@ -221,7 +221,7 @@ proc scatter_ray*(brdf: BRDF, randgen: var PCG, in_dir: Vec3f, int_point: Point3
         
         return newRay(
             int_point,
-            in_dir - 2 * dot(norm, dir) * norm,
+            dir - 2 * dot(norm, dir) * norm,
             1e-3, Inf, depth 
         )
 
