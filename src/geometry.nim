@@ -1,6 +1,6 @@
 from std/strformat import fmt
 from std/fenv import epsilon
-from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI
+from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI, copySign
 from std/sequtils import concat
 
 type 
@@ -188,6 +188,7 @@ proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 proc toPoint3D*(a: Vec3f | Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
 proc toNormal*(a: Vec3f | Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
 proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3(a[0], a[1], a[2])
+proc toVec3*(a: Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
 
 
 type
@@ -589,11 +590,28 @@ proc `/`*(transf: Transformation, scal: float32): Transformation =
         return Transformation(kind: tkComposition, transformations: transfs)
 
 
+#-------------------------------------#
+#          OrthoNormal basis          #
+#-------------------------------------#
+
 type Onb* = object
     vec*: array[3, Vec3f]
 
 proc newONB*(e1: Vec3f = eX, e2: Vec3f = eY, e3: Vec3f = eZ): Onb {.inline.} =
     Onb(vec: [e1, e2, e3])
+
+
+proc create_onb*(norm: Normal): Onb = 
+    var
+        sign = copySign(1.0, norm.z)
+        a = - 1.0/(sign + norm.z)
+        b = norm.x * norm.y * a
+    
+    result = newONB(
+        newVec3f(1.0 + sign*norm.x*norm.x*a, sign*b, -sign*norm.x),
+        newVec3f(b, sign + norm.y*norm.y*a, -norm.y), 
+        norm.toVec3
+    )
 
 type 
     Quat* {. borrow: `.`.} = distinct Vec4f
