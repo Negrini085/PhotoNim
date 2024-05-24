@@ -1,9 +1,9 @@
 from std/strformat import fmt
 from std/fenv import epsilon 
-from std/math import sum, pow, exp, log10, floor, arccos, degToRad, PI
+from std/math import sum, pow, exp, log10, floor, arccos, degToRad, PI, sqrt, cos, sin
 from std/sequtils import apply, map
 
-import geometry
+import geometry, pcg
 
 
 type Color* {.borrow: `.`.} = distinct Vec3f
@@ -72,8 +72,8 @@ type Ray* = object
     tmax*: float32
     depth*: int
 
-proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, tmin: epsilon(float32), tmax: Inf, depth: 0)  
+proc newRay*(origin: Point3D, direction: Vec3f, tmin: float32 =  epsilon(float32), tmax = Inf, depth: int = 0): Ray {.inline.} = 
+    Ray(origin: origin, dir: direction, tmin: tmin, tmax: tmax, depth: depth)  
 
 proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
 
@@ -195,6 +195,25 @@ proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Col
             return brdf.pigment.getColor(uv)
         else: 
             return newColor(0.0, 0.0, 0.0)
+
+
+proc scatter_ray*(brdf: BRDF, randgen: var PCG, in_dir: Vec3f, int_point: Point3D, normal: Normal, depth: int): Ray =
+    # Here we want to test how rays get scattered, in order to then solve the rendering equation
+    case brdf.kind:
+    of DiffuseBRDF:
+        var 
+            onb = create_onb(normal)
+            cos2 = randgen.rand
+            c = sqrt(cos2)
+            s = sqrt(1 - cos2)
+            phi = 2 * PI * randgen.rand
+        
+        return newRay(
+            int_point,
+            onb.base[0]*cos(phi)*c + onb.base[1]*sin(phi)*c + onb.base[2]*s,
+            1e-3, Inf, depth
+        )
+    of SpecularBRDF: discard
 
 
 type Material* = object
