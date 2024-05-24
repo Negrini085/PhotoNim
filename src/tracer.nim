@@ -61,3 +61,17 @@ proc fire_all_rays*(tracer: var ImageTracer; scenary: World, color_map: proc(ray
     
     stdout.eraseLine
     stdout.resetAttributes
+
+
+type 
+    RendererKind* = enum 
+        OnOffRenderer, FlatRenderer, PathTracer
+    
+    Renderer* = object 
+        world*: World
+        back_col*: Color
+
+        case kind*: RendererKind
+        of FlatRenderer, PathTracer: discard 
+        of OnOffRenderer:
+            col_hit: Color
