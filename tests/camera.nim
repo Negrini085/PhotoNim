@@ -258,10 +258,7 @@ suite "Camera tests":
 suite "ImageTracer unittest":
 
     setup:
-        var 
-            image = newHdrImage(5, 5)
-            cam = newOrthogonalCamera(1.2, Transformation.id)
-            im_tr = ImageTracer(image: image, camera: cam)
+        var im_tr = newImageTracer(5, 5, newOrthogonalCamera(1.2, Transformation.id))
 
     test "ImageTracer index":
         # Checking image tracer type, we will have to open an issue

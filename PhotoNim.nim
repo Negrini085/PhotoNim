@@ -1,7 +1,7 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, camera, shapes, pcg, tracer]
-export geometry, camera, shapes, pcg, tracer
+import src/[geometry, camera, shapes, hitrecord, pcg, tracer]
+export geometry, camera, shapes, hitrecord, pcg, tracer
 
 from std/times import cpuTime
 from std/strformat import fmt
@@ -84,8 +84,8 @@ Usage:
 Options:
     <input>             Path to the HDRImage to be converted from PFM to PNG. 
     <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "alpha_gamma" & ".png"]
-    --alpha=<alpha>     Color renormalization factor. [default: 0.18]
-    --gamma=<gamma>     Gamma correction factor. [default: 1.0]
+    --a=<alpha>         Color renormalization factor. [default: 0.18]
+    --g=<gamma>         Gamma correction factor. [default: 1.0]
     --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images.
 """
 
@@ -126,12 +126,12 @@ let demoDoc* = """
 PhotoNim `demo` command:
 
 Usage:
-    ./PhotoNim demo (p | o) [<output>] [--width=<width> --height=<height> --angle=<angle>]
+    ./PhotoNim demo (p | o) [<output>] [options]
 
 Options:
     p | o               Camera kind: p for Perspective, o for Orthogonal 
-    --width=<width>     Image width. [default: 1600]
-    --height=<height>   Image height. [default: 900]
+    --w=<width>         Image width. [default: 1600]
+    --h=<height>        Image height. [default: 900]
     --angle=<angle>     Rotation angle around z axis. [default: 10]
 """
 
@@ -170,20 +170,34 @@ when isMainModule:
 
     let PhotoNimDoc = """
 Usage:
-    ./PhotoNim (-h | --help) --version
-    ./PhotoNim help <command>
-    ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma> --avlum=<avlum>]
-    ./PhotoNim demo (p | o) [<output>] [--width=<width> --height=<height> --angle=<angle>]
+    ./PhotoNim help [<command>]
+    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --avlum=<avlum>]
+    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+
+Options:
+    -h                  Display the PhotoNim CLI helper screen.
+    --version           Display which PhotoNim version is being used.
+
+    --a=<alpha>         Color renormalization factor. [default: 0.18]
+    --g=<gamma>         Gamma correction factor. [default: 1.0]
+    --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images.
+
+    persp | ortho       Perspective or Orthogonal Camera kinds.
+    --w=<width>         Image width. [default: 1600]
+    --h=<height>        Image height. [default: 900]
+    --angle=<angle>     Rotation angle around z axis. [default: 10]
 """
 
     let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
 
     if args["help"]:
-        let command = $args["<command>"]
-        case command
-        of "pfm2png": echo pfm2pngDoc
-        of "demo": echo demoDoc
-        else: quit fmt"Command `{command}` not found!" & '\n' & PhotoNimDoc 
+        if args["<command>"]:
+            let command = $args["<command>"]
+            case command
+            of "pfm2png": echo pfm2pngDoc
+            of "demo": echo demoDoc
+            else: quit fmt"Command `{command}` not found!"
+        else: echo PhotoNimDoc
 
     elif args["pfm2png"]:
         let fileIn = $args["<input>"]
@@ -193,12 +207,12 @@ Usage:
             gamma = 1.0
             avlum = 0.0
 
-        if args["--alpha"]: 
-            try: alpha = parseFloat($args["--alpha"]) 
+        if args["--a"]: 
+            try: alpha = parseFloat($args["--a"]) 
             except: echo "Warning: alpha flag must be a float. Default value is used."
 
-        if args["--gamma"]: 
-            try: gamma = parseFloat($args["--gamma"]) 
+        if args["--g"]: 
+            try: gamma = parseFloat($args["--g"]) 
             except: echo "Warning: gamma flag must be a float. Default value is used."
 
         if args["--avlum"]: 
@@ -223,12 +237,12 @@ Usage:
             (width, height) = (1600, 900)
             angle = 10.0
 
-        if args["--width"]: 
-            try: width = parseInt($args["--width"]) 
+        if args["--w"]: 
+            try: width = parseInt($args["--w"]) 
             except: echo "Warning: width must be an integer. Default value is used."
         
-        if args["--height"]: 
-            try: height = parseInt($args["--height"]) 
+        if args["--h"]: 
+            try: height = parseInt($args["--h"]) 
             except: echo "Warning: height must be an integer. Default value is used."
 
         if args["--angle"]:
@@ -238,13 +252,13 @@ Usage:
         let
             a_ratio = width / height
             transf = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
-            camera = if args["p"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
+            camera = if args["persp"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
 
         var stream = newFileStream(pfmOut, fmWrite) 
         stream.writePFM(demo(width, height, camera))
         stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
-        discard execCmd fmt"open {pngOut}"
+        # discard execCmd fmt"open {pngOut}"
 
     else: quit PhotoNimDoc

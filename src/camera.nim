@@ -131,23 +131,21 @@ type
     PigmentKind* = enum
         pkUniform, pkTexture, pkCheckered
 
-    Pigment* = object of RootObj
+    Pigment* = object
         case kind*: PigmentKind
         of pkUniform: 
             color*: Color
 
         of pkTexture: 
-            texture*: HdrImage
+            texture*: ptr HdrImage
 
         of pkCheckered:
-            color1*: Color
-            color2*: Color
-            nsteps*: int
+            chessgrid*: tuple[color1, color2: Color, nsteps: int]
 
 proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
-proc newTexturePigment*(texture: HdrImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: texture)
+proc newTexturePigment*(texture: HdrImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: addr texture)
 proc newCheckeredPigment*(color1, color2: Color, nsteps: int): Pigment {.inline.} = 
-    Pigment(kind: pkCheckered, color1: color1, color2: color2, nsteps: nsteps)
+    Pigment(kind: pkCheckered, chessgrid: (color1, color2, nsteps))
 
 proc getColor*(pigment: Pigment; uv: Point2D): Color =
     case pigment.kind: 
@@ -159,18 +157,18 @@ proc getColor*(pigment: Pigment; uv: Point2D): Color =
         if col >= pigment.texture.width: col = pigment.texture.width - 1
         if row >= pigment.texture.height: row = pigment.texture.height - 1
 
-        return pigment.texture.getPixel(col, row)
+        return pigment.texture[].getPixel(col, row)
 
     of pkCheckered:
-        let (col, row) = (floor(uv.u * pigment.nsteps.float32).int, floor(uv.v * pigment.nsteps.float32).int)
-        return (if (col mod 2) == (row mod 2): pigment.color1 else: pigment.color2)
+        let (col, row) = (floor(uv.u * pigment.chessgrid.nsteps.float32).int, floor(uv.v * pigment.chessgrid.nsteps.float32).int)
+        return (if (col mod 2) == (row mod 2): pigment.chessgrid.color1 else: pigment.chessgrid.color2)
 
 
 type 
     BRDFKind* = enum 
         DiffuseBRDF, SpecularBRDF
 
-    BRDF* = object of RootObj
+    BRDF* = object
         pigment*: Pigment
 
         case kind*: BRDFKind
@@ -203,5 +201,5 @@ type Material* = object
     brdf*: BRDF
     radiance*: Pigment
 
-proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(BLACK)): Material {.inline.} = 
+proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = 
     Material(brdf: brdf, radiance: pigment) 
