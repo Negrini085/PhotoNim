@@ -213,7 +213,17 @@ proc scatter_ray*(brdf: BRDF, randgen: var PCG, in_dir: Vec3f, int_point: Point3
             onb.base[0]*cos(phi)*c + onb.base[1]*sin(phi)*c + onb.base[2]*s,
             1e-3, Inf, depth
         )
-    of SpecularBRDF: discard
+
+    of SpecularBRDF: 
+        var
+            dir = in_dir.normalize
+            norm = normal.toVec3.normalize
+        
+        return newRay(
+            int_point,
+            in_dir - 2 * dot(norm, dir) * norm,
+            1e-3, Inf, depth 
+        )
 
 
 type Material* = object
