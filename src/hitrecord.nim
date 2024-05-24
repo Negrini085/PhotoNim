@@ -110,7 +110,13 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
 
         let t = -inv_ray.origin.z / inv_ray.dir[2]
         return (if t < inv_ray.tmin or t > inv_ray.tmax: false else: true)
-                    
+
+proc fastIntersection*(world: World, ray: Ray): bool =
+    # Procedure to check fast intersection with all shapes making a world
+    for i in world.shapes:
+        if fastIntersection(i, ray): return true
+
+    return false 
 
 proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     var 
