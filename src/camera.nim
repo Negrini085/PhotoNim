@@ -175,7 +175,7 @@ type
         of DiffuseBRDF:
             reflectance*: float32
         of SpecularBRDF:
-            threshold_angle: float32
+            threshold_angle*: float32
 
 
 proc newDiffuseBRDF*(pigment = newUniformPigment(WHITE), reflectance = 1.0): BRDF {.inline.} =

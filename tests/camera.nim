@@ -1,5 +1,6 @@
 import std/[unittest, streams, math, sequtils]
 import PhotoNim
+from math import degToRad
 
 suite "HdrImageTest":
     
@@ -315,3 +316,26 @@ suite "Pigment unittest":
         check areClose(pigment.getColor(newPoint2D(0.75, 0.25)), color2)
         check areClose(pigment.getColor(newPoint2D(0.25, 0.75)), color2)
         check areClose(pigment.getColor(newPoint2D(0.75, 0.75)), color1)
+
+
+suite "BRDF":
+
+    setup:
+        var
+            dif = newDiffuseBRDF(newUniformPigment(newColor(1, 2, 3)), 0.2)
+            spe = newSpecularBRDF(newUniformPigment(newColor(1, 2, 3)), 110)
+
+    teardown:
+        discard dif
+        discard spe
+
+    test "newBRDF proc":
+        check areClose(dif.pigment.color.r, 1)
+        check areClose(dif.pigment.color.g, 2)
+        check areClose(dif.pigment.color.b, 3)
+        check areClose(dif.reflectance, 0.2)
+
+        check areClose(spe.pigment.color.r, 1)
+        check areClose(spe.pigment.color.g, 2)
+        check areClose(spe.pigment.color.b, 3)
+        check areClose(spe.threshold_angle, 0.1 * degToRad(110.0).float32)
