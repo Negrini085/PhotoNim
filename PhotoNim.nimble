@@ -38,6 +38,9 @@ task sphere, "Run the sphere example":
 task csg, "Run the csg example":
   exec "nim c -r examples/csg.nim"
   exec "rm examples/csg"
-  exec "./PhotoNim pfm2png images/CSGUnion.pfm images/CSGUnion.png --avlum 0.1"
-  exec "./PhotoNim pfm2png images/CSGDiff.pfm images/CSGDiff.png --avlum 0.1"
-  exec "open images/CSGUnion.png"
+#  exec "./PhotoNim pfm2png images/CSGUnion.pfm images/CSGUnion.png --avlum 0.1"
+#  exec "./PhotoNim pfm2png images/CSGDiff.pfm images/CSGDiff.png --avlum 0.1"
+  exec "./PhotoNim pfm2png images/CSGInt.pfm images/CSGInt.png --avlum 0.1"
+#  exec "open images/CSGUnion.png"
+#  exec "open images/CSGDiff.png"
+  exec "open images/CSGInt.png"

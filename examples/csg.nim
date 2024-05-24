@@ -46,33 +46,44 @@ union.shapes.add(s1); union.shapes.add(s2); union.shapes.add(s3);
 union.shapes.add(s4); union.shapes.add(s5); union.shapes.add(s6);
 union.shapes.add(s7);
 
-world.shapes.add(union);
+#world.shapes.add(union);
 
-tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
-var stream = newFileStream(filePFM1, fmWrite)
-stream.writePFM(tracer.image); stream.close()
-var appo = cpuTime() - timeStart
-echo fmt"Successfully rendered CSG Union image in {appo} seconds."
+#tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
+#var stream = newFileStream(filePFM1, fmWrite)
+#stream.writePFM(tracer.image); stream.close()
+#var appo = cpuTime() - timeStart
+#echo fmt"Successfully rendered CSG Union image in {appo} seconds."
 
-world.shapes = @[]
+#world.shapes = @[]
 
 #--------------------------------------------#
 #                 CSG Diff                   #
 #--------------------------------------------#
+#world.shapes.add(diff);
+
+#tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
+#var stream = newFileStream(filePFM2, fmWrite)
+#stream.writePFM(tracer.image); stream.close()
+
+#echo fmt"Successfully rendered CSG Diff image in {cpuTime()- timeStart} seconds."
+
+
+#--------------------------------------------#
+#                  CSG Int                   #
+#--------------------------------------------#
 let  
-    filePFM2 = "images/CSGDiff.pfm"
-    sp1 = newSphere(newPoint3D(0, 0.3, 0), radius = 0.5)
-    sp2 = newSphere(newPoint3D(0, -0.3, 0), radius = 0.5)
+    filePFM3 = "images/CSGInt.pfm"
+    sph1 = newSphere(newPoint3D(0, 0.3, 0), radius = 0.5)
+    sph2 = newSphere(newPoint3D(0, -0.3, 0), radius = 0.5)
 
-var diff = newCSGDiff()
+var cdgInt = newCSGInt()
 
-diff.shapes.add(sp1); diff.shapes.add(sp2)
+cdgInt.shapes.add(sph1); cdgInt.shapes.add(sph2)
 
-world.shapes.add(diff);
+world.shapes.add(cdgInt);
 
 tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
-stream = newFileStream(filePFM2, fmWrite)
+var stream = newFileStream(filePFM3, fmWrite)
 stream.writePFM(tracer.image); stream.close()
 
-
-echo fmt"Successfully rendered CSG Diff image in {cpuTime()- appo} seconds."
+echo fmt"Successfully rendered CSG Diff image in {cpuTime()- timeStart} seconds."
