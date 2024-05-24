@@ -76,17 +76,17 @@ proc writePFM*(stream: FileStream, img: HdrImage, endian: Endianness = littleEnd
 
 
 let pfm2pngDoc* = """
-PhotoNim `pfm2png` command:
+PhotoNim CLI `pfm2png` command:
 
 Usage: 
-    ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma> --avlum=<avlum>]
+    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
 
 Options:
     <input>             Path to the HDRImage to be converted from PFM to PNG. 
-    <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "alpha_gamma" & ".png"]
+    <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "_a_g" & ".png"]
     --a=<alpha>         Color renormalization factor. [default: 0.18]
     --g=<gamma>         Gamma correction factor. [default: 1.0]
-    --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images.
+    --lum=<avlum>       Average image luminosity. 
 """
 
 proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
@@ -123,13 +123,14 @@ proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
 
 
 let demoDoc* = """
-PhotoNim `demo` command:
+PhotoNim CLI `demo` command:
 
 Usage:
-    ./PhotoNim demo (p | o) [<output>] [options]
+    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
-    p | o               Camera kind: p for Perspective, o for Orthogonal 
+    persp | ortho       Perspective or Orthogonal Camera kinds.
+    <output>            Path to the output HDRImage. [default: "images/demo.pfm"]
     --w=<width>         Image width. [default: 1600]
     --h=<height>        Image height. [default: 900]
     --angle=<angle>     Rotation angle around z axis. [default: 10]
@@ -166,19 +167,20 @@ when isMainModule:
     from std/cmdline import commandLineParams
     from std/os import splitFile
 
-    let PhotoNimDoc = """
+    let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
+
 Usage:
     ./PhotoNim help [<command>]
-    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --avlum=<avlum>]
+    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
     ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
-    -h                  Display the PhotoNim CLI helper screen.
+    -h | --help         Display the PhotoNim CLI helper screen.
     --version           Display which PhotoNim version is being used.
 
     --a=<alpha>         Color renormalization factor. [default: 0.18]
     --g=<gamma>         Gamma correction factor. [default: 1.0]
-    --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images.
+    --lum=<avlum>       Average image luminosity. 
 
     persp | ortho       Perspective or Orthogonal Camera kinds.
     --w=<width>         Image width. [default: 1600]
@@ -213,9 +215,9 @@ Options:
             try: gamma = parseFloat($args["--g"]) 
             except: echo "Warning: gamma flag must be a float. Default value is used."
 
-        if args["--avlum"]: 
-            try: avlum = parseFloat($args["--avlum"])
-            except: echo "Warning: avlum flag must be a float. Default value is used."
+        if args["--lum"]: 
+            try: avlum = parseFloat($args["--lum"])
+            except: echo "Warning: lum flag must be a float. Default value is used."
 
         if args["<output>"]: fileOut = $args["<output>"]
         else: 
