@@ -9,7 +9,7 @@ from std/osproc import execCmd
 let 
     timeStart = cpuTime()
     (width, height) = (1600, 900)
-    filename = "images/triangle"
+    filename = "assets/images/examples/triangle"
 
 var 
     cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -3, 0, 0)))

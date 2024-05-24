@@ -130,7 +130,7 @@ Usage:
 
 Options:
     persp | ortho       Perspective or Orthogonal Camera kinds.
-    <output>            Path to the output HDRImage. [default: "images/demo.pfm"]
+    <output>            Path to the output HDRImage. [default: "assets/images/demo.pfm"]
     --w=<width>         Image width. [default: 1600]
     --h=<height>        Image height. [default: 900]
     --angle=<angle>     Rotation angle around z axis. [default: 10]
@@ -229,7 +229,7 @@ Options:
 
     elif args["demo"]:
         let 
-            pfmOut = if args["<output>"]: $args["<output>"] else: "images/demo.pfm"
+            pfmOut = if args["<output>"]: $args["<output>"] else: "assets/images/demo.pfm"
             (dir, name, _) = splitFile(pfmOut)
             pngOut = dir & '/' & name & ".png"
 

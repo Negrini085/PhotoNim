@@ -11,26 +11,6 @@ nav_order: 0
 ![GitHub last commit](https://img.shields.io/github/last-commit/Negrini085/PhotoNim)
 ![GitHub repo size](https://img.shields.io/github/repo-size/Negrini085/PhotoNim)
 
-## Usage
-```bash
-nimble build
-```
-This command generates in the root directory an executable called PhotoNim. 
-
-```bash
-./PhotoNim --help
-PhotoNim: a CPU raytracer written in Nim.
-
-Usage:
-    ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma>]
-    
-Options:
-    --alpha=<alpha>     Color renormalization factor. [default: 0.18]
-    --gamma=<gamma>     Gamma correction factor. [default: 1.0]
-    
-    -h --help           Show this helper screen.
-    --version           Show PhotoNim version.
-```
 
 ## Contributing
 If you want to contribute to the project, you can open a [pull requests](https://github.com/Negrini085/PhotoNim/pulls) or use the [issue tracker](https://github.com/Negrini085/PhotoNim/issues/) to suggest any code implementations or report bugs. 
