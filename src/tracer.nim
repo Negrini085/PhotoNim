@@ -79,7 +79,7 @@ type
 proc newOnOffRenderer*(world: World, back_col:Color = newColor(0, 0, 0), hit_col: Color = newColor(1,1,1)): Renderer {.inline.} =
     Renderer(kind: OnOffRenderer, world: world, back_col: back_col, hit_col: hit_col)
 
-proc call(rend: Renderer, ray: Ray): Color =
+proc call*(rend: Renderer, ray: Ray): Color =
     # Procedure that gives as output needed color
     # We can chose between OnOffRenderer, FlatRenderer and PathTracer
 

@@ -59,3 +59,14 @@ suite "Renderer":
 
         check areClose(oftrace.back_col, newColor(1, 2, 3))
         check areClose(oftrace.hit_col, newColor(3, 2, 1))
+
+
+    test "call proc":
+
+        var
+            ray1 = newRay(newPoint3D(-2, 0, 0), newVec3f(1, 0, 0))
+            ray2 = newRay(newPoint3D(-2, 0, 0), newVec3f(-1, 0, 0))
+
+        # On-Off Renderer
+        check areClose(oftrace.call(ray1), newColor(3, 2, 1))
+        check areClose(oftrace.call(ray2), newColor(1, 2, 3))
