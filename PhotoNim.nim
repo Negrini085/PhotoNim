@@ -1,13 +1,13 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, camera, shapes, pcg, tracer]
-export geometry, camera, shapes, pcg, tracer
+import src/[geometry, camera, shapes, hitrecord, pcg, tracer]
+export geometry, camera, shapes, hitrecord, pcg, tracer
 
 from std/times import cpuTime
 from std/strformat import fmt
 
 from std/strutils import split, parseFloat, parseInt
-from std/streams import Stream, newFileStream, close, write, writeLine, readLine, readFloat32
+from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
 from nimPNG import savePNG24
 
@@ -28,7 +28,7 @@ proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = little
     stream.write(tmp)
 
 
-proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
+proc readPFM*(stream: FileStream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
     assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
     let sizes = stream.readLine.split(" ")
     assert sizes.len == 2, "Invalid image size specification: required 'width height'."
@@ -61,7 +61,7 @@ proc readPFM*(stream: Stream): tuple[img: HdrImage, endian: Endianness] {.raises
             b = readFloat(stream, result.endian)
             result.img.setPixel(x, y, newColor(r, g, b))
 
-proc writePFM*(stream: Stream, img: HdrImage, endian: Endianness = littleEndian) = 
+proc writePFM*(stream: FileStream, img: HdrImage, endian: Endianness = littleEndian) = 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
     stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
@@ -84,8 +84,8 @@ Usage:
 Options:
     <input>             Path to the HDRImage to be converted from PFM to PNG. 
     <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "alpha_gamma" & ".png"]
-    --alpha=<alpha>     Color renormalization factor. [default: 0.18]
-    --gamma=<gamma>     Gamma correction factor. [default: 1.0]
+    --a=<alpha>         Color renormalization factor. [default: 0.18]
+    --g=<gamma>         Gamma correction factor. [default: 1.0]
     --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images.
 """
 
@@ -126,37 +126,36 @@ let demoDoc* = """
 PhotoNim `demo` command:
 
 Usage:
-    ./PhotoNim demo (p | o) [<output>] [--width=<width> --height=<height> --angle=<angle>]
+    ./PhotoNim demo (p | o) [<output>] [options]
 
 Options:
     p | o               Camera kind: p for Perspective, o for Orthogonal 
-    --width=<width>     Image width. [default: 1600]
-    --height=<height>   Image height. [default: 900]
+    --w=<width>         Image width. [default: 1600]
+    --h=<height>        Image height. [default: 900]
     --angle=<angle>     Rotation angle around z axis. [default: 10]
 """
 
 proc demo*(width, height: int, camera: Camera): HdrImage =
     let timeStart = cpuTime()
 
-    let     
-        s1 = newSphere(newPoint3D(0.5, 0.5, 0.5), 0.1)
-        s2 = newSphere(newPoint3D(0.5, 0.5, -0.5), 0.1)
-        s3 = newSphere(newPoint3D(0.5, -0.5, 0.5), 0.1)
-        s4 = newSphere(newPoint3D(0.5, -0.5, -0.5), 0.1)
-        s5 = newSphere(newPoint3D(-0.5, 0.5, 0.5), 0.1)
-        s6 = newSphere(newPoint3D(-0.5, 0.5, -0.5), 0.1)
-        s7 = newSphere(newPoint3D(-0.5, -0.5, 0.5), 0.1)
-        s8 = newSphere(newPoint3D(-0.5, -0.5, -0.5), 0.1)
-        s9 = newSphere(newPoint3D(-0.5, 0.0, 0.0), 0.1)
-        s10 = newSphere(newPoint3D(0.0, 0.5, 0.0), 0.1)   
+    let
+        s0 = newSphere(center = newPoint3D( 0.5,  0.5,  0.5), radius = 0.1)
+        s1 = newSphere(center = newPoint3D( 0.5,  0.5, -0.5), radius = 0.1)
+        s2 = newSphere(center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1)
+        s3 = newSphere(center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1)
+        s4 = newSphere(center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1)
+        s5 = newSphere(center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1)
+        s6 = newSphere(center = newPoint3D(-0.5, -0.5,  0.5), radius = 0.1)
+        s7 = newSphere(center = newPoint3D(-0.5, -0.5, -0.5), radius = 0.1)
+        s8 = newSphere(center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1)
+        s9 = newSphere(center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1)   
 
-    var scenary = newWorld()
-    scenary.shapes.add(s1); scenary.shapes.add(s2); scenary.shapes.add(s3); scenary.shapes.add(s4); scenary.shapes.add(s5)
-    scenary.shapes.add(s6); scenary.shapes.add(s7); scenary.shapes.add(s8); scenary.shapes.add(s9); scenary.shapes.add(s10)
+    var 
+        scenary = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+        tracer = newImageTracer(width, height, camera, sideSamples = 4)
 
-    var tracer = newImageTracer(width, height, camera, sideSamples=4)
     tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
-    
+
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
     tracer.image
@@ -165,25 +164,38 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
 when isMainModule: 
     import docopt
     from std/cmdline import commandLineParams
-    from std/osproc import execCmd
     from std/os import splitFile
 
     let PhotoNimDoc = """
 Usage:
-    ./PhotoNim (-h | --help) --version
-    ./PhotoNim help <command>
-    ./PhotoNim pfm2png <input> [<output>] [--alpha=<alpha> --gamma=<gamma> --avlum=<avlum>]
-    ./PhotoNim demo (p | o) [<output>] [--width=<width> --height=<height> --angle=<angle>]
+    ./PhotoNim help [<command>]
+    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --avlum=<avlum>]
+    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+
+Options:
+    -h                  Display the PhotoNim CLI helper screen.
+    --version           Display which PhotoNim version is being used.
+
+    --a=<alpha>         Color renormalization factor. [default: 0.18]
+    --g=<gamma>         Gamma correction factor. [default: 1.0]
+    --avlum=<avlum>     Avarage image luminosity given as imput, necessary to render almost totally dark images.
+
+    persp | ortho       Perspective or Orthogonal Camera kinds.
+    --w=<width>         Image width. [default: 1600]
+    --h=<height>        Image height. [default: 900]
+    --angle=<angle>     Rotation angle around z axis. [default: 10]
 """
 
     let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
 
     if args["help"]:
-        let command = $args["<command>"]
-        case command
-        of "pfm2png": echo pfm2pngDoc
-        of "demo": echo demoDoc
-        else: quit fmt"Command `{command}` not found!" & '\n' & PhotoNimDoc 
+        if args["<command>"]:
+            let command = $args["<command>"]
+            case command
+            of "pfm2png": echo pfm2pngDoc
+            of "demo": echo demoDoc
+            else: quit fmt"Command `{command}` not found!"
+        else: echo PhotoNimDoc
 
     elif args["pfm2png"]:
         let fileIn = $args["<input>"]
@@ -193,12 +205,12 @@ Usage:
             gamma = 1.0
             avlum = 0.0
 
-        if args["--alpha"]: 
-            try: alpha = parseFloat($args["--alpha"]) 
+        if args["--a"]: 
+            try: alpha = parseFloat($args["--a"]) 
             except: echo "Warning: alpha flag must be a float. Default value is used."
 
-        if args["--gamma"]: 
-            try: gamma = parseFloat($args["--gamma"]) 
+        if args["--g"]: 
+            try: gamma = parseFloat($args["--g"]) 
             except: echo "Warning: gamma flag must be a float. Default value is used."
 
         if args["--avlum"]: 
@@ -223,12 +235,12 @@ Usage:
             (width, height) = (1600, 900)
             angle = 10.0
 
-        if args["--width"]: 
-            try: width = parseInt($args["--width"]) 
+        if args["--w"]: 
+            try: width = parseInt($args["--w"]) 
             except: echo "Warning: width must be an integer. Default value is used."
         
-        if args["--height"]: 
-            try: height = parseInt($args["--height"]) 
+        if args["--h"]: 
+            try: height = parseInt($args["--h"]) 
             except: echo "Warning: height must be an integer. Default value is used."
 
         if args["--angle"]:
@@ -238,13 +250,12 @@ Usage:
         let
             a_ratio = width / height
             transf = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
-            camera = if args["p"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
+            camera = if args["persp"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
 
         var stream = newFileStream(pfmOut, fmWrite) 
         stream.writePFM(demo(width, height, camera))
         stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
-        discard execCmd fmt"open {pngOut}"
 
     else: quit PhotoNimDoc

@@ -15,22 +15,21 @@ requires "nimPNG >= 0.3"
 task build, "Build the PhotoNim executable":
   exec "nim c -d:release PhotoNim.nim"
 
-task test, "Run the PhotoNim tests!":
+task test, "Run the PhotoNim tests":
   withDir "tests":
     exec "nim c -d:release --hints:off -r geometry.nim"    
     exec "nim c -d:release --hints:off -r camera.nim"
     exec "nim c -d:release --hints:off -r shapes.nim"
     exec "nim c -d:release --hints:off -r pcg.nim"
-    exec "rm geometry camera shapes pcg"
+    exec "nim c -d:release --hints:off -r tracer.nim"
+    exec "rm geometry camera shapes pcg tracer"
 
-task triangle, "Run the triangle example":
-  exec "nim c -d:release -r examples/triangle.nim"
-  exec "rm examples/triangle"
-  exec "./PhotoNim pfm2png images/triangle.pfm images/triangle.png --avlum 0.1"
-  exec "open images/triangle.png"
-
-task sphere, "Run the sphere example":
-  exec "nim c -d:release -r examples/sphere.nim"
-  exec "rm examples/sphere"
-  exec "./PhotoNim pfm2png images/sphere.pfm images/sphere.png --avlum 0.1"
-  exec "open images/sphere.png"
+task demo, "Run the PhotoNim demo animation":
+  exec "nim c -d:release PhotoNim.nim"
+  exec "sh examples/demo/animation.sh"
+  
+task examples, "Run the PhotoNim examples":
+  exec "nim c -d:release --hints:off -r examples/shapes/triangle.nim"
+  exec "nim c -d:release --hints:off -r examples/shapes/sphere.nim"
+  exec "nim c -d:release --hints:off -r examples/shapes/earth.nim"
+  exec "rm examples/shapes/triangle examples/shapes/sphere examples/shapes/earth"

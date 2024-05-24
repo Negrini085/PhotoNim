@@ -2,7 +2,7 @@ import std/[unittest, math, options]
 import PhotoNim
 
 proc areClose(a, b: HitRecord): bool {.inline.} = 
-    areClose(a.ray, b.ray) and areClose(a.t_hit, b.t_hit) and 
+    areClose(a.ray, b.ray) and areClose(a.t, b.t) and 
     areClose(a.world_pt, b.world_pt) and areClose(a.surface_pt, b.surface_pt) and 
     areClose(a.normal, b.normal) 
 
@@ -11,8 +11,8 @@ suite "HitRecord":
 
     setup:
         var 
-            hit1 = HitRecord(ray: newRay(newPoint3D(0, 0, 0), newVec3(float32 0, 1, 0)), t_hit: float32(0.5), world_pt: newPoint3D(1, 2, 3), surface_pt: newPoint2D(1, 0), normal: newNormal(1, 0, 0))
-            hit2 = HitRecord(ray: newRay(newPoint3D(0, 0, 2), newVec3(float32 1, 1, 0)), t_hit: float32(0.6), world_pt: newPoint3D(1, 0, 0), surface_pt: newPoint2D(0.5, 0.5), normal: newNormal(0, 1, 0))
+            hit1 = HitRecord(ray: newRay(newPoint3D(0, 0, 0), newVec3(float32 0, 1, 0)), t: float32(0.5), world_pt: newPoint3D(1, 2, 3), surface_pt: newPoint2D(1, 0), normal: newNormal(1, 0, 0))
+            hit2 = HitRecord(ray: newRay(newPoint3D(0, 0, 2), newVec3(float32 1, 1, 0)), t: float32(0.6), world_pt: newPoint3D(1, 0, 0), surface_pt: newPoint2D(0.5, 0.5), normal: newNormal(0, 1, 0))
 
     teardown:
         discard hit1; discard hit2
@@ -22,7 +22,7 @@ suite "HitRecord":
         check areClose(hit1.world_pt, newPoint3D(1, 2, 3))
         check areClose(hit1.surface_pt, newPoint2D(1, 0))
         check areClose(hit1.normal, newNormal(1, 0, 0))
-        check areClose(hit1.t_hit, 0.5)
+        check areClose(hit1.t, 0.5)
         check areClose(hit1.ray, newRay(newPoint3D(0, 0, 0), newVec3(float32 0, 1, 0)))
 
 
@@ -34,7 +34,7 @@ suite "HitRecord":
         check not areClose(hit1.normal, hit2.normal)
         check not areClose(hit1.ray, hit2.ray)
         check not areClose(hit1.surface_pt, hit2.surface_pt)
-        check not areClose(hit1.t_hit, hit2.t_hit)
+        check not areClose(hit1.t, hit2.t)
 
         check not areClose(hit1, hit2)
 
@@ -103,17 +103,17 @@ suite "Sphere":
 
         check areClose(hit1.world_pt, newPoint3D(0, 0, 1))
         check areClose(hit1.normal, newNormal(0, 0, 1))
-        check areClose(hit1.t_hit, 1)
+        check areClose(hit1.t, 1)
         check areClose(hit1.surface_pt, newPoint2D(0, 0))
 
         check areClose(hit2.world_pt, newPoint3D(1, 0, 0))
         check areClose(hit2.normal, newNormal(1, 0, 0))
-        check areClose(hit2.t_hit, 2)
+        check areClose(hit2.t, 2)
         check areClose(hit1.surface_pt, newPoint2D(0, 0))
 
         check areClose(hit3.world_pt, newPoint3D(1, 0, 0))
         check areClose(hit3.normal, newNormal(-1, 0, 0))
-        check areClose(hit3.t_hit, 1)
+        check areClose(hit3.t, 1)
         check areClose(hit1.surface_pt, newPoint2D(0, 0))
     
 
@@ -134,12 +134,12 @@ suite "Sphere":
 
         check areClose(intersect1.world_pt, newPoint3D(10, 0, 1))
         check areClose(intersect1.normal, newNormal(0, 0, 1))
-        check areClose(intersect1.t_hit, 1)
+        check areClose(intersect1.t, 1)
         check areClose(intersect1.surface_pt, newPoint2D(0, 0))
 
         check areClose(intersect2.world_pt, newPoint3D(11, 0, 0))
         check areClose(intersect2.normal, newNormal(1, 0, 0))
-        check areClose(intersect2.t_hit, 2)
+        check areClose(intersect2.t, 2)
         check areClose(intersect2.surface_pt, newPoint2D(0, 0.5))
 
         sphere.transf = Transformation.id
@@ -176,12 +176,12 @@ suite "Plane":
 
         check areClose(plane.rayIntersection(ray1).get.world_pt, newPoint3D(0, 0, 0))
         check areClose(plane.rayIntersection(ray1).get.normal, newNormal(0, 0, 1))
-        check areClose(plane.rayIntersection(ray1).get.t_hit, 2)
+        check areClose(plane.rayIntersection(ray1).get.t, 2)
         check areClose(plane.rayIntersection(ray1).get.surface_pt, newPoint2D(0, 0))
 
         check areClose(plane.rayIntersection(ray2).get.world_pt, newPoint3D(1, 2, 0))
         check areClose(plane.rayIntersection(ray2).get.normal, newNormal(0, 0, -1))
-        check areClose(plane.rayIntersection(ray2).get.t_hit, 5)
+        check areClose(plane.rayIntersection(ray2).get.t, 5)
         check areClose(plane.rayIntersection(ray2).get.surface_pt, newPoint2D(0, 0))
 
         check not plane.rayIntersection(ray3).isSome
@@ -202,7 +202,7 @@ suite "Plane":
 
         check areClose(plane.rayIntersection(ray3).get().world_pt, newPoint3D(1, 6, 3))
         check areClose(plane.rayIntersection(ray3).get().normal, newNormal(0, 0, -1))
-        check areClose(plane.rayIntersection(ray3).get().t_hit, 10)
+        check areClose(plane.rayIntersection(ray3).get().t, 10)
         check areClose(plane.rayIntersection(ray3).get().surface_pt, newPoint2D(0, 0))
     
 
