@@ -5,22 +5,61 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/Negrini085/PhotoNim)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Negrini085/PhotoNim)
 
-## Installing
-### Dependencies
-- [nim](https://github.com/nim-lang/Nim) >= 2.0
-- [nimble](https://github.com/nim-lang/nimble) >= 0.14
+# Installation
+PhotoNim is available and tested for Linux, MacOSX and Windows machines.
+To install it you can choose which approach you find the most fitting for you. 
+
+## Prerequisites
+To use PhotoNim you must have installed the [Nim](https://github.com/nim-lang/Nim) programming language (version 2.0 or higher) on your machine. \
+To install the latest version on Unix you could run the following command:
+```sh
+curl https://nim-lang.org/choosenim/init.sh -sSf | sh
+```
+To install it on other OSs or to install previous versions, please refer to the [Nim installation guide](https://nim-lang.org/install.html).
+
+
+### Installing from Git
+Choose the appropriate protocol (HTTPS or SSH) and clone the [PhotoNim repository](https://github.com/Negrini085/PhotoNim) using the command
+```bash
+git clone https://github.com/Negrini085/PhotoNim.git    # for HTTPS
+git clone git@github.com:Negrini085/PhotoNim.git        # for SSH
+```
+
+### Installing from Tarball
+Download the latest tarball from [here](https://github.com/Negrini085/PhotoNim/releases) and extract the tarball by running
+```sh
+tar -xzf PhotoNim-<version>.tar.gz
+```
+
+### Installing using Nimble
+Install PhotoNim using [Nimble](https://github.com/nim-lang/nimble), the official Nim package manager:
+```sh
+nimble install PhotoNim
+```
+
+## Dependencies
+PhotoNim depends on the following packages
 - [docopt](https://github.com/docopt/docopt.nim) >= 0.6
 - [nimPNG](https://github.com/jangko/nimPNG) >= 0.3
 
-### From source
-```bash
-git clone https://github.com/Negrini085/PhotoNim.git
-cd PhotoNim
-nimble build
+which can be installed using Nimble
+```sh
+cd PhotoNim && nimble install
 ```
-This will produce an executable `PhotoNim` at the base of the project directory.
 
-## Usage
+Other dependencies are used to generate animations:
+- [GNU Parallel](https://www.gnu.org/software/parallel/)
+- [FFmpeg](https://ffmpeg.org/download.html)
+
+
+## Verifying the Installation
+After installing PhotoNim and its dependencies, you can verify the installation using Nimble by running PhotoNim test suites:
+```sh
+nimble test
+```
+
+
+# Usage
 ```bash
 ./PhotoNim --help
 PhotoNim: a CPU raytracer written in Nim.
@@ -65,9 +104,9 @@ ffmpeg -r 25 -f image2 -s 1600x1000 -i img%03d.png \
 
 [](https://github.com/Negrini085/PhotoNim/assets/139368862/6eb06aeb-eba3-4343-ac1f-96366d666894)
 
-## Contributing
+# Contributing
 If you want to contribute to the project, you can open a [pull requests](https://github.com/Negrini085/PhotoNim/pulls) or use the [issue tracker](https://github.com/Negrini085/PhotoNim/issues/) to suggest any code implementations or report bugs. 
 Any contributions are welcome! 
 
-## License
+# License
 The code is released under the terms of the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html), see the [LICENSE](https://github.com/Negrini085/PhotoNim/blob/master/LICENSE).
