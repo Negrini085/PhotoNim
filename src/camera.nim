@@ -31,6 +31,9 @@ proc `*=`*(a: var Color, b: float32) {.borrow.}
 proc `/`*(a: Color, b: float32): Color {.borrow.}
 proc `/=`*(a: var Color, b: float32) {.borrow.}
 
+proc `*`*(a: Color, b: Color): Color {.inline.} = 
+    result = newColor(a.r*b.r, a.g*b.g, a.b*b.b)
+
 proc luminosity*(a: Color): float32 {.inline.} = 0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
 
 
