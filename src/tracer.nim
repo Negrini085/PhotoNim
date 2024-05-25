@@ -72,16 +72,31 @@ type
         back_col*: Color
 
         case kind*: RendererKind
-        of FlatRenderer, PathTracer: discard 
+        of FlatRenderer: discard 
+
         of OnOffRenderer:
             hit_col*: Color
 
-proc newOnOffRenderer*(world: World, back_col:Color = newColor(0, 0, 0), hit_col: Color = newColor(1,1,1)): Renderer {.inline.} =
+        of PathTracer:
+            randgen*: PCG
+            num_ray*: int
+            max_depth*: int
+            roulette_lim*: int
+
+
+proc newOnOffRenderer*(world: World, back_col = newColor(0,0,0), hit_col = newColor(1,1,1)): Renderer {.inline.} =
     Renderer(kind: OnOffRenderer, world: world, back_col: back_col, hit_col: hit_col)
 
-proc  newFlatRenderer*(world: World, back_col = newColor(0, 0, 0)): Renderer {.inline.} =
+proc newFlatRenderer*(world: World, back_col = newColor(0,0,0)): Renderer {.inline.} =
     Renderer(kind: FlatRenderer, world: world, back_col: back_col)
 
+proc newPathTracer*(world: World, back_col = newColor(0,0,0), randgen = newPCG(), n_ray = 10, max_depth = 10, roulette_lim = 3): Renderer {.inline.} =
+    Render(kind: PathTracer, world: world, randgen: randgen, num_ray: n_ray, max_depth: max_depth, roulette_lim: roulette_lim) 
+
+
+#------------------------------------------------------------#
+#     Call procedure --> proc to solve rendering equation    #
+#------------------------------------------------------------#
 proc call*(rend: Renderer, ray: Ray): Color =
     # Procedure that gives as output needed color
     # We can chose between OnOffRenderer, FlatRenderer and PathTracer
