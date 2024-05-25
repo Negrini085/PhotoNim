@@ -242,6 +242,9 @@ suite "AABox":
         check not fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), -newVec3(float32 0.0, 0.0, 0.0)))
         
 
+#-----------------------------------------#
+#            World type test              #
+#-----------------------------------------#
 
 suite "World":
     
@@ -256,16 +259,43 @@ suite "World":
             
     
     test "add/get proc":
+        # Testing add/get procedure
 
         scenery.shapes.add newUnitarySphere(newPoint3D(0, 0, 0))
         check areClose(scenery.shapes[2].transf.mat, Mat4f.id)
         check areClose(scenery.shapes[2].transf.inv_mat, Mat4f.id)
 
+
     test "fastIntersection proc":
+        # Testing fastIntersection procedure on world scenery
+
         var
             ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
             ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
         
         check fastIntersection(scenery, ray1)
         check not fastIntersection(scenery, ray2)
-            
+    
+
+    test "rayIntersection proc":
+        # Testing rayIntersection procedure on world scenery
+
+        var
+            ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
+            ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
+            hit: Option[HitRecord]
+        
+        scenery.shapes = @[s1, s2]
+        
+        # Intersection with first ray, we expect to have hit
+        # in (1, 0, 0) at time t = 2
+        hit = rayIntersection(scenery, ray1)
+        check hit.isSome
+        check areClose(hit.get.world_pt, newPoint3D(1, 0, 0))
+        check areClose(hit.get.t, 2)
+        check areClose(hit.get.normal.toVec3, newVec3f(0, -1, 0))
+        check areClose(hit.get.surface_pt, newPoint2D(0.75, 0.5))
+
+        # Intersection with second ray, we expect not to have a hit
+        hit = rayIntersection(scenery, ray2)
+        check hit.isNone
