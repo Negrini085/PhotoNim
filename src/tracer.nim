@@ -93,5 +93,15 @@ proc call*(rend: Renderer, ray: Ray): Color =
         if fastIntersection(rend.world, ray): return rend.hit_col
         return rend.back_col
 
-    of FlatRenderer: discard
+    of FlatRenderer:
+        # Here we want to solve rendering equation using only pigment of each surface
+        if not fastIntersection(rend.world, ray): 
+            return rend.back_col
+
+        var
+            hit = rayIntersection(rend.world, ray).get
+            mat = hit.material
+
+        return mat.brdf.pigment.getColor(hit.surface_pt) + mat.radiance.getColor(hit.surface_pt)
+            
     of PathTracer: discard
