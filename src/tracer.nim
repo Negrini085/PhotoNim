@@ -79,12 +79,17 @@ type
 proc newOnOffRenderer*(world: World, back_col:Color = newColor(0, 0, 0), hit_col: Color = newColor(1,1,1)): Renderer {.inline.} =
     Renderer(kind: OnOffRenderer, world: world, back_col: back_col, hit_col: hit_col)
 
+proc  newFlatRenderer*(world: World, back_col = newColor(0, 0, 0)): Renderer {.inline.} =
+    Renderer(kind: FlatRenderer, world: world, back_col: back_col)
+
 proc call*(rend: Renderer, ray: Ray): Color =
     # Procedure that gives as output needed color
     # We can chose between OnOffRenderer, FlatRenderer and PathTracer
 
     case rend.kind
     of OnOffRenderer: 
+        # Here we just see if we have hit or not, meaning we will give as
+        # output background color if there isn't hit, or hit color when we hit a shape
         if fastIntersection(rend.world, ray): return rend.hit_col
         return rend.back_col
 
