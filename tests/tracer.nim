@@ -42,6 +42,7 @@ suite "Renderer":
             ])
             oftrace = newOnOffRenderer(world, newColor(1, 2, 3), newColor(3, 2, 1))
             flatrace = newFlatRenderer(world, newColor(1, 2, 3))
+            pathtr = newPathTracer(world)
     
     teardown:
         discard world
@@ -75,6 +76,42 @@ suite "Renderer":
         check areClose(flatrace.world.shapes[1].center, newPoint3D(1, 2, -1))
 
         check areClose(flatrace.back_col, newColor(1, 2, 3))
+
+
+        #----------------------------------#
+        #            Path Tracer           #
+        #----------------------------------#       
+        check pathtr.kind == PathTracer
+
+        check areClose(pathtr.world.shapes[0].radius, 0.5)
+        check areClose(pathtr.world.shapes[1].radius, 0.2)
+        check areClose(pathtr.world.shapes[0].center, newPoint3D(1, 0, 0))
+        check areClose(pathtr.world.shapes[1].center, newPoint3D(1, 2, -1))
+
+        check areClose(pathtr.back_col, newColor(0, 0, 0))
+        check pathtr.randgen.state == uint64(1753877967969059832)
+        check pathtr.randgen.inc == uint64(109)
+
+        check areClose(pathtr.num_ray.float32, 10.float32)
+        check areClose(pathtr.max_depth.float32, 10.float32)
+        check areClose(pathtr.roulette_lim.float32, 3.float32)
+
+        var pathtr1 = newPathTracer(world, newColor(1,2,3), n_ray = 15, max_depth = 12, roulette_lim = 10)
+
+        check pathtr1.kind == PathTracer
+
+        check areClose(pathtr1.world.shapes[0].radius, 0.5)
+        check areClose(pathtr1.world.shapes[1].radius, 0.2)
+        check areClose(pathtr1.world.shapes[0].center, newPoint3D(1, 0, 0))
+        check areClose(pathtr1.world.shapes[1].center, newPoint3D(1, 2, -1))
+
+        check areClose(pathtr1.back_col, newColor(1,2,3))
+        check pathtr.randgen.state == uint64(1753877967969059832)
+        check pathtr.randgen.inc == uint64(109)
+
+        check areClose(pathtr1.num_ray.float32, 15.float32)
+        check areClose(pathtr1.max_depth.float32, 12.float32)
+        check areClose(pathtr1.roulette_lim.float32, 10.float32)
 
 
     test "call proc":
