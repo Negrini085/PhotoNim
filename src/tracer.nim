@@ -99,7 +99,7 @@ proc newPathTracer*(world: World, back_col = newColor(0,0,0), randgen = newPCG()
 #------------------------------------------------------------#
 #     Call procedure --> proc to solve rendering equation    #
 #------------------------------------------------------------#
-proc call*(rend: Renderer, ray: Ray): Color =
+proc call*(rend: var Renderer, ray: Ray): Color =
     # Procedure that gives as output needed color
     # We can chose between OnOffRenderer, FlatRenderer and PathTracer
 
@@ -121,4 +121,44 @@ proc call*(rend: Renderer, ray: Ray): Color =
 
         return mat.brdf.pigment.getColor(hit.surface_pt) + mat.radiance.getColor(hit.surface_pt)
             
-    of PathTracer: discard
+    of PathTracer:
+        # Here we actually want to solve rendering equation using roussian roulette
+        # algorithm in order to avoid having infinite recursion
+
+        # We first need to check how many reflections did ray had
+        if (ray.depth > rend.max_depth): return newColor(0, 0, 0)
+
+        # Storing ray intersection, we check over the whole scenery
+        # Clearly we need to check wether intersection actually occured or not
+        var hit = rend.world.rayIntersection(ray)
+        if hit.isNone: return newColor(0, 0, 0)
+
+        var
+            mat_hit = hit.get.material
+            col_hit = mat_hit.brdf.pigment.getColor(hit.get.surface_pt)
+            rad_em = mat_hit.radiance.getColor(hit.get.surface_pt)
+            lum = max(col_hit.r, max(col_hit.g, col_hit.b))
+            rad = newColor(0, 0, 0)
+
+        # We want to do russian roulette only if we happen to have a ray depth greater
+        # than roulette_lim, otherwise ww will simply chechk for other reflection
+        if ray.depth >= rend.roulette_lim:
+            var q = max(0.05, 1 - lum)
+
+            if (rend.randgen.rand() > q): col_hit = col_hit * 1/(1-q)
+            else: return rad_em
+
+        if lum > 0.0:
+            var
+                new_ray: Ray
+                new_rad: Color 
+
+            for i in 0..<rend.num_ray:
+                new_ray = mat_hit.brdf.scatter_ray(rend.randgen, 
+                              hit.get.ray.dir, hit.get.world_pt, hit.get.normal,
+                              ray.depth + 1)
+                new_rad = rend.call(new_ray)
+                rad = rad + col_hit * new_rad
+
+        return rad_em + rad * (1/rend.num_ray)
+                
