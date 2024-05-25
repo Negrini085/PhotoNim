@@ -91,7 +91,7 @@ proc newFlatRenderer*(world: World, back_col = newColor(0,0,0)): Renderer {.inli
     Renderer(kind: FlatRenderer, world: world, back_col: back_col)
 
 proc newPathTracer*(world: World, back_col = newColor(0,0,0), randgen = newPCG(), n_ray = 10, max_depth = 10, roulette_lim = 3): Renderer {.inline.} =
-    Render(kind: PathTracer, world: world, randgen: randgen, num_ray: n_ray, max_depth: max_depth, roulette_lim: roulette_lim) 
+    Renderer(kind: PathTracer, world: world, randgen: randgen, num_ray: n_ray, max_depth: max_depth, roulette_lim: roulette_lim) 
 
 
 #------------------------------------------------------------#
