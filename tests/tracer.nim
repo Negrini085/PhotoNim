@@ -1,6 +1,5 @@
 import std/unittest
 import PhotoNim
-from math import exp, pow
 
 #------------------------------------------#
 #         Image Tracer type tests          #
@@ -84,6 +83,18 @@ suite "Renderer":
             ray1 = newRay(newPoint3D(-2, 0, 0), newVec3f(1, 0, 0))
             ray2 = newRay(newPoint3D(-2, 0, 0), newVec3f(-1, 0, 0))
 
-        # On-Off Renderer
+        # Here we expect to have hit while using ray1, but ray2 will not
+        # give rise to an intersection
+
+        #----------------------------------#
+        #          On-Off Renderer         #
+        #----------------------------------#
         check areClose(oftrace.call(ray1), newColor(3, 2, 1))
         check areClose(oftrace.call(ray2), newColor(1, 2, 3))
+    
+
+        #----------------------------------#
+        #           Flat Renderer          #
+        #----------------------------------#
+        check areClose(flatrace.call(ray1), newColor(2, 2, 2))
+        check areClose(flatrace.call(ray2), newColor(1, 2, 3))
