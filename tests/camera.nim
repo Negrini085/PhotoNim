@@ -291,6 +291,16 @@ suite "Pigment unittest":
     teardown:
         discard color1; discard color2; discard color3; discard color4
 
+    test "color * proc":
+        var
+            c1 = newColor(1, 2 ,3)
+            c2 = newColor(4, 5 ,6)
+        
+        c2 = c1 * c2
+        check areClose(c2.r, 4.0)
+        check areClose(c2.g, 10.0)
+        check areClose(c2.b, 18.0)
+
     test "newUniformPigment proc":
         let pigment = newUniformPigment(color1)
         check areClose(pigment.getColor(newPoint2D(0.0, 0.0)), color1)
