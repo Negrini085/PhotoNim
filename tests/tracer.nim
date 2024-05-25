@@ -42,14 +42,18 @@ suite "Renderer":
                 newSphere(newPoint3D(1, 2, -1), 0.2)
             ])
             oftrace = newOnOffRenderer(world, newColor(1, 2, 3), newColor(3, 2, 1))
+            flatrace = newFlatRenderer(world, newColor(1, 2, 3))
     
     teardown:
         discard world
         discard oftrace
+        discard flatrace
 
     test "constructor proc":
 
-        # On-Off Renderer
+        #----------------------------------#
+        #          On-Off Renderer         #
+        #----------------------------------#
         check oftrace.kind == OnOffRenderer
 
         check areClose(oftrace.world.shapes[0].radius, 0.5)
@@ -59,6 +63,19 @@ suite "Renderer":
 
         check areClose(oftrace.back_col, newColor(1, 2, 3))
         check areClose(oftrace.hit_col, newColor(3, 2, 1))
+
+
+        #----------------------------------#
+        #           Flat Renderer          #
+        #----------------------------------#
+        check flatrace.kind == FlatRenderer
+
+        check areClose(flatrace.world.shapes[0].radius, 0.5)
+        check areClose(flatrace.world.shapes[1].radius, 0.2)
+        check areClose(flatrace.world.shapes[0].center, newPoint3D(1, 0, 0))
+        check areClose(flatrace.world.shapes[1].center, newPoint3D(1, 2, -1))
+
+        check areClose(flatrace.back_col, newColor(1, 2, 3))
 
 
     test "call proc":
