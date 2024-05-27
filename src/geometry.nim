@@ -129,6 +129,9 @@ proc `==`*(a, b: Point2D): bool {.borrow.}
 proc `==`*(a, b: Point3D): bool {.borrow.}
 proc `==`*(a, b: Normal): bool {.borrow.}
 
+proc `<`*(a, b: Point3D): bool {.inline.} = a.x < b.x and a.y < b.y and a.z < b.z
+proc `<=`*(a, b: Point3D): bool {.inline.} = a.x <= b.x and a.y <= b.y and a.z <= b.z
+
 proc areClose*(a, b: Point2D; eps: float32 = epsilon(float32)): bool {.borrow.}
 proc areClose*(a, b: Point3D; eps: float32 = epsilon(float32)): bool {.borrow.}
 proc areClose*(a, b: Normal; eps: float32 = epsilon(float32)): bool {.borrow.}
