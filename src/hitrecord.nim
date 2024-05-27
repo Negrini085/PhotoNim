@@ -31,16 +31,16 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
         if delta_4 < 0: return none(seq[float32])
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: return some(@[t_l, t_r])
-        elif t_l > ray.tmin and t_l < ray.tmax: return some(@[t_l])
-        elif t_r > ray.tmin and t_r < ray.tmax: return some(@[t_r])
+        if t_l > ray.tspan.min and t_l < ray.tspan.max and t_r > ray.tspan.min and t_r < ray.tspan.max: return some(@[t_l, t_r])
+        elif t_l > ray.tspan.min and t_l < ray.tspan.max: return some(@[t_l])
+        elif t_r > ray.tspan.min and t_r < ray.tspan.max: return some(@[t_r])
         
         return none(seq[float32])
 
     of skPlane:
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[float32])
         let t_hit = -inv_ray.origin.z / inv_ray.dir[2]
-        if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
+        if t_hit < ray.tspan.min or t_hit > ray.tspan.max: return none(seq[float32])
 
         return some(@[t_hit, Inf])
 
@@ -86,7 +86,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         try: solution = solve(mat, vec) except ValueError: return false
 
         let t_hit = solution[2]
-        if inv_ray.tmin > t_hit or t_hit > inv_ray.tmax: return false
+        if not inv_ray.tspan.contains(t_hit): return false
 
         let (u, v) = (solution[0], solution[1])
         if u < 0.0 or v < 0.0 or u + v > 1.0: return false
@@ -101,14 +101,12 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         if delta_4 < 0: return false
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        return (inv_ray.tmin < t_l and t_l < inv_ray.tmax) or (inv_ray.tmin < t_r and t_r < inv_ray.tmax) 
+        return inv_ray.tspan.contains(t_l) or inv_ray.tspan.contains(t_r)
 
     of skPlane:
         let inv_ray = ray.transform(shape.transform.inverse)
         if abs(inv_ray.dir[2]) < epsilon(float32): return false
-
-        let t = -inv_ray.origin.z / inv_ray.dir[2]
-        return (if t < inv_ray.tmin or t > inv_ray.tmax: false else: true)
+        if inv_ray.tspan.contains(-inv_ray.origin.z / inv_ray.dir[2]): return true
                     
     of skCylinder: 
         let
@@ -122,11 +120,11 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         var (t_l, t_r) = ((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
         if t_l > t_r: swap(t_l, t_r)
 
-        if t_l > inv_ray.tmax or t_r < inv_ray.tmin: return false
+        if t_l > inv_ray.tspan.max or t_r < inv_ray.tspan.min: return false
 
         var t_hit = t_l
-        if t_hit < inv_ray.tmin:
-            if t_r > inv_ray.tmax: return false
+        if t_hit < inv_ray.tspan.min:
+            if t_r > inv_ray.tspan.max: return false
             t_hit = t_r
 
         var hit_pt = inv_ray.at(t_hit)
@@ -137,7 +135,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         if hit_pt.z < shape.zMin or hit_pt.z > shape.zMax or phi > shape.phiMax:
             if t_hit == t_r: return false
             t_hit = t_r
-            if t_hit > inv_ray.tmax: return false
+            if t_hit > inv_ray.tspan.max: return false
             
             hit_pt = inv_ray.at(t_hit)
             phi = arctan2(hit_pt.y, hit_pt.x)
