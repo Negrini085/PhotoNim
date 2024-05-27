@@ -121,6 +121,10 @@ proc x*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[0]
 proc y*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[1]
 proc z*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[2]
 
+proc `x=`*(a: var Point3D | Normal, value: float32) {.inline.} = a.x = value
+proc `y=`*(a: var Point3D | Normal, value: float32) {.inline.} = a.y = value
+proc `z=`*(a: var Point3D | Normal, value: float32) {.inline.} = a.z = value
+
 proc `==`*(a, b: Point2D): bool {.borrow.}
 proc `==`*(a, b: Point3D): bool {.borrow.}
 proc `==`*(a, b: Normal): bool {.borrow.}
@@ -154,23 +158,6 @@ proc dist2*(a, b: Point3D): float32 {.borrow.}
 proc dist*(a, b: Point2D): float32 {.borrow.}    
 proc dist*(a, b: Point3D): float32 {.borrow.}
 
-proc min*(cont: seq[Point3D]): Point3D = 
-    # Procedure that returns a vector with components equal to the minimum of the components of the elements of the sequence
-    if cont.len == 1: return cont[0]
-
-    var x, y, z = newSeq[float32](cont.len)
-    for i in 0..<cont.len: x[i] = cont[i].x; y[i] = cont[i].y; z[i] = cont[i].z
-    newPoint3D(x.min, y.min, z.min)
-
-proc max*(cont: seq[Point3D]): Point3D = 
-    # Procedure that returns a vector with components equal to the maximum of the components of the elements of the sequence
-    if cont.len == 1: return cont[0]
-
-    var x, y, z = newSeq[float32](cont.len)
-    for i in 0..<cont.len: x[i] = cont[i].x; y[i] = cont[i].y; z[i] = cont[i].z
-    newPoint3D(x.max, y.max, z.max)
-
-
 proc `$`*(p: Point2D): string {.inline.} = fmt"({p.u}, {p.v})"
 proc `$`*(p: Point3D): string {.inline.} = fmt"({p.x}, {p.y}, {p.z})"
 proc `$`*(n: Normal): string {.inline.} = fmt"<{n.x}, {n.y}, {n.z}>"
@@ -182,6 +169,43 @@ proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 proc toPoint3D*(a: Vec3f | Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
 proc toNormal*(a: Vec3f | Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
 proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3(a[0], a[1], a[2])
+
+
+type
+    Interval*[T] = tuple[min, max: T]
+
+proc newInterval*[T](a, b: T): Interval[T] =
+    when T is SomeNumber: 
+        result = if a > b: (b, a) else: (a, b)
+    elif T is Point2D: 
+        (result.min.u, result.max.u) = if a.u > b.u: (b.u, a.u) else: (a.u, b.u)
+        (result.min.v, result.max.v) = if a.v > b.v: (b.v, a.v) else: (a.v, b.v)
+
+    elif T is Point3D:
+        (result.min.x, result.max.x) = if a.x > b.x: (b.x, a.x) else: (a.x, b.x)
+        (result.min.y, result.max.y) = if a.y > b.y: (b.y, a.y) else: (a.y, b.y)
+        (result.min.z, result.max.z) = if a.z > b.z: (b.z, a.z) else: (a.z, b.z)
+
+    elif T is Vec3f:
+        (result.min[0], result.max[0]) = if a[0] > b[0]: (b[0], a[0]) else: (a[0], b[0])
+        (result.min[1], result.max[1]) = if a[1] > b[1]: (b[1], a[1]) else: (a[1], b[1])
+        (result.min[2], result.max[2]) = if a[2] > b[2]: (b[2], a[2]) else: (a[2], b[2])
+
+
+proc contains*[T](interval: Interval, value: T): bool {.inline.} =
+    when T is SomeNumber: 
+        return value > interval.min and value < interval.max
+    elif T is Point2D: 
+        return value.u > interval.min.u and value.u < interval.max.u and 
+            value.v > interval.min.v and value.v < interval.max.v
+    elif T is Point3D:
+        return value.x > interval.min.x and value.x < interval.max.x and 
+            value.y > interval.min.y and value.y < interval.max.y and 
+            value.z > interval.min.z and value.z < interval.max.z
+    elif T is Vec3f:
+        return x[0] > interval.min[0] and x[0] < interval.max[0] and 
+            x[1] > interval.min[1] and x[1] < interval.max[1] and 
+            x[2] > interval.min[2] and x[2] < interval.max[2]
 
 
 type
@@ -336,6 +360,8 @@ type
         of tkComposition: 
             transformations*: seq[Transformation]
 
+
+const Identity* = Transformation(kind: tkIdentity)
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
 

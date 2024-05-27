@@ -359,7 +359,7 @@ suite "Derived Transformation test":
 
     teardown:
         discard t1; discard t2; discard t3
-
+    
     test "Scaling of Vec4f":
         # Checking scaling of a Vec4f object
         let vec = newVec4f(1, 2, 3, 1)
