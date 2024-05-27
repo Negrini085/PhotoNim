@@ -126,17 +126,18 @@ let demoDoc* = """
 PhotoNim CLI `demo` command:
 
 Usage:
-    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim demo (persp | ortho) (OnOff | Flat | Path) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
-    persp | ortho       Perspective or Orthogonal Camera kinds.
-    <output>            Path to the output HDRImage. [default: "assets/images/demo.pfm"]
-    --w=<width>         Image width. [default: 1600]
-    --h=<height>        Image height. [default: 900]
-    --angle=<angle>     Rotation angle around z axis. [default: 10]
+    persp | ortho           Perspective or Orthogonal Camera kinds.
+    OnOff | Flat | Path     Choosing renderer: OnOff (only shows hit), Flat (flat renderer), Path (actual path tracer)
+    <output>                Path to the output HDRImage. [default: "assets/images/demo.pfm"]
+    --w=<width>             Image width. [default: 1600]
+    --h=<height>            Image height. [default: 900]
+    --angle=<angle>         Rotation angle around z axis. [default: 10]
 """
 
-proc demo*(width, height: int, camera: Camera): HdrImage =
+proc demo*(width, height: int, camera: Camera, render: var Renderer): HdrImage =
     let timeStart = cpuTime()
 
     let
@@ -152,10 +153,11 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
         s9 = newSphere(center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1)   
 
     var 
-        scenary = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+        scenery = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
         tracer = newImageTracer(width, height, camera, sideSamples = 4)
-
-    tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
+    
+    render.world = scenery
+    tracer.fire_all_rays(render)
 
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
@@ -172,7 +174,7 @@ when isMainModule:
 Usage:
     ./PhotoNim help [<command>]
     ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
-    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim demo (persp | ortho) (OnOff | Flat | Path) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
     -h | --help         Display the PhotoNim CLI helper screen.
@@ -182,10 +184,11 @@ Options:
     --g=<gamma>         Gamma correction factor. [default: 1.0]
     --lum=<avlum>       Average image luminosity. 
 
-    persp | ortho       Perspective or Orthogonal Camera kinds.
-    --w=<width>         Image width. [default: 1600]
-    --h=<height>        Image height. [default: 900]
-    --angle=<angle>     Rotation angle around z axis. [default: 10]
+    persp | ortho           Perspective or Orthogonal Camera kinds.
+    OnOff | Flat | Path     Choosing renderer: OnOff (only shows hit), Flat (flat renderer), Path (actual path tracer)
+    --w=<width>             Image width. [default: 1600]
+    --h=<height>            Image height. [default: 900]
+    --angle=<angle>         Rotation angle around z axis. [default: 10]
 """
 
     let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
@@ -253,9 +256,17 @@ Options:
             a_ratio = width / height
             transf = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
             camera = if args["persp"]: newPerspectiveCamera(a_ratio, 1.0, transf) else: newOrthogonalCamera(a_ratio, transf)
-
+        
+        var render: Renderer
+        if args["OnOff"]:
+            render = newOnOffRenderer(hit_col = newColor(1, 215.0/255, 0))
+        elif args["Flat"]:
+            render = newFlatRenderer()
+        else:
+            render = newPathTracer()
+        
         var stream = newFileStream(pfmOut, fmWrite) 
-        stream.writePFM(demo(width, height, camera))
+        stream.writePFM(demo(width, height, camera, render))
         stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)

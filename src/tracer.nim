@@ -161,4 +161,15 @@ proc call*(rend: var Renderer, ray: Ray): Color =
                 rad = rad + col_hit * new_rad
 
         return rad_em + rad * (1/rend.num_ray)
-                
+
+
+proc fire_all_rays*(tracer: var ImageTracer, rend: var Renderer) = 
+    # Proc to have rendered image: here we are not using anti-aliasing
+
+    for y in 0..<tracer.image.height:
+        for x in 0..<tracer.image.width:
+            tracer.image.setPixel(x, y, rend.call(tracer.fire_ray(x, y)))
+        
+        displayProgress(y + 1, tracer.image.height)
+    stdout.eraseLine
+    stdout.resetAttributes
