@@ -110,9 +110,43 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
         let t = -inv_ray.origin.z / inv_ray.dir[2]
         return (if t < inv_ray.tmin or t > inv_ray.tmax: false else: true)
                     
-    of skCylinder: discard
+    of skCylinder: 
+        let
+            a = inv_ray.dir[0] * inv_ray.dir[0] + inv_ray.dir[1] * inv_ray.dir[1]
+            b = 2 * (inv_ray.dir[0] * inv_ray.origin.x + inv_ray.dir[1] * inv_ray.origin.y)
+            c = inv_ray.origin.x * inv_ray.origin.x + inv_ray.origin.y * inv_ray.origin.y - shape.R * shape.R
+            delta = b * b - 4.0 * a * c
 
+        if delta < 0.0: return false
 
+        var (t_l, t_r) = ((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
+        if t_l > t_r: swap(t_l, t_r)
+
+        if t_l > inv_ray.tmax or t_r < inv_ray.tmin: return false
+
+        var t_hit = t_l
+        if t_hit < inv_ray.tmin:
+            if t_r > inv_ray.tmax: return false
+            t_hit = t_r
+
+        var hit_pt = inv_ray.at(t_hit)
+
+        var phi = arctan2(hit_pt.y, hit_pt.x)
+        if phi < 0.0: phi += 2.0 * PI
+
+        if hit_pt.z < shape.zMin or hit_pt.z > shape.zMax or phi > shape.phiMax:
+            if t_hit == t_r: return false
+            t_hit = t_r
+            if t_hit > inv_ray.tmax: return false
+            
+            hit_pt = inv_ray.at(t_hit)
+            phi = arctan2(hit_pt.y, hit_pt.x)
+            if phi < 0.0: phi += 2.0 * PI
+            if hit_pt.z < shape.zMin or hit_pt.z > shape.zMax or phi > shape.phiMax: return false
+
+        return true
+    
+    
 proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     var 
         t_hit: float32
