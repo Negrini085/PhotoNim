@@ -84,13 +84,13 @@ type
             roulette_lim*: int
 
 
-proc newOnOffRenderer*(world: World, back_col = newColor(0,0,0), hit_col = newColor(1,1,1)): Renderer {.inline.} =
+proc newOnOffRenderer*(world = newWorld(), back_col = newColor(0,0,0), hit_col = newColor(1,1,1)): Renderer {.inline.} =
     Renderer(kind: OnOffRenderer, world: world, back_col: back_col, hit_col: hit_col)
 
-proc newFlatRenderer*(world: World, back_col = newColor(0,0,0)): Renderer {.inline.} =
+proc newFlatRenderer*(world = newWorld(), back_col = newColor(0,0,0)): Renderer {.inline.} =
     Renderer(kind: FlatRenderer, world: world, back_col: back_col)
 
-proc newPathTracer*(world: World, back_col = newColor(0,0,0), randgen = newPCG(), n_ray = 10, max_depth = 10, roulette_lim = 3): Renderer {.inline.} =
+proc newPathTracer*(world = newWorld(), back_col = newColor(0,0,0), randgen = newPCG(), n_ray = 10, max_depth = 10, roulette_lim = 3): Renderer {.inline.} =
     Renderer(kind: PathTracer, world: world, back_col: back_col,
             randgen: randgen, num_ray: n_ray, max_depth: max_depth, 
             roulette_lim: roulette_lim) 
