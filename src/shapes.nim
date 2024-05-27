@@ -1,7 +1,7 @@
 import geometry, camera
 
-from std/math import sgn, floor, arccos, arctan2, PI
 from std/sequtils import map
+from std/math import sgn, floor, arccos, arctan2, PI
 
 type
     AABB* = Interval[Point3D]

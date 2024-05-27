@@ -508,7 +508,7 @@ proc `@`*(a, b: Transformation): Transformation =
 proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
-    of tkIdentity: return Transformation.id
+    of tkIdentity: return Identity
     of tkComposition: 
         var transfs = newSeq[Transformation](transf.transformations.len)
         for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i].inverse
