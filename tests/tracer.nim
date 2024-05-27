@@ -142,3 +142,43 @@ suite "Renderer":
         #----------------------------------#
         ray1.depth = 12
         check areClose(pathtr.call(ray1), newColor(0, 0, 0))
+    
+
+
+    test "Furnace test":
+        # Here we are actually testing the path tracer we previously implemented
+        # We are doing the so-called furnace test: we don't want to use russian roulette
+
+        # We will use random number for emitted radiance and reflectance
+        var 
+            randgen = newPCG()
+            radiance: float32
+            reflectance: float32
+            mat: Material
+            col: Color
+            ray: Ray
+
+        for i in 0 ..< 100:
+            world.shapes = @[]
+
+            radiance = randgen.rand()
+            reflectance = randgen.rand()
+
+            # Randomic chosen material
+            mat = newMaterial(
+                newDiffuseBRDF(pigment = newUniformPigment(newColor(1,1,1) * reflectance)),
+                newUniformPigment(newColor(1,1,1) * radiance)
+                )
+            world.shapes.add(newUnitarySphere(newPoint3D(0, 0, 0), material = mat))
+            
+            pathtr = newPathTracer(world, randgen = randgen, n_ray = 1, max_depth = 9100, roulette_lim = 10001)
+            
+            ray = newRay(newPoint3d(0, 0, 0), newVec3f(1, 0, 0))
+            col = pathtr.call(ray)
+
+
+            # Checking wether call method work or not, we know that we should have:
+            #           exp = radiance/(1 - reflectance)
+            check areClose(radiance/(1 - reflectance), col.r, eps = 1e-2)
+            check areClose(radiance/(1 - reflectance), col.g, eps = 1e-2)
+            check areClose(radiance/(1 - reflectance), col.b, eps = 1e-2)

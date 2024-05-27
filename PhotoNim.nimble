@@ -21,7 +21,7 @@ task test, "Run the PhotoNim tests":
     exec "nim c -d:release --hints:off -r camera.nim"
     exec "nim c -d:release --hints:off -r shapes.nim"
     exec "nim c -d:release --hints:off -r pcg.nim"
-    exec "nim c -d:release --hints:off -r tracer.nim"
+    exec "nim c -d:release --hints:off -d:nimCallDepthLimit=20000 -r tracer.nim"
     exec "rm geometry camera shapes pcg tracer"
 
 task demo, "Run the PhotoNim demo animation":
