@@ -13,11 +13,15 @@ proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
 const 
     WHITE* = newColor(1, 1, 1)
     BLACK* = newColor(0, 0, 0) 
+RED*   = newColor(1, 0, 0)
+    GREEN* = newColor(0, 1, 0)
+    BLUE*  = newColor(0, 0, 1)
 
 proc r*(a: Color): float32 {.inline.} = a.Vec3f[0]
 proc g*(a: Color): float32 {.inline.} = a.Vec3f[1]
 proc b*(a: Color): float32 {.inline.} = a.Vec3f[2]
 
+proc `==`*(a, b: Color): bool {.borrow.}
 proc areClose*(a, b: Color; epsilon = epsilon(float32)): bool {.borrow.}
 
 proc `+`*(a, b: Color): Color {.borrow.}
