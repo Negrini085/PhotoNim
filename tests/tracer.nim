@@ -135,3 +135,10 @@ suite "Renderer":
         #----------------------------------#
         check areClose(flatrace.call(ray1), newColor(2, 2, 2))
         check areClose(flatrace.call(ray2), newColor(1, 2, 3))
+
+
+        #----------------------------------#
+        #            Path Tracer           #
+        #----------------------------------#
+        ray1.depth = 12
+        check areClose(pathtr.call(ray1), newColor(0, 0, 0))
