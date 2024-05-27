@@ -141,16 +141,71 @@ proc demo*(width, height: int, camera: Camera, render: var Renderer): HdrImage =
     let timeStart = cpuTime()
 
     let
-        s0 = newSphere(center = newPoint3D( 0.5,  0.5,  0.5), radius = 0.1)
-        s1 = newSphere(center = newPoint3D( 0.5,  0.5, -0.5), radius = 0.1)
-        s2 = newSphere(center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1)
-        s3 = newSphere(center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1)
-        s4 = newSphere(center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1)
-        s5 = newSphere(center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1)
-        s6 = newSphere(center = newPoint3D(-0.5, -0.5,  0.5), radius = 0.1)
-        s7 = newSphere(center = newPoint3D(-0.5, -0.5, -0.5), radius = 0.1)
-        s8 = newSphere(center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1)
-        s9 = newSphere(center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1)   
+        s0 = newSphere(
+            center = newPoint3D( 0.5,  0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(1, 215/255, 0)))
+            )
+
+        s1 = newSphere(
+            center = newPoint3D( 0.5,  0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(1, 0, 0)))
+            )
+
+        s2 = newSphere(
+            center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newUniformPigment(newColor(0, 1, 127/255))
+                )
+            )
+
+        s3 = newSphere(
+            center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newUniformPigment(newColor(0, 1, 127/255))
+                )
+            )
+
+        s4 = newSphere(
+            center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 4)
+                )
+            )
+        
+        s5 = newSphere(
+            center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0.5), 
+                    newUniformPigment(newColor(139/255, 0, 139/255))
+                )
+        )
+
+        s6 = newSphere(
+            center = newPoint3D(-0.5, -0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0.5), 
+                    newUniformPigment(newColor(244/255, 164/255, 96/255))
+                )            
+            )
+
+        s7 = newSphere(
+            center = newPoint3D(-0.5, -0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), 
+                    newUniformPigment(newColor(244/255, 164/255, 96/255))
+                )   
+            )
+
+        s8 = newSphere(
+            center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1,
+            newMaterial(newSpecularBRDF(), 
+                    newUniformPigment(newColor(0, 0, 128/255))
+                )   
+            )            
+
+        s9 = newSphere(
+            center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 1), 
+                    newUniformPigment(newColor(124/255, 252/255, 0))
+                )   
+            )               
 
     var 
         scenery = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
