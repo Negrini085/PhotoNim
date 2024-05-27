@@ -58,10 +58,10 @@ suite "Sphere":
 
     test "newSphere proc":
         check sphere1.radius == 3.0
-        check sphere1.center == newPoint3D(0, 1, 0)
+        check areClose(apply(sphere1.transform, ORIGIN3D), newPoint3D(0, 1, 0))
 
         check sphere1.transform.kind == tkComposition
-        check sphere1.transform.transformations[0].mat == newTranslation(newVec3(float32 0, 1, 0)).mat
+        check sphere1.transform.transformations[0].mat == newTranslation(newVec3f(0, 1, 0)).mat
         check sphere1.transform.transformations[1].mat == newScaling(3.0).mat
 
 

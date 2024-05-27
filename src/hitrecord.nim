@@ -9,7 +9,7 @@ type
     HitRecord* = object
         ray*: Ray
         t*: float32
-        shape*: ShapeKind
+        shape*: ShapeKind # mainly for debug
         material*: Material
 
         world_pt*: Point3D
@@ -18,13 +18,10 @@ type
 
 
 proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
-    var t_hit: float32
-    let inv_ray = ray.transform(shape.transform.inverse)
+    let inv_ray = if shape.transform.kind != tkIdentity: ray.transform(shape.transform.inverse) else: ray
 
     case shape.kind
     of skTriangle: discard
-
-    of skTriangularMesh: discard            
 
     of skAABox: discard
 
@@ -34,30 +31,28 @@ proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
         if delta_4 < 0: return none(seq[float32])
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
-            return some(@[t_l, t_r])
-        elif t_l > ray.tmin and t_l < ray.tmax:
-            return some(@[t_l])
-        elif t_r > ray.tmin and t_r < ray.tmax:
-            return some(@[t_r])
+        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: return some(@[t_l, t_r])
+        elif t_l > ray.tmin and t_l < ray.tmax: return some(@[t_l])
+        elif t_r > ray.tmin and t_r < ray.tmax: return some(@[t_r])
+        
         return none(seq[float32])
 
     of skPlane:
         if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[float32])
-        t_hit = -inv_ray.origin.z / inv_ray.dir[2]
+        let t_hit = -inv_ray.origin.z / inv_ray.dir[2]
         if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
 
         return some(@[t_hit, Inf])
 
     of skCylinder: discard
 
+
 proc fastIntersection*(shape: Shape, ray: Ray): bool =
+    let inv_ray = if shape.transform.kind != tkIdentity: ray.transform(shape.transform.inverse) else: ray
+
     case shape.kind
     of skAABox:
-        let 
-            inv_ray = ray.transform(shape.transform)
-            (min, max) = (shape.min - inv_ray.origin, shape.max - inv_ray.origin)
-        
+        let (min, max) = (shape.aabb.min - inv_ray.origin, shape.aabb.max - inv_ray.origin)
         var
             (tx_min, tx_max) = (min.x / inv_ray.dir[0], max.x / inv_ray.dir[0])
             (ty_min, ty_max) = (min.y / inv_ray.dir[1], max.y / inv_ray.dir[1])
@@ -78,27 +73,20 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
 
         return true
 
-
-    of skTriangularMesh: discard
-    
     of skTriangle: 
         let 
-            (A, B, C) = shape.vertices
             mat = [
-                [B.x - A.x, C.x - A.x, -ray.dir[0]], 
-                [B.y - A.y, C.y - A.y, -ray.dir[1]], 
-                [B.z - A.z, C.z - A.z, -ray.dir[2]]
+                [shape.vertices[1].x - shape.vertices[0].x, shape.vertices[2].x - shape.vertices[0].x, -inv_ray.dir[0]], 
+                [shape.vertices[1].y - shape.vertices[0].y, shape.vertices[2].y - shape.vertices[0].y, -inv_ray.dir[1]], 
+                [shape.vertices[1].z - shape.vertices[0].z, shape.vertices[2].z - shape.vertices[0].z, -inv_ray.dir[2]]
             ]
-            vec = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
+            vec = [inv_ray.origin.x - shape.vertices[0].x, inv_ray.origin.y - shape.vertices[0].y, inv_ray.origin.z - shape.vertices[0].z]
         
         var solution: Vec3f
-        try:
-            solution = solve(mat, vec)
-        except ValueError:
-            return false
+        try: solution = solve(mat, vec) except ValueError: return false
 
-        var t_hit = solution[2]
-        if ray.tmin > t_hit or t_hit > ray.tmax: return false
+        let t_hit = solution[2]
+        if inv_ray.tmin > t_hit or t_hit > inv_ray.tmax: return false
 
         let (u, v) = (solution[0], solution[1])
         if u < 0.0 or v < 0.0 or u + v > 1.0: return false
@@ -107,7 +95,6 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
 
     of skSphere: 
         let 
-            inv_ray = ray.transform(shape.transform.inverse)
             (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1.0)
             delta_4 = b * b - a * c
 
@@ -132,19 +119,20 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         hit_pt: Point3D
         normal: Normal
 
-    let inv_ray = ray.transform(shape.transform.inverse)
+    let inv_ray = if shape.transform.kind != tkIdentity: ray.transform(shape.transform.inverse) else: ray
+    # This could be an useless if statement since both Ray.transform and Transformation.inverse handle well tkIdentity.
+    # let inv_ray = ray.transform(shape.transform.inverse) 
 
     case shape.kind
     of skTriangle:
         let 
-            (A, B, C) = shape.vertices
             mat = [
-                [B.x - A.x, C.x - A.x, -inv_ray.dir[0]], 
-                [B.y - A.y, C.y - A.y, -inv_ray.dir[1]], 
-                [B.z - A.z, C.z - A.z, -inv_ray.dir[2]]
+                [shape.vertices[1].x - shape.vertices[0].x, shape.vertices[2].x - shape.vertices[0].x, -inv_ray.dir[0]], 
+                [shape.vertices[1].y - shape.vertices[0].y, shape.vertices[2].y - shape.vertices[0].y, -inv_ray.dir[1]], 
+                [shape.vertices[1].z - shape.vertices[0].z, shape.vertices[2].z - shape.vertices[0].z, -inv_ray.dir[2]]
             ]
-            vec = [inv_ray.origin.x - A.x, inv_ray.origin.y - A.y, inv_ray.origin.z - A.z]
-        
+            vec = [inv_ray.origin.x - shape.vertices[0].x, inv_ray.origin.y - shape.vertices[0].y, inv_ray.origin.z - shape.vertices[0].z]
+
         var solution: Vec3f
         try:
             solution = solve(mat, vec)
@@ -168,12 +156,10 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
             normal: shape.normal(hit_pt, inv_ray.dir)
         )
 
-
-    of skTriangularMesh: discard            
-
+  
     of skAABox:
         assert inv_ray.dir != newVec3f(0.0, 0.0, 0.0)
-        let (min, max) = (shape.min - inv_ray.origin, shape.max - inv_ray.origin)
+        let (min, max) = (shape.aabb.min - inv_ray.origin, shape.aabb.max - inv_ray.origin)
         
         var
             (tx_min, tx_max) = (min.x / inv_ray.dir[0], max.x / inv_ray.dir[0])
@@ -193,14 +179,13 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if tz_min > t_hit_min: t_hit_min = tz_min
         if tz_max < t_hit_max: t_hit_max = tz_max
                 
-        proc `<=`(a, b: Point3D): bool {.inline.} = a.x <= b.x and a.y <= b.y and a.z <= b.z
-        t_hit = (if inv_ray.origin <= shape.max and shape.min <= inv_ray.origin: t_hit_max else: t_hit_min)
+        t_hit = (if inv_ray.origin <= shape.aabb.max and shape.aabb.min <= inv_ray.origin: t_hit_max else: t_hit_min)
         
         if (t_hit < inv_ray.tmin) or (t_hit > inv_ray.tmax): return none HitRecord
 
 
     of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
+        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1.0)
         let delta_4 = b * b - a * c
         if delta_4 < 0: return none HitRecord
 
@@ -211,8 +196,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
 
 
     of skCylinder:
-        if not fastIntersection(newAABox(newPoint3D(-shape.R, -shape.R, shape.limits.zmin), newPoint3D(shape.R, shape.R, shape.limits.zmax)), inv_ray):
-            return none HitRecord
+        if not fastIntersection(shape.getAABox, ray): return none HitRecord
 
         let
             a = inv_ray.dir[0] * inv_ray.dir[0] + inv_ray.dir[1] * inv_ray.dir[1]
@@ -236,7 +220,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         var phi = arctan2(hit_pt.y, hit_pt.x)
         if phi < 0.0: phi += 2.0 * PI
 
-        if hit_pt.z < shape.limits.zmin or hit_pt.z > shape.limits.zmax or phi > shape.limits.phimax:
+        if hit_pt.z < shape.zMin or hit_pt.z > shape.zMax or phi > shape.phiMax:
             if t_hit == t_r: return none HitRecord
             t_hit = t_r
             if t_hit > inv_ray.tmax: return none HitRecord
@@ -244,7 +228,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
             hit_pt = inv_ray.at(t_hit)
             phi = arctan2(hit_pt.y, hit_pt.x)
             if phi < 0.0: phi += 2.0 * PI
-            if hit_pt.z < shape.limits.zmin or hit_pt.z > shape.limits.zmax or phi > shape.limits.phimax: return none HitRecord
+            if hit_pt.z < shape.zMin or hit_pt.z > shape.zMax or phi > shape.phiMax: return none HitRecord
 
         return some HitRecord(
             ray: ray,
