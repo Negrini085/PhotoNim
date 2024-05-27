@@ -364,7 +364,7 @@ type
             transformations*: seq[Transformation]
 
 
-const Identity* = Transformation(kind: tkIdentity)
+const IDENTITY* = Transformation(kind: tkIdentity)
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
 
@@ -508,7 +508,7 @@ proc `@`*(a, b: Transformation): Transformation =
 proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
-    of tkIdentity: return Identity
+    of tkIdentity: return IDENTITY
     of tkComposition: 
         var transfs = newSeq[Transformation](transf.transformations.len)
         for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i].inverse

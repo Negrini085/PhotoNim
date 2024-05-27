@@ -42,10 +42,10 @@ type
         of skPlane: discard
 
 
-proc newAABox*(min = ORIGIN3D, max = newPoint3D(1, 1, 1), material = newMaterial(), transform = Identity): Shape {.inline.} =
+proc newAABox*(min = ORIGIN3D, max = newPoint3D(1, 1, 1), material = newMaterial(), transform = IDENTITY): Shape {.inline.} =
     Shape(kind: skAABox, material: material, aabb: (min, max), transform: transform)
 
-proc newAABox*(aabb: AABB, material = newMaterial(), transform = Identity): Shape {.inline.} =
+proc newAABox*(aabb: AABB, material = newMaterial(), transform = IDENTITY): Shape {.inline.} =
     Shape(kind: skAABox, material: material, aabb: aabb, transform: transform)
 
 proc getAABox*(shape: Shape): Shape {.inline.} =
@@ -64,7 +64,7 @@ proc getAABox*(shape: Shape): Shape {.inline.} =
 proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Shape {.inline.} =   
     Shape(
         kind: skSphere,
-        transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: Identity,
+        transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: IDENTITY,
         material: material,
         radius: radius
     )
@@ -72,12 +72,12 @@ proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Sha
 proc newUnitarySphere*(center: Point3D; material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skSphere,
-        transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: Identity, 
+        transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: IDENTITY, 
         material: material,
         radius: 1.0
     )
 
-proc newTriangle*(a, b, c: Point3D; transform = Identity, material = newMaterial()): Shape {.inline.} = 
+proc newTriangle*(a, b, c: Point3D; transform = IDENTITY, material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skTriangle, 
         transform: transform,
@@ -85,7 +85,7 @@ proc newTriangle*(a, b, c: Point3D; transform = Identity, material = newMaterial
         vertices: [a, b, c]
     )
 
-proc newTriangle*(vertices: array[3, Point3D]; transform = Identity, material = newMaterial()): Shape {.inline.} = 
+proc newTriangle*(vertices: array[3, Point3D]; transform = IDENTITY, material = newMaterial()): Shape {.inline.} = 
     Shape(
         kind: skTriangle, 
         transform: transform,
@@ -93,11 +93,11 @@ proc newTriangle*(vertices: array[3, Point3D]; transform = Identity, material = 
         vertices: vertices
     )
 
-proc newPlane*(transform = Identity, material = newMaterial()): Shape {.inline.} = 
+proc newPlane*(transform = IDENTITY, material = newMaterial()): Shape {.inline.} = 
     Shape(kind: skPlane, transform: transform, material: material)
 
 proc newCylinder*(r: float32 = 1.0, z_min: float32 = 0.0, z_max: float32 = 1.0, phi_max: float32 = 2.0 * PI; 
-                    transform = Identity, material = newMaterial()): Shape {.inline.} =
+                    transform = IDENTITY, material = newMaterial()): Shape {.inline.} =
     Shape(
         kind: skCylinder,
         transform: transform,

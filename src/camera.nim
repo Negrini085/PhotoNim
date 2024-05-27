@@ -109,10 +109,10 @@ type
         of ckPerspective: 
             distance*: float32 
 
-proc newOrthogonalCamera*(a: float32, transform = Identity): Camera {.inline.} = 
+proc newOrthogonalCamera*(a: float32, transform = IDENTITY): Camera {.inline.} = 
     Camera(kind: ckOrthogonal, transform: transform, aspect_ratio: a)
 
-proc newPerspectiveCamera*(a, d: float32, transform = Identity): Camera {.inline.} = 
+proc newPerspectiveCamera*(a, d: float32, transform = IDENTITY): Camera {.inline.} = 
     Camera(kind: ckPerspective, transform: transform, aspect_ratio: a, distance: d)
 
 proc fireRay*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
