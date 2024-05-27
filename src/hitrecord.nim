@@ -174,7 +174,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
             return none HitRecord
 
         t_hit = solution[2]
-        if inv_ray.tmin > t_hit or t_hit > inv_ray.tmax: return none HitRecord
+        if not inv_ray.tspan.contains(t_hit): return none HitRecord
 
         let (u, v) = (solution[0], solution[1])
         if u < 0.0 or v < 0.0 or u + v > 1.0: return none HitRecord
@@ -215,7 +215,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
                 
         t_hit = (if inv_ray.origin <= shape.aabb.max and shape.aabb.min <= inv_ray.origin: t_hit_max else: t_hit_min)
         
-        if (t_hit < inv_ray.tmin) or (t_hit > inv_ray.tmax): return none HitRecord
+        if not inv_ray.tspan.contains(t_hit): return none HitRecord
 
 
     of skSphere:
@@ -224,8 +224,8 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if delta_4 < 0: return none HitRecord
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax: t_hit = t_l
-        elif t_r > ray.tmin and t_r < ray.tmax: t_hit = t_r
+        if ray.tspan.contains(t_l): t_hit = t_l
+        elif ray.tspan.contains(t_r): t_hit = t_r
         else: return none HitRecord
 
 
@@ -243,11 +243,11 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         var (t_l, t_r) = ((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
         if t_l > t_r: swap(t_l, t_r)
 
-        if t_l > inv_ray.tmax or t_r < inv_ray.tmin: return none HitRecord
+        if t_l > inv_ray.tspan.max or t_r < inv_ray.tspan.min: return none HitRecord
 
         t_hit = t_l
-        if t_hit < inv_ray.tmin:
-            if t_r > inv_ray.tmax: return none HitRecord
+        if t_hit < inv_ray.tspan.min:
+            if t_r > inv_ray.tspan.max: return none HitRecord
             t_hit = t_r
 
         hit_pt = inv_ray.at(t_hit)
@@ -257,7 +257,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if hit_pt.z < shape.zMin or hit_pt.z > shape.zMax or phi > shape.phiMax:
             if t_hit == t_r: return none HitRecord
             t_hit = t_r
-            if t_hit > inv_ray.tmax: return none HitRecord
+            if t_hit > inv_ray.tspan.max: return none HitRecord
             
             hit_pt = inv_ray.at(t_hit)
             phi = arctan2(hit_pt.y, hit_pt.x)
@@ -278,7 +278,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
     of skPlane:
         if abs(inv_ray.dir[2]) < epsilon(float32): return none HitRecord
         t_hit = -inv_ray.origin.z / inv_ray.dir[2]
-        if t_hit < ray.tmin or t_hit > ray.tmax: return none HitRecord
+        if not ray.tspan.contains(t_hit): return none HitRecord
     
 
     hit_pt = inv_ray.at(t_hit)

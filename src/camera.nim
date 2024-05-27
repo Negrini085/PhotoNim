@@ -76,12 +76,11 @@ proc applyToneMap*(img: var HdrImage; alpha, gamma, avLum: float32) =
 type Ray* = object
     origin*: Point3D
     dir*: Vec3f
-    tmin*: float32
-    tmax*: float32
+    tspan*: Interval[float32]
     depth*: int
 
 proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, tmin: epsilon(float32), tmax: Inf, depth: 0)  
+    Ray(origin: origin, dir: direction, tspan: (epsilon(float32), Inf.float32), depth: 0)  
 
 proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
 
@@ -92,9 +91,9 @@ proc transform*(ray: Ray; transf: Transformation): Ray {.inline.} =
     case transf.kind: 
     of tkIdentity: return ray
     of tkTranslation, tkScaling: 
-        return Ray(origin: apply(transf, ray.origin), dir: ray.dir, tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
+        return Ray(origin: apply(transf, ray.origin), dir: ray.dir, tspan: ray.tspan, depth: ray.depth)
     of tkGeneric, tkRotation, tkComposition:
-        return Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tmin: ray.tmin, tmax: ray.tmax, depth: ray.depth)
+        return Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tspan: ray.tspan, depth: ray.depth)
 
 
 type
