@@ -46,8 +46,9 @@ suite "HitRecord":
 suite "Sphere":
 
     setup:
-        var sphere = newUnitarySphere(newPoint3D(0, 0, 0))
-        var sphere1 = newSphere(newPoint3D(0, 1, 0), 3.0)
+        var 
+            sphere = newUnitarySphere(newPoint3D(0, 0, 0))
+            sphere1 = newSphere(newPoint3D(0, 1, 0), 3.0)
 
     teardown: 
         discard sphere; discard sphere1
@@ -147,7 +148,7 @@ suite "Sphere":
         check not sphere.rayIntersection(ray4).isSome
     
 
-    test "FastIntersection":
+    test "FastIntersection proc":
         # Checking Fast intersection method
         var
             ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
@@ -155,6 +156,51 @@ suite "Sphere":
         
         check sphere.fastIntersection(ray1)
         check not sphere.fastIntersection(ray2)
+    
+    test "allHitTimes proc":
+        # Checking all hit times procedure
+
+        var
+            ray1 = newRay(newPoint3D(2, 0, 0), newVec3f(-1, 0 ,0))
+            ray2 = newRay(newPoint3D(0, -3, 0), newVec3f(0, 1, 0))
+            ray3 = newRay(newPoint3D(0, -3, 0), newVec3f(1, 0, 0))
+            appo: Option[seq[float32]]
+        
+
+        #----------------------------#
+        #       Unitary sphere       #
+        #----------------------------#  
+        appo = allHitTimes(sphere, ray1)
+        check appo.isSome
+        check areClose(appo.get[0], 1.0)
+        check areClose(appo.get[1], 3.0)
+
+        appo = allHitTimes(sphere, ray2)
+        check appo.isSome
+        check areClose(appo.get[0], 2.0)
+        check areClose(appo.get[1], 4.0)
+
+        appo = allHitTimes(sphere, ray3)
+        check not appo.isSome
+
+
+        #----------------------------#
+        #      Ordinary sphere       #
+        #----------------------------#
+        ray1.origin = newPoint3D(4, 1, 0)
+        appo = allHitTimes(sphere1, ray1)
+        check appo.isSome
+        echo appo.get[0]
+        check areClose(appo.get[0], 1.0, eps = 1e-6)
+        check areClose(appo.get[1], 7.0, eps = 1e-6)
+
+        appo = allHitTimes(sphere1, ray2)
+        check appo.isSome
+        check areClose(appo.get[0], 1.0, eps = 1e-6)
+        check areClose(appo.get[1], 7.0, eps = 1e-6)
+
+        appo = allHitTimes(sphere1, ray3)
+        check not appo.isSome
 
 
 
