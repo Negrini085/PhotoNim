@@ -54,21 +54,18 @@ proc getAABox*(shape: Shape): Shape {.inline.} =
 
     of skTriangle: return newAABox(shape.vertices.getAABB, transform = shape.transform)
 
-    of skSphere: return newAABox(newPoint3D(-1.0, -1.0, -1.0), newPoint3D(1.0, 1.0, 1.0), transform = shape.transform)
+    of skSphere: return newAABox(newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius), transform = shape.transform)
 
     of skCylinder: return newAABox(newPoint3D(-shape.R, -shape.R, shape.zMin), newPoint3D(shape.R, shape.R, shape.zMax), transform = shape.transform)
 
     of skPlane: return newAABox(newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, Inf), transform = shape.transform)
 
 
-proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Shape {.inline.} = 
-    var transform = Identity
-    if center != ORIGIN3D: transform = newTranslation(center.Vec3f)
-    if radius != 1.0: transform = transform @ newScaling(radius)
+proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Shape {.inline.} =   
     Shape(
         kind: skSphere,
-        transform: transform,
-        material: material, 
+        transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: Identity,
+        material: material,
         radius: radius
     )
 

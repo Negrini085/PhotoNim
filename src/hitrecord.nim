@@ -95,7 +95,7 @@ proc fastIntersection*(shape: Shape, ray: Ray): bool =
 
     of skSphere: 
         let 
-            (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1.0)
+            (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - shape.radius * shape.radius)
             delta_4 = b * b - a * c
 
         if delta_4 < 0: return false
@@ -217,7 +217,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
 
 
     of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1.0)
+        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - shape.radius * shape.radius)
         let delta_4 = b * b - a * c
         if delta_4 < 0: return none HitRecord
 
