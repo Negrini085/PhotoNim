@@ -162,7 +162,7 @@ suite "Renderer":
             world.shapes = @[]
 
             radiance = randgen.rand()
-            reflectance = randgen.rand()
+            reflectance = randgen.rand() * 0.9
 
             # Randomic chosen material
             mat = newMaterial(
@@ -171,14 +171,13 @@ suite "Renderer":
                 )
             world.shapes.add(newUnitarySphere(newPoint3D(0, 0, 0), material = mat))
             
-            pathtr = newPathTracer(world, randgen = randgen, n_ray = 1, max_depth = 9100, roulette_lim = 10001)
+            pathtr = newPathTracer(world, randgen = randgen, n_ray = 1, max_depth = 100, roulette_lim = 10001)
             
             ray = newRay(newPoint3d(0, 0, 0), newVec3f(1, 0, 0))
             col = pathtr.call(ray)
 
-
             # Checking wether call method work or not, we know that we should have:
             #           exp = radiance/(1 - reflectance)
-            check areClose(radiance/(1 - reflectance), col.r, eps = 1e-2)
-            check areClose(radiance/(1 - reflectance), col.g, eps = 1e-2)
-            check areClose(radiance/(1 - reflectance), col.b, eps = 1e-2)
+            check areClose(radiance/(1 - reflectance), col.r, eps = 1e-3)
+            check areClose(radiance/(1 - reflectance), col.g, eps = 1e-3)
+            check areClose(radiance/(1 - reflectance), col.b, eps = 1e-3)
