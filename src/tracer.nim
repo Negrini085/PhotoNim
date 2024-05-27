@@ -4,6 +4,7 @@ import std/options
 import std/terminal
 import std/strutils
 from std/strformat import fmt
+from math import pow
 
 type ImageTracer* = object
     image*: HdrImage
@@ -31,6 +32,11 @@ proc displayProgress(current, total: int) =
     stdout.styledWrite(fgRed, "0% ", fgWhite, bar, color, fmt" {percentage}%")
     stdout.flushFile
 
+
+#----------------------------------------------------------------------#
+#   fire_all_rays --> procedure to fire rays to all pixels, color is   #
+#                     given via a colormap that is a procedure input   #
+#----------------------------------------------------------------------# 
 proc fire_all_rays*(tracer: var ImageTracer; scenary: World, color_map: proc(ray: Ray): Color) = 
     for y in 0..<tracer.image.height:
         for x in 0..<tracer.image.width:
@@ -163,12 +169,32 @@ proc call*(rend: var Renderer, ray: Ray): Color =
         return rad_em + rad * (1/rend.num_ray)
 
 
+#-------------------------------------------------------------------------#
+#   fire_all_rays --> procedure to fire rays to all pixels that enables   #
+#                     image rendering using a renderer                    #
+#-------------------------------------------------------------------------# 
 proc fire_all_rays*(tracer: var ImageTracer, rend: var Renderer) = 
-    # Proc to have rendered image: here we are not using anti-aliasing
-
+    # Proc to have rendered image
     for y in 0..<tracer.image.height:
         for x in 0..<tracer.image.width:
-            tracer.image.setPixel(x, y, rend.call(tracer.fire_ray(x, y)))
+
+            var color:Color = BLACK
+            if tracer.sideSamples > 0:
+
+                for u in 0..<tracer.sideSamples:
+                    for v in 0..<tracer.sideSamples:
+                        let 
+                            pixelOffset = newPoint2D(
+                                (u.float32 + tracer.rg.rand) / tracer.sideSamples.float32, 
+                                (v.float32 + tracer.rg.rand) / tracer.sideSamples.float32
+                            )
+                                                
+                        color = color + rend.call(tracer.fire_ray(x, y, pixelOffset))
+
+                tracer.image.setPixel(x, y, color / pow(tracer.sideSamples.float32, 2))
+
+            else:
+                tracer.image.setPixel(x, y, rend.call(tracer.fire_ray(x, y)))
         
         displayProgress(y + 1, tracer.image.height)
     stdout.eraseLine
