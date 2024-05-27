@@ -6,7 +6,7 @@ from std/math import sgn, floor, arccos, arctan2, PI
 type
     AABB* = Interval[Point3D]
 
-proc getAABB(points: openArray[Point3D]): AABB =
+proc getRelativeAABB(points: openArray[Point3D]): AABB =
     if points.len == 1: return (points[0], points[0])
 
     let 
@@ -52,7 +52,7 @@ proc getAABox*(shape: Shape): Shape {.inline.} =
     case shape.kind
     of skAABox: return shape
 
-    of skTriangle: return newAABox(shape.vertices.getAABB, transform = shape.transform)
+    of skTriangle: return newAABox(shape.vertices.getRelativeAABB, transform = shape.transform)
 
     of skSphere: return newAABox(newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius), transform = shape.transform)
 
@@ -60,6 +60,27 @@ proc getAABox*(shape: Shape): Shape {.inline.} =
 
     of skPlane: return newAABox(newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, Inf), transform = shape.transform)
 
+
+proc getGlobalAABB*(shapes: openArray[Shape]): AABB =
+    if shapes.len == 0: return (ORIGIN3D, ORIGIN3D)
+    result = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
+    
+    for shape in shapes.items:
+        let 
+            bbox = shape.getAABox
+            corners = @[
+                bbox.aabb.min, bbox.aabb.max,
+                newPoint3D(bbox.aabb.min.x, bbox.aabb.min.y, bbox.aabb.max.z),
+                newPoint3D(bbox.aabb.min.x, bbox.aabb.max.y, bbox.aabb.min.z),
+                newPoint3D(bbox.aabb.min.x, bbox.aabb.max.y, bbox.aabb.max.z),
+                newPoint3D(bbox.aabb.max.x, bbox.aabb.min.y, bbox.aabb.min.z),
+                newPoint3D(bbox.aabb.max.x, bbox.aabb.min.y, bbox.aabb.max.z),
+                newPoint3D(bbox.aabb.max.x, bbox.aabb.max.y, bbox.aabb.min.z),
+            ]
+            aabb = corners.map(proc(corner: Point3D): Point3D = apply(bbox.transform, corner)).getRelativeAABB
+            
+        result = newInterval(newInterval(aabb.min, result.min).min, newInterval(aabb.max, result.max).max)
+    
 
 proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Shape {.inline.} =   
     Shape(

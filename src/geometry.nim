@@ -121,10 +121,6 @@ proc x*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[0]
 proc y*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[1]
 proc z*(a: Point3D | Normal): float32 {.inline.} = a.Vec3f[2]
 
-proc `x=`*(a: var Point3D | Normal, value: float32) {.inline.} = a.x = value
-proc `y=`*(a: var Point3D | Normal, value: float32) {.inline.} = a.y = value
-proc `z=`*(a: var Point3D | Normal, value: float32) {.inline.} = a.z = value
-
 proc `==`*(a, b: Point2D): bool {.borrow.}
 proc `==`*(a, b: Point3D): bool {.borrow.}
 proc `==`*(a, b: Normal): bool {.borrow.}
@@ -180,19 +176,18 @@ type
 proc newInterval*[T](a, b: T): Interval[T] =
     when T is SomeNumber: 
         result = if a > b: (b, a) else: (a, b)
+
     elif T is Point2D: 
-        (result.min.u, result.max.u) = if a.u > b.u: (b.u, a.u) else: (a.u, b.u)
-        (result.min.v, result.max.v) = if a.v > b.v: (b.v, a.v) else: (a.v, b.v)
+        result.min = newPoint2D(min(a.u, b.u), min(a.v, b.v))
+        result.max = newPoint2D(max(a.u, b.u), max(a.v, b.v))
 
     elif T is Point3D:
-        (result.min.x, result.max.x) = if a.x > b.x: (b.x, a.x) else: (a.x, b.x)
-        (result.min.y, result.max.y) = if a.y > b.y: (b.y, a.y) else: (a.y, b.y)
-        (result.min.z, result.max.z) = if a.z > b.z: (b.z, a.z) else: (a.z, b.z)
+        result.min = newPoint3D(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z))
+        result.max = newPoint3D(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z))
 
     elif T is Vec3f:
-        (result.min[0], result.max[0]) = if a[0] > b[0]: (b[0], a[0]) else: (a[0], b[0])
-        (result.min[1], result.max[1]) = if a[1] > b[1]: (b[1], a[1]) else: (a[1], b[1])
-        (result.min[2], result.max[2]) = if a[2] > b[2]: (b[2], a[2]) else: (a[2], b[2])
+        result.min = newVec3f(min(a[0], b[0]), min(a[1], b[1]), min(a[2], b[2]))
+        result.min = newVec3f(max(a[0], b[0]), max(a[1], b[1]), max(a[2], b[2]))
 
 
 proc contains*[T](interval: Interval, value: T): bool {.inline.} =
