@@ -12,8 +12,8 @@ proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
 
 const 
     WHITE* = newColor(1, 1, 1)
-    BLACK* = newColor(0, 0, 0) 
-RED*   = newColor(1, 0, 0)
+    BLACK* = newColor(0, 0, 0)
+    RED*   = newColor(1, 0, 0)
     GREEN* = newColor(0, 1, 0)
     BLUE*  = newColor(0, 0, 1)
 
@@ -105,15 +105,15 @@ type
         transform*: Transformation
         aspect_ratio*: float32
 
-        case kind: CameraKind
+        case kind*: CameraKind
         of ckOrthogonal: discard
         of ckPerspective: 
-            distance: float32 
+            distance*: float32 
 
-proc newOrthogonalCamera*(a: float32, transform = Transformation.id): Camera {.inline.} = 
+proc newOrthogonalCamera*(a: float32, transform = Identity): Camera {.inline.} = 
     Camera(kind: ckOrthogonal, transform: transform, aspect_ratio: a)
 
-proc newPerspectiveCamera*(a, d: float32, transform = Transformation.id): Camera {.inline.} = 
+proc newPerspectiveCamera*(a, d: float32, transform = Identity): Camera {.inline.} = 
     Camera(kind: ckPerspective, transform: transform, aspect_ratio: a, distance: d)
 
 proc fireRay*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
