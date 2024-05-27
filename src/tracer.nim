@@ -8,16 +8,16 @@ from std/strformat import fmt
 type ImageTracer* = object
     image*: HdrImage
     camera*: Camera
-    sideSamples: int
+    samplesPerSide: int
     rg: PCG
 
 
-proc newImageTracer*(width, height: int, camera: Camera, sideSamples = 4, randomGenerator = newPCG()): ImageTracer {.inline.} =
-    ImageTracer(image: newHdrImage(width, height), camera: camera, sideSamples: sideSamples, rg: randomGenerator)
+proc newImageTracer*(width, height: int, camera: Camera, samplesPerSide = 4, randomGenerator = newPCG()): ImageTracer {.inline.} =
+    ImageTracer(image: newHDRImage(width, height), camera: camera, samplesPerSide: samplesPerSide, rg: randomGenerator)
 
 
-proc fire_ray*(tracer: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray {.inline.} =   
-    tracer.camera.fire_ray(newPoint2D((x.float32 + pixel.u) / tracer.image.width.float32, 1 - (y.float32 + pixel.v) / tracer.image.height.float32))
+proc fireRay*(tracer: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray {.inline.} =   
+    tracer.camera.fireRay(newPoint2D((x.float32 + pixel.u) / tracer.image.width.float32, 1 - (y.float32 + pixel.v) / tracer.image.height.float32))
 
 
 proc displayProgress(current, total: int) =

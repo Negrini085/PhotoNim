@@ -12,8 +12,8 @@ let
     filename = "assets/images/examples/box"
 
 var 
-    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -2, 0, 0)))
-    tracer = newImageTracer(width, height, cam, sideSamples = 2)
+    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-5, 0, 0)))
+    tracer = newImageTracer(width, height, cam, samplesPerSide = 2)
     scenary = newWorld()
 
 scenary.shapes.add newAABox(transform = newTranslation(newVec3(float32 0.0, -2.0, 1.5)) @ newRotY(50))

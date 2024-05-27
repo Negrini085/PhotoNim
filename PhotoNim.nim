@@ -51,7 +51,7 @@ proc readPFM*(stream: FileStream): tuple[img: HdrImage, endian: Endianness] {.ra
     except:
         raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
 
-    result.img = newHdrImage(width, height)
+    result.img = newHDRImage(width, height)
 
     var r, g, b: float32
     for y in countdown(height - 1, 0):
@@ -100,7 +100,7 @@ proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     finally:
         inFS.close
        
-    img.toneMapping(alpha, gamma, avlum)
+    img.applyToneMap(alpha, gamma, avlum)
 
     var 
         i: int
@@ -153,7 +153,7 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
 
     var 
         scenary = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-        tracer = newImageTracer(width, height, camera, sideSamples = 4)
+        tracer = newImageTracer(width, height, camera, samplesPerSide = 4)
 
     tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
 
@@ -251,7 +251,7 @@ Options:
             
         let
             a_ratio = width / height
-            transform = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
+            transform = newTranslation(newVec3f(-1, 0, 0)) @ newRotZ(angle)
             camera = if args["persp"]: newPerspectiveCamera(a_ratio, 1.0, transform) else: newOrthogonalCamera(a_ratio, transform)
 
         var stream = newFileStream(pfmOut, fmWrite) 

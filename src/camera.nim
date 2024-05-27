@@ -42,9 +42,8 @@ type HdrImage* = object
     width*, height*: int
     pixels*: seq[Color]
 
-proc newHdrImage*(width, height: int): HdrImage = 
-    (result.width, result.height) = (width, height)
-    result.pixels = newSeq[Color](width * height)
+proc newHDRImage*(width, height: int): HdrImage {.inline.} = 
+    HdrImage(width: width, height: height, pixels: newSeq[Color](width * height))
 
 proc validPixel(img: HdrImage; x, y: int): bool {.inline.} = (0 <= y and y < img.height) and (0 <= x and x < img.width)
 proc pixelOffset(img: HdrImage; x, y: int): int {.inline.} = x + img.width * y
@@ -57,16 +56,21 @@ proc setPixel*(img: var HdrImage; x, y: int, color: Color) {.inline.} =
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HdrImage"
     img.pixels[img.pixelOffset(x, y)] = color
 
-proc averageLuminosity*(img: HdrImage; eps = epsilon(float32)): float32 {.inline.} =
+proc avLuminosity*(img: HdrImage; eps = epsilon(float32)): float32 {.inline.} =
     pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
 
 
 proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
+proc clamp(x: Color): Color {.inline.} = newColor(clamp(x.r), clamp(x.g), clamp(x.b))
 
-proc toneMapping*(img: var HdrImage; alpha, gamma, avLum: float32) = 
-    let lum = if avLum == 0.0: img.averageLuminosity else: avLum
-    img.pixels.apply(proc(pix: Color): Color = pix * (alpha / lum))
-    img.pixels.apply(proc(pix: Color): Color = newColor(clamp(pix.r), clamp(pix.g), clamp(pix.b)))
+proc toneMap*(img: HdrImage; alpha, gamma, avLum: float32): HdrImage =
+    result = newHDRImage(img.width, img.height) 
+    let lum = if avLum == 0.0: img.avLuminosity else: avLum
+    result.pixels = img.pixels.map(proc(pix: Color): Color = clamp(pix * (alpha / lum)))
+
+proc applyToneMap*(img: var HdrImage; alpha, gamma, avLum: float32) =
+    let lum = if avLum == 0.0: img.avLuminosity else: avLum
+    img.pixels.apply(proc(pix: Color): Color = clamp(pix * (alpha / lum)))
 
 
 type Ray* = object
@@ -112,23 +116,14 @@ proc newOrthogonalCamera*(a: float32, transform = Transformation.id): Camera {.i
 proc newPerspectiveCamera*(a, d: float32, transform = Transformation.id): Camera {.inline.} = 
     Camera(kind: ckPerspective, transform: transform, aspect_ratio: a, distance: d)
 
-proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
-    var ray: Ray
+proc fireRay*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
     case cam.kind
     of ckOrthogonal:
-        ray = newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX)
+        result = newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX)
     of ckPerspective:
-        ray = newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1))
+        result = newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1))
 
-    ray.transform(cam.transform)
-
-
-type ImageTracer* = object
-    image*: HdrImage
-    camera*: Camera
-
-proc fire_ray*(im_tr: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray {.inline.} =
-    im_tr.camera.fire_ray(newPoint2D((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32))
+    result = result.transform(cam.transform)
 
 
 type
