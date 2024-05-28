@@ -1,7 +1,9 @@
 from std/strformat import fmt
 from std/fenv import epsilon
 from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI
-from std/sequtils import concat
+from std/sequtils import toSeq, concat, map, foldl
+from std/algorithm import reversed
+
 
 type 
     Vec*[N: static[int], V] = array[N, V]
@@ -485,17 +487,29 @@ proc `@`*(a, b: Transformation): Transformation =
     var transforms: seq[Transformation]
     if a.kind == tkComposition:
         if b.kind == tkComposition: 
-            transforms = concat(a.transformations, b.transformations)
+            transforms = concat(b.transformations, a.transformations)
         else: 
             transforms = a.transformations
-            transforms.add b
+            transforms.insert(b, 0)        
 
     elif b.kind == tkComposition: 
         transforms = b.transformations
-        transforms.insert(a, 0)        
+        transforms.add a
 
     else: 
-        transforms.add a; transforms.add b
+        transforms.add b; transforms.add a
+
+    Transformation(kind: tkComposition, transformations: transforms)
+
+proc newComposition*(transformations: varargs[Transformation]): Transformation =
+    if transformations.len == 1: return transformations[0]
+    elif transformations.len == 2: return transformations[0] @ transformations[1]
+    var transforms = newSeq[Transformation]()
+    for t in transformations:
+        case t.kind
+        of tkIdentity: continue
+        of tkComposition: transforms = concat(transforms, t.transformations)
+        else: transforms.add t
 
     Transformation(kind: tkComposition, transformations: transforms)
 
@@ -504,13 +518,8 @@ proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
     of tkIdentity: return IDENTITY
-    of tkComposition: 
-        var transfs = newSeq[Transformation](transf.transformations.len)
-        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i].inverse
-        return Transformation(kind: kind, transformations: transfs)
-
-    of tkGeneric, tkTranslation, tkScaling, tkRotation: 
-        return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
+    of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.map(inverse))
+    else: return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
 
 
 proc `*`*(transf: Transformation, scal: float32): Transformation = 
@@ -574,22 +583,11 @@ proc apply*[T](transf: Transformation, x: T): T =
 
     of tkComposition:
         when T is Normal:
-            var inv_mat = transf.transformations[0].inv_mat
-            for i in 1..<transf.transformations.len:
-                if transf.transformations[i].kind != tkIdentity:
-                    inv_mat = dot(inv_mat, transf.transformations[i].inv_mat)
-            return dot(x, inv_mat).toNormal
+            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(b, a))).toNormal
         else:
-            var mat = transf.transformations[transf.transformations.len - 1].mat
-            for i in countdown(transf.transformations.len - 2, 0):
-                if transf.transformations[i].kind != tkIdentity:
-                    mat = dot(mat, transf.transformations[i].mat)
-
-            when T is Point3D: 
-                return dot(mat, x.toVec4).toPoint3D
-
-            elif T is Vec3f: 
-                return dot(mat, x) 
+            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldl(dot(b, a))
+            when T is Point3D: return dot(mat, x.toVec4).toPoint3D
+            elif T is Vec3f: return dot(mat, x) 
 
 
 type 
