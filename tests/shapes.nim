@@ -365,6 +365,42 @@ suite "CSG":
         check areClose(csg_un.shapes[1].radius, 0.2)
         check areClose(csg_diff.shapes[1].radius, 0.2)
         check areClose(csg_int.shapes[1].radius, 0.2)
+    
+    test "rayIntersection proc":
+        var
+            appo: Option[HitRecord]
+            ray1 = newRay(newPoint3D(-2, 0, 0), newVec3f(1, 0, 0))
+            ray2 = newRay(newPoint3D(0.5, -2, 0), newVec3f(0, 1, 0))
+            ray3 = newRay(newPoint3D(0.5, 0, -2), newVec3f(0, 0, 1))
+
+        #---------------------------------#
+        #          CSGUnion type          #
+        #---------------------------------#
+        appo = rayIntersection(csg_un, ray1)
+
+        check appo.isSome
+        check areClose(appo.get.t_hit, 1.8)
+        check areClose(appo.get.normal, newNormal(-1, 0, 0))
+        check areClose(appo.get.world_pt, newPoint3D(-0.2, 0, 0))
+
+
+        appo = rayIntersection(csg_un, ray2)
+
+        check appo.isSome
+        check areClose(appo.get.t_hit, 1.5)
+        check areClose(appo.get.normal, newNormal(0, -1, 0))
+        check areClose(appo.get.world_pt, newPoint3D(0.5, -0.5, 0))
+
+
+
+        appo = rayIntersection(csg_un, ray3)
+
+        check appo.isSome
+        check areClose(appo.get.t_hit, 1.5)
+        check areClose(appo.get.normal, newNormal(0, 0, -1))
+        check areClose(appo.get.world_pt, newPoint3D(0.5, 0, -0.5))
+
+
 
 suite "World":
     
