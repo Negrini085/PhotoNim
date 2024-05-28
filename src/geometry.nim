@@ -555,7 +555,7 @@ proc inverse*(transf: Transformation): Transformation =
     of tkIdentity: return Transformation.id
     of tkComposition: 
         var transfs = newSeq[Transformation](transf.transformations.len)
-        for t in transf.transformations: transfs.add t.inverse
+        for t in countdown(transf.transformations.len - 1, 0): transfs.add transf.transformations[t].inverse
         return Transformation(kind: kind, transformations: transfs)
 
         # result.transformations = newSeq[Transformation](transf.transformations.len)
