@@ -194,18 +194,18 @@ proc newInterval*[T](a, b: T): Interval[T] =
 
 proc contains*[T](interval: Interval, value: T): bool {.inline.} =
     when T is SomeNumber: 
-        return value > interval.min and value < interval.max
+        return value >= interval.min and value <= interval.max
     elif T is Point2D: 
-        return value.u > interval.min.u and value.u < interval.max.u and 
-            value.v > interval.min.v and value.v < interval.max.v
+        return value.u >= interval.min.u and value.u <= interval.max.u and 
+            value.v >= interval.min.v and value.v <= interval.max.v
     elif T is Point3D:
-        return value.x > interval.min.x and value.x < interval.max.x and 
-            value.y > interval.min.y and value.y < interval.max.y and 
-            value.z > interval.min.z and value.z < interval.max.z
+        return value.x >= interval.min.x and value.x <= interval.max.x and 
+            value.y >= interval.min.y and value.y <= interval.max.y and 
+            value.z >= interval.min.z and value.z <= interval.max.z
     elif T is Vec3f:
-        return x[0] > interval.min[0] and x[0] < interval.max[0] and 
-            x[1] > interval.min[1] and x[1] < interval.max[1] and 
-            x[2] > interval.min[2] and x[2] < interval.max[2]
+        return x[0] >= interval.min[0] and x[0] <= interval.max[0] and 
+            x[1] >= interval.min[1] and x[1] <= interval.max[1] and 
+            x[2] >= interval.min[2] and x[2] <= interval.max[2]
 
 
 type
