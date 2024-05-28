@@ -52,7 +52,7 @@ proc newAABox*(min = newPoint3D(0, 0, 0), max = newPoint3D(1, 1, 1), transf = Tr
 proc newSphere*(center: Point3D, radius: float32): Shape {.inline.} = 
     Shape(
         kind: skSphere,
-        transf: newTranslation(center.Vec3f) @ newScaling(radius), 
+        transf: newScaling(radius) @ newTranslation(center.Vec3f), 
         center: center, radius: radius
     )
 
@@ -315,19 +315,25 @@ proc allRayIntersections*(shape: Shape, ray: Ray): Option[seq[HitRecord]] =
                 HitRecord(ray: ray, t_hit: t_l, 
                         surface_pt: shape.uv(inv_ray.at(t_l)), 
                         world_pt: apply(shape.transf, inv_ray.at(t_l)), 
-                        normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), inv_ray.dir))),
+                        normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), ray.dir))),
                 HitRecord(ray: ray, t_hit: t_r, 
                         surface_pt: shape.uv(inv_ray.at(t_r)), 
-                        world_pt: apply(shape.transf, inv_ray.at(t_r)), 
-                        normal: apply(shape.transf, shape.normal(inv_ray.at(t_r), inv_ray.dir)))
+                        world_pt: apply(shape.transf, inv_ray.at(t_r)),
+                        normal: apply(shape.transf, shape.normal(inv_ray.at(t_r), ray.dir)))
                 ])
         elif t_l > ray.tmin and t_l < ray.tmax:
             return some(@[
-                HitRecord(ray: ray, t_hit: t_l, surface_pt: shape.uv(inv_ray.at(t_l)), world_pt: apply(shape.transf, inv_ray.at(t_l)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), inv_ray.dir)))
+                HitRecord(ray: ray, t_hit: t_l, 
+                        surface_pt: shape.uv(inv_ray.at(t_l)), 
+                        world_pt: apply(shape.transf, inv_ray.at(t_l)), 
+                        normal: apply(shape.transf, shape.normal(inv_ray.at(t_l), ray.dir)))
                 ])
         elif t_r > ray.tmin and t_r < ray.tmax:
             return some(@[
-                HitRecord(ray: ray, t_hit: t_r, surface_pt: shape.uv(inv_ray.at(t_r)), world_pt: apply(shape.transf, inv_ray.at(t_r)), normal: apply(shape.transf, shape.normal(inv_ray.at(t_r), inv_ray.dir)))
+                HitRecord(ray: ray, t_hit: t_r, 
+                        surface_pt: shape.uv(inv_ray.at(t_r)), 
+                        world_pt: apply(shape.transf, inv_ray.at(t_r)), 
+                        normal: apply(shape.transf, shape.normal(inv_ray.at(t_r), ray.dir)))
                 ])
         else: return none(seq[HitRecord])
 
@@ -406,8 +412,10 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         if (t_hit < inv_ray.tmin) or (t_hit > inv_ray.tmax): return none(HitRecord)
 
     of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
-        let delta_4 = b * b - a * c
+        let 
+            (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - shape.radius * shape.radius)
+            delta_4 = b * b - a * c
+
         if delta_4 < 0: return none(HitRecord)
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
