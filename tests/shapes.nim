@@ -178,6 +178,37 @@ suite "Sphere":
         check not sphere.rayIntersection(ray4).isSome
 
 
+    test "allRayIntersections proc":
+        # Checking all ray intersection proc
+        var
+            appo: Option[seq[HitRecord]]
+
+            ray1 = newRay(newPoint3D(0, -3, 0), newVec3f(0, 1, 0))
+            ray2 = newRay(newPoint3D(-4, 1, 0), newVec3f(1, 0, 0))
+            ray3 = newRay(newPoint3D(0, -3, 0), newVec3f(0, -1, 0))
+
+        appo = sphere1.allRayIntersections(ray1)
+        check appo.isSome
+
+        check areClose(appo.get[0].t_hit, 1, eps = 1e-6)
+        check areClose(appo.get[1].t_hit, 7, eps = 1e-6)
+        check areClose(appo.get[0].world_pt, newPoint3D(0, -2, 0), eps = 1e-6)
+        check areClose(appo.get[1].world_pt, newPoint3D(0, 4, 0), eps = 1e-6)
+        
+
+        appo = sphere1.allRayIntersections(ray2)
+        check appo.isSome
+
+        check areClose(appo.get[0].t_hit, 1, eps = 1e-6)
+        check areClose(appo.get[1].t_hit, 7, eps = 1e-6)
+        check areClose(appo.get[0].world_pt, newPoint3D(-3, 1, 0), eps = 1e-6)
+        check areClose(appo.get[1].world_pt, newPoint3D(3, 1, 0), eps = 1e-6)
+
+
+        appo = sphere1.allRayIntersections(ray3)
+        check not appo.isSome
+
+
 suite "Plane":
 
     setup:
@@ -236,6 +267,7 @@ suite "Plane":
         check plane.fastIntersection(ray1)
         check not plane.fastIntersection(ray2)
         check not plane.fastIntersection(ray3)
+
 
 
 suite "AABB":
