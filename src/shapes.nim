@@ -413,7 +413,7 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
 
     of skSphere:
         let 
-            (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - shape.radius * shape.radius)
+            (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
             delta_4 = b * b - a * c
 
         if delta_4 < 0: return none(HitRecord)

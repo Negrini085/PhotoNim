@@ -11,8 +11,8 @@ suite "HitRecord":
 
     setup:
         var 
-            hit1 = HitRecord(ray: newRay(newPoint3D(0, 0, 0), newVec3(float32 0, 1, 0)), t_hit: float32(0.5), world_pt: newPoint3D(1, 2, 3), surface_pt: newPoint2D(1, 0), normal: newNormal(1, 0, 0))
-            hit2 = HitRecord(ray: newRay(newPoint3D(0, 0, 2), newVec3(float32 1, 1, 0)), t_hit: float32(0.6), world_pt: newPoint3D(1, 0, 0), surface_pt: newPoint2D(0.5, 0.5), normal: newNormal(0, 1, 0))
+            hit1 = HitRecord(ray: newRay(newPoint3D(0, 0, 0), newVec3f(0, 1, 0)), t_hit: float32(0.5), world_pt: newPoint3D(1, 2, 3), surface_pt: newPoint2D(1, 0), normal: newNormal(1, 0, 0))
+            hit2 = HitRecord(ray: newRay(newPoint3D(0, 0, 2), newVec3f(1, 1, 0)), t_hit: float32(0.6), world_pt: newPoint3D(1, 0, 0), surface_pt: newPoint2D(0.5, 0.5), normal: newNormal(0, 1, 0))
 
     teardown:
         discard hit1; discard hit2
@@ -23,7 +23,7 @@ suite "HitRecord":
         check areClose(hit1.surface_pt, newPoint2D(1, 0))
         check areClose(hit1.normal, newNormal(1, 0, 0))
         check areClose(hit1.t_hit, 0.5)
-        check areClose(hit1.ray, newRay(newPoint3D(0, 0, 0), newVec3(float32 0, 1, 0)))
+        check areClose(hit1.ray, newRay(newPoint3D(0, 0, 0), newVec3f(0, 1, 0)))
 
 
     test "areClose":
@@ -60,7 +60,7 @@ suite "Sphere":
         check sphere1.transf.transformations[0].kind == tkScaling
         check sphere1.transf.transformations[0].mat == newScaling(3.0).mat
         check sphere1.transf.transformations[1].kind == tkTranslation
-        check sphere1.transf.transformations[1].mat == newTranslation(newVec3(float32 0, 1, 0)).mat
+        check sphere1.transf.transformations[1].mat == newTranslation(newVec3f(0, 1, 0)).mat
 
 
     test "newUnitarySphere proc":
@@ -75,12 +75,14 @@ suite "Sphere":
         var
             p1 = newPoint3D(1, 0 ,0)
             p2 = newPoint3D(cos(PI/3), sin(PI/3) ,0)
-            d = newVec3(float32 -1, 2, 0)
+            d = newVec3f(-1, 2, 0)
         
         check areClose(sphere.normal(p1, d), newNormal(1, 0, 0))
         check areClose(sphere.normal(p2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
 
-    
+        check areClose(sphere1.normal(4.float32 * p1, d), newNormal(1, 0, 0))
+
+
     test "(u, v) mapping proc":
         # Checking (u, v) coordinates computation
         var
@@ -110,21 +112,27 @@ suite "Sphere":
     test "FastIntersection":
         # Checking Fast intersection method
         var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
-            ray2 = newRay(newPoint3D(-10, 0, 0), newVec3(float32 0, 0, -1))
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
+            ray2 = newRay(newPoint3D(-10, 0, 0), newVec3f(0, 0, -1))
         
         check sphere.fastIntersection(ray1)
         check not sphere.fastIntersection(ray2)
+
+        check sphere1.fastIntersection(ray1)
+        check not sphere1.fastIntersection(ray2)
     
 
-    test "RayIntersection: no transformation":
-        # Checking ray intersection procedure on unitary shperical surface: no traslation is performed on sphere
+    test "rayIntersection proc":
+        # Checking ray intersection with sphere shape
         var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
-            ray2 = newRay(newPoint3D(3, 0, 0), newVec3(float32 -1, 0, 0))
-            ray3 = newRay(newPoint3D(0, 0, 0), newVec3(float32 1, 0, 0))
-
-        let 
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
+            ray2 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
+            ray3 = newRay(newPoint3D(0, 0, 0), newVec3f(1, 0, 0))
+        
+        #---------------------------------------------------#
+        #           Checking with unitary sphere            #
+        #---------------------------------------------------#
+        var
             hit1 = sphere.rayIntersection(ray1).get
             hit2 = sphere.rayIntersection(ray2).get
             hit3 = sphere.rayIntersection(ray3).get
@@ -143,17 +151,42 @@ suite "Sphere":
         check areClose(hit3.normal, newNormal(-1, 0, 0))
         check areClose(hit3.t_hit, 1)
         check areClose(hit1.surface_pt, newPoint2D(0, 0))
-    
+
+
+        #---------------------------------------------------#
+        #           Checking with generic sphere            #
+        #---------------------------------------------------#
+        ray1.origin = newPoint3D(0, 1, 2)    
+        ray2.origin = newPoint3D(4, 1, 0)
+        ray3.dir = newVec3f(0, 1, 0)    
+
+        hit1 = sphere1.rayIntersection(ray1).get
+        hit2 = sphere1.rayIntersection(ray2).get
+        hit3 = sphere1.rayIntersection(ray3).get
+
+
+        check areClose(hit1.world_pt, newPoint3D(0, 1, -3), eps = 1e-6)
+        check areClose(hit1.normal, newNormal(0, 0, 1), eps = 1e-6)
+        check areClose(hit1.t_hit, 5, eps = 1e-6)
+
+        check areClose(hit2.world_pt, newPoint3D(3, 1, 0), eps = 1e-6)
+        check areClose(hit2.normal, newNormal(1, 0, 0), eps = 1e-6)
+        check areClose(hit2.t_hit, 1, eps = 1e-6)
+
+        check areClose(hit3.world_pt, newPoint3D(0, 4, 0), eps = 1e-6)
+        check areClose(hit3.normal, newNormal(0, -1, 0), eps = 1e-6)
+        check areClose(hit3.t_hit, 4.0, eps = 1e-6)
+
 
     test "RayIntersection: with transformation":
         # Checking ray intersection procedure: we are transforming the sphere
         var
-            tr = newTranslation(newVec3(float32 10, 0, 0))
+            tr = newTranslation(newVec3f( 10, 0, 0))
 
-            ray1 = newRay(newPoint3D(10, 0, 2), newVec3(float32 0, 0, -1))
-            ray2 = newRay(newPoint3D(13, 0, 0), newVec3(float32 -1, 0, 0))
-            ray3 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
-            ray4 = newRay(newPoint3D(-10, 0, 0), newVec3(float32 0, 0, -1))
+            ray1 = newRay(newPoint3D(10, 0, 2), newVec3f(0, 0, -1))
+            ray2 = newRay(newPoint3D(13, 0, 0), newVec3f(-1, 0, 0))
+            ray3 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
+            ray4 = newRay(newPoint3D(-10, 0, 0), newVec3f(0, 0, -1))
         
         sphere.transf = tr
         let 
@@ -221,9 +254,9 @@ suite "Plane":
     test "RayIntersection: no transformation":
         # Checking ray intersection procedure on plane: no trasformation is performed
         var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
-            ray2 = newRay(newPoint3D(1, -2, -3), newVec3(float32 0, 4/5, 3/5))
-            ray3 = newRay(newPoint3D(3, 0, 0), newVec3(float32 -1, 0, 0))
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
+            ray2 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
+            ray3 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
 
         check areClose(plane.rayIntersection(ray1).get.world_pt, newPoint3D(0, 0, 0))
         check areClose(plane.rayIntersection(ray1).get.normal, newNormal(0, 0, 1))
@@ -242,9 +275,9 @@ suite "Plane":
         # Checking ray intersection procedure on plane: a translation along the z axis is performed
         var
             tr = newTranslation(newVec3(float32 0, 0, 3))
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
-            ray2 = newRay(newPoint3D(3, 0, 0), newVec3(float32 -1, 0, 0))
-            ray3 = newRay(newPoint3D(1, -2, -3), newVec3(float32 0, 4/5, 3/5))
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
+            ray2 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
+            ray3 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
         
         plane.transf = tr
 
@@ -260,9 +293,9 @@ suite "Plane":
     test "FastIntersection":
         # Checking Fast intersection method
         var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
-            ray2 = newRay(newPoint3D(1, 0, 1), newVec3(float32 0, 0, 1))
-            ray3 = newRay(newPoint3D(3, 0, 0), newVec3(float32 -1, 0, 0))
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
+            ray2 = newRay(newPoint3D(1, 0, 1), newVec3f(0, 0, 1))
+            ray3 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
         
         check plane.fastIntersection(ray1)
         check not plane.fastIntersection(ray2)
@@ -290,8 +323,8 @@ suite "AABox":
         discard box
 
     test "fastIntersection": 
-        check fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), newVec3(float32 0.0, 0.0, 0.0)))
-        check not fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), -newVec3(float32 0.0, 0.0, 0.0)))
+        check fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), newVec3f(0.0, 0.0, 0.0)))
+        check not fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), -newVec3f(0.0, 0.0, 0.0)))
         
 
 suite "CSG":
