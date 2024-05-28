@@ -118,6 +118,11 @@ proc areClose*(a, b: Normal; eps: float32 = epsilon(float32)): bool {.borrow.}
 proc `-`*(a, b: Point2D): Point2D {.borrow.}
 proc `-`*(a, b: Point3D): Point3D {.borrow.}
 
+proc `*`*(a: Point2D, b: float32): Point2D {.borrow.}
+proc `*`*(a: float32, b: Point2D): Point2D {.borrow.}
+proc `*`*(a: Point3D, b: float32): Point3D {.borrow.}
+proc `*`*(a: float32, b: Point3D): Point3D {.borrow.}
+
 proc `-`*(a: Normal): Normal {.borrow.}
 proc `*`*(a: Normal, b: float32): Normal {.borrow.}
 proc `*`*(a: float32, b: Normal): Normal {.borrow.}
