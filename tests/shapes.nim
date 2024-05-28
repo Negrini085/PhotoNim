@@ -219,18 +219,44 @@ suite "AABox":
         discard box
 
     test "fastIntersection": 
-        check fastIntersection(box, newRay(newPoint3D(0.5, 0.5, 0.5), newVec3f(0.0, 0.0, 0.0)))       
+        check fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 0.0), eX))
+        check not fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 2.0), eX))
+
+        check fastIntersection(box, newRay(newPoint3D(0.0, 2.0, 0.0), -eY))
+        check not fastIntersection(box, newRay(newPoint3D(0.0, -2.0, 0.0), -eY))
+
+        check fastIntersection(box, newRay(newPoint3D(0.0, 0.0, -1.5), eZ))
+        check not fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 1.5), eZ))
 
 
 suite "World":
     
     setup:
         var 
-            scenary = newWorld()
+            scenery = newWorld()
 
     teardown: 
-        discard scenary
+        discard scenery
             
     test "add/get proc":
-        scenary.shapes.add newUnitarySphere(ORIGIN3D)
-        check scenary.shapes[0].transform.kind == tkIdentity
+        scenery.shapes.add newUnitarySphere(ORIGIN3D)
+        check scenery.shapes[0].transform.kind == tkIdentity
+
+
+suite "Mesh unittest":
+
+    setup: 
+        # Example usage
+        var nodes: seq[Point3D] = @[
+            newPoint3D(0, 0, 0), newPoint3D(1, 0, 0), newPoint3D(0, 1, 0), newPoint3D(1, 1, 0),
+            newPoint3D(0, 0, 1), newPoint3D(1, 0, 1), newPoint3D(0, 1, 1), newPoint3D(1, 1, 1)
+        ]
+
+        var edges: seq[int] = @[0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6, 0, 2, 4, 2, 6, 4, 6, 5, 4, 5, 7, 6, 7, 3, 2, 7, 6, 3]
+        let mesh = newTriangularMesh(nodes, edges)
+
+    teardown:
+        discard mesh
+
+    test "items iterator":
+        for triangle in mesh.items: check triangle.kind == skTriangle

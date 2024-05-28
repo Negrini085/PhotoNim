@@ -23,17 +23,3 @@ suite "ImageTracer":
         
         check areClose(ray1.at(1.0), newPoint3D(0, 1.2, 1))
         check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
-
-
-    # test "ImageTracer fire_all_rays":
-
-    #     tracer.fire_all_rays()
-
-    #     for y in 0..<tracer.image.height:
-    #         for x in 0..<tracer.image.width:
-    #             let 
-    #                 r = (1 - exp(-float32(x + y)))
-    #                 g = y/tracer.image.height
-    #                 b = pow((1 - x/tracer.image.width), 2.5)
-    #             check areClose(tracer.image.getPixel(x, y), newColor(r, g, b))
-    
