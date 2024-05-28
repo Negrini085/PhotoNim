@@ -1,5 +1,6 @@
 import geometry, camera
 
+from std/strformat import fmt
 from std/sequtils import map
 from std/math import sgn, floor, arccos, arctan2, PI
 
@@ -206,3 +207,30 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
     of skPlane: 
         return newNormal(0, 0, sgn(-dir[2]).float32)
+
+
+type 
+    MeshKind* = enum
+        mkTriangular, mkSquared
+
+    Mesh* = object
+        nodes*: seq[Point3D]
+        edges*: seq[int]
+        kind*: MeshKind
+
+
+iterator items*(mesh: Mesh): Shape =
+    case mesh.kind
+    of mkTriangular: 
+        for i in 0 ..< (mesh.edges.len div 3): 
+            yield newTriangle(mesh.nodes[mesh.edges[i * 3]], mesh.nodes[mesh.edges[i * 3 + 1]], mesh.nodes[mesh.edges[i * 3 + 2]])    
+
+    of mkSquared: discard
+
+
+proc newMesh*(kind: MeshKind, nodes: seq[Point3D], edges: seq[int]; transform = IDENTITY): Mesh {.inline.} = 
+    Mesh(kind: kind, nodes: if transform.kind == tkIdentity: nodes else: nodes.map(proc(pt: Point3D): Point3D = apply(transform, pt)), edges: edges)
+
+proc newTriangularMesh*(nodes: seq[Point3D], edges: seq[int]; transform = IDENTITY): Mesh {.inline.} = 
+    assert edges.len mod 3 == 0, fmt"Error in creating a triangular Mesh! The length of the edges sequence must be a multiple of 3."
+    newMesh(mkTriangular, nodes, edges, transform)
