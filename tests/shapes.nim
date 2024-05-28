@@ -57,8 +57,10 @@ suite "Sphere":
         check sphere1.center == newPoint3D(0, 1, 0)
 
         check sphere1.transf.kind == tkComposition
-        check sphere1.transf.transformations[0].mat == newTranslation(newVec3(float32 0, 1, 0)).mat
-        check sphere1.transf.transformations[1].mat == newScaling(3.0).mat
+        check sphere1.transf.transformations[0].kind == tkScaling
+        check sphere1.transf.transformations[0].mat == newScaling(3.0).mat
+        check sphere1.transf.transformations[1].kind == tkTranslation
+        check sphere1.transf.transformations[1].mat == newTranslation(newVec3(float32 0, 1, 0)).mat
 
 
     test "newUnitarySphere proc":
@@ -103,7 +105,16 @@ suite "Sphere":
         check sphere1.in_shape(p1)
         check sphere1.in_shape(p2)
         check sphere1.in_shape(p3)
-    
+
+
+    test "FastIntersection":
+        # Checking Fast intersection method
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
+            ray2 = newRay(newPoint3D(-10, 0, 0), newVec3(float32 0, 0, -1))
+        
+        check sphere.fastIntersection(ray1)
+        check not sphere.fastIntersection(ray2)
     
 
     test "RayIntersection: no transformation":
@@ -149,6 +160,9 @@ suite "Sphere":
             intersect1 = sphere.rayIntersection(ray1).get
             intersect2 = sphere.rayIntersection(ray2).get
 
+        #---------------------------------------------------#
+        #           Checking with unitary sphere            #
+        #---------------------------------------------------#
         check areClose(intersect1.world_pt, newPoint3D(10, 0, 1))
         check areClose(intersect1.normal, newNormal(0, 0, 1))
         check areClose(intersect1.t_hit, 1)
@@ -162,17 +176,6 @@ suite "Sphere":
         sphere.transf = Transformation.id
         check sphere.rayIntersection(ray3).isSome
         check not sphere.rayIntersection(ray4).isSome
-    
-
-    test "FastIntersection":
-        # Checking Fast intersection method
-        var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
-            ray2 = newRay(newPoint3D(-10, 0, 0), newVec3(float32 0, 0, -1))
-        
-        check sphere.fastIntersection(ray1)
-        check not sphere.fastIntersection(ray2)
-
 
 
 suite "Plane":
