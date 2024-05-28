@@ -339,10 +339,37 @@ suite "Transformation unittest":
         check areClose(apply(t1, n2), newNormal(1, 0, 0))
         check areClose(apply(t, n3), newNormal(0, 0, 1))
 
+    
+    test "@ proc test":
+        let t2 = newScaling(0.5)
+        var 
+            origin = newPoint3D(0, 0, 0)
+            p1 = newPoint3D(1, 2, 3)
+            comp = t1 @ t2      # As we are working right now, we first translate and then scale
+            comp1 = t2 @ t1     # As we are working right now, we first scale and then translate
+            id = comp @ comp.inverse
 
+        #-----------------------------------------#
+        #         Testing on origin point         #
+        #-----------------------------------------#
+        check areClose(apply(t2, origin), newPoint3D(0, 0, 0))
+        check areClose(apply(t1, origin), newPoint3D(4, 3, -1))
+        check areClose(apply(comp, origin), newPoint3D(2, 1.5, -0.5))
+        check areClose(apply(comp1, origin), newPoint3D(4, 3, -1))
+        check areClose(apply(id, origin), newPoint3D(0, 0, 0))
+
+
+        #-----------------------------------------#
+        #         Testing on generic point        #
+        #-----------------------------------------#
+        check areClose(apply(t2, p1), newPoint3D(0.5, 1, 1.5))
+        check areClose(apply(t1, p1), newPoint3D(5, 5, 2))
+        check areClose(apply(comp, p1), newPoint3D(2.5, 2.5, 1.0))
+        check areClose(apply(comp1, p1), newPoint3D(4.5, 4, 0.5))
+        check areClose(apply(id, p1), newPoint3D(1, 2, 3))
 
 suite "Derived Transformation test":
-    echo "Testing the `Scaling`, `Translation`, `Rotation` types and their methods."
+    echo "Testing `Scaling`, `Translation`, `Rotation` types and their methods."
 
     setup:
         var
