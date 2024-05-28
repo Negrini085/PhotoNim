@@ -1,4 +1,4 @@
-import geometry, shapes, camera
+import geometry, shapes, bvh, camera
 
 import std/options
 from std/math import sqrt, arctan2, PI
@@ -267,3 +267,13 @@ proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
         surface_pt: shape.uv(hit_pt),
         normal: apply(shape.transform, shape.normal(hit_pt, ray.dir))
     )
+
+
+proc fastIntersection*(node: SceneNode, ray: Ray): bool =
+    if not fastIntersection(newAABox(node.aabb), ray): return false
+    if node.isLeaf:
+        for shape in node.shapes:
+            if fastIntersection(shape, ray): return true
+        return false
+
+    if (node.left != nil and fastIntersection(node.left, ray)) or (node.right != nil and fastIntersection(node.right, ray)): return true
