@@ -6,7 +6,7 @@ from std/math import sgn, floor, arccos, arctan2, PI
 type
     AABB* = Interval[Point3D]
 
-proc getRelativeAABB(points: openArray[Point3D]): AABB =
+proc newAABB*(points: openArray[Point3D]): AABB =
     if points.len == 1: return (points[0], points[0])
 
     let 
@@ -14,7 +14,7 @@ proc getRelativeAABB(points: openArray[Point3D]): AABB =
         y = points.map(proc(pt: Point3D): float32 = pt.y)
         z = points.map(proc(pt: Point3D): float32 = pt.z)
 
-    (newPoint3D(x.min, y.min, z.min), newPoint3D(x.max, y.max, z.max))
+    (min: newPoint3D(x.min, y.min, z.min), max: newPoint3D(x.max, y.max, z.max))
 
 
 type
@@ -43,44 +43,70 @@ type
 
 
 proc newAABox*(min = ORIGIN3D, max = newPoint3D(1, 1, 1), material = newMaterial(), transform = IDENTITY): Shape {.inline.} =
-    Shape(kind: skAABox, material: material, aabb: (min, max), transform: transform)
+    Shape(kind: skAABox, material: material, aabb: newInterval(min, max), transform: transform)
 
 proc newAABox*(aabb: AABB, material = newMaterial(), transform = IDENTITY): Shape {.inline.} =
     Shape(kind: skAABox, material: material, aabb: aabb, transform: transform)
 
+
 proc getAABox*(shape: Shape): Shape {.inline.} =
     case shape.kind
-    of skAABox: return shape
+    of skAABox: 
+        return shape
+    of skTriangle: 
+        return newAABox(newAABB(shape.vertices), transform = shape.transform)
+    of skSphere: 
+        return newAABox(newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius), transform = shape.transform)
+    of skCylinder: 
+        return newAABox(newPoint3D(-shape.R, -shape.R, shape.zMin), newPoint3D(shape.R, shape.R, shape.zMax), transform = shape.transform)
+    of skPlane: 
+        return newAABox(newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, Inf), transform = shape.transform)
 
-    of skTriangle: return newAABox(shape.vertices.getRelativeAABB, transform = shape.transform)
 
-    of skSphere: return newAABox(newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius), transform = shape.transform)
+proc getVertices*(shape: Shape): seq[Point3D] = 
+    case shape.kind
+    of skTriangle:
+        return shape.vertices[0..^1]
+    of skAABox:
+        return @[
+            shape.aabb.min, shape.aabb.max,
+            newPoint3D(shape.aabb.min.x, shape.aabb.min.y, shape.aabb.max.z),
+            newPoint3D(shape.aabb.min.x, shape.aabb.max.y, shape.aabb.min.z),
+            newPoint3D(shape.aabb.min.x, shape.aabb.max.y, shape.aabb.max.z),
+            newPoint3D(shape.aabb.max.x, shape.aabb.min.y, shape.aabb.min.z),
+            newPoint3D(shape.aabb.max.x, shape.aabb.min.y, shape.aabb.max.z),
+            newPoint3D(shape.aabb.max.x, shape.aabb.max.y, shape.aabb.min.z),
+        ]
+    else: 
+        return shape.getAABox.getVertices
 
-    of skCylinder: return newAABox(newPoint3D(-shape.R, -shape.R, shape.zMin), newPoint3D(shape.R, shape.R, shape.zMax), transform = shape.transform)
 
-    of skPlane: return newAABox(newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, Inf), transform = shape.transform)
+proc getTransformedVertices*(shape: Shape): seq[Point3D] {.inline.} = 
+    shape.getVertices.map(proc(pt: Point3D): Point3D = apply(shape.transform, pt))
+    
+
+proc getWorldAABB*(shape: Shape): AABB {.inline.} =
+    case shape.kind
+    of skAABox, skTriangle, skCylinder: return newAABB(shape.getTransformedVertices)
+
+    of skSphere: 
+        let center = apply(shape.transform, ORIGIN3D)
+        let radiusPt = newVec3f(shape.radius, shape.radius, shape.radius)
+        return newInterval(center - radiusPt, center + radiusPt)
+
+    of skPlane: return newInterval(apply(shape.transform, newPoint3D(-Inf, -Inf, -Inf)), apply(shape.transform, newPoint3D(Inf, Inf, Inf)))
 
 
-proc getGlobalAABB*(shapes: openArray[Shape]): AABB =
+proc newAABB*(shapes: openArray[Shape]): AABB =
     if shapes.len == 0: return (ORIGIN3D, ORIGIN3D)
     result = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
     
-    for shape in shapes.items:
-        let 
-            bbox = shape.getAABox
-            corners = @[
-                bbox.aabb.min, bbox.aabb.max,
-                newPoint3D(bbox.aabb.min.x, bbox.aabb.min.y, bbox.aabb.max.z),
-                newPoint3D(bbox.aabb.min.x, bbox.aabb.max.y, bbox.aabb.min.z),
-                newPoint3D(bbox.aabb.min.x, bbox.aabb.max.y, bbox.aabb.max.z),
-                newPoint3D(bbox.aabb.max.x, bbox.aabb.min.y, bbox.aabb.min.z),
-                newPoint3D(bbox.aabb.max.x, bbox.aabb.min.y, bbox.aabb.max.z),
-                newPoint3D(bbox.aabb.max.x, bbox.aabb.max.y, bbox.aabb.min.z),
-            ]
-            aabb = corners.map(proc(corner: Point3D): Point3D = apply(bbox.transform, corner)).getRelativeAABB
-            
+    for shape in shapes:
+        let aabb = shape.getWorldAABB
         result = newInterval(newInterval(aabb.min, result.min).min, newInterval(aabb.max, result.max).max)
-    
+
+proc getWorldAABox*(shape: Shape): Shape {.inline.} = newAABox(shape.getWorldAABB)
+
 
 proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Shape {.inline.} =   
     Shape(
