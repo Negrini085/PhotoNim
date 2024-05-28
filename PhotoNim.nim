@@ -1,7 +1,7 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, camera, shapes, hitrecord, pcg, tracer]
-export geometry, camera, shapes, hitrecord, pcg, tracer
+import src/[geometry, camera, shapes, bvh, hitrecord, pcg, tracer]
+export geometry, camera, shapes, bvh, hitrecord, pcg, tracer
 
 from std/times import cpuTime
 from std/strformat import fmt
@@ -152,10 +152,10 @@ proc demo*(width, height: int, camera: Camera): HdrImage =
         s9 = newSphere(center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1)   
 
     var 
-        scenary = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+        scenery = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
         tracer = newImageTracer(width, height, camera, samplesPerSide = 4)
 
-    tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
+    tracer.fireAllRays(scenery, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
 
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
