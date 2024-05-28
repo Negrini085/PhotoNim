@@ -329,7 +329,6 @@ suite "Transformation unittest":
 
     test "apply on Normal":
         var
-            n1 = newNormal(0, 0, 0)
             n2 = newNormal(1, 0, 0)
             n3 = newNormal(0, 3/5, 4/5)
             m1: Mat4f = [[1, 0, 0, 0], [0, 4/5, -3/5, 0], [0, 3/5, 4/5, 0], [0, 0, 0, 1]]
@@ -377,6 +376,10 @@ suite "Derived Transformation test":
             t2 = newScaling(newVec3[float32](1, 2, 3))
             t3 = newTranslation(newVec3[float32](2, 4, 1))
 
+    teardown:
+        discard t1
+        discard t2
+        discard t3
 
     test "Scaling of Vec4f":
         # Checking scaling of a Vec4f object
