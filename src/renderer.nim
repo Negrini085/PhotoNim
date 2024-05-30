@@ -130,9 +130,9 @@ proc render*(scene: var Scene; renderer: var Renderer, maxShapesPerLeaf = 4, sam
     proc task(scene: ptr Scene, renderer: ptr Renderer, rgState, rgSeq: uint64, u, v: int) =
         var rg = newPCG(rgState, rgSeq)
         withLock imageLock:
-            renderer.image[] += renderer.sample(scene, newPoint2D(u.float32 + rg.rand, v.float32 + rg.rand))
+            renderer.image[] += renderer.sample(scene, newPoint2D((u.float32 + rg.rand) / samplesPerSide.float32, (v.float32 + rg.rand) / samplesPerSide.float32))
 
-        withLock progressLock:
+        withLock progressLock: 
             completedTasks += 1
             displayProgress(completedTasks, numTasks)
         
