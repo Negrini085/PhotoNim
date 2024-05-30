@@ -144,3 +144,6 @@ proc render*(scene: var Scene; renderer: var Renderer, maxShapesPerLeaf = 4, sam
 
     # sync()
     # renderer.image[].pixels.apply(proc(pix: Color): Color = pix / (samplesPerSide * samplesPerSide).float32)
+
+    stdout.eraseLine
+    stdout.resetAttributes
