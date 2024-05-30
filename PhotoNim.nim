@@ -1,7 +1,7 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, camera, shapes, hitrecord, pcg, tracer]
-export geometry, camera, shapes, hitrecord, pcg, tracer
+import src/[geometry, pcg, camera, material, shapes, scene, hitrecord, renderer]
+export geometry, pcg, camera, material, shapes, scene, hitrecord, renderer
 
 from std/times import cpuTime
 from std/strformat import fmt
@@ -28,7 +28,7 @@ proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = little
     stream.write(tmp)
 
 
-proc readPFM*(stream: FileStream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
+proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.raises: [CatchableError].} =
     assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
     let sizes = stream.readLine.split(" ")
     assert sizes.len == 2, "Invalid image size specification: required 'width height'."
@@ -51,7 +51,7 @@ proc readPFM*(stream: FileStream): tuple[img: HdrImage, endian: Endianness] {.ra
     except:
         raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
 
-    result.img = newHdrImage(width, height)
+    result.img = newHDRImage(width, height)
 
     var r, g, b: float32
     for y in countdown(height - 1, 0):
@@ -61,7 +61,7 @@ proc readPFM*(stream: FileStream): tuple[img: HdrImage, endian: Endianness] {.ra
             b = readFloat(stream, result.endian)
             result.img.setPixel(x, y, newColor(r, g, b))
 
-proc writePFM*(stream: FileStream, img: HdrImage, endian: Endianness = littleEndian) = 
+proc writePFM*(stream: FileStream, img: HDRImage, endian: Endianness = littleEndian) = 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
     stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
@@ -91,7 +91,7 @@ Options:
 
 proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     var 
-        img: HdrImage
+        img: HDRImage
         inFS = newFileStream(fileIn, fmRead)
     try: 
         img = readPFM(inFS).img
@@ -100,7 +100,7 @@ proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     finally:
         inFS.close
        
-    img.toneMapping(alpha, gamma, avlum)
+    img.applyToneMap(alpha, gamma, avlum)
 
     var 
         i: int
@@ -126,40 +126,90 @@ let demoDoc* = """
 PhotoNim CLI `demo` command:
 
 Usage:
-    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim demo (persp | ortho) (OnOff | Flat | Path) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
-    persp | ortho       Perspective or Orthogonal Camera kinds.
-    <output>            Path to the output HDRImage. [default: "assets/images/demo.pfm"]
-    --w=<width>         Image width. [default: 1600]
-    --h=<height>        Image height. [default: 900]
-    --angle=<angle>     Rotation angle around z axis. [default: 10]
+    persp | ortho           Perspective or Orthogonal Camera kinds.
+    OnOff | Flat | Path     Choosing renderer: OnOff (only shows hit), Flat (flat renderer), Path (actual path tracer)
+    <output>                Path to the output HDRImage. [default: "assets/images/demo.pfm"]
+    --w=<width>             Image width. [default: 1600]
+    --h=<height>            Image height. [default: 900]
+    --angle=<angle>         Rotation angle around z axis. [default: 10]
 """
 
-proc demo*(width, height: int, camera: Camera): HdrImage =
+proc demo*(renderer: var Renderer) =
     let timeStart = cpuTime()
 
     let
-        s0 = newSphere(center = newPoint3D( 0.5,  0.5,  0.5), radius = 0.1)
-        s1 = newSphere(center = newPoint3D( 0.5,  0.5, -0.5), radius = 0.1)
-        s2 = newSphere(center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1)
-        s3 = newSphere(center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1)
-        s4 = newSphere(center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1)
-        s5 = newSphere(center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1)
-        s6 = newSphere(center = newPoint3D(-0.5, -0.5,  0.5), radius = 0.1)
-        s7 = newSphere(center = newPoint3D(-0.5, -0.5, -0.5), radius = 0.1)
-        s8 = newSphere(center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1)
-        s9 = newSphere(center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1)   
+        s0 = newSphere(
+            center = newPoint3D( 0.5,  0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(1, 215/255, 0)))
+            )
 
-    var 
-        scenary = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-        tracer = newImageTracer(width, height, camera, sideSamples = 4)
+        s1 = newSphere(
+            center = newPoint3D( 0.5,  0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(1, 0, 0)))
+            )
 
-    tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
+        s2 = newSphere(
+            center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newUniformPigment(newColor(0, 1, 127/255))
+                )
+            )
 
+        s3 = newSphere(
+            center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newUniformPigment(newColor(0, 1, 127/255))
+                )
+            )
+
+        s4 = newSphere(
+            center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 4)
+                )
+            )
+        
+        s5 = newSphere(
+            center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0.5), 
+                    newUniformPigment(newColor(139/255, 0, 139/255))
+                )
+        )
+
+        s6 = newSphere(
+            center = newPoint3D(-0.5, -0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0.5), 
+                    newUniformPigment(newColor(244/255, 164/255, 96/255))
+                )            
+            )
+
+        s7 = newSphere(
+            center = newPoint3D(-0.5, -0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), 
+                    newUniformPigment(newColor(244/255, 164/255, 96/255))
+                )   
+            )
+
+        s8 = newSphere(
+            center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1,
+            newMaterial(newSpecularBRDF(), 
+                    newUniformPigment(newColor(0, 0, 128/255))
+                )   
+            )            
+
+        s9 = newSphere(
+            center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 1), 
+                    newUniformPigment(newColor(124/255, 252/255, 0))
+                )   
+            )               
+
+    var scene = newScene(shapes = @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+    scene.render(renderer, maxShapesPerLeaf = 3)
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
-
-    tracer.image
 
 
 when isMainModule: 
@@ -172,7 +222,7 @@ when isMainModule:
 Usage:
     ./PhotoNim help [<command>]
     ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
-    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim demo (persp | ortho) (OnOff | Flat | Path) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
     -h | --help         Display the PhotoNim CLI helper screen.
@@ -182,10 +232,11 @@ Options:
     --g=<gamma>         Gamma correction factor. [default: 1.0]
     --lum=<avlum>       Average image luminosity. 
 
-    persp | ortho       Perspective or Orthogonal Camera kinds.
-    --w=<width>         Image width. [default: 1600]
-    --h=<height>        Image height. [default: 900]
-    --angle=<angle>     Rotation angle around z axis. [default: 10]
+    persp | ortho           Perspective or Orthogonal Camera kinds.
+    OnOff | Flat | Path     Choosing renderer: OnOff (only shows hit), Flat (flat renderer), Path (actual path tracer)
+    --w=<width>             Image width. [default: 1600]
+    --h=<height>            Image height. [default: 900]
+    --angle=<angle>         Rotation angle around z axis. [default: 10]
 """
 
     let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
@@ -249,13 +300,23 @@ Options:
             try: angle = parseFloat($args["--angle"]) 
             except: echo "Warning: angle must be an integer. Default value is used."
             
-        let
-            a_ratio = width / height
-            transform = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
-            camera = if args["persp"]: newPerspectiveCamera(a_ratio, 1.0, transform) else: newOrthogonalCamera(a_ratio, transform)
+            
+        var image = newHDRImage(width, height)
+
+        let transform = newComposition(newTranslation(newVec3f(-1, 0, 0)), newRotZ(angle))
+        let camera = 
+            if args["persp"]: newPerspectiveCamera(width / height, 1.0, transform) 
+            else: newOrthogonalCamera(width / height, transform)
+    
+        var render = 
+            if args["OnOff"]: newOnOffRenderer(addr image, camera, hitCol = newColor(1, 215.0 / 255, 0))
+            elif args["Flat"]: newFlatRenderer(addr image, camera)
+            else: newPathTracer(addr image, camera, nRays = 25)
+
+        demo(render)
 
         var stream = newFileStream(pfmOut, fmWrite) 
-        stream.writePFM(demo(width, height, camera))
+        stream.writePFM(image)
         stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)

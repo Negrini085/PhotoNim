@@ -8,19 +8,17 @@ from std/osproc import execCmd
 
 let 
     timeStart = cpuTime()
-    (width, height) = (1600, 900)
+    (width, height) = (900, 600)
     filename = "assets/images/examples/box"
 
 var 
-    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -2, 0, 0)))
-    tracer = newImageTracer(width, height, cam, sideSamples = 2)
-    scenary = newWorld()
+    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-3, 0, 0)))
+    tracer = newImageTracer(width, height, cam, samplesPerSide = 2)
+    scenery = newWorld()
 
-scenary.shapes.add newAABox(transform = newTranslation(newVec3(float32 0.0, -2.0, 1.5)) @ newRotY(50))
-scenary.shapes.add newAABox(transform = newTranslation(newVec3(float32 0.0, 3.0, 1.5)))
-scenary.shapes.add newUnitarySphere(ORIGIN3D)
-
-tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
+scenery.shapes.add newAABox(transform = newTranslation(newVec3f(2.0, -3.0, 1.0)) @ newRotY(10) @ newRotZ(30))
+scenery.shapes.add newUnitarySphere(newPoint3D(2.0, -3.0, -1.0))
+tracer.fireAllRays(scenery, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 

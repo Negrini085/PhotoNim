@@ -34,14 +34,14 @@ The operations of addition and subtraction between colors, as well as multiplica
 
 
 <div style="text-align: center;">
-    <span style="color: blue; font-size: 28px;"> HdrImage </span>
+    <span style="color: blue; font-size: 28px;"> HDRImage </span>
 </div>
 
 
 The images we are interested in are matrices of pixels. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors. 
 
 ```nim
-type HdrImage* = object
+type HDRImage* = object
     width*, height*: int
     pixels*: seq[Color]
 ```
@@ -50,7 +50,7 @@ Each color is uniquely associated with a particular pixel, which can be determin
 Given that the image is two-dimensional, while sequences are one-dimensional, it is necessary to have a procedure that allows accessing the sequence of colors correctly and efficiently: pixelOffset does just that, returning the index of the memory cell dedicated to a particular pixel.
 
 ``` nim
-proc pixelOffset(img: HdrImage; x, y: int): int {.inline.} = x + img.width * y
+proc pixelOffset(img: HDRImage; x, y: int): int {.inline.} = x + img.width * y
 ```
 
 Appropriate functionalities are available for setting or retrieving the color of a pixel: equally fundamental are the procedures that allow for tone mapping, ensuring the rendering of images with correct management of brightness and colors. You can read or write a .pfm file by using appropriate procedure implemented in PhotoNim.nim file.
@@ -60,8 +60,8 @@ Appropriate functionalities are available for setting or retrieving the color of
 </div>
 
 ```nim
-# Defining a HdrImage variable
-var im = newHdrImage(2, 2)
+# Defining a HDRImage variable
+var im = newHDRImage(2, 2)
 
 # Setting pixel value
 im.setPixel(1, 1, newColor(0.1, 0.3, 0.1))
@@ -70,10 +70,10 @@ im.setPixel(1, 1, newColor(0.1, 0.3, 0.1))
 echo im.getPixel(0, 0)
 
 # Computing avarage luminosity
-echo im.averageLuminosity()
+echo im.avLuminosity()
 
 # Tone Mapping, crucial for production of images with proper color management.
-im.toneMapping(1, 0.23)
+im.applyToneMap(1, 0.23)
 ```
 
 
@@ -82,7 +82,7 @@ im.toneMapping(1, 0.23)
 </div>
 
 
-What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenary. PhotoNim is a backward ray tracer, meaning that we are tracing rays from the camera to the light sources. The first tool we need to develop is indeed a type that allows us to uniquely characterize a ray:
+What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenery. PhotoNim is a backward ray tracer, meaning that we are tracing rays from the camera to the light sources. The first tool we need to develop is indeed a type that allows us to uniquely characterize a ray:
 
 ```nim
 type Ray* = object
@@ -115,11 +115,11 @@ If you want to evaluate ray position at a certain time t, you just have to use `
 
 ```nim
 let
-    trans = newTranslation(newVec3(float32 2, 0, 0))
+    trans = newTranslation(newVec3f(2, 0, 0))
 
 var 
     origin = ORIGIN3D        # Ray starting point
-    dir = newVec3(float32 1, 0, 0)     # Ray direction (along x-axis)
+    dir = newVec3f(1, 0, 0)     # Ray direction (along x-axis)
     ray = newRay(origin, dir)           # tmin, tmax and depth have default values
 
 # Printing ray variable content
@@ -179,7 +179,7 @@ proc newPerspectiveCamera*(a, d: float32; transf = Transformation.id): Camera {.
 is the one that enables the user to fire rays at a specific screen location: clearly this differs between different kinds of camera.
 
 ```nim
-proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
+proc fireRay*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
     case cam.kind
     of ckOrthogonal:
         apply(cam.transform, newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX))
@@ -196,7 +196,7 @@ Both cameras are initialized such that the observer is positioned along the nega
 ```nim
 let 
     # transformation to be associated with the chosen camera
-    trans = newTranslation(newVec3(float32 -1, 0, 0))
+    trans = newTranslation(newVec3f(-1, 0, 0))
 
 var
     ray: Ray                                # Ray variable to store rays fired
@@ -204,7 +204,7 @@ var
     pCam = newPerspectiveCamera(1.2, 1, trans)
 
 # Firing ray, we need to give (u, v) coordinates as input
-ray = pCam.fire_ray(uv)
+ray = pCam.fireRay(uv)
 # Printing ray: it should have
 #          ---> ray.origin = (-2, 0, 0)
 #          ---> ray.dir    = (1, 0, 0)
@@ -217,29 +217,29 @@ echo ray
 </div>
 
 
-We now need to bind the HdrImage type to one of the camera kinds in order to render scenarios: the ```ImageTracer``` type is exactly what we are looking for considering that its data members are an ```HdrImage``` variable and a ```Camera``` one.
+We now need to bind the HDRImage type to one of the camera kinds in order to render scenarios: the ```ImageTracer``` type is exactly what we are looking for considering that its data members are an ```HDRImage``` variable and a ```Camera``` one.
 
 ```nim
 type ImageTracer* = object
-    image*: HdrImage
+    image*: HDRImage
     camera*: Camera
 ```
 
 ImageTracer is responsible for casting rays to the various image pixels, working with row and column indices that allow access to specific memory cells in the color sequence. We have implemented two functionalities, which enable casting a ray to a specific pixel on the screen or to all pixels present. The first one compute index conversion such as
 
 ```nim
-proc fire_ray*(im_tr: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray {.inline.} =
-    im_tr.camera.fire_ray(newPoint2D((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32))
+proc fireRay*(im_tr: ImageTracer; x, y: int, pixel = newPoint2D(0.5, 0.5)): Ray {.inline.} =
+    im_tr.camera.fireRay(newPoint2D((x.float32 + pixel.u) / im_tr.image.width.float32, 1 - (y.float32 + pixel.v) / im_tr.image.height.float32))
 ```
 
 As we transition from continuous (u, v) to discrete (x, y), we also need to decide which region of the pixel to hit, hence one of the inputs is Point2D labeled as pixel. By default, we work by hitting the center, meaning passing a tuple with both entries initialized to 0.5.
 To shoot rays at all the pixels on the screen, one simply needs to iterate over the row and column indices.
 
 ```nim
-proc fire_all_rays*(im_tr: var ImageTracer) = 
+proc fireAllRays*(im_tr: var ImageTracer) = 
     for x in 0..<im_tr.image.height:
         for y in 0..<im_tr.image.width:
-            discard im_tr.fire_ray(x, y)
+            discard im_tr.fireRay(x, y)
             let 
                 r = (1 - exp(-float32(x + y)))
                 g = y / im_tr.image.height
@@ -255,11 +255,11 @@ Here we are creating a colormap associating each pixel with a color depending on
 
 ```nim
 let
-    trans = newTranslation(newVec3(float32 -1, 0, 0))  # Transformation to apply to camera
+    trans = newTranslation(newVec3f(-1, 0, 0))  # Transformation to apply to camera
 
 var
     ray: Ray
-    img = newHdrImage(5, 5)
+    img = newHDRImage(5, 5)
     pcam = newPerspectiveCamera(1, 1, trans)
     im_tr = ImageTracer(image: img, camera: pcam)   # ImageTracer initialization
 
@@ -267,12 +267,12 @@ var
 # Procedure to fire a single ray
 # We are choosing middle pixel
 # Ray direction must be along x-axis
-ray = im_tr.fire_ray(2, 2)
+ray = im_tr.fireRay(2, 2)
 echo ray.origin             # Should be (-2, 0, 0)
 echo ray.dir                # Should be (1, 0, 0)
 
-# Procedure to fire all rays, HdrImage elements will change value
+# Procedure to fire all rays, HDRImage elements will change value
 # We are going to check using echo, we find no initialization value (0, 0, 0)
-im_tr.fire_all_rays()
+im_tr.fireAllRays()
 echo getPixel(im_tr.image, 2, 2)
 ```

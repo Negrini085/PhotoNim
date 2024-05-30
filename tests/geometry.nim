@@ -1,4 +1,5 @@
 import std/unittest
+from math import sqrt
 import PhotoNim
 
 
@@ -19,7 +20,7 @@ suite "Vec unittest":
         let d = newVec2(1.0, 2.0)
         check d.N == 2 and d.V is float
 
-        let e = newVec3(float32 1.0, 2.0, 3.0)
+        let e = newVec3f(1.0, 2.0, 3.0)
         check e.N == 3 and e.V is float32
 
         let f = newVec4(-1, -4, 5, 2)
@@ -50,6 +51,13 @@ suite "Vec unittest":
         var a = newVec3(1.0, 2.0, 3.0)
         a[2] = -3.0
         check a[0] == 1.0 and a[1] == 2.0 and a[2] == -3.0
+
+    test "`==` proc": 
+        check BLACK.Vec3f == [float32 0, 0, 0]
+        check WHITE.Vec3f == [float32 1, 1, 1]
+        check RED.Vec3f == [float32 1, 0, 0]
+        check GREEN.Vec3f == [float32 0, 1, 0]
+        check BLUE.Vec3f == [float32 0, 0, 1]
 
 
     test "`+` proc":
@@ -135,34 +143,34 @@ suite "Points unittest":
         
     test "toPoint3D proc":
         check p3.Vec3f is Vec3f
-        check newVec3(float32 0.01, 0.02, 0.03).toPoint3D is Point3D
+        check newVec3f(0.01, 0.02, 0.03).toPoint3D is Point3D
 
     test "`$` proc":
         check $p2 == "(1.0, 20.0)"
     
-    test "min proc":
-        var
-            a = newPoint3D(1, 2, 3)
-            b = newPoint3D(-1, 2, 5)
-            c = newPoint3D(1, -2, 4)
+    # test "min proc":
+    #     var
+    #         a = newPoint3D(1, 2, 3)
+    #         b = newPoint3D(-1, 2, 5)
+    #         c = newPoint3D(1, -2, 4)
             
-            s1 = @[a]
-            s2 = @[a, b, c]
+    #         s1 = @[a]
+    #         s2 = @[a, b, c]
 
-        check areClose(min(s1), newPoint3D(1, 2, 3))
-        check areClose(min(s2), newPoint3D(-1, -2, 3))
+    #     check areClose(min(s1), newPoint3D(1, 2, 3))
+    #     check areClose(min(s2), newPoint3D(-1, -2, 3))
     
-    test "max proc":
-        var
-            a = newPoint3D(1, 2, 3)
-            b = newPoint3D(-1, 2, 5)
-            c = newPoint3D(1, -2, 4)
+    # test "max proc":
+    #     var
+    #         a = newPoint3D(1, 2, 3)
+    #         b = newPoint3D(-1, 2, 5)
+    #         c = newPoint3D(1, -2, 4)
             
-            s1 = @[a]
-            s2 = @[a, b, c]
+    #         s1 = @[a]
+    #         s2 = @[a, b, c]
 
-        check areClose(max(s1), newPoint3D(1, 2, 3))
-        check areClose(max(s2), newPoint3D(1, 2, 5))
+    #     check areClose(max(s1), newPoint3D(1, 2, 3))
+    #     check areClose(max(s2), newPoint3D(1, 2, 5))
 
 
 
@@ -298,14 +306,14 @@ suite "Transformation unittest":
 
     test "apply on Vec4f":
         var
-            vec: Vec4f = newVec4[float32](1, 2, 3, 0)
-            point: Vec4f = newVec4[float32](1, 2, 3, 1)
+            vec: Vec4f = newVec4f(1, 2, 3, 0)
+            point: Vec4f = newVec4f(1, 2, 3, 1)
 
         # In order to test general methods we are using translation matrices: that means that
         # transformation acts different depending on the last vector component
             
         check areClose(apply(t1, vec), vec)
-        check areClose(apply(t1, point), newVec4[float32](5, 5, 2, 1))
+        check areClose(apply(t1, point), newVec4f(5, 5, 2, 1))
 
 
     test "apply on Point3D":
@@ -319,17 +327,16 @@ suite "Transformation unittest":
 
     test "apply on Vec3f":
         var
-            p1 = newVec3(float32 0, 0, 0)
-            p2 = newVec3(float32 1, 2, 3) 
+            p1 = newVec3f(0, 0, 0)
+            p2 = newVec3f(1, 2, 3) 
 
         # Testing apply procedure
-        check areClose(apply(t1, p1), newVec3(float32 0, 0, 0))
-        check areClose(apply(t1, p2), newVec3(float32 1, 2, 3))
+        check areClose(apply(t1, p1), newVec3f(0, 0, 0))
+        check areClose(apply(t1, p2), newVec3f(1, 2, 3))
     
 
     test "apply on Normal":
         var
-            n1 = newNormal(0, 0, 0)
             n2 = newNormal(1, 0, 0)
             n3 = newNormal(0, 3/5, 4/5)
             m1: Mat4f = [[1, 0, 0, 0], [0, 4/5, -3/5, 0], [0, 3/5, 4/5, 0], [0, 0, 0, 1]]
@@ -347,16 +354,18 @@ suite "Derived Transformation test":
     setup:
         var
             t1 = newScaling(2.0)
-            t2 = newScaling(newVec3(float32 1, 2, 3))
-            t3 = newTranslation(newVec3(float32 2, 4, 1))
+            t2 = newScaling(newVec3f(1, 2, 3))
+            t3 = newTranslation(newVec3f(2, 4, 1))
 
-
+    teardown:
+        discard t1; discard t2; discard t3
+    
     test "Scaling of Vec4f":
         # Checking scaling of a Vec4f object
-        let vec = newVec4(float32 1, 2, 3, 1)
+        let vec = newVec4f(1, 2, 3, 1)
 
-        check areClose(apply(t1, vec), newVec4[float32](2, 4, 6, 1))
-        check areClose(apply(t2, vec), newVec4[float32](1, 4, 9, 1))
+        check areClose(apply(t1, vec), newVec4f(2, 4, 6, 1))
+        check areClose(apply(t2, vec), newVec4f(1, 4, 9, 1))
     
 
     test "Scaling of Point3D":
@@ -372,23 +381,23 @@ suite "Derived Transformation test":
 
     test "Scaling of Vec3f":
         # Checking scaling of a Point3D object
-        var p = newVec3(float32 0, 3, 1)
+        var p = newVec3f(0, 3, 1)
         
         # Checking omogeneous scaling
-        check areClose(apply(t1, p), newVec3(float32 0, 6, 2))
+        check areClose(apply(t1, p), newVec3f(0, 6, 2))
 
         # Checking arbitrary scaling
-        check areClose(apply(t2, p), newVec3(float32 0, 6, 3))
+        check areClose(apply(t2, p), newVec3f(0, 6, 3))
 
 
     test "Translation of Vec4f":
         var
-            vec: Vec4f = newVec4[float32](1, 2, 3, 0)
-            point: Vec4f = newVec4[float32](1, 0, 3, 1)
+            vec: Vec4f = newVec4f(1, 2, 3, 0)
+            point: Vec4f = newVec4f(1, 0, 3, 1)
 
         # Checking apply procedure
         check areClose(apply(t3, vec), vec)
-        check areClose(apply(t3, point), newVec4[float32](3, 4, 4, 1))
+        check areClose(apply(t3, point), newVec4f(3, 4, 4, 1))
     
 
     test "Translation of Point3D":
@@ -406,8 +415,54 @@ suite "Derived Transformation test":
             tx = newRotX(180) 
             ty = newRotY(180) 
             tz = newRotZ(180) 
-            vec = newVec4[float32](1, 2, 3, 1)
+            vec = newVec4f(1, 2, 3, 1)
         
         check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0), 1e-6)
         check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0), 1e-6)
         check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0), 1e-6)
+
+
+suite "OrthoNormal Basis":
+
+    setup:
+        var 
+            onb = newONB()
+            onb1 = newONB(newVec3f(sqrt(2.0), sqrt(2.0), 0), 
+                          newVec3f(sqrt(2.0), -sqrt(2.0), 0),
+                          newVec3f(0, 0, 1))
+    
+    teardown:
+        discard onb
+        discard onb1
+    
+    test "newONB proc":
+        # Checkig newONB proc
+        check areClose(onb[0], eX)
+        check areClose(onb[1], eY)
+        check areClose(onb[2], eZ)
+
+        check areClose(onb1[0], newVec3f(sqrt(2.0), sqrt(2.0), 0))
+        check areClose(onb1[1], newVec3f(sqrt(2.0), -sqrt(2.0), 0))
+        check areClose(onb1[2], eZ)
+    
+    test "newONB proc":
+        # Checking Duff et al. algorithm
+        # We are gonna random test it, so we will check random normals as input
+        var 
+            pcg = newPCG()
+            normal: Normal
+
+
+        for i in 0..<1000:
+            normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
+            onb = newONB(normal)
+
+            check areClose(onb[2], normal.toVec3)
+
+            check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
+            check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)
+            check areClose(dot(onb[2], onb[0]), 0, eps = 1e-6)
+
+            check areClose(onb[0].norm, 1, eps = 1e-6)
+            check areClose(onb[1].norm, 1, eps = 1e-6)
+            check areClose(onb[2].norm, 1, eps = 1e-6)

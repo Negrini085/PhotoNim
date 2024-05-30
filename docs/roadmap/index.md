@@ -44,8 +44,8 @@ type
 
         
 type ImageTracer* = object
-    image*: HdrImage
+    image*: HDRImage
     camera*: Camera
-    sideSamples: int
+    samplesPerSide: int
     rg: PCG
 ```

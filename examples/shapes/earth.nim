@@ -15,7 +15,7 @@
 
 # var 
 #     stream = newFileStream(texturePFM, fmRead)
-#     texture: HdrImage
+#     texture: HDRImage
 
 # try:
 #     texture = stream.readPFM.img
@@ -24,7 +24,7 @@
 
 # var
 #     tracer = ImageTracer(
-#         image: newHdrImage(width, height), 
+#         image: newHDRImage(width, height), 
 #         camera: newPerspectiveCamera(width / height, distance, newTranslation(newVec3(float32 -distance, 0, 0)))
 #     )
 

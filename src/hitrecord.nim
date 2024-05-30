@@ -1,276 +1,181 @@
-import geometry, shapes, camera
+import geometry, shapes, scene, camera
 
 import std/options
-from std/math import sqrt, arctan2, PI
 from std/fenv import epsilon
+from std/math import sqrt, arctan2, PI
+from std/sequtils import concat, map, foldl, filter
+from std/algorithm import sorted
 
 
-type
-    HitRecord* = object
-        ray*: Ray
-        t*: float32
-        shape*: ShapeKind
-        material*: Material
+proc intersect*(ray: Ray; node: SceneNode): bool =
+    if not ray.intersect(newAABox(node.aabb)): return false
+    if node.kind == nkLeaf:
+        for shape in node.shapes:
+            if ray.intersect(shape): return true
+        return false
 
-        world_pt*: Point3D
-        surface_pt*: Point2D
-        normal*: Normal
+    if (node.left != nil and ray.intersect(node.left)) or (node.right != nil and ray.intersect(node.right)): return true
+    
+
+proc getHitLeafNodes*(node: SceneNode; ray: Ray): Option[seq[SceneNode]] =
+    if not ray.intersect(newAABox(node.aabb)): return none seq[SceneNode]
+    var sceneNodes: seq[SceneNode]
+    case node.kind
+    of nkLeaf: sceneNodes.add node
+
+    of nkRoot:
+        if node.left != nil:
+            let hit = node.left.getHitLeafNodes(ray)
+            if hit.isSome: sceneNodes = concat(sceneNodes, hit.get)
+
+        if node.right != nil:
+            let hit = node.right.getHitLeafNodes(ray)
+            if hit.isSome: sceneNodes = concat(sceneNodes, hit.get)
+
+    some sceneNodes
+
+
+type HitPayload* = object
+    shape*: ptr Shape
+    ray*: Ray
+    t*: float32
+    
+    
+proc newHitPayload*(shape: Shape, ray: Ray): Option[HitPayload] =
+    let invRay = ray.transform(shape.transform.inverse) 
+
+    case shape.kind
+    of skAABox:
+        let
+            xSpan = newInterval((shape.aabb.min.x - invRay.origin.x) / invRay.dir[0], (shape.aabb.max.x - invRay.origin.x) / invRay.dir[0])
+            ySpan = newInterval((shape.aabb.min.y - invRay.origin.y) / invRay.dir[1], (shape.aabb.max.y - invRay.origin.y) / invRay.dir[1])
+
+        if xSpan.min > ySpan.max or ySpan.min > xSpan.max: return none HitPayload
+
+        let zSpan = newInterval((shape.aabb.min.z - invRay.origin.z) / invRay.dir[2], (shape.aabb.min.z - invRay.origin.z) / invRay.dir[2])
+        
+        var (tHitMin, tHitMax) = (max(xSpan.min, ySpan.min), min(xSpan.max, ySpan.max))
+        if tHitMin > zSpan.max or zSpan.min > tHitMax: return none HitPayload
+
+        if zSpan.min > tHitMin: tHitMin = zSpan.min
+        if zSpan.max < tHitMax: tHitMax = zSpan.max
+                
+        let tHit = if shape.aabb.contains(invRay.origin): tHitMax else: tHitMin
+        if not invRay.tspan.contains(tHit): return none HitPayload
+
+        return some HitPayload(shape: addr shape, ray: invRay, t: tHit)
+
+    of skTriangle:
+        let 
+            mat = [
+                [shape.vertices[1].x - shape.vertices[0].x, shape.vertices[2].x - shape.vertices[0].x, -invRay.dir[0]], 
+                [shape.vertices[1].y - shape.vertices[0].y, shape.vertices[2].y - shape.vertices[0].y, -invRay.dir[1]], 
+                [shape.vertices[1].z - shape.vertices[0].z, shape.vertices[2].z - shape.vertices[0].z, -invRay.dir[2]]
+            ]
+            vec = [invRay.origin.x - shape.vertices[0].x, invRay.origin.y - shape.vertices[0].y, invRay.origin.z - shape.vertices[0].z]
+
+        let sol = try: solve(mat, vec) except ValueError: return none HitPayload
+        if not invRay.tspan.contains(sol[2]): return none HitPayload
+        if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return none HitPayload
+
+        return some HitPayload(shape: addr shape, ray: invRay, t: sol[2])
+
+    of skSphere:
+        let (a, b, c) = (norm2(invRay.dir), dot(invRay.origin.Vec3f, invRay.dir), norm2(invRay.origin.Vec3f) - shape.radius * shape.radius)
+        let delta_4 = b * b - a * c
+        if delta_4 < 0: return none HitPayload
+
+        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
+        let tHit = if ray.tspan.contains(t_l): t_l elif ray.tspan.contains(t_r): t_r else: return none HitPayload
+
+        return some HitPayload(shape: addr shape, ray: invRay, t: tHit)
+
+    of skPlane:
+        if abs(invRay.dir[2]) < epsilon(float32): return none HitPayload
+        let tHit = -invRay.origin.z / invRay.dir[2]
+        if not ray.tspan.contains(t_hit): return none HitPayload
+
+        return some HitPayload(shape: addr shape, ray: invRay, t: tHit)
+
+    of skCylinder:
+        if not ray.intersect(shape.getAABox): return none HitPayload
+
+        let
+            a = invRay.dir[0] * invRay.dir[0] + invRay.dir[1] * invRay.dir[1]
+            b = 2 * (invRay.dir[0] * invRay.origin.x + invRay.dir[1] * invRay.origin.y)
+            c = invRay.origin.x * invRay.origin.x + invRay.origin.y * invRay.origin.y - shape.R * shape.R
+            delta = b * b - 4.0 * a * c
+
+        if delta < 0.0: return none HitPayload
+
+        var tspan = newInterval((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
+
+        if tspan.min > invRay.tspan.max or tspan.max < invRay.tspan.min: return none HitPayload
+
+        var tHit = tspan.min
+        if tHit < invRay.tspan.min:
+            if tspan.max > invRay.tspan.max: return none HitPayload
+            tHit = tspan.max
+
+        var hitPt = invRay.at(tHit)
+        var phi = arctan2(hitPt.y, hitPt.x)
+        if phi < 0.0: phi += 2.0 * PI
+
+        if hitPt.z < shape.zMin or hitPt.z > shape.zMax or phi > shape.phiMax:
+            if tHit == tspan.max: return none HitPayload
+            tHit = tspan.max
+            if tHit > invRay.tspan.max: return none HitPayload
+            
+            hitPt = invRay.at(tHit)
+            phi = arctan2(hitPt.y, hitPt.x)
+            if phi < 0.0: phi += 2.0 * PI
+            if hitPt.z < shape.zMin or hitPt.z > shape.zMax or phi > shape.phiMax: return none HitPayload
+
+        return some HitPayload(shape: addr shape, ray: invRay, t: tHit)
+
+
+proc getHitPayloads(nodes: seq[SceneNode], ray: Ray): seq[HitPayload] =
+    nodes
+        .map(proc(node: SceneNode): SceneTree = newBVHTree(node.shapes, mspl = 1))
+        .map(proc(tree: SceneTree): seq[SceneNode] = tree.root.getHitLeafNodes(ray).get).foldl(concat(a, b))
+        .map(proc(node: SceneNode): Option[HitPayload] = newHitPayload(node.shapes[0], ray))
+        .filter(proc(x: Option[HitPayload]): bool = x.isSome)
+        .map(proc(hit: Option[HitPayload]): HitPayload = hit.get)
+
+
+proc newHitRecord*(scene: ptr Scene, ray: Ray): Option[seq[HitPayload]] =
+    var hitNodes = scene.tree.root.getHitLeafNodes(ray)
+    if hitNodes.isNone: return none seq[HitPayload]
+    let hitPayloads = hitNodes.get.getHitPayloads(ray)
+    if hitPayloads.len == 0: return none seq[HitPayload]
+    some hitPayloads.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))       
 
 
 proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
-    var t_hit: float32
-    let inv_ray = ray.transform(shape.transform.inverse)
+    let invRay = if shape.transform.kind != tkIdentity: ray.transform(shape.transform.inverse) else: ray
 
     case shape.kind
     of skTriangle: discard
 
-    of skTriangularMesh: discard            
-
     of skAABox: discard
 
     of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
+        let (a, b, c) = (norm2(invRay.dir), dot(invRay.origin.Vec3f, invRay.dir), norm2(invRay.origin.Vec3f) - 1)
         let delta_4 = b * b - a * c
         if delta_4 < 0: return none(seq[float32])
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax and t_r > ray.tmin and t_r < ray.tmax: 
-            return some(@[t_l, t_r])
-        elif t_l > ray.tmin and t_l < ray.tmax:
-            return some(@[t_l])
-        elif t_r > ray.tmin and t_r < ray.tmax:
-            return some(@[t_r])
+        if t_l > ray.tspan.min and t_l < ray.tspan.max and t_r > ray.tspan.min and t_r < ray.tspan.max: return some(@[t_l, t_r])
+        elif t_l > ray.tspan.min and t_l < ray.tspan.max: return some(@[t_l])
+        elif t_r > ray.tspan.min and t_r < ray.tspan.max: return some(@[t_r])
+        
         return none(seq[float32])
 
     of skPlane:
-        if abs(inv_ray.dir[2]) < epsilon(float32): return none(seq[float32])
-        t_hit = -inv_ray.origin.z / inv_ray.dir[2]
-        if t_hit < ray.tmin or t_hit > ray.tmax: return none(seq[float32])
+        if abs(invRay.dir[2]) < epsilon(float32): return none(seq[float32])
+        let t_hit = -invRay.origin.z / invRay.dir[2]
+        if t_hit < ray.tspan.min or t_hit > ray.tspan.max: return none(seq[float32])
 
         return some(@[t_hit, Inf])
 
     of skCylinder: discard
-
-proc fastIntersection*(shape: Shape, ray: Ray): bool =
-    case shape.kind
-    of skAABox:
-        let 
-            inv_ray = ray.transform(shape.transform)
-            (min, max) = (shape.min - inv_ray.origin, shape.max - inv_ray.origin)
-        
-        var
-            (tx_min, tx_max) = (min.x / inv_ray.dir[0], max.x / inv_ray.dir[0])
-            (ty_min, ty_max) = (min.y / inv_ray.dir[1], max.y / inv_ray.dir[1])
-
-        if tx_min > tx_max: swap(tx_min, tx_max)
-        if ty_min > ty_max: swap(ty_min, ty_max)
-
-        if tx_min > ty_max or ty_min > tx_max: return false
-
-        var (tz_min, tz_max) = (min.z / inv_ray.dir[2], max.z / inv_ray.dir[2])
-        if tz_min > tz_max: swap(tz_min, tz_max)
-        
-        var (t_hit_min, t_hit_max) = (max(tx_min, ty_min), min(tx_max, ty_max))
-        if t_hit_min > tz_max or tz_min > t_hit_max: return false
-
-        if tz_min > t_hit_min: t_hit_min = tz_min
-        if tz_max < t_hit_max: t_hit_max = tz_max
-
-        return true
-
-
-    of skTriangularMesh: discard
-    
-    of skTriangle: 
-        let 
-            (A, B, C) = shape.vertices
-            mat = [
-                [B.x - A.x, C.x - A.x, -ray.dir[0]], 
-                [B.y - A.y, C.y - A.y, -ray.dir[1]], 
-                [B.z - A.z, C.z - A.z, -ray.dir[2]]
-            ]
-            vec = [ray.origin.x - A.x, ray.origin.y - A.y, ray.origin.z - A.z]
-        
-        var solution: Vec3f
-        try:
-            solution = solve(mat, vec)
-        except ValueError:
-            return false
-
-        var t_hit = solution[2]
-        if ray.tmin > t_hit or t_hit > ray.tmax: return false
-
-        let (u, v) = (solution[0], solution[1])
-        if u < 0.0 or v < 0.0 or u + v > 1.0: return false
-
-        return true
-
-    of skSphere: 
-        let 
-            inv_ray = ray.transform(shape.transform.inverse)
-            (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1.0)
-            delta_4 = b * b - a * c
-
-        if delta_4 < 0: return false
-
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        return (inv_ray.tmin < t_l and t_l < inv_ray.tmax) or (inv_ray.tmin < t_r and t_r < inv_ray.tmax) 
-
-    of skPlane:
-        let inv_ray = ray.transform(shape.transform.inverse)
-        if abs(inv_ray.dir[2]) < epsilon(float32): return false
-
-        let t = -inv_ray.origin.z / inv_ray.dir[2]
-        return (if t < inv_ray.tmin or t > inv_ray.tmax: false else: true)
-                    
-    of skCylinder: discard
-
-
-proc rayIntersection*(shape: Shape, ray: Ray): Option[HitRecord] =
-    var 
-        t_hit: float32
-        hit_pt: Point3D
-        normal: Normal
-
-    let inv_ray = ray.transform(shape.transform.inverse)
-
-    case shape.kind
-    of skTriangle:
-        let 
-            (A, B, C) = shape.vertices
-            mat = [
-                [B.x - A.x, C.x - A.x, -inv_ray.dir[0]], 
-                [B.y - A.y, C.y - A.y, -inv_ray.dir[1]], 
-                [B.z - A.z, C.z - A.z, -inv_ray.dir[2]]
-            ]
-            vec = [inv_ray.origin.x - A.x, inv_ray.origin.y - A.y, inv_ray.origin.z - A.z]
-        
-        var solution: Vec3f
-        try:
-            solution = solve(mat, vec)
-        except ValueError:
-            return none HitRecord
-
-        t_hit = solution[2]
-        if inv_ray.tmin > t_hit or t_hit > inv_ray.tmax: return none HitRecord
-
-        let (u, v) = (solution[0], solution[1])
-        if u < 0.0 or v < 0.0 or u + v > 1.0: return none HitRecord
-
-        hit_pt = inv_ray.at(t_hit)
-        return some HitRecord(
-            ray: ray, 
-            t: t_hit, 
-            shape: shape.kind,
-            material: shape.material,
-            world_pt: hit_pt, 
-            surface_pt: newPoint2D(u, v), 
-            normal: shape.normal(hit_pt, inv_ray.dir)
-        )
-
-
-    of skTriangularMesh: discard            
-
-    of skAABox:
-        assert inv_ray.dir != newVec3f(0.0, 0.0, 0.0)
-        let (min, max) = (shape.min - inv_ray.origin, shape.max - inv_ray.origin)
-        
-        var
-            (tx_min, tx_max) = (min.x / inv_ray.dir[0], max.x / inv_ray.dir[0])
-            (ty_min, ty_max) = (min.y / inv_ray.dir[1], max.y / inv_ray.dir[1])
-
-        if tx_min > tx_max: swap(tx_min, tx_max)
-        if ty_min > ty_max: swap(ty_min, ty_max)
-
-        if tx_min > ty_max or ty_min > tx_max: return none HitRecord
-
-        var (tz_min, tz_max) = (min.z / inv_ray.dir[2], max.z / inv_ray.dir[2])
-        if tz_min > tz_max: swap(tz_min, tz_max)
-        
-        var (t_hit_min, t_hit_max) = (max(tx_min, ty_min), min(tx_max, ty_max))
-        if t_hit_min > tz_max or tz_min > t_hit_max: return none HitRecord
-
-        if tz_min > t_hit_min: t_hit_min = tz_min
-        if tz_max < t_hit_max: t_hit_max = tz_max
-                
-        proc `<=`(a, b: Point3D): bool {.inline.} = a.x <= b.x and a.y <= b.y and a.z <= b.z
-        t_hit = (if inv_ray.origin <= shape.max and shape.min <= inv_ray.origin: t_hit_max else: t_hit_min)
-        
-        if (t_hit < inv_ray.tmin) or (t_hit > inv_ray.tmax): return none HitRecord
-
-
-    of skSphere:
-        let (a, b, c) = (norm2(inv_ray.dir), dot(inv_ray.origin.Vec3f, inv_ray.dir), norm2(inv_ray.origin.Vec3f) - 1)
-        let delta_4 = b * b - a * c
-        if delta_4 < 0: return none HitRecord
-
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tmin and t_l < ray.tmax: t_hit = t_l
-        elif t_r > ray.tmin and t_r < ray.tmax: t_hit = t_r
-        else: return none HitRecord
-
-
-    of skCylinder:
-        if not fastIntersection(newAABox(newPoint3D(-shape.R, -shape.R, shape.limits.zmin), newPoint3D(shape.R, shape.R, shape.limits.zmax)), inv_ray):
-            return none HitRecord
-
-        let
-            a = inv_ray.dir[0] * inv_ray.dir[0] + inv_ray.dir[1] * inv_ray.dir[1]
-            b = 2 * (inv_ray.dir[0] * inv_ray.origin.x + inv_ray.dir[1] * inv_ray.origin.y)
-            c = inv_ray.origin.x * inv_ray.origin.x + inv_ray.origin.y * inv_ray.origin.y - shape.R * shape.R
-            delta = b * b - 4.0 * a * c
-
-        if delta < 0.0: return none HitRecord
-
-        var (t_l, t_r) = ((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
-        if t_l > t_r: swap(t_l, t_r)
-
-        if t_l > inv_ray.tmax or t_r < inv_ray.tmin: return none HitRecord
-
-        t_hit = t_l
-        if t_hit < inv_ray.tmin:
-            if t_r > inv_ray.tmax: return none HitRecord
-            t_hit = t_r
-
-        hit_pt = inv_ray.at(t_hit)
-        var phi = arctan2(hit_pt.y, hit_pt.x)
-        if phi < 0.0: phi += 2.0 * PI
-
-        if hit_pt.z < shape.limits.zmin or hit_pt.z > shape.limits.zmax or phi > shape.limits.phimax:
-            if t_hit == t_r: return none HitRecord
-            t_hit = t_r
-            if t_hit > inv_ray.tmax: return none HitRecord
-            
-            hit_pt = inv_ray.at(t_hit)
-            phi = arctan2(hit_pt.y, hit_pt.x)
-            if phi < 0.0: phi += 2.0 * PI
-            if hit_pt.z < shape.limits.zmin or hit_pt.z > shape.limits.zmax or phi > shape.limits.phimax: return none HitRecord
-
-        return some HitRecord(
-            ray: ray,
-            t: t_hit, 
-            shape: shape.kind,
-            material: shape.material,
-            world_pt: apply(shape.transform, hit_pt),
-            surface_pt: shape.uv(hit_pt), 
-            normal: apply(shape.transform, shape.normal(hit_pt, newVec3f(0, 0, 0)))
-        )
-
-
-    of skPlane:
-        if abs(inv_ray.dir[2]) < epsilon(float32): return none HitRecord
-        t_hit = -inv_ray.origin.z / inv_ray.dir[2]
-        if t_hit < ray.tmin or t_hit > ray.tmax: return none HitRecord
-    
-
-    hit_pt = inv_ray.at(t_hit)
-
-    some HitRecord(
-        ray: ray,
-        t: t_hit,
-        shape: shape.kind,
-        material: shape.material,
-        world_pt: apply(shape.transform, hit_pt),
-        surface_pt: shape.uv(hit_pt),
-        normal: apply(shape.transform, shape.normal(hit_pt, ray.dir))
-    )

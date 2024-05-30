@@ -144,7 +144,7 @@ By varying the parameters alpha and gamma, you can produce visually different im
 
 
 ### demo command
-By using demo mode, you can produce a complex figure of different spheres located in different spatial positions. You can specify image resolution and at which angle you want to see the scenary: in order to produce the following gif you just have to type
+By using demo mode, you can produce a complex figure of different spheres located in different spatial positions. You can specify image resolution and at which angle you want to see the scenery: in order to produce the following gif you just have to type
 ```bash
 for angle in $(seq 0 359); do
     # Angle with three digits, e.g. angle="1" → angleNNN="001"

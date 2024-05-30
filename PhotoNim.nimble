@@ -29,9 +29,8 @@ task demo, "Run the PhotoNim demo animation":
   exec "sh examples/demo/animation.sh"
   
 task examples, "Run the PhotoNim examples":
-  exec "nim c -d:release --hints:off -r examples/shapes/sphere.nim"
   exec "nim c -d:release --hints:off -r examples/shapes/triangle.nim"
   exec "nim c -d:release --hints:off -r examples/shapes/box.nim"
   exec "nim c -d:release --hints:off -r examples/shapes/cylinder.nim"
-  # exec "nim c -d:release --hints:off -r examples/shapes/earth.nim"
-  exec "rm examples/shapes/sphere examples/shapes/triangle examples/shapes/box examples/shapes/cylinder"
+  exec "nim c -d:release --hints:off -r examples/shapes/bvh.nim"
+  exec "rm examples/shapes/triangle examples/shapes/box examples/shapes/cylinder examples/shapes/bvh"

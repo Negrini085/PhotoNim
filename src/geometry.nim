@@ -1,7 +1,9 @@
 from std/strformat import fmt
 from std/fenv import epsilon
-from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI
-from std/sequtils import concat
+from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI, copySign
+from std/sequtils import toSeq, concat, map, foldl
+from std/algorithm import reversed
+
 
 type 
     Vec*[N: static[int], V] = array[N, V]
@@ -23,6 +25,12 @@ proc newVec4*[V](x, y, z, w: V): Vec4[V] {.inline.} = newVec([x, y, z, w])
 proc newVec2f*(x, y: float32): Vec2f {.inline.} = newVec([x, y])
 proc newVec3f*(x, y, z: float32): Vec3f {.inline.} = newVec([x, y, z])
 proc newVec4f*(x, y, z, w: float32): Vec4f {.inline.} = newVec([x, y, z, w])
+
+
+proc `==`*[N: static[int], V](a, b: Vec[N, V]): bool =
+    for i in 0..<N:
+        if a[i] != b[i]: return false
+    true
 
 proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
 proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 
@@ -119,6 +127,9 @@ proc `==`*(a, b: Point2D): bool {.borrow.}
 proc `==`*(a, b: Point3D): bool {.borrow.}
 proc `==`*(a, b: Normal): bool {.borrow.}
 
+proc `<`*(a, b: Point3D): bool {.inline.} = a.x < b.x and a.y < b.y and a.z < b.z
+proc `<=`*(a, b: Point3D): bool {.inline.} = a.x <= b.x and a.y <= b.y and a.z <= b.z
+
 proc areClose*(a, b: Point2D; eps: float32 = epsilon(float32)): bool {.borrow.}
 proc areClose*(a, b: Point3D; eps: float32 = epsilon(float32)): bool {.borrow.}
 proc areClose*(a, b: Normal; eps: float32 = epsilon(float32)): bool {.borrow.}
@@ -148,23 +159,6 @@ proc dist2*(a, b: Point3D): float32 {.borrow.}
 proc dist*(a, b: Point2D): float32 {.borrow.}    
 proc dist*(a, b: Point3D): float32 {.borrow.}
 
-proc min*(cont: seq[Point3D]): Point3D = 
-    # Procedure that returns a vector with components equal to the minimum of the components of the elements of the sequence
-    if cont.len == 1: return cont[0]
-
-    var x, y, z = newSeq[float32](cont.len)
-    for i in 0..<cont.len: x[i] = cont[i].x; y[i] = cont[i].y; z[i] = cont[i].z
-    newPoint3D(x.min, y.min, z.min)
-
-proc max*(cont: seq[Point3D]): Point3D = 
-    # Procedure that returns a vector with components equal to the maximum of the components of the elements of the sequence
-    if cont.len == 1: return cont[0]
-
-    var x, y, z = newSeq[float32](cont.len)
-    for i in 0..<cont.len: x[i] = cont[i].x; y[i] = cont[i].y; z[i] = cont[i].z
-    newPoint3D(x.max, y.max, z.max)
-
-
 proc `$`*(p: Point2D): string {.inline.} = fmt"({p.u}, {p.v})"
 proc `$`*(p: Point3D): string {.inline.} = fmt"({p.x}, {p.y}, {p.z})"
 proc `$`*(n: Normal): string {.inline.} = fmt"<{n.x}, {n.y}, {n.z}>"
@@ -176,6 +170,42 @@ proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 proc toPoint3D*(a: Vec3f | Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
 proc toNormal*(a: Vec3f | Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
 proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3(a[0], a[1], a[2])
+
+
+type
+    Interval*[T] = tuple[min, max: T]
+
+proc newInterval*[T](a, b: T): Interval[T] =
+    when T is SomeNumber: 
+        result = if a > b: (b, a) else: (a, b)
+
+    elif T is Point2D: 
+        result.min = newPoint2D(min(a.u, b.u), min(a.v, b.v))
+        result.max = newPoint2D(max(a.u, b.u), max(a.v, b.v))
+
+    elif T is Point3D:
+        result.min = newPoint3D(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z))
+        result.max = newPoint3D(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z))
+
+    elif T is Vec3f:
+        result.min = newVec3f(min(a[0], b[0]), min(a[1], b[1]), min(a[2], b[2]))
+        result.min = newVec3f(max(a[0], b[0]), max(a[1], b[1]), max(a[2], b[2]))
+
+
+proc contains*[T](interval: Interval, value: T): bool {.inline.} =
+    when T is SomeNumber: 
+        return value >= interval.min and value <= interval.max
+    elif T is Point2D: 
+        return value.u >= interval.min.u and value.u <= interval.max.u and 
+            value.v >= interval.min.v and value.v <= interval.max.v
+    elif T is Point3D:
+        return value.x >= interval.min.x and value.x <= interval.max.x and 
+            value.y >= interval.min.y and value.y <= interval.max.y and 
+            value.z >= interval.min.z and value.z <= interval.max.z
+    elif T is Vec3f:
+        return x[0] >= interval.min[0] and x[0] <= interval.max[0] and 
+            x[1] >= interval.min[1] and x[1] <= interval.max[1] and 
+            x[2] >= interval.min[2] and x[2] <= interval.max[2]
 
 
 type
@@ -331,6 +361,8 @@ type
             transformations*: seq[Transformation]
 
 
+const IDENTITY* = Transformation(kind: tkIdentity)
+
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
 
 proc newTransformation*(mat, inv_mat: Mat4f): Transformation = 
@@ -455,17 +487,29 @@ proc `@`*(a, b: Transformation): Transformation =
     var transforms: seq[Transformation]
     if a.kind == tkComposition:
         if b.kind == tkComposition: 
-            transforms = concat(a.transformations, b.transformations)
+            transforms = concat(b.transformations, a.transformations)
         else: 
             transforms = a.transformations
-            transforms.add b
+            transforms.insert(b, 0)        
 
     elif b.kind == tkComposition: 
         transforms = b.transformations
-        transforms.insert(a, 0)        
+        transforms.add a
 
     else: 
-        transforms.add a; transforms.add b
+        transforms.add b; transforms.add a
+
+    Transformation(kind: tkComposition, transformations: transforms)
+
+proc newComposition*(transformations: varargs[Transformation]): Transformation =
+    if transformations.len == 1: return transformations[0]
+    elif transformations.len == 2: return transformations[0] @ transformations[1]
+    var transforms = newSeq[Transformation]()
+    for t in transformations:
+        case t.kind
+        of tkIdentity: continue
+        of tkComposition: transforms = concat(transforms, t.transformations)
+        else: transforms.add t
 
     Transformation(kind: tkComposition, transformations: transforms)
 
@@ -473,14 +517,9 @@ proc `@`*(a, b: Transformation): Transformation =
 proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
-    of tkIdentity: return Transformation.id
-    of tkComposition: 
-        var transfs = newSeq[Transformation](transf.transformations.len)
-        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i].inverse
-        return Transformation(kind: kind, transformations: transfs)
-
-    of tkGeneric, tkTranslation, tkScaling, tkRotation: 
-        return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
+    of tkIdentity: return IDENTITY
+    of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.map(inverse))
+    else: return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
 
 
 proc `*`*(transf: Transformation, scal: float32): Transformation = 
@@ -544,22 +583,29 @@ proc apply*[T](transf: Transformation, x: T): T =
 
     of tkComposition:
         when T is Normal:
-            var inv_mat = transf.transformations[0].inv_mat
-            for i in 1..<transf.transformations.len:
-                if transf.transformations[i].kind != tkIdentity:
-                    inv_mat = dot(inv_mat, transf.transformations[i].inv_mat)
-            return dot(x, inv_mat).toNormal
+            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(b, a))).toNormal
         else:
-            var mat = transf.transformations[transf.transformations.len - 1].mat
-            for i in countdown(transf.transformations.len - 2, 0):
-                if transf.transformations[i].kind != tkIdentity:
-                    mat = dot(mat, transf.transformations[i].mat)
+            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldl(dot(a, b))
+            when T is Point3D: return dot(mat, x.toVec4).toPoint3D
+            else: return dot(mat, x) 
 
-            when T is Point3D: 
-                return dot(mat, x.toVec4).toPoint3D
 
-            elif T is Vec3f: 
-                return dot(mat, x) 
+type ONB* = array[3, Vec3f]
+
+proc newONB*(e1: Vec3f = eX, e2: Vec3f = eY, e3: Vec3f = eZ): ONB {.inline.} = ONB([e1, e2, e3])
+
+proc newONB*(normal: Normal): ONB = 
+    let
+        sign = copySign(1.0, normal.z)
+        a = -1.0 / (sign + normal.z)
+        b = normal.x * normal.y * a
+    
+    newONB(
+        newVec3f(1.0 + sign * normal.x * normal.x * a, sign * b, -sign * normal.x),
+        newVec3f(b, sign + normal.y * normal.y * a, -normal.y), 
+        normal.Vec3f
+    )
+
 
 
 type 
