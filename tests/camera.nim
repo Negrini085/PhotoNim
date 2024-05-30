@@ -243,6 +243,16 @@ suite "Pigment unittest":
     teardown:
         discard color1; discard color2; discard color3; discard color4
 
+    test "color * proc":
+        var
+            c1 = newColor(1, 2 ,3)
+            c2 = newColor(4, 5 ,6)
+        
+        c2 = c1 * c2
+        check areClose(c2.r, 4.0)
+        check areClose(c2.g, 10.0)
+        check areClose(c2.b, 18.0)
+
     test "newUniformPigment proc":
         let pigment = newUniformPigment(color1)
         check areClose(pigment.getColor(newPoint2D(0.0, 0.0)), color1)
@@ -267,3 +277,79 @@ suite "Pigment unittest":
         check areClose(pigment.getColor(newPoint2D(0.75, 0.25)), color2)
         check areClose(pigment.getColor(newPoint2D(0.25, 0.75)), color2)
         check areClose(pigment.getColor(newPoint2D(0.75, 0.75)), color1)
+
+
+suite "BRDF":
+
+    setup:
+        var
+            dif = newDiffuseBRDF(newUniformPigment(newColor(1, 2, 3)), 0.2)
+            spe = newSpecularBRDF(newUniformPigment(newColor(1, 2, 3)), 110)
+
+    teardown:
+        discard dif
+        discard spe
+
+
+    test "newBRDF proc":
+        check areClose(dif.pigment.color.r, 1)
+        check areClose(dif.pigment.color.g, 2)
+        check areClose(dif.pigment.color.b, 3)
+        check areClose(dif.reflectance, 0.2)
+
+        check areClose(spe.pigment.color.r, 1)
+        check areClose(spe.pigment.color.g, 2)
+        check areClose(spe.pigment.color.b, 3)
+        check areClose(spe.threshold_angle, 0.1 * degToRad(110.0).float32)
+    
+
+    test "eval proc":
+
+        var
+            norm = newNormal(1, 0, 0)
+            in_dir = newVec3f(1, 2, -1)
+            out_dir = newVec3f(1, 2, 1)
+            uv = newPoint2D(0.3, 0.5)
+            appo: Color
+        
+        appo = dif.eval(norm, in_dir, out_dir, uv)
+        check areClose(appo.r, 1 * 0.2/PI)
+        check areClose(appo.g, 2 * 0.2/PI)
+        check areClose(appo.b, 3 * 0.2/PI)
+
+        appo = spe.eval(norm, in_dir, out_dir, uv)
+        check areClose(appo.r, 1)
+        check areClose(appo.g, 2)
+        check areClose(appo.b, 3)
+
+
+    test "scatterRay proc":
+
+        var
+            pcg = newPCG()
+            pcg1 = newPCG()
+            appo: Ray
+            norm = newNormal(0, 0, 1)
+            in_dir = newVec3f(-1, 0, -1)
+            int_point = newPoint3D(0, 0, 0)
+            cos2 = pcg1.rand
+            c = sqrt(cos2)
+            s = sqrt(1 - cos2)
+            phi = 2 * PI * pcg1.rand
+
+        appo = dif.scatterRay(pcg, in_dir, int_point, norm, 0)
+        check areClose(appo, 
+            newRay(
+                int_point, eX * cos(phi)*c + eY * sin(phi) * c + eZ * s,
+                1e-3, Inf, 0
+                )
+        )
+
+        appo = spe.scatterRay(pcg, in_dir, int_point, norm, 0)
+        check areClose(appo,
+            newRay(
+                int_point, 
+                in_dir.normalize-2*dot(norm.normalize.toVec3, in_dir.normalize)*norm.normalize.toVec3,
+                1e-3, Inf, 0
+            )
+        )

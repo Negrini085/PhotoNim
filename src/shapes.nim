@@ -1,24 +1,10 @@
-import geometry, camera
+import geometry, camera, material
 
-from std/strformat import fmt
+from std/fenv import epsilon
+from std/math import sgn, floor, sqrt, arccos, arctan2, PI
 from std/sequtils import map
-from std/math import sgn, floor, arccos, arctan2, PI
 
-type
-    AABB* = Interval[Point3D]
-
-proc newAABB*(points: openArray[Point3D]): AABB =
-    if points.len == 1: return (points[0], points[0])
-
-    let 
-        x = points.map(proc(pt: Point3D): float32 = pt.x) 
-        y = points.map(proc(pt: Point3D): float32 = pt.y)
-        z = points.map(proc(pt: Point3D): float32 = pt.z)
-
-    (min: newPoint3D(x.min, y.min, z.min), max: newPoint3D(x.max, y.max, z.max))
-
-
-type
+type 
     ShapeKind* = enum
         skAABox, skTriangle, skSphere, skPlane, skCylinder
         
@@ -29,7 +15,7 @@ type
 
         case kind*: ShapeKind 
         of skAABox: 
-            aabb*: AABB
+            aabb*: Interval[Point3D]
 
         of skTriangle: 
             vertices*: array[3, Point3D]            
@@ -43,25 +29,34 @@ type
         of skPlane: discard
 
 
-proc newAABox*(min = ORIGIN3D, max = newPoint3D(1, 1, 1), material = newMaterial(), transform = IDENTITY): Shape {.inline.} =
-    Shape(kind: skAABox, material: material, aabb: newInterval(min, max), transform: transform)
+proc newAABB*(points: openArray[Point3D]): Interval[Point3D] =
+    if points.len == 1: return (points[0], points[0])
 
-proc newAABox*(aabb: AABB, material = newMaterial(), transform = IDENTITY): Shape {.inline.} =
-    Shape(kind: skAABox, material: material, aabb: aabb, transform: transform)
+    let 
+        x = points.map(proc(pt: Point3D): float32 = pt.x) 
+        y = points.map(proc(pt: Point3D): float32 = pt.y)
+        z = points.map(proc(pt: Point3D): float32 = pt.z)
 
+    (newPoint3D(x.min, y.min, z.min), newPoint3D(x.max, y.max, z.max))
+
+
+proc newAABox*(min = ORIGIN3D, max = newPoint3D(1, 1, 1), material = newMaterial(), transformation = IDENTITY): Shape {.inline.} =
+    Shape(kind: skAABox, material: material, aabb: newInterval(min, max), transform: transformation)
+
+proc newAABox*(aabb: Interval[Point3D], material = newMaterial(), transformation = IDENTITY): Shape {.inline.} =
+    Shape(kind: skAABox, material: material, aabb: aabb, transform: transformation)
 
 proc getAABox*(shape: Shape): Shape {.inline.} =
     case shape.kind
-    of skAABox: 
-        return shape
+    of skAABox: return shape
     of skTriangle: 
-        return newAABox(newAABB(shape.vertices), transform = shape.transform)
+        return newAABox(newAABB(shape.vertices), transformation = shape.transform)
     of skSphere: 
-        return newAABox(newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius), transform = shape.transform)
+        return newAABox(newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius), transformation = shape.transform)
     of skCylinder: 
-        return newAABox(newPoint3D(-shape.R, -shape.R, shape.zMin), newPoint3D(shape.R, shape.R, shape.zMax), transform = shape.transform)
+        return newAABox(newPoint3D(-shape.R, -shape.R, shape.zMin), newPoint3D(shape.R, shape.R, shape.zMax), transformation = shape.transform)
     of skPlane: 
-        return newAABox(newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, Inf), transform = shape.transform)
+        return newAABox(newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0), transformation = shape.transform)
 
 
 proc getVertices*(shape: Shape): seq[Point3D] = 
@@ -81,33 +76,8 @@ proc getVertices*(shape: Shape): seq[Point3D] =
     else: 
         return shape.getAABox.getVertices
 
-
-proc getTransformedVertices*(shape: Shape): seq[Point3D] {.inline.} = 
-    shape.getVertices.map(proc(pt: Point3D): Point3D = apply(shape.transform, pt))
+proc getTransformedVertices*(shape: Shape): seq[Point3D] {.inline.} = shape.getVertices.map(proc(pt: Point3D): Point3D = apply(shape.transform, pt))
     
-
-proc getWorldAABB*(shape: Shape): AABB {.inline.} =
-    case shape.kind
-    of skAABox, skTriangle, skCylinder: return newAABB(shape.getTransformedVertices)
-
-    of skSphere: 
-        let center = apply(shape.transform, ORIGIN3D)
-        let radiusPt = newVec3f(shape.radius, shape.radius, shape.radius)
-        return newInterval(center - radiusPt, center + radiusPt)
-
-    of skPlane: return newInterval(apply(shape.transform, newPoint3D(-Inf, -Inf, -Inf)), apply(shape.transform, newPoint3D(Inf, Inf, Inf)))
-
-
-proc newAABB*(shapes: openArray[Shape]): AABB =
-    if shapes.len == 0: return (ORIGIN3D, ORIGIN3D)
-    result = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
-    
-    for shape in shapes:
-        let aabb = shape.getWorldAABB
-        result = newInterval(newInterval(aabb.min, result.min).min, newInterval(aabb.max, result.max).max)
-
-proc getWorldAABox*(shape: Shape): Shape {.inline.} = newAABox(shape.getWorldAABB)
-
 
 proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Shape {.inline.} =   
     Shape(
@@ -118,43 +88,23 @@ proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Sha
     )
 
 proc newUnitarySphere*(center: Point3D; material = newMaterial()): Shape {.inline.} = 
-    Shape(
-        kind: skSphere,
-        transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: IDENTITY, 
-        material: material,
-        radius: 1.0
-    )
+    Shape(kind: skSphere, transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: IDENTITY, material: material, radius: 1.0)
 
-proc newTriangle*(a, b, c: Point3D; transform = IDENTITY, material = newMaterial()): Shape {.inline.} = 
-    Shape(
-        kind: skTriangle, 
-        transform: transform,
-        material: material,
-        vertices: [a, b, c]
-    )
+proc newTriangle*(a, b, c: Point3D; transformation = IDENTITY, material = newMaterial()): Shape {.inline.} = 
+    Shape(kind: skTriangle, transform: transformation, material: material, vertices: [a, b, c])
 
-proc newTriangle*(vertices: array[3, Point3D]; transform = IDENTITY, material = newMaterial()): Shape {.inline.} = 
-    Shape(
-        kind: skTriangle, 
-        transform: transform,
-        material: material,
-        vertices: vertices
-    )
+proc newTriangle*(vertices: array[3, Point3D]; transformation = IDENTITY, material = newMaterial()): Shape {.inline.} = 
+    Shape(kind: skTriangle, transform: transformation, material: material, vertices: vertices)
 
-proc newPlane*(transform = IDENTITY, material = newMaterial()): Shape {.inline.} = 
-    Shape(kind: skPlane, transform: transform, material: material)
+proc newPlane*(transformation = IDENTITY, material = newMaterial()): Shape {.inline.} = 
+    Shape(kind: skPlane, transform: transformation, material: material)
 
 proc newCylinder*(r: float32 = 1.0, z_min: float32 = 0.0, z_max: float32 = 1.0, phi_max: float32 = 2.0 * PI; 
-                    transform = IDENTITY, material = newMaterial()): Shape {.inline.} =
-    Shape(
-        kind: skCylinder,
-        transform: transform,
-        material: material,
-        R: r, zMin: z_min, zMax: z_max, phiMax: phi_max
-    )
+                    transformation = IDENTITY, material = newMaterial()): Shape {.inline.} =
+    Shape(kind: skCylinder, transform: transformation, material: material, R: r, zMin: z_min, zMax: z_max, phiMax: phi_max)
 
 
-proc uv*(shape: Shape; pt: Point3D): Point2D = 
+proc getUV*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
     of skAABox:
         if pt.x == shape.aabb.min.x: 
@@ -194,7 +144,7 @@ proc uv*(shape: Shape; pt: Point3D): Point2D =
         return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
 
-proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
+proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
     case shape.kind
     of skAABox:
         if   areClose(pt.x, shape.aabb.min.x, 1e-6) or areClose(pt.x, shape.aabb.max.x, 1e-6): result = newNormal(1, 0, 0)
@@ -217,28 +167,86 @@ proc normal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
         return newNormal(0, 0, sgn(-dir[2]).float32)
 
 
-type 
-    MeshKind* = enum
-        mkTriangular, mkSquared
+proc intersect*(ray: Ray; shape: Shape): bool =
+    case shape.kind
+    of skAABox:
+        let invRay = ray.transform(shape.transform.inverse)
+        let (min, max) = (shape.aabb.min - invRay.origin, shape.aabb.max - invRay.origin)
+        let
+            txspan = newInterval(min.x / invRay.dir[0], max.x / invRay.dir[0])
+            tyspan = newInterval(min.y / invRay.dir[1], max.y / invRay.dir[1])
 
-    Mesh* = object
-        nodes*: seq[Point3D]
-        edges*: seq[int]
-        kind*: MeshKind
+        if txspan.min > tyspan.max or tyspan.min > txspan.max: return false
 
+        let tzspan = newInterval(min.z / invRay.dir[2], max.z / invRay.dir[2])
+        
+        var hitspan = newInterval(max(txspan.min, tyspan.min), min(txspan.max, tyspan.max))
+        if hitspan.min > tzspan.max or tzspan.min > hitspan.max: return false
 
-iterator items*(mesh: Mesh): Shape =
-    case mesh.kind
-    of mkTriangular: 
-        for i in 0 ..< (mesh.edges.len div 3): 
-            yield newTriangle(mesh.nodes[mesh.edges[i * 3]], mesh.nodes[mesh.edges[i * 3 + 1]], mesh.nodes[mesh.edges[i * 3 + 2]])    
+        return true
 
-    of mkSquared: discard
+    of skTriangle: 
+        let 
+            invRay = ray.transform(shape.transform.inverse)
+            mat = [
+                [shape.vertices[1].x - shape.vertices[0].x, shape.vertices[2].x - shape.vertices[0].x, -invRay.dir[0]], 
+                [shape.vertices[1].y - shape.vertices[0].y, shape.vertices[2].y - shape.vertices[0].y, -invRay.dir[1]], 
+                [shape.vertices[1].z - shape.vertices[0].z, shape.vertices[2].z - shape.vertices[0].z, -invRay.dir[2]]
+            ]
+            vec = [invRay.origin.x - shape.vertices[0].x, invRay.origin.y - shape.vertices[0].y, invRay.origin.z - shape.vertices[0].z]
+        
+        let solution = try: solve(mat, vec) except ValueError: return false
 
+        if not invRay.tspan.contains(solution[2]): return false
+        if solution[0] < 0.0 or solution[1] < 0.0 or solution[0] + solution[1] > 1.0: return false
 
-proc newMesh*(kind: MeshKind, nodes: seq[Point3D], edges: seq[int]; transform = IDENTITY): Mesh {.inline.} = 
-    Mesh(kind: kind, nodes: if transform.kind == tkIdentity: nodes else: nodes.map(proc(pt: Point3D): Point3D = apply(transform, pt)), edges: edges)
+        return true
 
-proc newTriangularMesh*(nodes: seq[Point3D], edges: seq[int]; transform = IDENTITY): Mesh {.inline.} = 
-    assert edges.len mod 3 == 0, fmt"Error in creating a triangular Mesh! The length of the edges sequence must be a multiple of 3."
-    newMesh(mkTriangular, nodes, edges, transform)
+    of skSphere: 
+        let 
+            invRay = ray.transform(shape.transform.inverse)
+            (a, b, c) = (norm2(invRay.dir), dot(invRay.origin.Vec3f, invRay.dir), norm2(invRay.origin.Vec3f) - shape.radius * shape.radius)
+            delta_4 = b * b - a * c
+
+        if delta_4 < 0: return false
+        return invRay.tspan.contains((-b - sqrt(delta_4)) / a) or invRay.tspan.contains((-b + sqrt(delta_4)) / a)
+
+    of skPlane:
+        let invRay = ray.transform(shape.transform.inverse)
+        if abs(invRay.dir[2]) < epsilon(float32): return false
+        if invRay.tspan.contains(-invRay.origin.z / invRay.dir[2]): return true
+                    
+    of skCylinder: 
+        let
+            invRay = ray.transform(shape.transform.inverse)
+            a = invRay.dir[0] * invRay.dir[0] + invRay.dir[1] * invRay.dir[1]
+            b = 2 * (invRay.dir[0] * invRay.origin.x + invRay.dir[1] * invRay.origin.y)
+            c = invRay.origin.x * invRay.origin.x + invRay.origin.y * invRay.origin.y - shape.R * shape.R
+            delta = b * b - 4.0 * a * c
+
+        if delta < 0.0: return false
+
+        var tspan = newInterval((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
+
+        if tspan.min > invRay.tspan.max or tspan.max < invRay.tspan.min: return false
+
+        var t_hit = tspan.min
+        if t_hit < invRay.tspan.min:
+            if tspan.max > invRay.tspan.max: return false
+            t_hit = tspan.max
+
+        var hitPt = invRay.at(t_hit)
+        var phi = arctan2(hitPt.y, hitPt.x)
+        if phi < 0.0: phi += 2.0 * PI
+
+        if hitPt.z < shape.zMin or hitPt.z > shape.zMax or phi > shape.phiMax:
+            if t_hit == tspan.max: return false
+            t_hit = tspan.max
+            if t_hit > invRay.tspan.max: return false
+            
+            hitPt = invRay.at(t_hit)
+            phi = arctan2(hitPt.y, hitPt.x)
+            if phi < 0.0: phi += 2.0 * PI
+            if hitPt.z < shape.zMin or hitPt.z > shape.zMax or phi > shape.phiMax: return false
+
+        return true

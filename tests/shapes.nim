@@ -139,7 +139,7 @@ suite "Sphere":
         check not sphere.rayIntersection(ray4).isSome
     
 
-    test "FastIntersection":
+    test "FastIntersection proc":
         # Checking Fast intersection method
         var
             ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
@@ -147,6 +147,51 @@ suite "Sphere":
         
         check sphere.fastIntersection(ray1)
         check not sphere.fastIntersection(ray2)
+    
+    test "allHitTimes proc":
+        # Checking all hit times procedure
+
+        var
+            ray1 = newRay(newPoint3D(2, 0, 0), newVec3f(-1, 0 ,0))
+            ray2 = newRay(newPoint3D(0, -3, 0), newVec3f(0, 1, 0))
+            ray3 = newRay(newPoint3D(0, -3, 0), newVec3f(1, 0, 0))
+            appo: Option[seq[float32]]
+        
+
+        #----------------------------#
+        #       Unitary sphere       #
+        #----------------------------#  
+        appo = allHitTimes(sphere, ray1)
+        check appo.isSome
+        check areClose(appo.get[0], 1.0)
+        check areClose(appo.get[1], 3.0)
+
+        appo = allHitTimes(sphere, ray2)
+        check appo.isSome
+        check areClose(appo.get[0], 2.0)
+        check areClose(appo.get[1], 4.0)
+
+        appo = allHitTimes(sphere, ray3)
+        check not appo.isSome
+
+
+        #----------------------------#
+        #      Ordinary sphere       #
+        #----------------------------#
+        ray1.origin = newPoint3D(4, 1, 0)
+        appo = allHitTimes(sphere1, ray1)
+        check appo.isSome
+        echo appo.get[0]
+        check areClose(appo.get[0], 1.0, eps = 1e-6)
+        check areClose(appo.get[1], 7.0, eps = 1e-6)
+
+        appo = allHitTimes(sphere1, ray2)
+        check appo.isSome
+        check areClose(appo.get[0], 1.0, eps = 1e-6)
+        check areClose(appo.get[1], 7.0, eps = 1e-6)
+
+        appo = allHitTimes(sphere1, ray3)
+        check not appo.isSome
 
 
 
@@ -228,35 +273,59 @@ suite "AABox":
         check fastIntersection(box, newRay(newPoint3D(0.0, 0.0, -1.5), eZ))
         check not fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 1.5), eZ))
 
+#-----------------------------------------#
+#            World type test              #
+#-----------------------------------------#
 
 suite "World":
     
     setup:
         var 
-            scenery = newWorld()
+            s1 = newSphere(newPoint3D(1, 1, 0), 1)
+            s2 = newSphere(newPoint3D(1, 0, 1), 0.5)
+            scenery = newWorld(@[s1, s2])
 
     teardown: 
-        discard scenery
+        discard scenary
             
+    
     test "add/get proc":
-        scenery.shapes.add newUnitarySphere(ORIGIN3D)
-        check scenery.shapes[0].transform.kind == tkIdentity
+        # Testing add/get procedure
+
+        scenery.shapes.add newUnitarySphere(newPoint3D(0, 0, 0))
+        check areClose(scenery.shapes[2].transf.mat, Mat4f.id)
+        check areClose(scenery.shapes[2].transf.inv_mat, Mat4f.id)
 
 
-suite "Mesh unittest":
+    test "fastIntersection proc":
+        # Testing fastIntersection procedure on world scenery
 
-    setup: 
-        # Example usage
-        var nodes: seq[Point3D] = @[
-            newPoint3D(0, 0, 0), newPoint3D(1, 0, 0), newPoint3D(0, 1, 0), newPoint3D(1, 1, 0),
-            newPoint3D(0, 0, 1), newPoint3D(1, 0, 1), newPoint3D(0, 1, 1), newPoint3D(1, 1, 1)
-        ]
+        var
+            ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
+            ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
+        
+        check fastIntersection(scenery, ray1)
+        check not fastIntersection(scenery, ray2)
+    
 
-        var edges: seq[int] = @[0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6, 0, 2, 4, 2, 6, 4, 6, 5, 4, 5, 7, 6, 7, 3, 2, 7, 6, 3]
-        let mesh = newTriangularMesh(nodes, edges)
+    test "rayIntersection proc":
 
-    teardown:
-        discard mesh
+        var
+            ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
+            ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
+            hit: Option[HitRecord]
+        
+        scenery.shapes = @[s1, s2]
+        
+        # Intersection with first ray, we expect to have hit
+        # in (1, 0, 0) at time t = 2
+        hit = rayIntersection(scenery, ray1)
+        check hit.isSome
+        check areClose(hit.get.world_pt, newPoint3D(1, 0, 0))
+        check areClose(hit.get.t, 2)
+        check areClose(hit.get.normal.toVec3, newVec3f(0, -1, 0))
+        check areClose(hit.get.surface_pt, newPoint2D(0.75, 0.5))
 
-    test "items iterator":
-        for triangle in mesh.items: check triangle.kind == skTriangle
+        # Intersection with second ray, we expect not to have a hit
+        hit = rayIntersection(scenery, ray2)
+        check hit.isNone

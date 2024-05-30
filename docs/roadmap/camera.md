@@ -34,14 +34,14 @@ The operations of addition and subtraction between colors, as well as multiplica
 
 
 <div style="text-align: center;">
-    <span style="color: blue; font-size: 28px;"> HdrImage </span>
+    <span style="color: blue; font-size: 28px;"> HDRImage </span>
 </div>
 
 
 The images we are interested in are matrices of pixels. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors. 
 
 ```nim
-type HdrImage* = object
+type HDRImage* = object
     width*, height*: int
     pixels*: seq[Color]
 ```
@@ -50,7 +50,7 @@ Each color is uniquely associated with a particular pixel, which can be determin
 Given that the image is two-dimensional, while sequences are one-dimensional, it is necessary to have a procedure that allows accessing the sequence of colors correctly and efficiently: pixelOffset does just that, returning the index of the memory cell dedicated to a particular pixel.
 
 ``` nim
-proc pixelOffset(img: HdrImage; x, y: int): int {.inline.} = x + img.width * y
+proc pixelOffset(img: HDRImage; x, y: int): int {.inline.} = x + img.width * y
 ```
 
 Appropriate functionalities are available for setting or retrieving the color of a pixel: equally fundamental are the procedures that allow for tone mapping, ensuring the rendering of images with correct management of brightness and colors. You can read or write a .pfm file by using appropriate procedure implemented in PhotoNim.nim file.
@@ -60,7 +60,7 @@ Appropriate functionalities are available for setting or retrieving the color of
 </div>
 
 ```nim
-# Defining a HdrImage variable
+# Defining a HDRImage variable
 var im = newHDRImage(2, 2)
 
 # Setting pixel value
@@ -217,11 +217,11 @@ echo ray
 </div>
 
 
-We now need to bind the HdrImage type to one of the camera kinds in order to render scenarios: the ```ImageTracer``` type is exactly what we are looking for considering that its data members are an ```HdrImage``` variable and a ```Camera``` one.
+We now need to bind the HDRImage type to one of the camera kinds in order to render scenarios: the ```ImageTracer``` type is exactly what we are looking for considering that its data members are an ```HDRImage``` variable and a ```Camera``` one.
 
 ```nim
 type ImageTracer* = object
-    image*: HdrImage
+    image*: HDRImage
     camera*: Camera
 ```
 
@@ -271,7 +271,7 @@ ray = im_tr.fireRay(2, 2)
 echo ray.origin             # Should be (-2, 0, 0)
 echo ray.dir                # Should be (1, 0, 0)
 
-# Procedure to fire all rays, HdrImage elements will change value
+# Procedure to fire all rays, HDRImage elements will change value
 # We are going to check using echo, we find no initialization value (0, 0, 0)
 im_tr.fireAllRays()
 echo getPixel(im_tr.image, 2, 2)

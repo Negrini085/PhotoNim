@@ -1,6 +1,6 @@
 from std/strformat import fmt
 from std/fenv import epsilon
-from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI
+from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI, copySign
 from std/sequtils import toSeq, concat, map, foldl
 from std/algorithm import reversed
 
@@ -585,9 +585,27 @@ proc apply*[T](transf: Transformation, x: T): T =
         when T is Normal:
             return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(b, a))).toNormal
         else:
-            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldl(dot(b, a))
+            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldl(dot(a, b))
             when T is Point3D: return dot(mat, x.toVec4).toPoint3D
-            elif T is Vec3f: return dot(mat, x) 
+            else: return dot(mat, x) 
+
+
+type ONB* = array[3, Vec3f]
+
+proc newONB*(e1: Vec3f = eX, e2: Vec3f = eY, e3: Vec3f = eZ): ONB {.inline.} = ONB([e1, e2, e3])
+
+proc newONB*(normal: Normal): ONB = 
+    let
+        sign = copySign(1.0, normal.z)
+        a = -1.0 / (sign + normal.z)
+        b = normal.x * normal.y * a
+    
+    newONB(
+        newVec3f(1.0 + sign * normal.x * normal.x * a, sign * b, -sign * normal.x),
+        newVec3f(b, sign + normal.y * normal.y * a, -normal.y), 
+        normal.Vec3f
+    )
+
 
 
 type 

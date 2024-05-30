@@ -1,4 +1,5 @@
 import std/unittest
+from math import sqrt
 import PhotoNim
 
 
@@ -336,7 +337,6 @@ suite "Transformation unittest":
 
     test "apply on Normal":
         var
-            n1 = newNormal(0, 0, 0)
             n2 = newNormal(1, 0, 0)
             n3 = newNormal(0, 3/5, 4/5)
             m1: Mat4f = [[1, 0, 0, 0], [0, 4/5, -3/5, 0], [0, 3/5, 4/5, 0], [0, 0, 0, 1]]
@@ -417,6 +417,52 @@ suite "Derived Transformation test":
             tz = newRotZ(180) 
             vec = newVec4f(1, 2, 3, 1)
         
-        check areClose(apply(tx, vec), newVec4f(1.0, -2.0, -3.0, 1.0), 1e-6)
-        check areClose(apply(ty, vec), newVec4f(-1.0, 2.0, -3.0, 1.0), 1e-6)
-        check areClose(apply(tz, vec), newVec4f(-1.0, -2.0, 3.0, 1.0), 1e-6)
+        check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0), 1e-6)
+        check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0), 1e-6)
+        check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0), 1e-6)
+
+
+suite "OrthoNormal Basis":
+
+    setup:
+        var 
+            onb = newONB()
+            onb1 = newONB(newVec3f(sqrt(2.0), sqrt(2.0), 0), 
+                          newVec3f(sqrt(2.0), -sqrt(2.0), 0),
+                          newVec3f(0, 0, 1))
+    
+    teardown:
+        discard onb
+        discard onb1
+    
+    test "newONB proc":
+        # Checkig newONB proc
+        check areClose(onb[0], eX)
+        check areClose(onb[1], eY)
+        check areClose(onb[2], eZ)
+
+        check areClose(onb1[0], newVec3f(sqrt(2.0), sqrt(2.0), 0))
+        check areClose(onb1[1], newVec3f(sqrt(2.0), -sqrt(2.0), 0))
+        check areClose(onb1[2], eZ)
+    
+    test "newONB proc":
+        # Checking Duff et al. algorithm
+        # We are gonna random test it, so we will check random normals as input
+        var 
+            pcg = newPCG()
+            normal: Normal
+
+
+        for i in 0..<1000:
+            normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
+            onb = newONB(normal)
+
+            check areClose(onb[2], normal.toVec3)
+
+            check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
+            check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)
+            check areClose(dot(onb[2], onb[0]), 0, eps = 1e-6)
+
+            check areClose(onb[0].norm, 1, eps = 1e-6)
+            check areClose(onb[1].norm, 1, eps = 1e-6)
+            check areClose(onb[2].norm, 1, eps = 1e-6)
