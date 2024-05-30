@@ -26,6 +26,8 @@ let
 
 let
     filePFM1 = "images/CSGUnion.pfm"
+    filePFM2 = "images/CSGDiff.pfm"
+    filePFM3 = "images/CSGInt.pfm"
 
     # Shapes to add to CSGUnion
     s1 = newSphere(newPoint3D(0, 0, 0), 0.5)
@@ -37,8 +39,8 @@ let
     s7 = newSphere(newPoint3D(0, 0, -0.5), 0.2)
 
 var 
-    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(float32 -3, 0, 0)))
-    tracer = newImageTracer(width, height, cam, sideSamples=2)
+    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-3, 0, 0)))
+    tracer = newImageTracer(width, height, cam, sideSamples=4)
     world = newWorld()
     union = newCSGUnion()
 
@@ -46,36 +48,37 @@ union.shapes.add(s1); union.shapes.add(s2); union.shapes.add(s3);
 union.shapes.add(s4); union.shapes.add(s5); union.shapes.add(s6);
 union.shapes.add(s7);
 
-#world.shapes.add(union);
+world.shapes.add(union);
 
-#tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
-#var stream = newFileStream(filePFM1, fmWrite)
-#stream.writePFM(tracer.image); stream.close()
-#var appo = cpuTime() - timeStart
-#echo fmt"Successfully rendered CSG Union image in {appo} seconds."
+tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
+var stream = newFileStream(filePFM1, fmWrite)
+stream.writePFM(tracer.image); stream.close()
 
-#world.shapes = @[]
+var appo = cpuTime() - timeStart
+echo fmt"Successfully rendered CSG Union image in {appo} seconds."
+world.shapes = @[]
 
 #--------------------------------------------#
 #                 CSG Diff                   #
 #--------------------------------------------#
-#world.shapes.add(diff);
+let  
+    sph1 = newSphere(newPoint3D(0, 0.3, 0), radius = 0.5)
+    sph2 = newSphere(newPoint3D(0, -0.3, 0), radius = 0.5)
 
-#tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
-#var stream = newFileStream(filePFM2, fmWrite)
-#stream.writePFM(tracer.image); stream.close()
+var csgDiff = newCSGDiff()
+world.shapes.add(csgDiff)
 
-#echo fmt"Successfully rendered CSG Diff image in {cpuTime()- timeStart} seconds."
+tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
+stream = newFileStream(filePFM2, fmWrite)
+stream.writePFM(tracer.image); stream.close()
 
+echo fmt"Successfully rendered CSG Diff image in {cpuTime() - appo} seconds."
+appo = cpuTime() - timeStart
+world.shapes = @[]
 
 #--------------------------------------------#
 #                  CSG Int                   #
 #--------------------------------------------#
-let  
-    filePFM3 = "images/CSGInt.pfm"
-    sph1 = newSphere(newPoint3D(0, 0.3, 0), radius = 0.5)
-    sph2 = newSphere(newPoint3D(0, -0.3, 0), radius = 0.5)
-
 var cdgInt = newCSGInt()
 
 cdgInt.shapes.add(sph1); cdgInt.shapes.add(sph2)
@@ -83,7 +86,7 @@ cdgInt.shapes.add(sph1); cdgInt.shapes.add(sph2)
 world.shapes.add(cdgInt);
 
 tracer.fire_all_rays(world, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
-var stream = newFileStream(filePFM3, fmWrite)
+stream = newFileStream(filePFM3, fmWrite)
 stream.writePFM(tracer.image); stream.close()
 
-echo fmt"Successfully rendered CSG Diff image in {cpuTime()- timeStart} seconds."
+echo fmt"Successfully rendered CSG Diff image in {cpuTime() - appo} seconds."
