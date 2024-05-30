@@ -40,15 +40,18 @@ proc `*`*(a: Color, b: Color): Color {.inline.} = newColor(a.r*b.r, a.g*b.g, a.b
 proc luminosity*(a: Color): float32 {.inline.} = 0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
 
 
-type HDRImage* = object
-    width*, height*: int
-    pixels*: seq[Color]
+type 
+    PixelMap* = seq[Color]
+    HDRImage* = object
+        width*, height*: int
+        pixels*: PixelMap
 
+proc newPixelMap*(width, height: int): PixelMap {.inline.} = newSeq[Color](width * height)
 proc newHDRImage*(width, height: int): HDRImage {.inline.} = 
-    HDRImage(width: width, height: height, pixels: newSeq[Color](width * height))
+    HDRImage(width: width, height: height, pixels: newPixelMap(width, height))
 
 proc validPixel(img: HDRImage; x, y: int): bool {.inline.} = (0 <= y and y < img.height) and (0 <= x and x < img.width)
-proc pixelOffset(img: HDRImage; x, y: int): int {.inline.} = x + img.width * y
+proc pixelOffset*(img: HDRImage; x, y: int): int {.inline.} = x + img.width * y
 
 proc getPixel*(img: HDRImage; x, y: int): Color {.inline.} = 
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HDRImage"

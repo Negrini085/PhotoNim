@@ -1,6 +1,7 @@
 import geometry, pcg, camera, material, shapes, scene, hitrecord
 
 from std/strformat import fmt
+from std/times import cpuTime
 from std/sequtils import apply
 import std/[options, strutils, threadpool, locks, terminal]
 
@@ -90,8 +91,8 @@ proc sampleRay(renderer: ptr Renderer, scene: ptr Scene, ray: Ray): Color =
             # return rad_em + rad * (1/renderer.nRays)
 
 
-proc sample(renderer: ptr Renderer; scene: ptr Scene, pixOffset: Point2D): HDRImage =
-    result = newHDRImage(renderer.image.width, renderer.image.height)
+proc sample(renderer: ptr Renderer; scene: ptr Scene, pixOffset: Point2D): PixelMap =
+    result = newPixelMap(renderer.image.width, renderer.image.height)
 
     for y in 0..<renderer.image.height:
         for x in 0..<renderer.image.width:
@@ -102,15 +103,16 @@ proc sample(renderer: ptr Renderer; scene: ptr Scene, pixOffset: Point2D): HDRIm
                 )
             )
 
-            result.setPixel(x, y, renderer.sampleRay(scene, ray))
+            result[renderer.image[].pixelOffset(x, y)] = renderer.sampleRay(scene, ray)
 
 
 proc render*(scene: var Scene; renderer: var Renderer, maxShapesPerLeaf = 4, samplesPerSide = 4, rgState = 42, rgSeq = 54) =
+    let startTime = cpuTime()
+
     scene.buildTree(renderer.camera.transform, maxShapesPerLeaf)
 
     var rg = newPCG(rgState.uint64, rgSeq.uint64)
     var completedTasks = 0
-    let numTasks = samplesPerSide * samplesPerSide
 
     proc displayProgress(current, total: int) =
         let
@@ -124,26 +126,32 @@ proc render*(scene: var Scene; renderer: var Renderer, maxShapesPerLeaf = 4, sam
         stdout.flushFile
 
     var imageLock, progressLock: Lock
-    proc `+=`(a: var HDRImage, b: HDRImage) =
-        for i in 0..<a.width*a.height: a.pixels[i] += b.pixels[i]
-
-    proc task(scene: ptr Scene, renderer: ptr Renderer, rgState, rgSeq: uint64, u, v: int) =
-        var rg = newPCG(rgState, rgSeq)
-        withLock imageLock:
-            renderer.image[] += renderer.sample(scene, newPoint2D((u.float32 + rg.rand) / samplesPerSide.float32, (v.float32 + rg.rand) / samplesPerSide.float32))
-
-        withLock progressLock: 
-            completedTasks += 1
-            displayProgress(completedTasks, numTasks)
-        
     initLock(imageLock)
     initLock(progressLock)
+
+    proc `+=`(a: var PixelMap, b: PixelMap) = 
+        assert a.len == b.len, fmt"Cannot sum two PixelMap with different sizes."
+        for i in 0..<a.len: a[i] += b[i]
+
+    proc task(scene: ptr Scene, renderer: ptr Renderer, imageLock, progressLock: ptr Lock, completedTasks: ptr int, rgState, rgSeq: uint64, u, v, samplesPerSide: int) =
+        var rg = newPCG(rgState, rgSeq)
+        let pixOffset = newPoint2D((u.float32 + rg.rand) / samplesPerSide.float32, (v.float32 + rg.rand) / samplesPerSide.float32)
+
+        withLock imageLock[]:
+            renderer.image[].pixels += renderer.sample(scene, pixOffset)
+
+        withLock progressLock[]: 
+            completedTasks[] += 1
+            displayProgress(completedTasks[], samplesPerSide * samplesPerSide)
+
     for u in 0..<samplesPerSide:
         for v in 0..<samplesPerSide:
-            task(addr scene, addr renderer, rg.random, rg.random, u, v)
+            spawn task(addr scene, addr renderer, addr imageLock, addr progressLock, addr completedTasks, rg.random, rg.random, u, v, samplesPerSide)
 
-    # sync()
-    # renderer.image[].pixels.apply(proc(pix: Color): Color = pix / (samplesPerSide * samplesPerSide).float32)
+    sync()
+    renderer.image[].pixels.apply(proc(pix: Color): Color = pix / (samplesPerSide * samplesPerSide).float32)
 
     stdout.eraseLine
     stdout.resetAttributes
+
+    echo fmt"Successfully rendered image in {cpuTime() - startTime} seconds." # not so sure this is working...

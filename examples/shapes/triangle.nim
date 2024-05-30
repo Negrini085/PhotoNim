@@ -1,12 +1,10 @@
 import PhotoNim
 
-from std/times import cpuTime
 from std/strformat import fmt
 from std/streams import newFileStream, close
 from std/osproc import execCmd
 
 let 
-    timeStart = cpuTime()
     (width, height) = (900, 600)
     filename = "assets/images/examples/triangle"
 
@@ -23,8 +21,7 @@ var
     camera = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-4, 0, 0)))
     renderer = newOnOffRenderer(addr image, camera)
 
-scene.render(renderer, maxShapesPerLeaf = 2, samplesPerSide = 10)
-echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
+scene.render(renderer, maxShapesPerLeaf = 2, samplesPerSide = 25)
 
 var stream = newFileStream(filename & ".pfm", fmWrite)
 stream.writePFM image
