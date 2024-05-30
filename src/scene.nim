@@ -1,4 +1,4 @@
-import geometry, shapes, camera
+import geometry, shapes, hdrimage
 
 import std/options
 from std/strformat import fmt

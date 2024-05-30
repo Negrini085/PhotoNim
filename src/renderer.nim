@@ -1,4 +1,4 @@
-import geometry, pcg, camera, material, shapes, scene, hitrecord
+import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 
 from std/strformat import fmt
 from std/times import cpuTime

@@ -1,4 +1,4 @@
-import geometry, camera, material
+import geometry, camera
 
 from std/fenv import epsilon
 from std/math import sgn, floor, sqrt, arccos, arctan2, PI

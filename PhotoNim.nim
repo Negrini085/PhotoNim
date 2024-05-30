@@ -1,7 +1,7 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, pcg, camera, material, shapes, scene, hitrecord, renderer]
-export geometry, pcg, camera, material, shapes, scene, hitrecord, renderer
+import src/[geometry, pcg, hdrimage, camera, shapes, scene, hitrecord, renderer]
+export geometry, pcg, hdrimage, camera, shapes, scene, hitrecord, renderer
 
 from std/times import cpuTime
 from std/strformat import fmt
