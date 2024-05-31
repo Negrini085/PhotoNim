@@ -84,7 +84,7 @@ proc sample*(renderer: Renderer; scene: Scene, samplesPerSide: int,
 
                                 color = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
-                        of rkPathTracer:
+                        of rkPathTracer: discard
                             # Checking wether we reached upper limit
                             # if (ray.depth > renderer.maxDepth): return BLACK
 
