@@ -10,7 +10,7 @@ suite "PCG":
         # Checking PCG constructor
         
         check gen.state == uint64(1753877967969059832)
-        check gen.inc == uint64(109)
+        check gen.incr == uint64(109)
     
 
     test "random proc":
