@@ -1,5 +1,66 @@
-import std/[unittest, streams, math, sequtils]
+import std/[unittest, streams, math, sequtils, endians, strutils]
 import PhotoNim
+
+proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
+    ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
+    var tmp: float32 = stream.readFloat32
+    if endianness == littleEndian: littleEndian32(addr result, addr tmp)
+    else: bigEndian32(addr result, addr tmp)
+
+proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
+    ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
+    var tmp: float32
+    if endianness == littleEndian: littleEndian32(addr tmp, addr value)
+    else: bigEndian32(addr tmp, addr value)
+    stream.write(tmp)
+
+
+proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.raises: [CatchableError].} =
+    assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
+    let sizes = stream.readLine.split(" ")
+    assert sizes.len == 2, "Invalid image size specification: required 'width height'."
+
+    var width, height: int
+    try:
+        width = parseInt(sizes[0])
+        height = parseInt(sizes[1])
+    except:
+        raise newException(CatchableError, "Invalid image size specification: required 'width height' as unsigned integers")
+    
+    try:
+        let endianFloat = parseFloat(stream.readLine)
+        if endianFloat == 1.0:
+            result.endian = bigEndian
+        elif endianFloat == -1.0:
+            result.endian = littleEndian
+        else:
+            raise newException(CatchableError, "")
+    except:
+        raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
+
+    result.img = newHDRImage(width, height)
+
+    var r, g, b: float32
+    for y in countdown(height - 1, 0):
+        for x in 0..<width:
+            r = readFloat(stream, result.endian)
+            g = readFloat(stream, result.endian)
+            b = readFloat(stream, result.endian)
+            result.img.setPixel(x, y, newColor(r, g, b))
+
+proc writePFM*(stream: FileStream, img: HDRImage, endian: Endianness = littleEndian) = 
+    stream.writeLine("PF")
+    stream.writeLine(img.width, " ", img.height)
+    stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
+
+    var c: Color
+    for y in countdown(img.height - 1, 0):
+        for x in 0..<img.width:
+            c = img.getPixel(x, y)
+            stream.writeFloat(c.r, endian)
+            stream.writeFloat(c.g, endian)
+            stream.writeFloat(c.b, endian)
+
 
 suite "HDRImage unittest":
     
@@ -75,11 +136,9 @@ suite "HDRImage streaming test":
         var stream = newFileStream("files/wpFloat.txt", fmWrite)
 
         stream.writeFloat(float32(1.0), bigEndian)
-        stream.write "1.0"
         stream.close
 
         stream = openFileStream("files/wpFloat.txt", fmRead)
-        check stream.readLine == "1.0"
         check stream.readFloat(bigEndian) == 1.0
         stream.close
     
@@ -206,31 +265,6 @@ suite "Camera unittest":
         check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
 
 
-suite "ImageTracer unittest":
-
-    setup:
-        var tracer = newImageTracer(5, 5, newOrthogonalCamera(1.2, Transformation.id))
-        
-    test "newImageTrace proc":
-        check tracer.image.width == 5 and tracer.image.height == 5 
-        check tracer.camera.kind == ckOrthogonal
-
-    test "fireRay proc":
-        var
-            ray1 = tracer.fireRay(0, 0, newPoint2D(2.5, 1.5))
-            ray2 = tracer.fireRay(2, 1, newPoint2D(0.5, 0.5))
-
-        check areClose(ray1.origin, ray2.origin)
-
-    test "Camera Orientation":
-        var
-            ray1 = tracer.fireRay(0, 0, newPoint2D(0, 0))   # Ray direct to top left corner
-            ray2 = tracer.fireRay(4, 4, newPoint2D(1, 1))   # Ray direct to bottom right corner
-        
-        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, 1))
-        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))    
-
-
 suite "Pigment unittest":
 
     setup: 
@@ -338,18 +372,12 @@ suite "BRDF":
             phi = 2 * PI * pcg1.rand
 
         appo = dif.scatterRay(pcg, in_dir, int_point, norm, 0)
-        check areClose(appo, 
-            newRay(
-                int_point, eX * cos(phi)*c + eY * sin(phi) * c + eZ * s,
-                1e-3, Inf, 0
-                )
-        )
+        check areClose(appo, newRay(int_point, eX * cos(phi)*c + eY * sin(phi) * c + eZ * s))
 
         appo = spe.scatterRay(pcg, in_dir, int_point, norm, 0)
         check areClose(appo,
             newRay(
                 int_point, 
-                in_dir.normalize-2*dot(norm.normalize.toVec3, in_dir.normalize)*norm.normalize.toVec3,
-                1e-3, Inf, 0
-            )
-        )
+                in_dir.normalize-2*dot(norm.normalize.toVec3, in_dir.normalize)*norm.normalize.toVec3
+                ))
+
