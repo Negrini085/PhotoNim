@@ -221,8 +221,12 @@ proc getHitPayloads(nodes: seq[SceneNode], ray: Ray): seq[HitPayload] = discard
     nodes
         .map(proc(node: SceneNode): SceneTree = newSceneTree(node.shapes, IDENTITY, 1))
         .map(proc(tree: SceneTree): seq[SceneNode] = tree.root.getHitLeafNodes(ray).get).foldl(concat(a, b))
-        .map(proc(node: SceneNode): Option[HitPayload] = newHitPayload(node.shapes[0], ray))
+        # Getting HitPayLoads (option, it's possible to hit box but not shape)
+        .map(proc(node: SceneNode): Option[HitPayload] =
+            newHitPayload(node.shapes[0], ray))
+        # Filtering only on real hits
         .filter(proc(x: Option[HitPayload]): bool = x.isSome)
+        # Sorting with regard to hit time
         .map(proc(hit: Option[HitPayload]): HitPayload = hit.get)
 
 

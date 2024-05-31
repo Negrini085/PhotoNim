@@ -311,7 +311,7 @@ Options:
         var render = 
             if args["OnOff"]: newOnOffRenderer(addr image, camera, hitCol = newColor(1, 215.0 / 255, 0))
             elif args["Flat"]: newFlatRenderer(addr image, camera)
-            else: newPathTracer(addr image, camera, nRays = 25)
+            else: newPathTracer(addr image, camera, nRays = 2)
 
         demo(render)
 
