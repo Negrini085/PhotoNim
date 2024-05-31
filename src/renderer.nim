@@ -48,11 +48,14 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sample*(renderer: Renderer; scene: Scene, samplesPerSide: int, rgState: uint64 = 42, rgSeq: uint64 = 54, displayProgress = true): PixelMap =
-    var rg = newPCG(rgState, rgSeq)
-    let sceneTree = newSceneTree(addr scene, maxShapesPerLeaf = 4)
+proc sample*(renderer: Renderer; scene: Scene, samplesPerSide: int, 
+                rgState: uint64 = 42, rgSeq: uint64 = 54, displayProgress = true): PixelMap =
 
     result = newPixelMap(renderer.image.width, renderer.image.height)
+    let sceneTree = newSceneTree(addr scene, maxShapesPerLeaf = 4)
+
+    var rg = newPCG(rgState, rgSeq)
+
     for y in 0..<renderer.image.height:
         for x in 0..<renderer.image.width:
             for u in 0..<samplesPerSide:
@@ -138,17 +141,16 @@ proc sample*(renderer: Renderer; scene: Scene, samplesPerSide: int, rgState: uin
 proc sampleParallel*(renderer: var Renderer; scene: Scene, samplesPerSide, nSnaps: int, rgState: uint64 = 42, rgSeq: uint64 = 54) =
     proc sampleScene(imageLock: ptr Lock, renderer: ptr Renderer, scene: ptr Scene, samplesPerSide: int, rgState, rgSeq: uint64) =
         withLock imageLock[]:
-            let samplePixels = renderer[].sample(scene[], samplesPerSide, rgState, rgSeq)
+            let samplePixels = renderer[].sample(scene[], samplesPerSide, rgState, rgSeq, displayProgress = false)
             for i in 0..<renderer.image.height * renderer.image.width:
                 renderer.image[].pixels[i] += samplePixels[i]
 
     var rg = newPCG(rgState, rgSeq)
     var imageLock: Lock; initLock(imageLock) 
 
-    for _ in 0..<nSnaps: spawnX sampleScene(addr imageLock, addr renderer, addr scene, samplesPerSide, rg.random, rg.random)
+    for i in 0..<nSnaps: 
+        spawnX sampleScene(addr imageLock, addr renderer, addr scene, samplesPerSide, rg.random, rg.random)
+        displayProgress(i, nSnaps)
 
     sync()
     renderer.image[].pixels.apply(proc(pix: Color): Color = pix / nSnaps.float32)
-
-    stdout.eraseLine
-    stdout.resetAttributes
