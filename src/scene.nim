@@ -45,8 +45,10 @@ type
 
     Scene* = object
         bgCol*: Color
-        shapes*: seq[Shape]
-        meshes*: seq[Mesh]
+        shapes*: ptr seq[Shape]
+        transhapes*: ptr seq[Transformation]
+        meshes*: ptr seq[Mesh]
+        transmeshes*: ptr seq[Transformation]
 
 
     SceneNodeKind* = enum
@@ -69,6 +71,23 @@ type
         kind*: SceneTreeKind
         root*: SceneNode
 
+# Need to be tested
+proc newScene*(shapes: ptr seq[Shape], tShapes: ptr seq[Transformation], meshes: ptr seq[Mesh], tMeshes: ptr seq[Transformation], bgCol = BLACK, tScene: Transformation): Scene = 
+    
+    # Checking wether we need to transform shape or not
+    if not areClose(tScene.mat, IDENTITY.mat):
+        for i in 0..<shapes[].len:
+            tShapes[i] = tShapes[i] @ tScene.inverse
+        for i in 0..<meshes[].len:
+            tMeshes[i] = tMeshes[i] @ tScene.inverse
+
+    return Scene(
+            bgCol: bgCol,
+            shapes: shapes,
+            transhapes: tShapes,
+            meshes: meshes, 
+            transmeshes: tMeshes
+        )
 
 proc newAABB*(points: openArray[Point3D]): AABB =
     if points.len == 1: return (points[0], points[0])
@@ -167,9 +186,9 @@ proc newTriangularMesh*(nodes: seq[Point3D], edges: seq[int]; transformation = I
 
 
 proc getAllShapes*(scene: Scene): seq[Shape] {.inline.} =
-    if scene.meshes.len == 0: return scene.shapes
-    elif scene.shapes.len == 0: return scene.meshes.map(proc(mesh: Mesh): seq[Shape] = mesh.items.toSeq).foldl(concat(a, b))
-    else: return concat(scene.shapes, scene.meshes.map(proc(mesh: Mesh): seq[Shape] = mesh.items.toSeq).foldl(concat(a, b)))
+    if scene.meshes[].len == 0: return scene.shapes[]
+    elif scene.shapes[].len == 0: return scene.meshes[].map(proc(mesh: Mesh): seq[Shape] = mesh.items.toSeq).foldl(concat(a, b))
+    else: return concat(scene.shapes[], scene.meshes[].map(proc(mesh: Mesh): seq[Shape] = mesh.items.toSeq).foldl(concat(a, b)))
 
 
 proc getTotalAABB*(shapes: openArray[Shape], transform: Transformation = IDENTITY): AABB =
