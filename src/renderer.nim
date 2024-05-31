@@ -45,7 +45,7 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sample*(renderer: Renderer; scene: Scene, samplesPerSide: int, rgState: uint64 = 42, rgSeq: uint64 = 54): PixelMap =
+proc sample*(renderer: Renderer; scene: Scene, samplesPerSide: int, rgState: uint64 = 42, rgSeq: uint64 = 54, displayProgress = true): PixelMap =
     var rg = newPCG(rgState, rgSeq)
     let sceneTree = newSceneTree(addr scene, maxShapesPerLeaf = 4)
 
@@ -122,10 +122,9 @@ proc sample*(renderer: Renderer; scene: Scene, samplesPerSide: int, rgState: uin
                     #     if ray.intersect(newAABox(shape.getAABB(shape.transform))):
                     #         result[renderer.image[].pixelOffset(x, y)] += newColor(0.4, 0.0, 0.0)
                             
-        displayProgress(y + 1, renderer.image.height)
+        if displayProgress: displayProgress(y + 1, renderer.image.height)
         
-    stdout.eraseLine
-    stdout.resetAttributes
+    if displayProgress: stdout.eraseLine; stdout.resetAttributes
 
 
 proc sampleParallel*(renderer: var Renderer; scene: Scene, samplesPerSide, nSnaps: int, rgState: uint64 = 42, rgSeq: uint64 = 54) =
