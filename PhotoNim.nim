@@ -126,11 +126,11 @@ let demoDoc* = """
 PhotoNim CLI `demo` command:
 
 Usage:
-    ./PhotoNim demo (persp | ortho) (OnOff | Flat | Path) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim demo (persp | ortho) (OnOff | Flat) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
     persp | ortho           Perspective or Orthogonal Camera kinds.
-    OnOff | Flat | Path     Choosing renderer: OnOff (only shows hit), Flat (flat renderer), Path (actual path tracer)
+    OnOff | Flat            Choosing renderer: OnOff (only shows hit), Flat (flat renderer)
     <output>                Path to the output HDRImage. [default: "assets/images/demo.pfm"]
     --w=<width>             Image width. [default: 1600]
     --h=<height>            Image height. [default: 900]
@@ -205,9 +205,11 @@ proc demo*(renderer: var Renderer) =
             newMaterial(newDiffuseBRDF(reflectance = 1), 
                     newUniformPigment(newColor(124/255, 252/255, 0))
                 )   
-            )               
+            )                
 
-    var scene = Scene(bgCol: BLACK, shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+    var 
+        shapes = @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9]
+        scene = Scene(bgCol: BLACK, shapes: addr shapes)
     renderer.image[].pixels = renderer.sample(scene, samplesPerSide = 4)
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
@@ -222,7 +224,7 @@ when isMainModule:
 Usage:
     ./PhotoNim help [<command>]
     ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
-    ./PhotoNim demo (persp | ortho) (OnOff | Flat | Path) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim demo (persp | ortho) (OnOff | Flat) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
     -h | --help         Display the PhotoNim CLI helper screen.
@@ -233,7 +235,7 @@ Options:
     --lum=<avlum>       Average image luminosity. 
 
     persp | ortho           Perspective or Orthogonal Camera kinds.
-    OnOff | Flat | Path     Choosing renderer: OnOff (only shows hit), Flat (flat renderer), Path (actual path tracer)
+    OnOff | Flat            Choosing renderer: OnOff (only shows hit), Flat (flat renderer)
     --w=<width>             Image width. [default: 1600]
     --h=<height>            Image height. [default: 900]
     --angle=<angle>         Rotation angle around z axis. [default: 10]
@@ -310,8 +312,7 @@ Options:
     
         var render = 
             if args["OnOff"]: newOnOffRenderer(addr image, camera, hitCol = newColor(1, 215.0 / 255, 0))
-            elif args["Flat"]: newFlatRenderer(addr image, camera)
-            else: newPathTracer(addr image, camera, nRays = 2)
+            else: newFlatRenderer(addr image, camera)
 
         demo(render)
 
