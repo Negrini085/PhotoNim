@@ -208,6 +208,7 @@ proc demo*(renderer: var Renderer) =
             )               
 
     var scene = newScene(shapes = @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+    echo "Starting image rendering."
     scene.render(renderer, maxShapesPerLeaf = 3)
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
@@ -311,7 +312,7 @@ Options:
         var render = 
             if args["OnOff"]: newOnOffRenderer(addr image, camera, hitCol = newColor(1, 215.0 / 255, 0))
             elif args["Flat"]: newFlatRenderer(addr image, camera)
-            else: newPathTracer(addr image, camera, nRays = 25)
+            else: newPathTracer(addr image, camera, nRays = 2)
 
         demo(render)
 

@@ -22,6 +22,7 @@ type
 
         of rkPathTracer:
             nRays*, maxDepth*, rouletteLim*: int
+            rgen*: PCG
 
 
 proc newOnOffRenderer*(image: ptr HDRImage, camera: Camera, hitCol = WHITE): Renderer {.inline.} =
@@ -30,12 +31,15 @@ proc newOnOffRenderer*(image: ptr HDRImage, camera: Camera, hitCol = WHITE): Ren
 proc newFlatRenderer*(image: ptr HDRImage, camera: Camera): Renderer {.inline.} =
     Renderer(kind: rkFlat, image: image, camera: camera)
 
-proc newPathTracer*(image: ptr HDRImage, camera: Camera, nRays = 25, maxDepth = 10, rouletteLim = 3): Renderer {.inline.} =
-    Renderer(kind: rkPathTracer, image: image, camera: camera, nRays: nRays, maxDepth: maxDepth, rouletteLim: rouletteLim)
+proc newPathTracer*(image: ptr HDRImage, camera: Camera, nRays = 25, maxDepth = 10, rouletteLim = 3, rgen = newPCG()): Renderer {.inline.} =
+    Renderer(kind: rkPathTracer, image: image, camera: camera, 
+        nRays: nRays, maxDepth: maxDepth, rgen: rgen,
+        rouletteLim: rouletteLim)
 
 
 proc sampleRay(renderer: ptr Renderer, scene: ptr Scene, ray: Ray): Color =
-    result = scene.bgCol
+
+    # Does it intersect or not?
     if ray.intersect(scene.tree.root):
         case renderer.kind
         of rkOnOff:
@@ -53,42 +57,51 @@ proc sampleRay(renderer: ptr Renderer, scene: ptr Scene, ray: Ray): Color =
                 result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
         of rkPathTracer:
-            discard
-            # if (ray.depth > renderer.maxDepth): return BLACK
+            # Checking wether we reached upper limit
+            if (ray.depth > renderer.maxDepth): return BLACK
 
-            # # Storing ray intersection, we check over the whole scene
-            # # Clearly we need to check wether intersection actually occured or not
-            # var hit = world.rayIntersection(ray)
-            # if hit.isNone: return BLACK
+            # Storing ray intersection, we check over the whole scene
+            # Clearly we need to check wether intersection actually occured or not
+            var hit_rec = newHitRecord(scene, ray)
+            if hit_rec.isNone: return BLACK
 
-            # var
-            #     mat_hit = hit.get.material
-            #     col_hit = mat_hit.brdf.pigment.getColor(hit.get.surface_pt)
-            #     rad_em = mat_hit.radiance.getColor(hit.get.surface_pt)
-            #     lum = max(col_hit.r, max(col_hit.g, col_hit.b))
-            #     rad = BLACK
+            var
+                hit = hit_rec.get[0]
+                hit_pt = hit.ray.at(hit.t)
 
-            # # We want to do russian roulette only if we happen to have a ray depth greater
-            # # than rouletteLim, otherwise ww will simply chechk for other reflection
-            # if ray.depth >= renderer.rouletteLim:
-            #     var q = max(0.05, 1 - lum)
+                mat_hit = hit.shape[].material
+                surf_pt = hit.shape[].getUV(hit_pt)
+                col_hit = mat_hit.brdf.pigment.getColor(surf_pt)
+                rad_em = mat_hit.radiance.getColor(surf_pt)
+                lum = max(col_hit.r, max(col_hit.g, col_hit.b))
+                rad = BLACK
+            
+            echo hit_pt
 
-            #     if (renderer.rg.rand() > q): col_hit = col_hit * 1/(1-q)
-            #     else: return rad_em
+            # We want to do russian roulette only if we happen to have a ray depth greater
+            # than rouletteLim, otherwise ww will simply chechk for other reflection
+            if ray.depth >= renderer.rouletteLim:
+                var q = max(0.05, 1 - lum)
 
-            # if lum > 0.0:
-            #     var
-            #         new_ray: Ray
-            #         new_rad: Color
+                # Keep doing recursion only if roulette test passes
+                if (renderer.rgen.rand() > q): col_hit = col_hit * 1/(1-q)
+                else: return rad_em
 
-            #     for i in 0..<renderer.nRays:
-            #         new_ray = mat_hit.brdf.scatterRay(renderer.rg,
-            #                     hit.get.ray.dir, hit.get.world_pt, hit.get.normal,
-            #                     ray.depth + 1)
-            #         new_rad = renderer.call(new_ray)
-            #         rad = rad + col_hit * new_rad
+            if lum > 0.0:
+                var
+                    new_ray: Ray
+                    new_rad: Color
 
-            # return rad_em + rad * (1/renderer.nRays)
+                for i in 0..<renderer.nRays:
+                    new_ray = mat_hit.brdf.scatterRay(renderer.rgen,
+                                ray.dir, hit_pt, hit.shape[].getNormal(hit_pt, ray.dir),
+                                ray.depth + 1)
+                    new_rad = renderer.sampleRay(scene, new_ray)
+                    rad = rad + col_hit * new_rad
+
+            return rad_em + rad * (1/renderer.nRays)
+    
+    result = scene.bgCol
 
 
 proc sample(renderer: ptr Renderer; scene: ptr Scene, pixOffset: Point2D): PixelMap =

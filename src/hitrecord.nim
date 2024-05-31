@@ -136,10 +136,16 @@ proc newHitPayload*(shape: Shape, ray: Ray): Option[HitPayload] =
 
 proc getHitPayloads(nodes: seq[SceneNode], ray: Ray): seq[HitPayload] =
     nodes
+        # Creating subtrees from leafs
         .map(proc(node: SceneNode): SceneTree = newBVHTree(node.shapes, mspl = 1))
+        # Getting leaf nodes of subtrees
         .map(proc(tree: SceneTree): seq[SceneNode] = tree.root.getHitLeafNodes(ray).get).foldl(concat(a, b))
-        .map(proc(node: SceneNode): Option[HitPayload] = newHitPayload(node.shapes[0], ray))
+        # Getting HitPayLoads (option, it's possible to hit box but not shape)
+        .map(proc(node: SceneNode): Option[HitPayload] =
+            newHitPayload(node.shapes[0], ray))
+        # Filtering only on real hits
         .filter(proc(x: Option[HitPayload]): bool = x.isSome)
+        # Sorting with regard to hit time
         .map(proc(hit: Option[HitPayload]): HitPayload = hit.get)
 
 

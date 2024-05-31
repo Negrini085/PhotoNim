@@ -250,3 +250,18 @@ proc intersect*(ray: Ray; shape: Shape): bool =
             if hitPt.z < shape.zMin or hitPt.z > shape.zMax or phi > shape.phiMax: return false
 
         return true
+
+
+
+proc areClose(sh1, sh2: Shape, eps = epsilon(float32)): bool = 
+
+    # If shapes are not of the same kind clearly they are not close to each other
+    if sh1.kind != sh2.kind: return false
+    
+    case sh1.kind
+    of skAABox: discard
+    of skCylinder: discard
+    of skPlane: discard
+    of skTriangle: discard
+    of skSphere:
+        return areClose(sh1.transform.mat, sh2.transform.mat, eps = max(1e-6, epsilon(float32))) and areClose(sh1.radius, sh2.radius, eps = max(1e-6, epsilon(float32)))
