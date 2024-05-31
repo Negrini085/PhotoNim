@@ -85,47 +85,6 @@ proc sample*(renderer: Renderer; scene: Scene, samplesPerSide: int,
                                 color = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
                         of rkPathTracer: discard
-                            # Checking wether we reached upper limit
-                            # if (ray.depth > renderer.maxDepth): return BLACK
-
-                            # Storing ray intersection, we check over the whole scene
-                            # Clearly we need to check wether intersection actually occured or not
-                            # var hit_rec = newHitRecord(scene, ray)
-                            # if hit_rec.isNone: return BLACK
-
-                            # var
-                            #    hit = hit_rec.get[0]
-                            #    hit_pt = hit.ray.at(hit.t)
-
-                            #    mat_hit = hit.shape[].material
-                            #    surf_pt = hit.shape[].getUV(hit_pt)
-                            #    col_hit = mat_hit.brdf.pigment.getColor(surf_pt)
-                            #    rad_em = mat_hit.radiance.getColor(surf_pt)
-                            #    lum = max(col_hit.r, max(col_hit.g, col_hit.b))
-                            #    rad = BLACK
-
-                                # We want to do russian roulette only if we happen to have a ray depth greater
-                                # than rouletteLim, otherwise ww will simply chechk for other reflection
-                            #if ray.depth >= renderer.rouletteLim:
-                            #    var q = max(0.05, 1 - lum)
-
-                                # Keep doing recursion only if roulette test passes
-                            #    if (renderer.rgen.rand() > q): col_hit = col_hit * 1/(1-q)
-                            #    else: return rad_em
-
-                            # if lum > 0.0:
-                            #    var
-                            #        new_ray: Ray
-                            #        new_rad: Color
-
-                            # for i in 0..<renderer.nRays:
-                            #    new_ray = mat_hit.brdf.scatterRay(renderer.rgen,
-                            #            ray.dir, hit_pt, hit.shape[].getNormal(hit_pt, ray.dir),
-                            #            ray.depth + 1)
-                            #    new_rad = renderer.sampleRay(scene, new_ray)
-                            #    rad = rad + col_hit * new_rad
-
-                            # color = rad_em + rad * (1/renderer.nRays)
     
                     result[renderer.image[].pixelOffset(x, y)] = color #/ (samplesPerSide * samplesPerSide).float32 
 
