@@ -602,6 +602,7 @@ proc apply*[T](transf: Transformation, x: T): T =
 type ONB* = array[3, Vec3f]
 
 proc newONB*(e1: Vec3f = eX, e2: Vec3f = eY, e3: Vec3f = eZ): ONB {.inline.} = ONB([e1, e2, e3])
+const defONB*: ONB = newONB()
 
 proc createONB*(normal: Normal): ONB = 
     let
@@ -618,6 +619,9 @@ proc createONB*(normal: Normal): ONB =
 
 proc getComponents*(onb: ONB, vec: Vec3f): array[3, float32] {.inline.} = 
     result[0] = dot(onb[0], vec); result[1] = dot(onb[1], vec); result[2] = dot(onb[2], vec)
+
+proc getVector*(onb: ONB, cx, cy, cz: float32): Vec3f {.inline.} =
+    result = cx * onb[0] + cy * onb[1] + cz * onb[2]
 
 
 
