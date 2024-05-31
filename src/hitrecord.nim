@@ -236,33 +236,3 @@ proc newHitRecord*(scene: ptr Scene, ray: Ray): Option[seq[HitPayload]] =
     let hitPayloads = hitNodes.get.getHitPayloads(ray)
     if hitPayloads.len == 0: return none seq[HitPayload]
     some hitPayloads.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))       
-
-
-proc allHitTimes*(shape: Shape, ray: Ray): Option[seq[float32]] =
-    let invRay = if shape.transform.kind != tkIdentity: ray.transform(shape.transform.inverse) else: ray
-
-    case shape.kind
-    of skTriangle: discard
-
-    of skAABox: discard
-
-    of skSphere:
-        let (a, b, c) = (norm2(invRay.dir), dot(invRay.origin.Vec3f, invRay.dir), norm2(invRay.origin.Vec3f) - 1)
-        let delta_4 = b * b - a * c
-        if delta_4 < 0: return none(seq[float32])
-
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        if t_l > ray.tspan.min and t_l < ray.tspan.max and t_r > ray.tspan.min and t_r < ray.tspan.max: return some(@[t_l, t_r])
-        elif t_l > ray.tspan.min and t_l < ray.tspan.max: return some(@[t_l])
-        elif t_r > ray.tspan.min and t_r < ray.tspan.max: return some(@[t_r])
-        
-        return none(seq[float32])
-
-    of skPlane:
-        if abs(invRay.dir[2]) < epsilon(float32): return none(seq[float32])
-        let t_hit = -invRay.origin.z / invRay.dir[2]
-        if t_hit < ray.tspan.min or t_hit > ray.tspan.max: return none(seq[float32])
-
-        return some(@[t_hit, Inf])
-
-    of skCylinder: discard
