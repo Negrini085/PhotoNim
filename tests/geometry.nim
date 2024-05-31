@@ -1,5 +1,5 @@
 import std/unittest
-from math import sqrt
+from math import sqrt, cos, sin, PI
 import PhotoNim
 
 
@@ -422,13 +422,17 @@ suite "Derived Transformation test":
         check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0), 1e-6)
 
 
+
+#-------------------------------------------#
+#       Orthonormal basis test suite        #
+#-------------------------------------------#
 suite "OrthoNormal Basis":
 
     setup:
         var 
             onb = newONB()
-            onb1 = newONB(newVec3f(sqrt(2.0), sqrt(2.0), 0), 
-                          newVec3f(sqrt(2.0), -sqrt(2.0), 0),
+            onb1 = newONB(newVec3f(sqrt(2.0), sqrt(2.0), 0).normalize, 
+                          newVec3f(-sqrt(2.0), sqrt(2.0), 0).normalize,
                           newVec3f(0, 0, 1))
     
     teardown:
@@ -441,10 +445,11 @@ suite "OrthoNormal Basis":
         check areClose(onb[1], eY)
         check areClose(onb[2], eZ)
 
-        check areClose(onb1[0], newVec3f(sqrt(2.0), sqrt(2.0), 0))
-        check areClose(onb1[1], newVec3f(sqrt(2.0), -sqrt(2.0), 0))
+        check areClose(onb1[0], newVec3f(sqrt(2.0), sqrt(2.0), 0).normalize)
+        check areClose(onb1[1], newVec3f(-sqrt(2.0), sqrt(2.0), 0).normalize)
         check areClose(onb1[2], eZ)
     
+
     test "ONB random testing":
         # Checking Duff et al. algorithm
         # We are gonna random test it, so we will check random normals as input
@@ -455,7 +460,7 @@ suite "OrthoNormal Basis":
 
         for i in 0..<1000:
             normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
-            onb = newONB(normal)
+            onb = createONB(normal)
 
             check areClose(onb[2], normal.toVec3)
 
@@ -466,3 +471,19 @@ suite "OrthoNormal Basis":
             check areClose(onb[0].norm, 1, eps = 1e-6)
             check areClose(onb[1].norm, 1, eps = 1e-6)
             check areClose(onb[2].norm, 1, eps = 1e-6)
+
+
+    test "getComponents proc":
+        var 
+            appo: array[3, float32]
+            vec = newVec3f(1, 4, 3)
+
+        appo = onb.getComponents(vec)
+        check areClose(appo[0], vec[0])
+        check areClose(appo[1], vec[1])
+        check areClose(appo[2], vec[2])
+
+        appo = onb1.getComponents(vec)
+        check areClose(appo[0], 5 * cos(PI/4), eps = 1e-6)
+        check areClose(appo[1], 3 * sin(PI/4), eps = 1e-6)
+        check areClose(appo[2], vec[2])
