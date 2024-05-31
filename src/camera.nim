@@ -128,7 +128,7 @@ proc scatterRay*(brdf: BRDF, rg: var PCG, in_dir: Vec3f, hit_pt: Point3D, normal
     case brdf.kind:
     of DiffuseBRDF:
         let 
-            ONB = newONB(normal)
+            ONB = createONB(normal)
             cos2 = rg.rand
             c = sqrt(cos2)
             s = sqrt(1 - cos2)

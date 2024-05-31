@@ -349,6 +349,10 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
     result[2] = matZ.det / det
 
 
+
+#---------------------------------------#
+#          Transformation type          #
+#---------------------------------------#
 type 
     TransformationKind* = enum
         tkIdentity, tkGeneric, tkTranslation, tkScaling, tkRotation, tkComposition
@@ -591,11 +595,15 @@ proc apply*[T](transf: Transformation, x: T): T =
             else: return dot(mat, x) 
 
 
+
+#-----------------------------------------#
+#          OrthoNormal Basis type         #
+#-----------------------------------------# 
 type ONB* = array[3, Vec3f]
 
 proc newONB*(e1: Vec3f = eX, e2: Vec3f = eY, e3: Vec3f = eZ): ONB {.inline.} = ONB([e1, e2, e3])
 
-proc newONB*(normal: Normal): ONB = 
+proc createONB*(normal: Normal): ONB = 
     let
         sign = copySign(1.0, normal.z)
         a = -1.0 / (sign + normal.z)
@@ -608,7 +616,14 @@ proc newONB*(normal: Normal): ONB =
     )
 
 
+proc getComponents*(onb: ONB, vec: Vec3f): array[3, float32] {.inline.} = 
+    result[0] = dot(onb[0], vec); result[1] = dot(onb[1], vec); result[2] = dot(onb[2], vec)
 
+
+
+#----------------------------------------#
+#         Quaternion data structure      #
+#----------------------------------------#
 type 
     Quat* {. borrow: `.`.} = distinct Vec4f
 
