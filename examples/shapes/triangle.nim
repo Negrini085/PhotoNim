@@ -16,12 +16,12 @@ shapes.add newCylinder(transformation = newComposition(newTranslation(newVec3f(0
 shapes.add newAABox(transformation = newComposition(newTranslation(newVec3f(-0.5, -2.5, 2.0)), newRotX(10)))
 
 var 
-    scene = newScene(shapes)
+    scene = Scene(bgCol: BLACK, shapes: shapes)
     image = newHDRImage(width, height)
     camera = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-4, 0, 0)))
     renderer = newOnOffRenderer(addr image, camera)
 
-scene.render(renderer, maxShapesPerLeaf = 2, samplesPerSide = 25)
+image.pixels = renderer.sample(scene, samplesPerSide = 2)
 
 var stream = newFileStream(filename & ".pfm", fmWrite)
 stream.writePFM image
