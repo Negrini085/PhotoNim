@@ -203,7 +203,6 @@ proc newBVHNode*(shapes: seq[Shape], transform: Transformation, maxShapesPerLeaf
  
 
 proc newSceneTree*(shapes: seq[Shape], transform: Transformation = IDENTITY, maxShapesPerLeaf: int): SceneTree =  
-    echo "new Tree!"     
     SceneTree(kind: stkBVH, root: newBVHNode(shapes, transform, maxShapesPerLeaf, depth = 0).get)
 
 proc newSceneTree*(scene: ptr Scene, transform: Transformation = IDENTITY, maxShapesPerLeaf: int): SceneTree =       

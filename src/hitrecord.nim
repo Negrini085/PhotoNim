@@ -231,7 +231,7 @@ proc getHitPayloads(nodes: seq[SceneNode], ray: Ray): seq[HitPayload] = discard
 
 
 proc newHitRecord*(scene: ptr Scene, ray: Ray): Option[seq[HitPayload]] =
-    var hitNodes = newSceneTree(scene, newTranslation(ray.origin.Vec3f), 4).root.getHitLeafNodes(ray)
+    var hitNodes = newSceneTree(scene, maxShapesPerLeaf = 4).root.getHitLeafNodes(ray) # newTranslation(ray.origin.Vec3f)
     if hitNodes.isNone: return none seq[HitPayload]
     let hitPayloads = hitNodes.get.getHitPayloads(ray)
     if hitPayloads.len == 0: return none seq[HitPayload]
