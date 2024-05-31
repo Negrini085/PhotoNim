@@ -445,7 +445,7 @@ suite "OrthoNormal Basis":
         check areClose(onb1[1], newVec3f(sqrt(2.0), -sqrt(2.0), 0))
         check areClose(onb1[2], eZ)
     
-    test "newONB proc":
+    test "ONB random testing":
         # Checking Duff et al. algorithm
         # We are gonna random test it, so we will check random normals as input
         var 
