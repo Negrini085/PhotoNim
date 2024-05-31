@@ -202,7 +202,7 @@ proc newBVHNode*(shapes: seq[Shape], transform: Transformation, maxShapesPerLeaf
     some newBVHRoot(shapes.getTotalAABB(transform), leftNode, rightNode)
  
 
-proc newSceneTree*(shapes: seq[Shape], transform: Transformation = IDENTITY, maxShapesPerLeaf: int): SceneTree =     
+proc newSceneTree*(shapes: seq[Shape], transform: Transformation = IDENTITY, maxShapesPerLeaf: int): SceneTree =  
     SceneTree(kind: stkBVH, root: newBVHNode(shapes, transform, maxShapesPerLeaf, depth = 0).get)
 
 proc newSceneTree*(scene: ptr Scene, transform: Transformation = IDENTITY, maxShapesPerLeaf: int): SceneTree =       
