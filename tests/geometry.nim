@@ -487,3 +487,13 @@ suite "OrthoNormal Basis":
         check areClose(appo[0], 5 * cos(PI/4), eps = 1e-6)
         check areClose(appo[1], 3 * sin(PI/4), eps = 1e-6)
         check areClose(appo[2], vec[2])
+    
+
+    test "getVector proc":
+        var
+            x = 1.0.float32
+            y = 2.0.float32
+            z = 1.5.float32
+        
+        check areClose(newVec3f(1, 2, 1.5), onb.getVector(x, y, z)) 
+        check areClose(newVec3f(0, 2, 1.5), onb1.getVector(sqrt(2.float32), sqrt(2.float32), z)) 
