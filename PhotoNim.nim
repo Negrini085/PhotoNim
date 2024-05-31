@@ -1,7 +1,7 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, pcg, hdrimage, camera, shapes, scene, hitrecord, renderer]
-export geometry, pcg, hdrimage, camera, shapes, scene, hitrecord, renderer
+import src/[geometry, pcg, hdrimage, camera, scene, hitrecord, renderer]
+export geometry, pcg, hdrimage, camera, scene, hitrecord, renderer
 
 from std/times import cpuTime
 from std/strformat import fmt
@@ -207,8 +207,8 @@ proc demo*(renderer: var Renderer) =
                 )   
             )               
 
-    var scene = newScene(shapes = @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-    scene.render(renderer, maxShapesPerLeaf = 3)
+    var scene = Scene(bgCol: BLACK, shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+    renderer.image[].pixels = renderer.sample(scene, samplesPerSide = 4)
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
 
