@@ -420,16 +420,33 @@ suite "Derived Transformation test":
         check areClose(apply(t3, p2), newPoint3D(2, 7, 2))
 
 
-    test "Rotation":
+    test "Rotation of Vec4f":
         var
             tx = newRotX(180) 
             ty = newRotY(180) 
             tz = newRotZ(180) 
-            vec = newVec4f(1, 2, 3, 1)
+            vec = newVec4f(1, 2, 3, 0)
+            vec1 = newVec4f(1, 2, 3, 1)
+
+        check areClose(apply(tx, vec), newVec4f(1, -2, -3, 0), 1e-6)
+        check areClose(apply(ty, vec), newVec4f(-1, 2, -3, 0), 1e-6)
+        check areClose(apply(tz, vec), newVec4f(-1, -2, 3, 0), 1e-6)
         
-        check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0), 1e-6)
-        check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0), 1e-6)
-        check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0), 1e-6)
+        check areClose(apply(tx, vec1), newVec4f(1, -2, -3, 1), 1e-6)
+        check areClose(apply(ty, vec1), newVec4f(-1, 2, -3, 1), 1e-6)
+        check areClose(apply(tz, vec1), newVec4f(-1, -2, 3, 1), 1e-6)
+    
+    
+    test "Rotation of Point3D":
+        var
+            tx = newRotX(180) 
+            ty = newRotY(180) 
+            tz = newRotZ(180) 
+            p = newPoint3D(1, 2, 3)
+        
+        check areClose(apply(tx, p), newPoint3D(1.0, -2.0, -3.0), 1e-6)
+        check areClose(apply(ty, p), newPoint3D(-1.0, 2.0, -3.0), 1e-6)
+        check areClose(apply(tz, p), newPoint3D(-1.0, -2.0, 3.0), 1e-6)
 
 
 
