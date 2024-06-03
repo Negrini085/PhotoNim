@@ -12,11 +12,11 @@ nav_order: 0
 
 PhotoNim is a ray tracing code that enables the rendering of complex scenery. To solve the rendering equation, define shapes, and study the evolution of rays in space and time, it is necessary to implement code to address problems in linear geometry, work with vectors, and manage entire scenarios.
 
-<div style="height: 20px;"></div>
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> Vector type </span>
 </div>
-<div style="height: 20px;"></div>
+<div style="height: 40px;"></div>
 
 Vectors are one of the fundamental units of our code as they allow us to define directions and will also serve as the basis for implementing points and normals. To ensure maximum generality, the most general vectors are template arrays with a specified length. The type ```Vec*[N: static[int], V]``` specializes in fixed-length, fixed-type vectors, as we are particularly interested in float32 vectors that are 2, 3, or 4 memory cells long (due to the dimensionality of our problem).
 
@@ -85,11 +85,11 @@ proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(flo
     return true
 ```
 
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 <div style="text-align: left;">
     <span style="color: blue; font-size: 20px;"> Example </span>
 </div>
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 
 ```nim
 var 
@@ -110,11 +110,11 @@ echo areClose(v2, newVec3f(1, 2, 3))    # You should see true
 echo v1.norm2   # You should see 14
 ```
 
-<div style="height: 20px;"></div>
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> Distinct vector types </span>
 </div>
-<div style="height: 20px;"></div>
+<div style="height: 40px;"></div>
 
 In order to deal with a complex scenario, vectors alone aren't adequate: we must also incorporate points and normals. To accomplish this we utilize distinct types, which are like other type aliases, but they provide type safety so that it is impossible to coerce a distinct type into its base type without explicit conversion.
 
@@ -137,11 +137,11 @@ proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.u + b[0], a.v
 proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
 ```
 
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 <div style="text-align: left;">
     <span style="color: blue; font-size: 20px;"> Example </span>
 </div>
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 
 ```nim
 var
@@ -164,11 +164,11 @@ echo "Scalar product: ", dot(newVec3f(normal.x, normal.y, normal.z), vec)
 echo "AreClose test: ", areClose(p_3d, newPoint3D(2, 3, 4))     # You should get false
 ```
 
-<div style="height: 20px;"></div>
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> Transformation types </span>
 </div>
-<div style="height: 20px;"></div>
+<div style="height: 40px;"></div>
 
 In order to manipulate complex scenarios and in order to observe them from a generic position in space, it is necessary to apply transformations to the geometric elements we have previously defined. In PhotoNim, only invertible transformations are implemented, such as:
 
@@ -178,11 +178,11 @@ In order to manipulate complex scenarios and in order to observe them from a gen
 
 Two matrices are associated to each transformation, one representing the direct transformation, while the other describes the inverse one. Consequently, we must develop procedures and types that enable us to manipulate these matrices. 
 
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 20px;"> Matrices </span>
 </div>
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 
 In PhotoNim a matrix is an array of arrays: working like this might seem non-optimal in terms of memory storage and usage, but considering that we use 4x4 matrices (thus of small dimensions), this is not the case. We have maintained the same approach that we used during vectors defining , starting from the definition of general template types and then moving on to the specific types relevant to PhotoNim and a RayTracing program
 
@@ -252,11 +252,11 @@ proc dot*[M, N: static[int], V](a: Mat[M, N, V], b: Vec[N, V]): Vec[M, V] =
         for j in 0..<N: result[i] += a[i][j] * b[j]
 ```
 
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 20px;"> Transformations </span>
 </div>
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 
 The transformations of interest to us are rotation, scaling, and translation. We have opted to implement them as different ```kind``` of transformations due to challenges encountered with inheritance in Nim. 
 The total number of transformation types is six, as we have also taken into account the identity transformation and the possibility of generic and composite transformations.
@@ -349,11 +349,11 @@ proc apply*[T](transf: Transformation, x: T): T =
             else: return dot(mat, x) 
 ```
 
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 <div style="text-align: left;">
     <span style="color: blue; font-size: 20px;"> Example </span>
 </div>
-<div style="height: 15px;"></div>
+<div style="height: 25px;"></div>
 
 ```nim
 var
@@ -388,11 +388,11 @@ echo '\n'
 echo "Vector inverse transformation: ", inv.apply(v)          # You should get (1.5, 1, 0.5)
 echo "Point3D inverse transformation: ", inv.apply(p)         # You should get (1.5, 1, 0.5)
 ```
-<div style="height: 20px;"></div>
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> ONB </span>
 </div>
-<div style="height: 20px;"></div>
+<div style="height: 40px;"></div>
 
 So far, we have defined geometric constructs that enable us to work with shapes and describe the propagation of rays, but we have yet to address the interaction of rays with shapes. 
 Orthonormal bases fill this gap, serving as the reference system in which ray reflections will be handled.
