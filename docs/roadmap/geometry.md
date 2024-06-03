@@ -124,16 +124,35 @@ proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
 proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z].normalize)
 ```
 
-You can access point coordinates using ```u, v``` procs for a Point2D variable or ```x, y, z``` for a Point3D. Cosidering that Point2D, Point3D and Normal are distinct types of Vec2f and Vec3f respectively, we borrow procedures implemented for Vector types. We have added procedures for addition and subtraction between points and vectors, as it does not make geometric sense to add two points.
+You can access point coordinates using ```u, v``` procs for a Point2D variable or ```x, y, z``` for a Point3D. Cosidering that Point2D, Point3D and Normal are distinct types of Vec2f and Vec3f respectively, we borrow procedures implemented for Vector types. We have added procedures for addition and subtraction between points and vectors such as following, as it does not make geometric sense to add two points.
 
 ```nim
 proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.u + b[0], a.v + b[1])
-proc `+`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] + b.u, a[1] + b.v)
-proc `-`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.u - b[0], a.v - b[1])
-proc `-`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] - b.u, a[1] - b.v)
 
 proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
-proc `+`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] + b.x, a[1] + b.y, a[2] + b.z)
-proc `-`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x - b[0], a.y - b[1], a.z - b[2])
-proc `-`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] - b.x, a[1] - b.y, a[2] - b.z)
+```
+
+<div style="text-align: left;">
+    <span style="color: blue; font-size: 15px;"> Example </span>
+</div>
+
+```nim
+var
+    vec = newVec3f(4, 5, 6)         # Initializes a three-dimensional vector
+    p_3d = newPoint3D(1, 2, 3)      # New three-dimensional point
+    p_2d = newPoint2D(1.0, 0.5)     # New two dimensional point
+    normal = newNormal(1, 0, 0)     # New normal
+
+echo "Vector + Point3D: ", vec + p_3d         # You should get (5, 7, 9)
+echo "Point3D - Vector: ", p_3d - vec         # You should get (-3, -3, -3)
+
+echo "First point2D component: ", p_2d.u       # You should get 1.0
+echo "Second point2D component: ", p_2d.v      # You should get 0.5
+
+echo "First point3D component: ", p_3d.x             # You should get 1
+echo "First Normal component: ", normal.x            # You should get 1
+
+# Doing dot product, you should get 4
+echo "Scalar product: ", dot(newVec3f(normal.x, normal.y, normal.z), vec)
+echo "AreClose test: ", areClose(p_3d, newPoint3D(2, 3, 4))     # You should get false
 ```
