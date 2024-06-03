@@ -309,13 +309,13 @@ proc apply*[T](transf: Transformation, x: T): T =
 
     of tkTranslation: 
         when T is Vec4f:
-            return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
+             return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
         elif T is Vec3f:
-            return newVec3(x[0] + transf.mat[0][3], x[1] + transf.mat[1][3], x[2] + transf.mat[2][3])
+            return newVec3(x[0], x[1], x[2])
         elif T is Point3D: 
             return newPoint3D(x.x + transf.mat[0][3], x.y + transf.mat[1][3], x.z + transf.mat[2][3])
         elif T is Normal:
-            return newNormal(x.x + transf.inv_mat[3][0], x.y + transf.inv_mat[3][1], x.z + transf.inv_mat[3][2])
+            return newNormal(x.x, x.y, x.z)
 
     of tkScaling:
         when T is Vec4f:
@@ -373,3 +373,60 @@ echo '\n'
 echo "Vector inverse transformation: ", inv.apply(v)          # You should get (1.5, 1, 0.5)
 echo "Point3D inverse transformation: ", inv.apply(p)         # You should get (1.5, 1, 0.5)
 ```
+
+<div style="text-align: center;">
+    <span style="color: blue; font-size: 28px;"> Transformation types </span>
+</div>
+
+So far, we have defined geometric constructs that enable us to work with shapes and describe the propagation of rays, but we have yet to address the interaction of rays with shapes. 
+Orthonormal bases fill this gap, serving as the reference system in which ray reflections will be handled.
+We implemented orthonormal basis such as following:
+
+```nim
+type ONB* = array[3, Vec3f]
+```
+
+The most important procedure regarding orthonormal basis is ```createONB```, which create an ONB when a normal is given as input using the _Duff et al. algorithm_.
+
+```nim
+proc createONB*(normal: Normal): ONB = 
+    let
+        sign = copySign(1.0, normal.z)
+        a = -1.0 / (sign + normal.z)
+        b = normal.x * normal.y * a
+    
+    newONB(
+        newVec3f(1.0 + sign * normal.x * normal.x * a, sign * b, -sign * normal.x),
+        newVec3f(b, sign + normal.y * normal.y * a, -normal.y), 
+        normal.Vec3f
+    )
+
+```
+
+This procedure is tested by means of a method known as random testing: what we are doing in the following code block is generating randomly 1000 ONB and actually checking if ONB properties are verified or not.
+
+```nim
+    test "ONB random testing":
+        # Checking Duff et al. algorithm
+        # We are gonna random test it, so we will check random normals as input
+        var 
+            pcg = newPCG()
+            normal: Normal
+
+
+        for i in 0..<1000:
+            normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
+            onb = createONB(normal)
+
+            check areClose(onb[2], normal.toVec3)
+
+            check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
+            check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)
+            check areClose(dot(onb[2], onb[0]), 0, eps = 1e-6)
+
+            check areClose(onb[0].norm, 1, eps = 1e-6)
+            check areClose(onb[1].norm, 1, eps = 1e-6)
+            check areClose(onb[2].norm, 1, eps = 1e-6)
+```
+
+If you want to get vector components in a particular frame of reference ```getComponents*(onb: ONB, vec: Vec3f)``` is available, as well as ```getVector```, which builds a vector given components in a specific ONB.
