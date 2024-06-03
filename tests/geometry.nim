@@ -418,6 +418,14 @@ suite "Derived Transformation test":
         # Checking apply procedure
         check areClose(apply(t3, p1), newPoint3D(2, 4, 1))
         check areClose(apply(t3, p2), newPoint3D(2, 7, 2))
+    
+
+    test "Translation of Normal":
+        var 
+            n1 = newNormal(1, 2, 3)
+
+        # Checking apply procedure
+        check areClose(apply(t3, n1), newNormal(1, 2, 3))
 
 
     test "Rotation of Vec4f":

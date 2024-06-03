@@ -574,7 +574,7 @@ proc apply*[T](transf: Transformation, x: T): T =
         elif T is Point3D: 
             return newPoint3D(x.x + transf.mat[0][3], x.y + transf.mat[1][3], x.z + transf.mat[2][3])
         elif T is Normal:
-            return newNormal(x.x + transf.inv_mat[3][0], x.y + transf.inv_mat[3][1], x.z + transf.inv_mat[3][2])
+            return newNormal(x.x, x.y, x.z)
 
     of tkScaling:
         when T is Vec4f:
