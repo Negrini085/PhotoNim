@@ -12,11 +12,11 @@ nav_order: 1
 
 The ray tracing code "PhotoNim" facilitates the conversion of images from .pfm to .png format and the rendering of intricate scenes composed of geometric figures. Consequently, it is essential to implement types and functionalities that enable efficient image processing. 
 
-
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> Color </span>
 </div>
-
+<div style="height: 40px;"></div>
 
 Within this code, we employ RGB color encoding: Color type is a ```distinct Vec3f``` because we need to store the triplet of numbers that defines the color of a pixel. 
 If you want to create a new Color variable, you should specify r, g and b values such as following:
@@ -36,11 +36,11 @@ echo col.b
 What you should see on your terminal are the three values that you used in the previous initialization.
 The operations of addition and subtraction between colors, as well as multiplication and division by a scalar, are defined.
 
-
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> HdrImage </span>
 </div>
-
+<div style="height: 40px;"></div>
 
 The images we are interested in are matrices of pixels. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors. 
 
@@ -59,9 +59,11 @@ proc pixelOffset(img: HdrImage; x, y: int): int {.inline.} = x + img.width * y
 
 Appropriate functionalities are available for setting or retrieving the color of a pixel: equally fundamental are the procedures that allow for tone mapping, ensuring the rendering of images with correct management of brightness and colors. You can read or write a .pfm file by using appropriate procedure implemented in PhotoNim.nim file.
 
+<div style="height: 25px;"></div>
 <div style="text-align: left;">
-    <span style="color: blue; font-size: 15px;"> Example </span>
+    <span style="color: blue; font-size: 20px;"> Example </span>
 </div>
+<div style="height: 25px;"></div>
 
 ```nim
 # Defining a HdrImage variable
@@ -80,11 +82,11 @@ echo im.averageLuminosity()
 im.toneMapping(1, 0.23)
 ```
 
-
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> Ray </span>
 </div>
-
+<div style="height: 40px;"></div>
 
 What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenary. PhotoNim is a backward ray tracer, meaning that we are tracing rays from the camera to the light sources. The first tool we need to develop is indeed a type that allows us to uniquely characterize a ray:
 
@@ -113,9 +115,11 @@ proc translate*(ray: Ray, vec: Vec3f): Ray {.inline.} =
 because they allow for applying generic transformations to the ray, and this step is essential for evaluating intersections with shapes in their local reference system.
 If you want to evaluate ray position at a certain time t, you just have to use ```at``` procedure.
 
+<div style="height: 25px;"></div>
 <div style="text-align: left;">
-    <span style="color: blue; font-size: 15px;"> Example </span>
+    <span style="color: blue; font-size: 20px;"> Example </span>
 </div>
+<div style="height: 25px;"></div>
 
 ```nim
 let
@@ -140,11 +144,11 @@ echo ray.origin         # Here you should have (2, 0, 0)
 echo ray.at(1)
 ```
 
-
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> Camera </span>
 </div>
-
+<div style="height: 40px;"></div>
 
 Rays are employed for image reconstruction, a task which, within PhotoNim, can be executed through two distinct modalities:
 1. orthogonal
@@ -193,9 +197,11 @@ proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} =
 
 Both cameras are initialized such that the observer is positioned along the negative x-axis, and the screen lies on the xy-plane. The ray direction is perpendicular to the screen in the case of orthogonal projection, while it depends on the coordinates (u, v) otherwise. The returned ray in both cases is transformed to account for the actual arrangement of the camera in space.
 
+<div style="height: 25px;"></div>
 <div style="text-align: left;">
-    <span style="color: blue; font-size: 15px;"> Example </span>
+    <span style="color: blue; font-size: 20px;"> Example </span>
 </div>
+<div style="height: 25px;"></div>
 
 ```nim
 let 
@@ -215,11 +221,11 @@ ray = pCam.fire_ray(uv)
 echo ray
 ```
 
-
+<div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> ImageTracer </span>
 </div>
-
+<div style="height: 40px;"></div>
 
 We now need to bind the HdrImage type to one of the camera kinds in order to render scenarios: the ```ImageTracer``` type is exactly what we are looking for considering that its data members are an ```HdrImage``` variable and a ```Camera``` one.
 
@@ -253,9 +259,11 @@ proc fire_all_rays*(im_tr: var ImageTracer) =
 
 Here we are creating a colormap associating each pixel with a color depending on the row and column index.
 
+<div style="height: 25px;"></div>
 <div style="text-align: left;">
-    <span style="color: blue; font-size: 15px;"> Example </span>
+    <span style="color: blue; font-size: 2'px;"> Example </span>
 </div>
+<div style="height: 25px;"></div>
 
 ```nim
 let
