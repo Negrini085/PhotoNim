@@ -84,7 +84,7 @@ proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(flo
 ```
 
 <div style="text-align: left;">
-    <span style="color: blue; font-size: 15px;"> Example </span>
+    <span style="color: blue; font-size: 20px;"> Example </span>
 </div>
 
 ```nim
@@ -133,7 +133,7 @@ proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y
 ```
 
 <div style="text-align: left;">
-    <span style="color: blue; font-size: 15px;"> Example </span>
+    <span style="color: blue; font-size: 20px;"> Example </span>
 </div>
 
 ```nim
@@ -244,3 +244,132 @@ proc dot*[M, N: static[int], V](a: Mat[M, N, V], b: Vec[N, V]): Vec[M, V] =
 <div style="text-align: center;">
     <span style="color: blue; font-size: 20px;"> Transformations </span>
 </div>
+
+The transformations of interest to us are rotation, scaling, and translation. We have opted to implement them as different ```kind``` of transformations due to challenges encountered with inheritance in Nim. 
+The total number of transformation types is six, as we have also taken into account the identity transformation and the possibility of generic and composite transformations.
+
+```nim
+type 
+    TransformationKind* = enum
+        tkIdentity, tkGeneric, tkTranslation, tkScaling, tkRotation, tkComposition
+
+    Transformation* = object
+        case kind*: TransformationKind
+        of tkIdentity: discard
+        of tkGeneric, tkTranslation, tkScaling, tkRotation:
+            mat*, inv_mat*: Mat4f
+        of tkComposition: 
+            transformations*: seq[Transformation]
+```
+
+As you can see, direct and inverse matrices are 4x4: that's because 3x3 translation matrices aren't linear operators. 
+In order to restore linearity, we need to add a dimensionality and use 4x4 matrices: in such a frame of work we also need to add a coordinate to points and vectors. 
+A vector has zero as its fourth component, whilst a point has one at the same position.
+To establish the most comprehensive framework wherein transformations are determined by the row-by-column multiplication of vectors and matrices, procedures are implemented to upgrade three-component elements into 4-component memory containers.
+
+```nim
+proc toVec4*(a: Point3D): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 1.0)
+proc toVec4*(a: Normal): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 0.0)
+proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
+```
+
+Since we aim to describe various types of transformations, constructor procedures vary significantly from one another. Below, we outline the different constructor procedures:
+
+- ```proc newTranslation*(v: Vec3f): Transformation``` enables the user to define a translation procedure providing as input a Vec3f, which will be the vector through which the points will be translated.
+
+- ```proc newScaling*[T](x: T): Transformation``` which initializes a translation variable of kind ```tkScaling``` to uniform scaling if a scalar is given as input, otherwise a non-isotropic scaling if a ```Vec3f``` is provided.
+
+- ```proc newRotX*(angle: SomeNumber): Transformation``` defines a rotation around the x-axis. The angle of rotation is given in degrees.
+
+- ```proc newRotY*(angle: SomeNumber): Transformation``` defines a rotation around the y-axis. The angle of rotation is given in degrees.
+
+- ```proc newRotZ*(angle: SomeNumber): Transformation``` defines a rotation around the z-axis. The angle of rotation is given in degrees.
+
+- ```proc newComposition*(transformations: varargs[Transformation]): Transformation``` enables the user to define a transformations composition: the first one given is the first one applied. You can compose different transformation via ```@``` operator.
+
+- ```proc newTransformation*(mat, inv_mat: Mat4f): Transformation``` is the most generic constructor procedure, gives as output a tkGeneric transformation and the user has to specify direct and inverse transformation matrices.
+
+Once you have initialized a transformation using one of the previously exposed constructor procedures, you can simply get the inverse one by calling ```proc inverse*(transf: Transformation): Transformation``` which creates a new transformation consistently exchanging transformation matrices. 
+
+To apply the transformations defined previously, it is possible to use the ```apply``` procedure, which plays a crucial role in scenery creation and in the intersection analysis between light rays and different objects. 
+With the goal of having a high-performance ray tracer, we carried out some calculations explicitly in order to avoid doing a lot of useless multiplication such as in applying a scaling, which has a transformation matrix that has almost all entries equal to zero.
+
+```nim
+proc apply*[T](transf: Transformation, x: T): T =
+    case transf.kind
+    of tkIdentity: return x
+
+    of tkGeneric, tkRotation: 
+        when T is Point3D: 
+            return dot(transf.mat, x.toVec4).toPoint3D
+        elif T is Normal:
+            return dot(x, transf.inv_mat).toNormal
+        else: 
+            return dot(transf.mat, x) 
+
+    of tkTranslation: 
+        when T is Vec4f:
+            return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
+        elif T is Vec3f:
+            return newVec3(x[0] + transf.mat[0][3], x[1] + transf.mat[1][3], x[2] + transf.mat[2][3])
+        elif T is Point3D: 
+            return newPoint3D(x.x + transf.mat[0][3], x.y + transf.mat[1][3], x.z + transf.mat[2][3])
+        elif T is Normal:
+            return newNormal(x.x + transf.inv_mat[3][0], x.y + transf.inv_mat[3][1], x.z + transf.inv_mat[3][2])
+
+    of tkScaling:
+        when T is Vec4f:
+            return newVec4(x[0] * transf.mat[0][0], x[1] * transf.mat[1][1], x[2] * transf.mat[2][2], x[3])
+        elif T is Vec3f:
+            return newVec3(x[0] * transf.mat[0][0], x[1] * transf.mat[1][1], x[2] * transf.mat[2][2])
+        elif T is Point3D: 
+            return newPoint3D(x.x * transf.mat[0][0], x.y * transf.mat[1][1], x.z * transf.mat[2][2])
+        elif T is Normal: 
+            return x
+
+    of tkComposition:
+        when T is Normal:
+            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(b, a))).toNormal
+        else:
+            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldl(dot(a, b))
+            when T is Point3D: return dot(mat, x.toVec4).toPoint3D
+            else: return dot(mat, x) 
+```
+
+<div style="text-align: left;">
+    <span style="color: blue; font-size: 20px;"> Example </span>
+</div>
+
+```nim
+var
+    t1 = newScaling(2.0)                        # Uniform scaling
+    t2 = newRotX(90)                            # Rotation of PI/2
+    t3 = newTranslation(newVec3f(1, 2, 3))      # Translation of (1, 2, 3)
+    comp: Transformation
+    inv: Transformation
+
+    v = newVec3f(3, 2, 1)
+    p = newPoint3D(3, 2, 1)
+
+
+echo "Vector scaling: ", t1.apply(v)         # You should get (6, 4, 2)
+echo "Point3D scaling: ", t1.apply(p)        # You should get (6, 4, 2)
+
+echo '\n'
+echo "Vector rotation: ", t2.apply(v)        # You should get (3, -1, 2)
+echo "Point3D rotation: ", t2.apply(p)       # You should get (3, -1, 2)
+
+echo '\n'
+echo "Vector translation: ", t3.apply(v)        # You should get (3, 2, 1)
+echo "Point3D translation: ", t3.apply(p)       # You should get (4, 4, 4)
+
+comp = t1 @ t2  # Compose transformations
+echo '\n'
+echo "Vector compound transformation: ", comp.apply(v)        # You should get (6, -2, 4)
+echo "Point3D compound transformation: ", comp.apply(p)       # You should get (6, -2, 4)
+
+inv = t1.inverse
+echo '\n'
+echo "Vector inverse transformation: ", inv.apply(v)          # You should get (1.5, 1, 0.5)
+echo "Point3D inverse transformation: ", inv.apply(p)         # You should get (1.5, 1, 0.5)
+```
