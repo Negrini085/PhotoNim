@@ -568,7 +568,7 @@ proc apply*[T](transf: Transformation, x: T): T =
 
     of tkTranslation: 
         when T is Vec4f:
-            return newVec4(x[0], x[1], x[2], x[3])
+             return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
         elif T is Vec3f:
             return newVec3(x[0], x[1], x[2])
         elif T is Point3D: 

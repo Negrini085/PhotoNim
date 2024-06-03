@@ -403,9 +403,11 @@ suite "Derived Transformation test":
     test "Translation of Vec4f":
         var
             vec: Vec4f = newVec4f(1, 2, 3, 0)
+            vec1: Vec4f = newVec4f(1, 2, 3, 1)
 
         # Checking apply procedure
         check areClose(apply(t3, vec), vec)
+        check areClose(apply(t3, vec1), newVec4f(3, 6, 4, 1))
     
 
     test "Translation of Point3D":
