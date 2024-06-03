@@ -6,7 +6,9 @@ permalink: /roadmap/geometry/
 nav_order: 0
 ---
 
-# PhotoNim Geometry submodule
+<div style="text-align: center;">
+    <span style="color: black; font-size: 40px;"> PhotoNim Geometry submodule </span>
+</div>
 
 PhotoNim is a ray tracing code that enables the rendering of complex scenery. To solve the rendering equation, define shapes, and study the evolution of rays in space and time, it is necessary to implement code to address problems in linear geometry, work with vectors, and manage entire scenarios.
 
@@ -102,4 +104,36 @@ echo areClose(v2, v3)                   # You should see false
 echo areClose(v2, newVec3f(1, 2, 3))    # You should see true
 
 echo v1.norm2   # You should see 14
+```
+
+
+<div style="text-align: center;">
+    <span style="color: blue; font-size: 28px;"> Distinct vector types </span>
+</div>
+
+In order to deal with a complex scenario, vectors alone aren't adequate: we must also incorporate points and normals. To accomplish this we utilize distinct types, which are like other type aliases, but they provide type safety so that it is impossible to coerce a distinct type into its base type without explicit conversion.
+
+```nim
+type
+    Point2D* {.borrow: `.`.} = distinct Vec2f
+    Point3D* {.borrow: `.`.} = distinct Vec3f
+    Normal* {.borrow: `.`.} = distinct Vec3f
+
+proc newPoint2D*(u, v: float32): Point2D {.inline.} = Point2D([u, v]) 
+proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
+proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z].normalize)
+```
+
+You can access point coordinates using ```u, v``` procs for a Point2D variable or ```x, y, z``` for a Point3D. Cosidering that Point2D, Point3D and Normal are distinct types of Vec2f and Vec3f respectively, we borrow procedures implemented for Vector types. We have added procedures for addition and subtraction between points and vectors, as it does not make geometric sense to add two points.
+
+```nim
+proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.u + b[0], a.v + b[1])
+proc `+`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] + b.u, a[1] + b.v)
+proc `-`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.u - b[0], a.v - b[1])
+proc `-`*(a: Vec2f, b: Point2D): Point2D {.inline.} = newPoint2D(a[0] - b.u, a[1] - b.v)
+
+proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
+proc `+`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] + b.x, a[1] + b.y, a[2] + b.z)
+proc `-`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x - b[0], a.y - b[1], a.z - b[2])
+proc `-`*(a: Vec3f, b: Point3D): Point3D {.inline.} = newPoint3D(a[0] - b.x, a[1] - b.y, a[2] - b.z)
 ```

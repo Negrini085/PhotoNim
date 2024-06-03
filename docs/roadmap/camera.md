@@ -6,6 +6,10 @@ permalink: /roadmap/camera/
 nav_order: 1
 ---
 
+<div style="text-align: center;">
+    <span style="color: black; font-size: 40px;"> PhotoNim Camera submodule </span>
+</div>
+
 The ray tracing code "PhotoNim" facilitates the conversion of images from .pfm to .png format and the rendering of intricate scenes composed of geometric figures. Consequently, it is essential to implement types and functionalities that enable efficient image processing. 
 
 
