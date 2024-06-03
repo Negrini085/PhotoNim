@@ -390,6 +390,16 @@ suite "Derived Transformation test":
         check areClose(apply(t2, p), newVec3f(0, 6, 3))
 
 
+    test "Translation of Vec3f":
+        var 
+            v1 = newVec3f(0, 0, 0)
+            v2 = newVec3f(0, 3, 1)
+
+        # Checking apply procedure
+        check areClose(apply(t3, v1), newVec3f(0, 0, 0))
+        check areClose(apply(t3, v2), newVec3f(0, 3, 1))
+
+
     test "Translation of Vec4f":
         var
             vec: Vec4f = newVec4f(1, 2, 3, 0)
