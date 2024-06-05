@@ -13,9 +13,7 @@ type
     ShapeKind* = enum
         skAABox, skTriangle, skSphere, skPlane, skCylinder
         
-    Shape* = object
-        transform*: Transformation # this should be a ref or ptr
-
+    Shape* = ref object
         material*: Material
 
         case kind*: ShapeKind 
@@ -41,14 +39,9 @@ type
         kind*: MeshKind
         nodes*: seq[Point3D]
         edges*: seq[int]
+   
 
-
-    Scene* = object
-        bgCol*: Color
-        shapes*: ptr seq[Shape]
-        transhapes*: ptr seq[Transformation]
-        meshes*: ptr seq[Mesh]
-        transmeshes*: ptr seq[Transformation]
+    ShapeHandler* = tuple[shape: Shape, transformation: Transformation]
 
 
     SceneNodeKind* = enum
@@ -58,10 +51,10 @@ type
         aabb*: AABB
         
         case kind*: SceneNodeKind
-        of nkLeaf:
-            shapes*: seq[Shape]
         of nkRoot:
             left*, right*: SceneNode
+        of nkLeaf:
+            handlers*: seq[ShapeHandler]
 
 
     SceneTreeKind* = enum
@@ -71,23 +64,10 @@ type
         kind*: SceneTreeKind
         root*: SceneNode
 
-# Need to be tested
-proc newScene*(shapes: ptr seq[Shape], tShapes: ptr seq[Transformation], meshes: ptr seq[Mesh], tMeshes: ptr seq[Transformation], bgCol = BLACK, tScene: Transformation): Scene = 
-    
-    # Checking wether we need to transform shape or not
-    if not areClose(tScene.mat, IDENTITY.mat):
-        for i in 0..<shapes[].len:
-            tShapes[i] = tShapes[i] @ tScene.inverse
-        for i in 0..<meshes[].len:
-            tMeshes[i] = tMeshes[i] @ tScene.inverse
+    Scene* = object
+        bgCol*: Color
+        handlers*: seq[ShapeHandler]
 
-    return Scene(
-            bgCol: bgCol,
-            shapes: shapes,
-            transhapes: tShapes,
-            meshes: meshes, 
-            transmeshes: tMeshes
-        )
 
 proc newAABB*(points: openArray[Point3D]): AABB =
     if points.len == 1: return (points[0], points[0])
@@ -110,63 +90,82 @@ proc getVertices*(aabb: AABB): array[8, Point3D] =
         newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z),
     ]
 
-proc getLocalAABB(shape: Shape): AABB {.inline.} =
+proc getAABB*(shape: Shape): AABB {.inline.} =
     case shape.kind
     of skAABox: return shape.aabb
     of skTriangle: return newAABB(shape.vertices)
     of skSphere: return (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
     of skCylinder: return (newPoint3D(-shape.R, -shape.R, shape.zMin), newPoint3D(shape.R, shape.R, shape.zMax))
     of skPlane: return (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
+    
 
-proc getLocalVertices(shape: Shape): seq[Point3D] {.inline.} = 
+proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
     of skTriangle: return shape.vertices.toSeq
     of skAABox: return shape.aabb.getVertices.toSeq
-    else: return shape.getLocalAABB.getVertices.toSeq
-
-proc getVertices*(shape: Shape, transform: Transformation = IDENTITY): seq[Point3D] {.inline.} = 
-    if transform.kind == tkIdentity: shape.getLocalVertices
-    else: shape.getLocalVertices.map(proc(pt: Point3D): Point3D = apply(transform, pt))
+    else: return shape.getAABB.getVertices.toSeq
     
-proc getAABB*(shape: Shape, transform: Transformation = IDENTITY): AABB {.inline.} =
-    if transform.kind == tkIdentity: return shape.getLocalAABB
 
-    case shape.kind
-    of skAABox, skTriangle, skCylinder: return newAABB(shape.getVertices(transform))
+proc getLocalAABB*(handler: ShapeHandler, observerTranslation: Transformation): AABB =
+    let transform = 
+        if observerTranslation.kind == tkIdentity: handler.transformation 
+        else: newComposition(observerTranslation.inverse, handler.transformation)
 
-    of skSphere: 
-        let center = apply(transform, ORIGIN3D)
-        let radiusPt = newVec3f(shape.radius, shape.radius, shape.radius)
-        return newInterval(center - radiusPt, center + radiusPt)
-
-    of skPlane: return newInterval(apply(transform, newPoint3D(-Inf, -Inf, -Inf)), apply(transform, newPoint3D(Inf, Inf, 0)))
+    newAABB(handler.shape.getVertices.map(proc(vertex: Point3D): Point3D = apply(transform, vertex)))
 
 
-proc newAABox*(min = ORIGIN3D, max = newPoint3D(1, 1, 1); 
-                material = newMaterial(), transformation = IDENTITY): Shape {.inline.} =
-    Shape(kind: skAABox, material: material, aabb: newInterval(min, max), transform: transformation)
+proc getLocalAABB*(shapeHandlers: seq[ShapeHandler], observerTranslation: Transformation): AABB =
+    if shapeHandlers.len == 0: 
+        let observerPt = apply(observerTranslation, ORIGIN3D)
+        return (observerPt, observerPt)
 
-proc newAABox*(aabb: AABB; material = newMaterial(), transformation = IDENTITY): Shape {.inline.} =
-    Shape(kind: skAABox, material: material, aabb: aabb, transform: transformation)
+    result = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
+    for i in 0..<shapeHandlers.len:
+        let aabb = shapeHandlers[i].getLocalAABB(observerTranslation)
+        result = newInterval(newInterval(aabb.min, result.min).min, newInterval(aabb.max, result.max).max)
 
-proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Shape {.inline.} =   
-    Shape(kind: skSphere, transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: IDENTITY, material: material, radius: radius)
+    # result = (apply(observerTransformation, result.min), apply(observerTransformation, result.max))
 
-proc newUnitarySphere*(center: Point3D; material = newMaterial()): Shape {.inline.} = 
-    Shape(kind: skSphere, transform: if center != ORIGIN3D: newTranslation(center.Vec3f) else: IDENTITY, material: material, radius: 1.0)
+    
+# proc getAABB*(shape: Shape, transform: Transformation = IDENTITY): AABB {.inline.} =
+#     if transform.kind == tkIdentity: return shape.getLocalAABB
 
-proc newTriangle*(a, b, c: Point3D; transformation = IDENTITY, material = newMaterial()): Shape {.inline.} = 
-    Shape(kind: skTriangle, transform: transformation, material: material, vertices: [a, b, c])
+#     case shape.kind
+#     of skAABox, skTriangle, skCylinder: return newAABB(shape.getVertices(transform))
 
-proc newTriangle*(vertices: array[3, Point3D]; transformation = IDENTITY, material = newMaterial()): Shape {.inline.} = 
-    Shape(kind: skTriangle, transform: transformation, material: material, vertices: vertices)
+#     of skSphere: 
+#         let center = apply(transform, ORIGIN3D)
+#         let radiusPt = newVec3f(shape.radius, shape.radius, shape.radius)
+#         return newInterval(center - radiusPt, center + radiusPt)
 
-proc newPlane*(transformation = IDENTITY, material = newMaterial()): Shape {.inline.} = 
-    Shape(kind: skPlane, transform: transformation, material: material)
+#     of skPlane: return newInterval(apply(transform, newPoint3D(-Inf, -Inf, -Inf)), apply(transform, newPoint3D(Inf, Inf, 0)))
 
-proc newCylinder*(r: float32 = 1.0, z_min: float32 = 0.0, z_max: float32 = 1.0, phi_max: float32 = 2.0 * PI; 
-                    transformation = IDENTITY, material = newMaterial()): Shape {.inline.} =
-    Shape(kind: skCylinder, transform: transformation, material: material, R: r, zMin: z_min, zMax: z_max, phiMax: phi_max)
+
+proc newAABox*(min = ORIGIN3D, max = newPoint3D(1, 1, 1); material = newMaterial()): Shape {.inline.} =
+    Shape(kind: skAABox, material: material, aabb: newInterval(min, max))
+
+proc newAABox*(aabb: AABB; material = newMaterial()): Shape {.inline.} =
+    Shape(kind: skAABox, material: material, aabb: aabb)
+
+proc newSphere*(radius: float32; material = newMaterial()): Shape {.inline.} = 
+    Shape(kind: skSphere, material: material, radius: radius)
+
+proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): ShapeHandler {.inline.} =   
+    (shape: newSphere(radius, material), transformation: if center != ORIGIN3D: newTranslation(center.Vec3f) else: IDENTITY)
+
+proc newUnitarySphere*(center: Point3D; material = newMaterial()): ShapeHandler {.inline.} = 
+    (shape: newSphere(1.0, material), transformation: if center != ORIGIN3D: newTranslation(center.Vec3f) else: IDENTITY)
+
+proc newTriangle*(a, b, c: Point3D; material = newMaterial()): Shape {.inline.} = 
+    Shape(kind: skTriangle, material: material, vertices: [a, b, c])
+
+proc newTriangle*(vertices: array[3, Point3D]; material = newMaterial()): Shape {.inline.} = 
+    Shape(kind: skTriangle, material: material, vertices: vertices)
+
+proc newPlane*(material = newMaterial()): Shape {.inline.} = Shape(kind: skPlane, material: material)
+
+proc newCylinder*(r: float32 = 1.0, z_min: float32 = 0.0, z_max: float32 = 1.0, phi_max: float32 = 2.0 * PI; material = newMaterial()): Shape {.inline.} =
+    Shape(kind: skCylinder, material: material, R: r, zMin: z_min, zMax: z_max, phiMax: phi_max)
 
 
 proc newMesh*(kind: MeshKind, nodes: seq[Point3D], edges: seq[int]; transformation = IDENTITY): Mesh {.inline.} = 
@@ -185,47 +184,38 @@ proc newTriangularMesh*(nodes: seq[Point3D], edges: seq[int]; transformation = I
     newMesh(mkTriangular, nodes, edges, transformation)
 
 
-proc getAllShapes*(scene: Scene): seq[Shape] {.inline.} =
-    if scene.meshes[].len == 0: return scene.shapes[]
-    elif scene.shapes[].len == 0: return scene.meshes[].map(proc(mesh: Mesh): seq[Shape] = mesh.items.toSeq).foldl(concat(a, b))
-    else: return concat(scene.shapes[], scene.meshes[].map(proc(mesh: Mesh): seq[Shape] = mesh.items.toSeq).foldl(concat(a, b)))
+# proc getAllShapes*(scene: Scene): seq[Shape] {.inline.} =
+#     if scene.meshes[].len == 0: return scene.shapes[]
+#     elif scene.shapes[].len == 0: return scene.meshes[].map(proc(mesh: Mesh): seq[Shape] = mesh.items.toSeq).foldl(concat(a, b))
+#     else: return concat(scene.shapes[], scene.meshes[].map(proc(mesh: Mesh): seq[Shape] = mesh.items.toSeq).foldl(concat(a, b)))
 
 
-proc getTotalAABB*(shapes: openArray[Shape], transform: Transformation = IDENTITY): AABB =
-    if shapes.len == 0: 
-        let observerPt = apply(transform, ORIGIN3D)
-        return (observerPt, observerPt)
-
-    result = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
-    for shape in shapes:
-        let aabb = shape.getAABB(if transform.kind != tkComposition: newComposition(transform.inverse, shape.transform) else: shape.transform)
-        result = newInterval(newInterval(aabb.min, result.min).min, newInterval(aabb.max, result.max).max)
-
-
-proc newBVHLeaf*(aabb: AABB, shapes: seq[Shape]): SceneNode {.inline.} =
-    SceneNode(kind: nkLeaf, aabb: aabb, shapes: shapes)
+proc newBVHLeaf*(aabb: AABB, shapeHandlers: seq[ShapeHandler]): SceneNode {.inline.} =
+    SceneNode(kind: nkLeaf, aabb: aabb, handlers: shapeHandlers)
 
 proc newBVHRoot*(aabb: AABB, left, right: Option[SceneNode]): SceneNode {.inline.} =
     SceneNode(kind: nkRoot, aabb: aabb, left: if left.isSome: left.get else: nil, right: if right.isSome: right.get else: nil)
 
-proc newBVHNode*(shapes: seq[Shape], transform: Transformation, maxShapesPerLeaf: int, depth: int): Option[SceneNode] =   
-    if shapes.len == 0: return none SceneNode
+proc newBVHNode*(shapeHandlers: seq[ShapeHandler], observerTranslation: Transformation, observerBase: ONB, maxShapesPerLeaf, depth: int): Option[SceneNode] =   
+    if shapeHandlers.len == 0: return none SceneNode
 
-    if shapes.len <= maxShapesPerLeaf: return some newBVHLeaf(shapes.getTotalAABB(transform), shapes)
+    let aabb = shapeHandlers.getLocalAABB(observerTranslation)
+    if shapeHandlers.len <= maxShapesPerLeaf: return some newBVHLeaf(aabb, shapeHandlers)
+
     let 
-        sortedShapes = shapes.sorted(proc(a, b: Shape): int = cmp(a.getAABB(transform).min.x, b.getAABB(transform).min.x))
-        leftNode =  newBVHNode(sortedShapes[0..<shapes.len div 2], transform, maxShapesPerLeaf, depth + 1)
-        rightNode = newBVHNode(sortedShapes[shapes.len div 2..<shapes.len], transform, maxShapesPerLeaf, depth + 1)
+        sortedShapes = shapeHandlers.sorted(proc(a, b: ShapeHandler): int = cmp(a.getLocalAABB(observerTranslation).min.x, b.getLocalAABB(observerTranslation).min.x))
+        leftNode =  newBVHNode(sortedShapes[0..<sortedShapes.len div 2], observerTranslation, observerBase, maxShapesPerLeaf, depth + 1)
+        rightNode = newBVHNode(sortedShapes[sortedShapes.len div 2..<sortedShapes.len], observerTranslation, observerBase, maxShapesPerLeaf, depth + 1)
 
     if leftNode.isNone and rightNode.isNone: return none SceneNode # maybe not useful
-    some newBVHRoot(shapes.getTotalAABB(transform), leftNode, rightNode)
+    some newBVHRoot(aabb, leftNode, rightNode)
  
+proc newSceneTree*(shapeHandlers: seq[ShapeHandler], observerPt: Point3D, observerBase: ONB, maxShapesPerLeaf: int): SceneTree =  
+    SceneTree(kind: stkBVH, root: newBVHNode(shapeHandlers, newTranslation(observerPt.Vec3f), observerBase, maxShapesPerLeaf, depth = 0).get)
 
-proc newSceneTree*(shapes: seq[Shape], transform: Transformation = IDENTITY, maxShapesPerLeaf: int): SceneTree =  
-    SceneTree(kind: stkBVH, root: newBVHNode(shapes, transform, maxShapesPerLeaf, depth = 0).get)
 
-proc newSceneTree*(scene: ptr Scene, transform: Transformation = IDENTITY, maxShapesPerLeaf: int): SceneTree =       
-    SceneTree(kind: stkBVH, root: newBVHNode(scene[].getAllShapes, transform, maxShapesPerLeaf, depth = 0).get)
+proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.inline.} = 
+    Scene(bgCol: bgCol, handlers: shapeHandlers)
 
 
 proc loadMesh*(world: Scene, source: string) = quit "to implement"

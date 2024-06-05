@@ -1,7 +1,7 @@
 from std/strformat import fmt
 from std/fenv import epsilon
 from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI, copySign
-from std/sequtils import toSeq, concat, map, foldl
+from std/sequtils import toSeq, concat, map, foldl, foldr
 from std/algorithm import reversed
 
 
@@ -487,17 +487,17 @@ proc `@`*(a, b: Transformation): Transformation =
     var transforms: seq[Transformation]
     if a.kind == tkComposition:
         if b.kind == tkComposition: 
-            transforms = concat(b.transformations, a.transformations)
+            transforms = concat(a.transformations, b.transformations)
         else: 
             transforms = a.transformations
-            transforms.insert(b, 0)        
+            transforms.add b        
 
     elif b.kind == tkComposition: 
         transforms = b.transformations
-        transforms.add a
+        transforms.insert(a, 0)
 
     else: 
-        transforms.add b; transforms.add a
+        transforms.add a; transforms.add b
 
     Transformation(kind: tkComposition, transformations: transforms)
 
@@ -582,10 +582,11 @@ proc apply*[T](transf: Transformation, x: T): T =
             return x
 
     of tkComposition:
+        if transf.transformations.len == 1: return apply(transf.transformations[0], x)
         when T is Normal:
-            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(b, a))).toNormal
+            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(a, b))).toNormal
         else:
-            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldl(dot(a, b))
+            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldr(dot(a, b))
             when T is Point3D: return dot(mat, x.toVec4).toPoint3D
             else: return dot(mat, x) 
 

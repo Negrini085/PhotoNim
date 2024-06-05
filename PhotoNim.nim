@@ -207,9 +207,18 @@ proc demo*(renderer: var Renderer) =
                 )   
             )               
 
-    var scene = Scene(bgCol: BLACK, shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-    renderer.image[].pixels = renderer.sample(scene, samplesPerSide = 4)
+    var scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+    renderer.image[].pixels = renderer.sample(scene, samplesPerSide = 4, 42.uint64, 4.uint64)
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
+
+
+proc earth*(renderer: var Renderer) = 
+    var 
+        stream = newFileStream("assets/images/textures/earth.pfm", fmRead)
+        texture = try: stream.readPFM.img except: quit fmt"Could not read texture!" finally: stream.close
+        scene = newScene(@[newUnitarySphere(ORIGIN3D, newMaterial(newDiffuseBRDF(newTexturePigment(texture)), newTexturePigment(texture)))])
+
+    renderer.image.pixels = renderer.sample(scene, samplesPerSide = 2, 42.uint64, 4.uint64)
 
 
 when isMainModule: 
@@ -223,6 +232,7 @@ Usage:
     ./PhotoNim help [<command>]
     ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
     ./PhotoNim demo (persp | ortho) (OnOff | Flat | Path) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim earth [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
     -h | --help         Display the PhotoNim CLI helper screen.
@@ -316,6 +326,42 @@ Options:
         demo(render)
 
         var stream = newFileStream(pfmOut, fmWrite) 
+        stream.writePFM(image)
+        stream.close
+
+        pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
+
+    elif args["earth"]:
+        let 
+            pfmOut = if args["<output>"]: $args["<output>"] else: "assets/images/earth.pfm"
+            (dir, name, _) = splitFile(pfmOut)
+            pngOut = dir & '/' & name & ".png"
+
+        var 
+            (width, height) = (600, 600)
+            angle = 10.0
+
+        if args["--w"]: 
+            try: width = parseInt($args["--w"]) 
+            except: echo "Warning: width must be an integer. Default value is used."
+        
+        if args["--h"]: 
+            try: height = parseInt($args["--h"]) 
+            except: echo "Warning: height must be an integer. Default value is used."
+
+        if args["--angle"]:
+            try: angle = parseFloat($args["--angle"]) 
+            except: echo "Warning: angle must be an integer. Default value is used."
+            
+            
+        let camera = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-1, 0, 0)) @ newRotZ(angle)) 
+        var 
+            image = newHDRImage(width, height)
+            renderer = newFlatRenderer(addr image, camera)
+            stream = newFileStream(pfmOut, fmWrite) 
+
+        earth(renderer)
+
         stream.writePFM(image)
         stream.close
 
