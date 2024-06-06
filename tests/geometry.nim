@@ -465,6 +465,21 @@ suite "Derived Transformation test":
         check areClose(apply(ty, p), newPoint3D(-1.0, 2.0, -3.0), 1e-6)
         check areClose(apply(tz, p), newPoint3D(-1.0, -2.0, 3.0), 1e-6)
 
+    
+    test "@ composition operator":
+        var
+            tx = newRotX(180) 
+            comp: Transformation 
+
+        comp = t1 @ t3 @ tx
+
+        check comp.kind == tkComposition
+        check comp.transformations.len == 3
+
+        check comp.transformations[0].kind == tkScaling
+        check comp.transformations[1].kind == tkTranslation
+        check comp.transformations[2].kind == tkRotation
+
 
 
 #-------------------------------------------#
