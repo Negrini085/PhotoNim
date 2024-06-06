@@ -170,6 +170,7 @@ proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 proc toPoint3D*(a: Vec3f | Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
 proc toNormal*(a: Vec3f | Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
 proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3(a[0], a[1], a[2])
+proc toVec3*(a: Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
 
 
 type
@@ -348,6 +349,10 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
     result[2] = matZ.det / det
 
 
+
+#---------------------------------------#
+#          Transformation type          #
+#---------------------------------------#
 type 
     TransformationKind* = enum
         tkIdentity, tkGeneric, tkTranslation, tkScaling, tkRotation, tkComposition
@@ -563,13 +568,13 @@ proc apply*[T](transf: Transformation, x: T): T =
 
     of tkTranslation: 
         when T is Vec4f:
-            return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
+             return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
         elif T is Vec3f:
-            return newVec3(x[0] + transf.mat[0][3], x[1] + transf.mat[1][3], x[2] + transf.mat[2][3])
+            return newVec3(x[0], x[1], x[2])
         elif T is Point3D: 
             return newPoint3D(x.x + transf.mat[0][3], x.y + transf.mat[1][3], x.z + transf.mat[2][3])
         elif T is Normal:
-            return newNormal(x.x + transf.inv_mat[3][0], x.y + transf.inv_mat[3][1], x.z + transf.inv_mat[3][2])
+            return newNormal(x.x, x.y, x.z)
 
     of tkScaling:
         when T is Vec4f:
@@ -591,11 +596,16 @@ proc apply*[T](transf: Transformation, x: T): T =
             else: return dot(mat, x) 
 
 
+
+#-----------------------------------------#
+#          OrthoNormal Basis type         #
+#-----------------------------------------# 
 type ONB* = array[3, Vec3f]
 
 proc newONB*(e1: Vec3f = eX, e2: Vec3f = eY, e3: Vec3f = eZ): ONB {.inline.} = ONB([e1, e2, e3])
+const defONB*: ONB = newONB()
 
-proc newONB*(normal: Normal): ONB = 
+proc createONB*(normal: Normal): ONB = 
     let
         sign = copySign(1.0, normal.z)
         a = -1.0 / (sign + normal.z)
@@ -608,7 +618,17 @@ proc newONB*(normal: Normal): ONB =
     )
 
 
+proc getComponents*(onb: ONB, vec: Vec3f): array[3, float32] {.inline.} = 
+    result[0] = dot(onb[0], vec); result[1] = dot(onb[1], vec); result[2] = dot(onb[2], vec)
 
+proc getVector*(onb: ONB, cx, cy, cz: float32): Vec3f {.inline.} =
+    result = cx * onb[0] + cy * onb[1] + cz * onb[2]
+
+
+
+#----------------------------------------#
+#         Quaternion data structure      #
+#----------------------------------------#
 type 
     Quat* {. borrow: `.`.} = distinct Vec4f
 

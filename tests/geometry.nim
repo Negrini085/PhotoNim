@@ -1,5 +1,5 @@
 import std/unittest
-from math import sqrt
+from math import sqrt, cos, sin, PI
 import PhotoNim
 
 
@@ -390,14 +390,24 @@ suite "Derived Transformation test":
         check areClose(apply(t2, p), newVec3f(0, 6, 3))
 
 
+    test "Translation of Vec3f":
+        var 
+            v1 = newVec3f(0, 0, 0)
+            v2 = newVec3f(0, 3, 1)
+
+        # Checking apply procedure
+        check areClose(apply(t3, v1), newVec3f(0, 0, 0))
+        check areClose(apply(t3, v2), newVec3f(0, 3, 1))
+
+
     test "Translation of Vec4f":
         var
             vec: Vec4f = newVec4f(1, 2, 3, 0)
-            point: Vec4f = newVec4f(1, 0, 3, 1)
+            vec1: Vec4f = newVec4f(1, 2, 3, 1)
 
         # Checking apply procedure
         check areClose(apply(t3, vec), vec)
-        check areClose(apply(t3, point), newVec4f(3, 4, 4, 1))
+        check areClose(apply(t3, vec1), newVec4f(3, 6, 4, 1))
     
 
     test "Translation of Point3D":
@@ -408,27 +418,56 @@ suite "Derived Transformation test":
         # Checking apply procedure
         check areClose(apply(t3, p1), newPoint3D(2, 4, 1))
         check areClose(apply(t3, p2), newPoint3D(2, 7, 2))
+    
+
+    test "Translation of Normal":
+        var 
+            n1 = newNormal(1, 2, 3)
+
+        # Checking apply procedure
+        check areClose(apply(t3, n1), newNormal(1, 2, 3))
 
 
-    test "Rotation":
+    test "Rotation of Vec4f":
         var
             tx = newRotX(180) 
             ty = newRotY(180) 
             tz = newRotZ(180) 
-            vec = newVec4f(1, 2, 3, 1)
+            vec = newVec4f(1, 2, 3, 0)
+            vec1 = newVec4f(1, 2, 3, 1)
+
+        check areClose(apply(tx, vec), newVec4f(1, -2, -3, 0), 1e-6)
+        check areClose(apply(ty, vec), newVec4f(-1, 2, -3, 0), 1e-6)
+        check areClose(apply(tz, vec), newVec4f(-1, -2, 3, 0), 1e-6)
         
-        check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0), 1e-6)
-        check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0), 1e-6)
-        check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0), 1e-6)
+        check areClose(apply(tx, vec1), newVec4f(1, -2, -3, 1), 1e-6)
+        check areClose(apply(ty, vec1), newVec4f(-1, 2, -3, 1), 1e-6)
+        check areClose(apply(tz, vec1), newVec4f(-1, -2, 3, 1), 1e-6)
+    
+    
+    test "Rotation of Point3D":
+        var
+            tx = newRotX(180) 
+            ty = newRotY(180) 
+            tz = newRotZ(180) 
+            p = newPoint3D(1, 2, 3)
+        
+        check areClose(apply(tx, p), newPoint3D(1.0, -2.0, -3.0), 1e-6)
+        check areClose(apply(ty, p), newPoint3D(-1.0, 2.0, -3.0), 1e-6)
+        check areClose(apply(tz, p), newPoint3D(-1.0, -2.0, 3.0), 1e-6)
 
 
+
+#-------------------------------------------#
+#       Orthonormal basis test suite        #
+#-------------------------------------------#
 suite "OrthoNormal Basis":
 
     setup:
         var 
             onb = newONB()
-            onb1 = newONB(newVec3f(sqrt(2.0), sqrt(2.0), 0), 
-                          newVec3f(sqrt(2.0), -sqrt(2.0), 0),
+            onb1 = newONB(newVec3f(sqrt(2.0), sqrt(2.0), 0).normalize, 
+                          newVec3f(-sqrt(2.0), sqrt(2.0), 0).normalize,
                           newVec3f(0, 0, 1))
     
     teardown:
@@ -441,11 +480,12 @@ suite "OrthoNormal Basis":
         check areClose(onb[1], eY)
         check areClose(onb[2], eZ)
 
-        check areClose(onb1[0], newVec3f(sqrt(2.0), sqrt(2.0), 0))
-        check areClose(onb1[1], newVec3f(sqrt(2.0), -sqrt(2.0), 0))
+        check areClose(onb1[0], newVec3f(sqrt(2.0), sqrt(2.0), 0).normalize)
+        check areClose(onb1[1], newVec3f(-sqrt(2.0), sqrt(2.0), 0).normalize)
         check areClose(onb1[2], eZ)
     
-    test "newONB proc":
+
+    test "ONB random testing":
         # Checking Duff et al. algorithm
         # We are gonna random test it, so we will check random normals as input
         var 
@@ -455,7 +495,7 @@ suite "OrthoNormal Basis":
 
         for i in 0..<1000:
             normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
-            onb = newONB(normal)
+            onb = createONB(normal)
 
             check areClose(onb[2], normal.toVec3)
 
@@ -466,3 +506,29 @@ suite "OrthoNormal Basis":
             check areClose(onb[0].norm, 1, eps = 1e-6)
             check areClose(onb[1].norm, 1, eps = 1e-6)
             check areClose(onb[2].norm, 1, eps = 1e-6)
+
+
+    test "getComponents proc":
+        var 
+            appo: array[3, float32]
+            vec = newVec3f(1, 4, 3)
+
+        appo = onb.getComponents(vec)
+        check areClose(appo[0], vec[0])
+        check areClose(appo[1], vec[1])
+        check areClose(appo[2], vec[2])
+
+        appo = onb1.getComponents(vec)
+        check areClose(appo[0], 5 * cos(PI/4), eps = 1e-6)
+        check areClose(appo[1], 3 * sin(PI/4), eps = 1e-6)
+        check areClose(appo[2], vec[2])
+    
+
+    test "getVector proc":
+        var
+            x = 1.0.float32
+            y = 2.0.float32
+            z = 1.5.float32
+        
+        check areClose(newVec3f(1, 2, 1.5), onb.getVector(x, y, z)) 
+        check areClose(newVec3f(0, 2, 1.5), onb1.getVector(sqrt(2.float32), sqrt(2.float32), z)) 
