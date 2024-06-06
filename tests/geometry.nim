@@ -149,32 +149,10 @@ suite "Points unittest":
     test "`$` proc":
         check $p2 == "(1.0, 20.0)"
     
-    # test "min proc":
-    #     var
-    #         a = newPoint3D(1, 2, 3)
-    #         b = newPoint3D(-1, 2, 5)
-    #         c = newPoint3D(1, -2, 4)
-            
-    #         s1 = @[a]
-    #         s2 = @[a, b, c]
 
-    #     check areClose(min(s1), newPoint3D(1, 2, 3))
-    #     check areClose(min(s2), newPoint3D(-1, -2, 3))
-    
-    # test "max proc":
-    #     var
-    #         a = newPoint3D(1, 2, 3)
-    #         b = newPoint3D(-1, 2, 5)
-    #         c = newPoint3D(1, -2, 4)
-            
-    #         s1 = @[a]
-    #         s2 = @[a, b, c]
-
-    #     check areClose(max(s1), newPoint3D(1, 2, 3))
-    #     check areClose(max(s2), newPoint3D(1, 2, 5))
-
-
-
+#---------------------------------#
+#        Matrix types test        #
+#---------------------------------#
 suite "Mat unittest":
     echo "Testing the `Mat` type and its procedures."
 
@@ -477,9 +455,34 @@ suite "Derived Transformation test":
         check comp.transformations.len == 3
 
         check comp.transformations[0].kind == tkScaling
-        check comp.transformations[1].kind == tkTranslation
-        check comp.transformations[2].kind == tkRotation
+        check areClose(comp.transformations[0].mat, t1.mat)
 
+        check comp.transformations[1].kind == tkTranslation
+        check areClose(comp.transformations[1].mat, t3.mat)
+
+        check comp.transformations[2].kind == tkRotation
+        check areClose(comp.transformations[2].mat, tx.mat)
+
+
+
+    test "newComposition proc":
+        var
+            tx = newRotX(180) 
+            comp: Transformation 
+        
+        comp = newComposition(@[t1, t3, tx])
+
+        check comp.kind == tkComposition
+        check comp.transformations.len == 3
+
+        check comp.transformations[0].kind == tkScaling
+        check areClose(comp.transformations[0].mat, t1.mat)
+
+        check comp.transformations[1].kind == tkTranslation
+        check areClose(comp.transformations[1].mat, t3.mat)
+
+        check comp.transformations[2].kind == tkRotation
+        check areClose(comp.transformations[2].mat, tx.mat)
 
 
 #-------------------------------------------#
