@@ -1,9 +1,9 @@
 import std/unittest
 from math import sqrt, cos, sin, PI
-import PhotoNim
+import ../src/[geometry, hdrimage, pcg]
 
 
-
+  
 suite "Vec unittest":
     echo "Testing the `Vec` type and its procedures."
 
@@ -532,3 +532,27 @@ suite "OrthoNormal Basis":
         
         check areClose(newVec3f(1, 2, 1.5), onb.getVector(x, y, z)) 
         check areClose(newVec3f(0, 2, 1.5), onb1.getVector(sqrt(2.float32), sqrt(2.float32), z)) 
+
+
+suite "RefSystem":
+
+    setup:
+        let
+            rs1 = newRefSystem()
+            rs2 = newRefSystem(newPoint3D(1, 3, 3), newONB(eY, eX, eZ))
+    
+    teardown:
+        discard rs1
+        discard rs2
+
+    test "newRefSystem proc":
+        
+        check areClose(rs1.origin, newPoint3D(0, 0, 0))
+        check areClose(rs1.base[0], newVec3f(1, 0, 0))
+        check areClose(rs1.base[1], newVec3f(0, 1, 0))
+        check areClose(rs1.base[2], newVec3f(0, 0, 1))
+
+        check areClose(rs2.origin, newPoint3D(1, 3, 3))
+        check areClose(rs2.base[0], newVec3f(0, 1, 0))
+        check areClose(rs2.base[1], newVec3f(1, 0, 0))
+        check areClose(rs2.base[2], newVec3f(0, 0, 1))
