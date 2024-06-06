@@ -1,5 +1,43 @@
 import std/[unittest, sequtils]
-import PhotoNim
+import ../src/[geometry, scene, shapes]
+
+
+suite "RefSystem":
+
+    setup:
+        let
+            rs1 = newReferenceSystem(newPoint3D(0, 0, 0), stdONB)
+            rs2 = newReferenceSystem(newPoint3D(1, 3, 3), newONB(eY, eX, eZ))
+    
+    teardown:
+        discard rs1
+        discard rs2
+
+    test "newRefSystem proc":
+        
+        var
+            colSeq: seq[Vec3f]
+            e1, e2, e3: Vec3f
+
+
+        colSeq = columns(rs1.base).toSeq()
+        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
+        
+        check areClose(rs1.origin, newPoint3D(0, 0, 0))
+        check areClose(e1, newVec3f(1, 0, 0))
+        check areClose(e2, newVec3f(0, 1, 0))
+        check areClose(e3, newVec3f(0, 0, 1))
+
+
+        colSeq = columns(rs2.base).toSeq()
+        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
+
+        check areClose(rs2.origin, newPoint3D(1, 3, 3))
+        check areClose(e1, newVec3f(0, 1, 0))
+        check areClose(e2, newVec3f(1, 0, 0))
+        check areClose(e3, newVec3f(0, 0, 1))
+
+
 
 suite "Scene unittest":
     test "getWorldAABB proc":
@@ -33,5 +71,3 @@ suite "Scene unittest":
             otherRefSystem = newReferenceSystem(newPoint3D(5.0, 0.0, 0.0), newONB(-eX, eY, -eZ))
         
             sceneAABB = otherRefSystem.getAABB(@[handler1, handler2])
-
-        echo sceneAABB
