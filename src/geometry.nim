@@ -602,11 +602,10 @@ proc apply*[T](transf: Transformation, x: T): T =
             else: return dot(mat, x) 
 
 
-
 #-----------------------------------------#
 #          OrthoNormal Basis type         #
 #-----------------------------------------# 
-type ONB*  {.borrow: `.`.} = distinct Mat3f
+type ONB* {.borrow: `.`.} = distinct Mat3f
 
 proc T*(onb: ONB): ONB {.borrow.}
 proc `$`*(onb: ONB): string {.borrow.}
@@ -628,33 +627,14 @@ proc createONB*(normal: Normal): ONB =
     )
 
 iterator columns*(onb: ONB): Vec3f =
-        for i in 0..<3: 
-            yield newVec3f(onb[0][i], onb[1][i], onb[2][i])   
+    for i in 0..<3: yield newVec3f(onb[0][i], onb[1][i], onb[2][i])   
 
-proc getComponents*(onb: ONB, vec: Vec3f): array[3, float32] {.inline.} = 
-    var    
-        colSeq = columns(onb).toSeq()
-        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])
+proc getComponents*(onb: ONB, vec: Vec3f): Vec3f {.inline.} = 
+    let colSeq = onb.columns.toSeq
+    for i in 0..<3: result[i] = dot(colSeq[i], vec)
 
-    result[0] = dot(e1, vec); result[1] = dot(e2, vec); result[2] = dot(e3, vec)
+proc getVector*(onb: ONB, coeff: Vec3f): Vec3f {.inline.} = dot(onb.Mat3f, coeff) 
 
- 
-proc getVector*(onb: ONB, cx, cy, cz: float32): Vec3f {.inline.} =
-    var    
-        colSeq = columns(onb).toSeq()
-        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])
-
-    result = cx * e1 + cy * e2 + cz * e3
-
-
-
-type RefSystem* = ref object
-    origin*: Point3D
-    base*: ONB
-
-
-proc newRefSystem*(origin = ORIGIN3D, base = stdONB): RefSystem {.inline.} =
-    RefSystem(origin: origin, base: base)
 
 #----------------------------------------#
 #         Quaternion data structure      #

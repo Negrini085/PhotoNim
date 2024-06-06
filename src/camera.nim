@@ -122,39 +122,3 @@ proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Col
         if abs(arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))) < brdf.threshold_angle: 
             return brdf.pigment.getColor(uv)
         else: return BLACK
-
-
-proc scatterRay*(brdf: BRDF, rg: var PCG, in_dir: Vec3f, hit_pt: Point3D, normal: Normal, depth: int): Ray =
-    case brdf.kind:
-    of DiffuseBRDF:
-        let 
-            ONB = createONB(normal)
-            cos2 = rg.rand
-            c = sqrt(cos2)
-            s = sqrt(1 - cos2)
-            phi = 2 * PI * rg.rand
-        
-        return Ray(
-            origin: hit_pt,
-            dir: ONB[0] * cos(phi) * c + ONB[1] * sin(phi) * c + ONB[2] * s,
-            tspan: (float32 1e-3, float32 Inf), depth: depth
-        )
-
-    of SpecularBRDF: 
-        let
-            dir = in_dir.normalize
-            norm = normal.Vec3f.normalize
-        
-        return Ray(
-            origin: hit_pt,
-            dir: dir - 2 * dot(norm, dir) * norm,
-            tspan: (float32 1e-3, float32 Inf), depth: depth 
-        )
-
-
-type Material* = object
-    brdf*: BRDF
-    radiance*: Pigment
-
-proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = 
-    Material(brdf: brdf, radiance: pigment)
