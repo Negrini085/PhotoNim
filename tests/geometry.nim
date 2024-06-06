@@ -474,7 +474,7 @@ suite "OrthoNormal Basis":
     
     test "newONB proc":
         var    
-            colSeq = columns(defaultONB).toSeq()
+            colSeq = columns(stdONB).toSeq()
             (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])
             
         # Checkig newONB proc
@@ -524,7 +524,7 @@ suite "OrthoNormal Basis":
             appo: array[3, float32]
             vec = newVec3f(1, 4, 3)
 
-        appo = defaultONB.getComponents(vec)
+        appo = stdONB.getComponents(vec)
         check areClose(appo[0], vec[0])
         check areClose(appo[1], vec[1])
         check areClose(appo[2], vec[2])
@@ -541,29 +541,41 @@ suite "OrthoNormal Basis":
             y = 2.0.float32
             z = 1.5.float32
         
-        check areClose(newVec3f(1, 2, 1.5), defaultONB.getVector(x, y, z)) 
+        check areClose(newVec3f(1, 2, 1.5), stdONB.getVector(x, y, z)) 
         check areClose(newVec3f(0, 2, 1.5), onb.getVector(sqrt(2.float32), sqrt(2.float32), z)) 
 
 
-#suite "RefSystem":
-#
-#    setup:
-#        let
-#            rs1 = newRefSystem()
-#            rs2 = newRefSystem(newPoint3D(1, 3, 3), newONB(eY, eX, eZ))
-#    
-#    teardown:
-#        discard rs1
-#        discard rs2
-#
-#    test "newRefSystem proc":
-#        
-#        check areClose(rs1.origin, newPoint3D(0, 0, 0))
-#        check areClose(rs1.base[0], newVec3f(1, 0, 0))
-#        check areClose(rs1.base[1], newVec3f(0, 1, 0))
-#        check areClose(rs1.base[2], newVec3f(0, 0, 1))
-#
-#        check areClose(rs2.origin, newPoint3D(1, 3, 3))
-#        check areClose(rs2.base[0], newVec3f(0, 1, 0))
-#        check areClose(rs2.base[1], newVec3f(1, 0, 0))
-#        check areClose(rs2.base[2], newVec3f(0, 0, 1))
+suite "RefSystem":
+
+    setup:
+        let
+            rs1 = newRefSystem()
+            rs2 = newRefSystem(newPoint3D(1, 3, 3), newONB(eY, eX, eZ))
+    
+    teardown:
+        discard rs1
+        discard rs2
+
+    test "newRefSystem proc":
+        
+        var
+            colSeq: seq[Vec3f]
+            e1, e2, e3: Vec3f
+
+
+        colSeq = columns(rs1.base).toSeq()
+        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
+        
+        check areClose(rs1.origin, newPoint3D(0, 0, 0))
+        check areClose(e1, newVec3f(1, 0, 0))
+        check areClose(e2, newVec3f(0, 1, 0))
+        check areClose(e3, newVec3f(0, 0, 1))
+
+
+        colSeq = columns(rs2.base).toSeq()
+        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
+
+        check areClose(rs2.origin, newPoint3D(1, 3, 3))
+        check areClose(e1, newVec3f(0, 1, 0))
+        check areClose(e2, newVec3f(1, 0, 0))
+        check areClose(e3, newVec3f(0, 0, 1))

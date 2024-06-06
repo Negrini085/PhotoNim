@@ -613,7 +613,7 @@ proc `$`*(onb: ONB): string {.borrow.}
 proc `[]`*(onb: ONB, i: int): Vec3f {.inline.} = onb.Mat3f[i]
 
 proc newONB*(e1, e2, e3: Vec3f): ONB {.inline.} = ONB([e1, e2, e3].T)
-const defaultONB* = newONB(eX, eY, eZ)
+const stdONB* = newONB(eX, eY, eZ)
 
 proc createONB*(normal: Normal): ONB = 
     let
@@ -648,19 +648,14 @@ proc getVector*(onb: ONB, cx, cy, cz: float32): Vec3f {.inline.} =
 
 
 
-#type RefSystem* = ref object
-#    origin*: Point3D
-#    base*: ONB
-#
-#
-#proc newRefSystem*(origin = ORIGIN3D, base = newONB()): RefSystem {.inline.} =
-#    RefSystem(origin: origin, base: base)
-#
-#
-#proc changeRefSystem*(ref1, ref2: RefSystem): Transformation =
-#    let
-#        transl = newTranslation(ref1.origin.Vec3f - ref2.origin.Vec3f)
-#
+type RefSystem* = ref object
+    origin*: Point3D
+    base*: ONB
+
+
+proc newRefSystem*(origin = ORIGIN3D, base = stdONB): RefSystem {.inline.} =
+    RefSystem(origin: origin, base: base)
+
 #----------------------------------------#
 #         Quaternion data structure      #
 #----------------------------------------#
