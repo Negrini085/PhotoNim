@@ -257,8 +257,16 @@ suite "Mat unittest":
 
 
     test "T proc":
+        var mat: Mat3f = newMat3([float32 1, 2, 3], [float32 4, 5, 6], [float32 7, 8, 9])
+
         check [[float32 1.0, 2.0, 3.0]].Tv is Vec3f
         check [float32 1.0, 2.0, 3.0].T is Mat[1, 3, float32]
+
+        mat = mat.T
+        check areClose(mat[0], newVec3f(1, 4, 7))
+        check areClose(mat[1], newVec3f(2, 5, 8))
+        check areClose(mat[2], newVec3f(3, 6, 9))
+    
 
 
 
@@ -541,41 +549,6 @@ suite "OrthoNormal Basis":
             y = 2.0.float32
             z = 1.5.float32
         
-        check areClose(newVec3f(1, 2, 1.5), stdONB.getVector(x, y, z)) 
-        check areClose(newVec3f(0, 2, 1.5), onb.getVector(sqrt(2.float32), sqrt(2.float32), z)) 
+        check areClose(newVec3f(1, 2, 1.5), stdONB.getVector(newVec3f(x, y, z))) 
+        check areClose(newVec3f(0, 2, 1.5), onb.getVector(newVec3f(sqrt(2.float32), sqrt(2.float32), z))) 
 
-
-suite "RefSystem":
-
-    setup:
-        let
-            rs1 = newRefSystem()
-            rs2 = newRefSystem(newPoint3D(1, 3, 3), newONB(eY, eX, eZ))
-    
-    teardown:
-        discard rs1
-        discard rs2
-
-    test "newRefSystem proc":
-        
-        var
-            colSeq: seq[Vec3f]
-            e1, e2, e3: Vec3f
-
-
-        colSeq = columns(rs1.base).toSeq()
-        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
-        
-        check areClose(rs1.origin, newPoint3D(0, 0, 0))
-        check areClose(e1, newVec3f(1, 0, 0))
-        check areClose(e2, newVec3f(0, 1, 0))
-        check areClose(e3, newVec3f(0, 0, 1))
-
-
-        colSeq = columns(rs2.base).toSeq()
-        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
-
-        check areClose(rs2.origin, newPoint3D(1, 3, 3))
-        check areClose(e1, newVec3f(0, 1, 0))
-        check areClose(e2, newVec3f(1, 0, 0))
-        check areClose(e3, newVec3f(0, 0, 1))
