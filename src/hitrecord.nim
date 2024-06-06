@@ -1,4 +1,4 @@
-import geometry, scene, camera
+import geometry, shapes, scene, camera
 
 import std/options
 from std/fenv import epsilon
@@ -80,7 +80,7 @@ proc checkIntersection*(handler: ShapeHandler, ray: Ray): bool =
         var phi = arctan2(hitPt.y, hitPt.x)
         if phi < 0.0: phi += 2.0 * PI
 
-        if hitPt.z < handler.shape.zMin or hitPt.z > handler.shape.zMax or phi > handler.shape.phiMax:
+        if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax:
             if t_hit == tspan.max: return false
             t_hit = tspan.max
             if t_hit > invRay.tspan.max: return false
@@ -88,7 +88,7 @@ proc checkIntersection*(handler: ShapeHandler, ray: Ray): bool =
             hitPt = invRay.at(t_hit)
             phi = arctan2(hitPt.y, hitPt.x)
             if phi < 0.0: phi += 2.0 * PI
-            if hitPt.z < handler.shape.zMin or hitPt.z > handler.shape.zMax or phi > handler.shape.phiMax: return false
+            if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax: return false
 
         return true
 
@@ -105,19 +105,18 @@ proc checkIntersection(node: SceneNode, ray: Ray): bool =
         (node.right != nil and checkIntersection(node.right, ray)): return true
     
 
-proc getHitLeafNodes*(node: SceneNode; ray: Ray): Option[seq[SceneNode]] =
+proc getHitLeafs*(node: SceneNode; ray: Ray): Option[seq[SceneNode]] =
     let boxHandler = (shape: newAABox(node.aabb), transformation: IDENTITY)
     if not checkIntersection(boxHandler, ray): return none seq[SceneNode]
 
     var sceneNodes: seq[SceneNode]
     case node.kind
-    of nkLeaf: 
-        sceneNodes.add node
-    of nkRoot:
+    of nkLeaf: sceneNodes.add node
+    of nkRoot, nkBranch:
         for node in [node.left, node.right]:
             if node != nil:
-                let hitLeafs = node.getHitLeafNodes(ray)
-                if hitLeafs.isSome: sceneNodes = concat(sceneNodes, hitLeafs.get)
+                let hits = node.getHitLeafs(ray)
+                if hits.isSome: sceneNodes = concat(sceneNodes, hits.get)
 
     some sceneNodes
 
@@ -126,7 +125,6 @@ type HitPayload* = object
     shape*: ptr Shape
     ray*: Ray
     t*: float32
-    
     
 proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
     let invRay = ray.transform(handler.transformation.inverse) 
@@ -206,7 +204,7 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
         var phi = arctan2(hitPt.y, hitPt.x)
         if phi < 0.0: phi += 2.0 * PI
 
-        if hitPt.z < handler.shape.zMin or hitPt.z > handler.shape.zMax or phi > handler.shape.phiMax:
+        if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax:
             if tHit == tspan.max: return none HitPayload
             tHit = tspan.max
             if tHit > invRay.tspan.max: return none HitPayload
@@ -214,13 +212,13 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
             hitPt = invRay.at(tHit)
             phi = arctan2(hitPt.y, hitPt.x)
             if phi < 0.0: phi += 2.0 * PI
-            if hitPt.z < handler.shape.zMin or hitPt.z > handler.shape.zMax or phi > handler.shape.phiMax: return none HitPayload
+            if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax: return none HitPayload
 
         return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
 
 
-proc getHitPayloads*(node: SceneNode, ray: Ray): seq[HitPayload] =
-    let hitLeafs = node.getHitLeafNodes(ray)
+proc getHitPayloads*(node: SceneNode; ray: Ray): seq[HitPayload] =
+    let hitLeafs = node.getHitLeafs(ray)
 
     if hitLeafs.isNone: return @[]
     hitLeafs.get
