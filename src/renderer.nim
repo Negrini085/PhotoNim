@@ -73,36 +73,36 @@ proc samplePixel(renderer: Renderer; scene: Scene, sceneTree: SceneTree, rg: var
 
                 result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
-        of rkPathTracer: 
-            if (ray.depth > renderer.maxDepth): return BLACK
-
-            let hitRecord = newHitRecord(hitLeafNodes.get, ray)
-            if hitRecord.isNone: return BLACK
-        
-            let 
-                hit = hitRecord.get[0]
-                hitPt = hit.ray.at(hit.t)
-                material = hit.shape[].material
-                surfacePt = hit.shape[].getUV(hitPt)
-                normal = hit.shape[].getNormal(hitPt, ray.dir)
-
-                onb = newONB(normal)
-                newTree = newSceneTree(scene.handlers, hitPt, onb, maxShapesPerLeaf = 4)
-            
-            var
-                col_hit = material.brdf.pigment.getColor(surfacePt)
-                rad_em = material.radiance.getColor(surfacePt)
-                lum = max(col_hit.r, max(col_hit.g, col_hit.b))
-                rad = BLACK
-
-            if ray.depth >= renderer.roulette_lim:
-                var q = max(0.05, 1 - lum)
- 
-                if (rg.rand > q): col_hit *= 1/(1-q)
-                else: color = rad_em
-
-
-
+        of rkPathTracer: discard
+        #    if (ray.depth > renderer.maxDepth): return BLACK
+#
+        #    let hitRecord = newHitRecord(hitLeafNodes.get, ray)
+        #    if hitRecord.isNone: return BLACK
+        #
+        #    let 
+        #        hit = hitRecord.get[0]
+        #        hitPt = hit.ray.at(hit.t)
+        #        material = hit.shape[].material
+        #        surfacePt = hit.shape[].getUV(hitPt)
+        #        normal = hit.shape[].getNormal(hitPt, ray.dir)
+#
+        #        onb = newONB(normal)
+        #        newTree = newSceneTree(scene.handlers, hitPt, onb, maxShapesPerLeaf = 4)
+        #    
+        #    var
+        #        col_hit = material.brdf.pigment.getColor(surfacePt)
+        #        rad_em = material.radiance.getColor(surfacePt)
+        #        lum = max(col_hit.r, max(col_hit.g, col_hit.b))
+        #        rad = BLACK
+#
+        #    if ray.depth >= renderer.roulette_lim:
+        #        var q = max(0.05, 1 - lum)
+ #
+        #        if (rg.rand > q): col_hit *= 1/(1-q)
+        #        else: color = rad_em
+#
+#
+#
             # color = renderer.call(scene, ray)
 
             # let hitRecord = newHitRecord(hitLeafNodes.get, ray)
