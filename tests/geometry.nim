@@ -249,6 +249,7 @@ suite "Mat unittest":
 
 
 suite "Transformation unittest":
+
     echo "Testing the `Transformation` types and their methods and procs."
 
     setup:
@@ -260,12 +261,16 @@ suite "Transformation unittest":
     teardown:
         discard mat; discard inv_mat; discard t1
 
+
     test "newTransformation proc":
-        let t2 = newTransformation(inv_mat, mat)
-        check areClose(t2.mat, inv_mat)
-        check areClose(t2.inv_mat, mat)
         
+        check t1.kind == tkGeneric
+        check areClose(t1.mat, mat)
+        check areClose(t1.inv_mat, inv_mat)
+
+
     test "inverse proc":
+
         let t2 = t1.inverse()
         check areClose(t2.mat, t1.inv_mat)
         check areClose(t2.inv_mat, t1.mat)
@@ -295,9 +300,6 @@ suite "Transformation unittest":
         var
             vec: Vec4f = newVec4f(1, 2, 3, 0)
             point: Vec4f = newVec4f(1, 2, 3, 1)
-
-        # In order to test general methods we are using translation matrices: that means that
-        # transformation acts different depending on the last vector component
             
         check areClose(apply(t1, vec), vec)
         check areClose(apply(t1, point), newVec4f(5, 5, 2, 1))
@@ -317,12 +319,12 @@ suite "Transformation unittest":
             p1 = newVec3f(0, 0, 0)
             p2 = newVec3f(1, 2, 3) 
 
-        # Testing apply procedure
         check areClose(apply(t1, p1), newVec3f(0, 0, 0))
         check areClose(apply(t1, p2), newVec3f(1, 2, 3))
     
 
     test "apply on Normal":
+
         var
             n2 = newNormal(1, 0, 0)
             n3 = newNormal(0, 3/5, 4/5)
@@ -336,6 +338,7 @@ suite "Transformation unittest":
 
 
 suite "Derived Transformation test":
+
     echo "Testing the `Scaling`, `Translation`, `Rotation` types and their methods."
 
     setup:
@@ -348,7 +351,7 @@ suite "Derived Transformation test":
         discard t1; discard t2; discard t3
     
     test "Scaling of Vec4f":
-        # Checking scaling of a Vec4f object
+
         let vec = newVec4f(1, 2, 3, 1)
 
         check areClose(apply(t1, vec), newVec4f(2, 4, 6, 1))
@@ -356,7 +359,7 @@ suite "Derived Transformation test":
     
 
     test "Scaling of Point3D":
-        # Checking scaling of a Point3D object
+
         var p = newPoint3D(0, 3, 1)
         
         # Checking omogeneous scaling
@@ -367,7 +370,7 @@ suite "Derived Transformation test":
     
 
     test "Scaling of Vec3f":
-        # Checking scaling of a Point3D object
+
         var p = newVec3f(0, 3, 1)
         
         # Checking omogeneous scaling
@@ -446,10 +449,10 @@ suite "Derived Transformation test":
     
     test "@ composition operator":
         var
-            tx = newRotX(180) 
+            rotx = newRotX(180) 
             comp: Transformation 
 
-        comp = t1 @ t3 @ tx
+        comp = t1 @ t3 @ rotx
 
         check comp.kind == tkComposition
         check comp.transformations.len == 3
@@ -461,16 +464,15 @@ suite "Derived Transformation test":
         check areClose(comp.transformations[1].mat, t3.mat)
 
         check comp.transformations[2].kind == tkRotation
-        check areClose(comp.transformations[2].mat, tx.mat)
-
+        check areClose(comp.transformations[2].mat, rotx.mat)
 
 
     test "newComposition proc":
         var
-            tx = newRotX(180) 
+            rotx = newRotX(180) 
             comp: Transformation 
         
-        comp = newComposition(@[t1, t3, tx])
+        comp = newComposition(@[t1, t3, rotx])
 
         check comp.kind == tkComposition
         check comp.transformations.len == 3
@@ -482,7 +484,58 @@ suite "Derived Transformation test":
         check areClose(comp.transformations[1].mat, t3.mat)
 
         check comp.transformations[2].kind == tkRotation
-        check areClose(comp.transformations[2].mat, tx.mat)
+        check areClose(comp.transformations[2].mat, rotx.mat)
+
+    
+    test "Composition on Point3D":
+
+        var
+            rotx = newRotX(90)
+            rotz = newRotZ(90)
+
+            comp: Transformation
+            p = newPoint3D(1, 2, 3)
+
+        comp = rotx @ rotz
+        check areClose(apply(comp, p), newPoint3D(-2, -3, 1), eps = 1e-6)
+
+        comp = t3 @ rotx
+        check areClose(apply(comp, p), newPoint3D(3, 1, 3), eps = 1e-6)
+
+    
+    test "Composition on Vec3f":
+
+        var
+            rotx = newRotX(90)
+            rotz = newRotZ(90)
+            
+            comp: Transformation
+            vec = newVec3f(1, 2, 3)
+
+        comp = rotx @ rotz
+        check areClose(apply(comp, vec), newVec3f(-2, -3, 1), eps = 1e-6)
+
+        comp = t3 @ rotx
+        check areClose(apply(comp, vec), newVec3f(1, -3, 2),eps = 1e-6)
+
+    
+    test "Composition on Vec4f":
+
+        var
+            rotx = newRotX(90)
+            rotz = newRotZ(90)
+            comp: Transformation
+
+            vec1 = newVec4f(1, 2, 3, 0)
+            vec2 = newVec4f(1, 2, 3, 1)
+
+        comp = rotx @ rotz
+        check areClose(apply(comp, vec1), newVec4f(-2, -3, 1, 0), eps = 1e-6)
+        check areClose(apply(comp, vec2), newVec4f(-2, -3, 1, 1), eps = 1e-6)
+
+        comp = t3 @ rotx
+        check areClose(apply(comp, vec1), newVec4f(1, -3, 2, 0), eps = 1e-6)
+        check areClose(apply(comp, vec2), newVec4f(3, 1, 3, 1), eps = 1e-6)
 
 
 #-------------------------------------------#
