@@ -61,7 +61,6 @@ proc scatterRay*(refSystem: ReferenceSystem, inWorldDir: Vec3f, depth: int, brdf
         )
 
     of SpecularBRDF: 
-        
         Ray(
             origin: ORIGIN3D,
             dir: inWorldDir.normalize - 2 * dot(refSystem.base[2], inWorldDir.normalize) * refSystem.base[2],
@@ -72,7 +71,8 @@ proc scatterRay*(refSystem: ReferenceSystem, inWorldDir: Vec3f, depth: int, brdf
 
 proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int, rg: var PCG): Color =
     result = scene.bgCol
-    let hitLeafNodes = scene.tree.getHitLeafs(ray)
+
+    let hitLeafNodes = scene.tree.getHitLeafs(ray) 
 
     if hitLeafNodes.isSome:
         case renderer.kind
@@ -133,11 +133,7 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int
 proc sample*(renderer: Renderer; scene: Scene, maxShapesPerLeaf, samplesPerSide: int, rgState, rgSeq: uint64, displayProgress = true): PixelMap =
     result = newPixelMap(renderer.image.width, renderer.image.height)
             
-    var cameraScene = scene.fromObserver(
-        case renderer.camera.kind
-        of ckOrthogonal: newReferenceSystem(apply(renderer.camera.transform, newPoint3D(-1, 0, 0)))
-        of ckPerspective: newReferenceSystem(apply(renderer.camera.transform, newPoint3D(-renderer.camera.distance, 0, 0)))
-    )
+    var cameraScene = scene.fromObserver(renderer.camera.rs)
 
     cameraScene.buildBVHTree(maxShapesPerLeaf, skSAH)
 

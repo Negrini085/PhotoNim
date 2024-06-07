@@ -49,9 +49,7 @@ suite "Scene unittest":
         check scene.bgCol == BLACK
 
         check scene.handlers.len == 2
-        check scene.handlers[0].shape.kind == skTriangle
-        check scene.handlers[1].shape.kind == skTriangle
-
+        check scene.handlers[0].shape.kind == skTriangle and scene.handlers[1].shape.kind == skTriangle
         check scene.tree.isNil
 
     test "getTotalAABB proc":
@@ -66,19 +64,22 @@ suite "Scene unittest":
         check subScene.bgCol == BLACK
 
         check subScene.handlers.len == 2
-        check scene.handlers[0].shape.kind == skTriangle
-        check scene.handlers[1].shape.kind == skTriangle
+        check subScene.handlers[0].shape.kind == skTriangle and subScene.handlers[1].shape.kind == skTriangle
+
+        check subScene.handlers[0].transformation != scene.handlers[0].transformation
+        check subScene.handlers[1].transformation != scene.handlers[1].transformation
 
     
     test "buildBVHTree proc":
         var subScene = scene.fromObserver(newReferenceSystem(newPoint3D(5.0, 0.0, 0.0), [-eX, eY, -eZ]))
 
         check subScene.tree.isNil
-        subScene.buildBVHTree(maxShapesPerLeaf = 4, skSAH)
+        subScene.buildBVHTree(1, skSAH)
         check not subScene.tree.isNil
 
         check subScene.tree.aabb.min == newPoint3D(2, -2, -1)
         check subScene.tree.aabb.max == newPoint3D(5, 4, 2)
+
 
 # =======
 #         check areClose(worldAABB1.min, newPoint3D(0, -2, 0))
