@@ -8,8 +8,8 @@ type
         ckOrthogonal, ckPerspective
 
     Camera* = object
-        transform*: Transformation
-        aspect_ratio*: float32
+        rs*: ReferenceSystem
+        aspectRatio*: float32
 
         case kind*: CameraKind
         of ckOrthogonal: discard
@@ -19,17 +19,23 @@ type
     Ray* = ref object
         origin*: Point3D
         dir*: Vec3f
-        tspan*: Interval[float32]
+        tSpan*: Interval[float32]
         depth*: int
 
-proc newOrthogonalCamera*(a: float32, transform = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckOrthogonal, transform: transform, aspect_ratio: a)
 
-proc newPerspectiveCamera*(a, d: float32, transform = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckPerspective, transform: transform, aspect_ratio: a, distance: d)
+#     case renderer.camera.kind
+#     of ckOrthogonal: newReferenceSystem(apply(renderer.camera.transform, newPoint3D(-1, 0, 0)), renderer.camera.transform.mat.toMat3)
+#     of ckPerspective: newReferenceSystem(apply(renderer.camera.transform, newPoint3D(-renderer.camera.distance, 0, 0)), renderer.camera.transform.mat.toMat3)
+# )
+
+proc newOrthogonalCamera*(a: float32, transformation = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckOrthogonal, aspectRatio: a)
+
+proc newPerspectiveCamera*(a, d: float32, transformation = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckPerspective, aspectRatio: a, distance: d)
 
 proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, tspan: (epsilon(float32), Inf.float32), depth: 0)  
+    Ray(origin: origin, dir: direction, tSpan: (epsilon(float32), Inf.float32), depth: 0)  
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
     areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
@@ -38,9 +44,9 @@ proc transform*(ray: Ray; transf: Transformation): Ray {.inline.} =
     case transf.kind: 
     of tkIdentity: return ray
     of tkTranslation, tkScaling: 
-        return Ray(origin: apply(transf, ray.origin), dir: ray.dir, tspan: ray.tspan, depth: ray.depth)
+        return Ray(origin: apply(transf, ray.origin), dir: ray.dir, tSpan: ray.tSpan, depth: ray.depth)
     of tkGeneric, tkRotation, tkComposition:
-        return Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tspan: ray.tspan, depth: ray.depth)
+        return Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tSpan: ray.tSpan, depth: ray.depth)
 
 proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
 
@@ -48,14 +54,14 @@ proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * t
 proc fireRay*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
     case cam.kind
     of ckOrthogonal:
-        result = newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX)
+        result = newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspectRatio, 2 * pixel.v - 1), eX)
     of ckPerspective:
-        result = newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1))
+        result = newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspectRatio, 2 * pixel.v - 1))
     
     # here we must change something. 
     # Since we generate a subScene viewed from the camera point after its transformation, 
     # each ray should be casted from the origin of that ref system. 
-    result = result.transform(cam.transform)
+    # result = result.transform(cam.transform)
 
 
 type
