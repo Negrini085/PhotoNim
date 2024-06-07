@@ -6,9 +6,21 @@ from std/math import sqrt, arctan2, PI
 from std/sequtils import concat, map, foldl, filter
 from std/algorithm import sorted
 
+proc checkIntersection(aabb: Interval[Point3D], ray: Ray): bool =
+    assert ray.origin == ORIGIN3D
+    let
+        txspan = newInterval(aabb.min.x / ray.dir[0], aabb.max.x / ray.dir[0])
+        tyspan = newInterval(aabb.min.y / ray.dir[1], aabb.max.y / ray.dir[1])
+
+    if txspan.min > tyspan.max or tyspan.min > txspan.max: return false
+
+    let tzspan = newInterval(aabb.min.z / ray.dir[2], aabb.max.z / ray.dir[2])
+    
+    var hitspan = newInterval(max(txspan.min, tyspan.min), min(txspan.max, tyspan.max))
+    if hitspan.min > tzspan.max or tzspan.min > hitspan.max: return false
+
 
 proc checkIntersection*(handler: ShapeHandler, ray: Ray): bool =
-
     case handler.shape.kind
     of skAABox:
         let invRay = ray.transform(handler.transformation.inverse)
@@ -93,26 +105,27 @@ proc checkIntersection*(handler: ShapeHandler, ray: Ray): bool =
         return true
 
 
-proc checkIntersection(node: SceneNode, ray: Ray): bool =
-    let boxHandler = (shape: newAABox(node.aabb), transformation: IDENTITY)
-    if not checkIntersection(boxHandler, ray): return false
-    if node.kind == nkLeaf:
+proc checkIntersection*(node: SceneNode, ray: Ray): bool =
+    if not checkIntersection(node.aabb, ray): return false
+
+    case node.kind
+    of nkLeaf:
         for handler in node.handlers:
-            if checkIntersection(handler, ray): return true
+            if checkIntersection(handler.getAABB, ray): return true
         return false
 
-    if (node.left != nil and checkIntersection(node.left, ray)) or 
-        (node.right != nil and checkIntersection(node.right, ray)): return true
+    of nkBranch:
+        if (node.left != nil and checkIntersection(node.left, ray)) or 
+            (node.right != nil and checkIntersection(node.right, ray)): return true
     
 
 proc getHitLeafs*(node: SceneNode; ray: Ray): Option[seq[SceneNode]] =
-    let boxHandler = (shape: newAABox(node.aabb), transformation: IDENTITY)
-    if not checkIntersection(boxHandler, ray): return none seq[SceneNode]
+    if not checkIntersection(node.aabb, ray): return none seq[SceneNode]
 
     var sceneNodes: seq[SceneNode]
     case node.kind
     of nkLeaf: sceneNodes.add node
-    of nkRoot, nkBranch:
+    of nkBranch:
         for node in [node.left, node.right]:
             if node != nil:
                 let hits = node.getHitLeafs(ray)

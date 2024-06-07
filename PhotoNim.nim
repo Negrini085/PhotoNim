@@ -208,7 +208,7 @@ proc demo*(renderer: var Renderer) =
             )                
 
     var scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-    renderer.image[].pixels = renderer.sample(scene, samplesPerSide = 4, 42.uint64, 4.uint64)
+    renderer.image[].pixels = renderer.sample(scene, maxShapesPerLeaf = 2, samplesPerSide = 4, rgState = 42, rgSeq = 4)
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
 
