@@ -612,43 +612,6 @@ proc apply*[T](transf: Transformation, x: T): T =
             else: return dot(mat, x) 
 
 
-#-----------------------------------------#
-#          OrthoNormal Basis type         #
-#-----------------------------------------# 
-type ONB* {.borrow: `.`.} = distinct Mat3f
-
-proc T*(onb: ONB): ONB {.borrow.}
-proc `$`*(onb: ONB): string {.borrow.}
-proc `[]`*(onb: ONB, i: int): Vec3f {.inline.} = onb.Mat3f[i]
-
-proc newONB*(e1, e2, e3: Vec3f): ONB {.inline.} = ONB([e1, e2, e3].T)
-const stdONB* = newONB(eX, eY, eZ)
-
-proc createONB*(normal: Normal): ONB = 
-    let
-        sign = copySign(1.0, normal.z)
-        a = -1.0 / (sign + normal.z)
-        b = normal.x * normal.y * a
-   
-    newONB(
-        newVec3f(1.0 + sign * normal.x * normal.x * a, sign * b, -sign * normal.x),
-        newVec3f(b, sign + normal.y * normal.y * a, -normal.y), 
-        normal.Vec3f
-    )
-
-iterator columns*(onb: ONB): Vec3f =
-    for i in 0..<3: yield newVec3f(onb[0][i], onb[1][i], onb[2][i])   
-
-proc getComponents*(onb: ONB, vec: Vec3f): Vec3f {.inline.} = 
-    let colSeq = onb.columns.toSeq
-    for i in 0..<3: result[i] = dot(colSeq[i], vec)
-
-proc getVector*(onb: ONB, coeff: Vec3f): Vec3f {.inline.} = dot(onb.Mat3f, coeff) 
-
-
-#----------------------------------------#
-#         Quaternion data structure      #
-#----------------------------------------#
 type 
     Quat* {. borrow: `.`.} = distinct Vec4f
 

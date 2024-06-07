@@ -52,7 +52,10 @@ proc fireRay*(cam: Camera; pixel: Point2D): Ray {.inline.} =
         result = newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX)
     of ckPerspective:
         result = newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1))
-
+    
+    # here we must change something. 
+    # Since we generate a subScene viewed from the camera point after its transformation, 
+    # each ray should be casted from the origin of that ref system. 
     result = result.transform(cam.transform)
 
 
