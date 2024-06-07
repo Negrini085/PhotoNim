@@ -1,8 +1,7 @@
 import geometry, hdrimage
 
 from std/fenv import epsilon 
-from std/sequtils import apply, map
-from std/math import sum, pow, exp, log10, floor, arccos, degToRad, PI, sqrt, cos, sin
+from std/math import floor, cos, sin, arccos, degToRad, PI
 
 type
     CameraKind* = enum
