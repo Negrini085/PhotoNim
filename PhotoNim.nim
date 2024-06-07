@@ -208,7 +208,7 @@ proc demo*(renderer: var Renderer) =
             )                
 
     var scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-    renderer.image[].pixels = renderer.sample(scene, samplesPerSide = 4, 42.uint64, 4.uint64)
+    renderer.image[].pixels = renderer.sample(scene, maxShapesPerLeaf = 2, samplesPerSide = 4, rgState = 42, rgSeq = 4)
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
 
@@ -218,7 +218,7 @@ proc earth*(renderer: var Renderer) =
         texture = try: stream.readPFM.img except: quit fmt"Could not read texture!" finally: stream.close
         scene = newScene(@[newUnitarySphere(ORIGIN3D, newMaterial(newDiffuseBRDF(newTexturePigment(texture)), newTexturePigment(texture)))])
 
-    renderer.image.pixels = renderer.sample(scene, samplesPerSide = 2, 42.uint64, 4.uint64)
+    renderer.image.pixels = renderer.sample(scene, maxShapesPerLeaf = 4, samplesPerSide = 2, rgState = 42, rgSeq = 4)
 
 
 when isMainModule: 
@@ -320,7 +320,8 @@ Options:
     
         var render = 
             if args["OnOff"]: newOnOffRenderer(addr image, camera, hitCol = newColor(1, 215.0 / 255, 0))
-            else: newFlatRenderer(addr image, camera)
+            elif args["Flat"]: newFlatRenderer(addr image, camera)
+            else: newPathTracer(addr image, camera, nRays = 25, maxDepth = 10, rouletteLim = 3)
 
         demo(render)
 

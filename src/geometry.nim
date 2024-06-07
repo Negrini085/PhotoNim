@@ -225,6 +225,17 @@ proc newMat2*[V](x, y: array[2, V]): Mat2[V] {.inline.} = newMat([x, y])
 proc newMat3*[V](x, y, z: array[3, V]): Mat3[V] {.inline.} = newMat([x, y, z])
 proc newMat4*[V](x, y, z, w: array[4, V]): Mat4[V] {.inline.} = newMat([x, y, z, w])
 
+proc toMat3*(mat: Mat4f): Mat3f {.inline.} = 
+    for i in 0..<3:
+        for j in 0..<3: result[i][j] = mat[i][j]
+
+proc toMat4*(mat: Mat3f): Mat4f =
+    for i in 0..<3:
+        for j in 0..<3: result[i][j] = mat[i][j]
+
+    result[3][3] = 1.0
+
+
 proc areClose*[M, N: static[int], V](a, b: Mat[M, N, V]; eps: V = epsilon(V)): bool = 
     for i in 0..<M: 
         for j in 0..<N:
@@ -355,15 +366,11 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
     result[2] = matZ.det / det
 
 
-
-#---------------------------------------#
-#          Transformation type          #
-#---------------------------------------#
 type 
     TransformationKind* = enum
         tkIdentity, tkGeneric, tkTranslation, tkScaling, tkRotation, tkComposition
 
-    Transformation* = object
+    Transformation* = ref object
         case kind*: TransformationKind
         of tkIdentity: discard
         of tkGeneric, tkTranslation, tkScaling, tkRotation:
@@ -371,28 +378,42 @@ type
         of tkComposition: 
             transformations*: seq[Transformation]
 
-
-const IDENTITY* = Transformation(kind: tkIdentity)
-
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
 
 proc newTransformation*(mat, inv_mat: Mat4f): Transformation = 
     assert areClose(dot(mat, inv_mat), Mat4f.id), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
     Transformation(kind: tkGeneric, mat: mat, inv_mat: inv_mat)
 
-proc newTranslation*(v: Vec3f): Transformation {.inline.} =
+proc newTranslation*(vec: Vec3f): Transformation {.inline.} =
     Transformation(
         kind: tkTranslation,
         mat: [
-            [1.0, 0.0, 0.0, v[0]], 
-            [0.0, 1.0, 0.0, v[1]], 
-            [0.0, 0.0, 1.0, v[2]], 
+            [1.0, 0.0, 0.0, vec[0]], 
+            [0.0, 1.0, 0.0, vec[1]], 
+            [0.0, 0.0, 1.0, vec[2]], 
             [0.0, 0.0, 0.0, 1.0]
         ],
         inv_mat: [
-            [1.0, 0.0, 0.0, -v[0]], 
-            [0.0, 1.0, 0.0, -v[1]], 
-            [0.0, 0.0, 1.0, -v[2]], 
+            [1.0, 0.0, 0.0, -vec[0]], 
+            [0.0, 1.0, 0.0, -vec[1]], 
+            [0.0, 0.0, 1.0, -vec[2]], 
+            [0.0, 0.0, 0.0,  1.0]   
+        ]
+    )
+
+proc newTranslation*(pt: Point3D): Transformation {.inline.} =
+    Transformation(
+        kind: tkTranslation,
+        mat: [
+            [1.0, 0.0, 0.0, pt.x], 
+            [0.0, 1.0, 0.0, pt.y], 
+            [0.0, 0.0, 1.0, pt.z], 
+            [0.0, 0.0, 0.0, 1.0]
+        ],
+        inv_mat: [
+            [1.0, 0.0, 0.0, -pt.x], 
+            [0.0, 1.0, 0.0, -pt.y], 
+            [0.0, 0.0, 1.0, -pt.z], 
             [0.0, 0.0, 0.0,  1.0]   
         ]
     )
@@ -408,7 +429,7 @@ proc newScaling*[T](x: T): Transformation =
         return Transformation(kind: tkScaling, mat: mat, inv_mat: inv_mat)
 
     elif T is Vec3f: 
-        return Transformation(
+        Transformation(
             kind: tkScaling,
             mat: [
                 [x[0], 0.0, 0.0, 0.0], 
@@ -528,7 +549,7 @@ proc newComposition*(transformations: varargs[Transformation]): Transformation =
 proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
-    of tkIdentity: return IDENTITY
+    of tkIdentity: return Transformation.id
     of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.map(inverse))
     else: return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
 
@@ -603,43 +624,53 @@ proc apply*[T](transf: Transformation, x: T): T =
                 result = apply(transf.transformations[i], result)
 
 
-#-----------------------------------------#
-#          OrthoNormal Basis type         #
-#-----------------------------------------# 
-type ONB* {.borrow: `.`.} = distinct Mat3f
 
-proc T*(onb: ONB): ONB {.borrow.}
-proc `$`*(onb: ONB): string {.borrow.}
-proc `[]`*(onb: ONB, i: int): Vec3f {.inline.} = onb.Mat3f[i]
+type ReferenceSystem* = tuple[origin: Point3D, base: Mat3f]
 
-proc newONB*(e1, e2, e3: Vec3f): ONB {.inline.} = ONB([e1, e2, e3].T)
-const stdONB* = newONB(eX, eY, eZ)
+proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = (origin, base)
 
-proc createONB*(normal: Normal): ONB = 
+proc newONB(normal: Normal): Mat3f = 
     let
         sign = copySign(1.0, normal.z)
         a = -1.0 / (sign + normal.z)
-        b = normal.x * normal.y * a
-   
-    newONB(
-        newVec3f(1.0 + sign * normal.x * normal.x * a, sign * b, -sign * normal.x),
-        newVec3f(b, sign + normal.y * normal.y * a, -normal.y), 
+        b = a * normal.x * normal.y
+        
+    [
+        newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
+        newVec3f(b, sign + a * normal.y * normal.y, -normal.y), 
         normal.Vec3f
-    )
-
-iterator columns*(onb: ONB): Vec3f =
-    for i in 0..<3: yield newVec3f(onb[0][i], onb[1][i], onb[2][i])   
-
-proc getComponents*(onb: ONB, vec: Vec3f): Vec3f {.inline.} = 
-    let colSeq = onb.columns.toSeq
-    for i in 0..<3: result[i] = dot(colSeq[i], vec)
-
-proc getVector*(onb: ONB, coeff: Vec3f): Vec3f {.inline.} = dot(onb.Mat3f, coeff) 
+    ]
 
 
-#----------------------------------------#
-#         Quaternion data structure      #
-#----------------------------------------#
+proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = (origin, newONB(normal)) 
+
+proc newReferenceSystem*(transformation: Transformation): ReferenceSystem =
+    case transformation.kind
+    of tkComposition:
+        discard
+    else: discard
+
+proc coeff*(refSystem: ReferenceSystem, pt: Vec3f): Vec3f {.inline.} = dot(refSystem.base, pt)
+proc fromCoeff*(refSystem: ReferenceSystem, coeff: Vec3f): Vec3f {.inline.} = dot(refSystem.base.T, coeff)
+
+
+proc extractRotation(mat: Mat4f): Mat3f =
+  result = [
+    [mat[0][0], mat[0][1], mat[0][2]],
+    [mat[1][0], mat[1][1], mat[1][2]],
+    [mat[2][0], mat[2][1], mat[2][2]]
+  ]
+
+
+proc newReferenceSystem*(transformation: Transformation): ReferenceSystem =
+    proc extractTranslation(mat: Mat4f): Point3D {.inline.} = newPoint3D(mat[0][3], mat[1][3], mat[2][3])
+
+    case transformation.kind
+    of tkIdentity: discard
+    of tkComposition: discard
+    else: discard
+
+
 type 
     Quat* {. borrow: `.`.} = distinct Vec4f
 

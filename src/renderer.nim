@@ -1,8 +1,7 @@
 import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 
 from std/strformat import fmt
-from std/sequtils import apply
-import std/[options, strutils, threadpool, locks, terminal]
+import std/[options, strutils, terminal]
 
 
 type
@@ -54,23 +53,26 @@ proc scatterRay*(refSystem: ReferenceSystem, inWorldDir: Vec3f, depth: int, brdf
             (c, s) = (sqrt(cos2), sqrt(1 - cos2))
             phi = 2 * PI * rg.rand
         
-        return Ray(
-            origin: ORIGIN3D,
-            dir: refSystem.base.getVector(newVec3f(cos(phi) * c, sin(phi) * c, s)),
-            tSpan: (float32 1e-3, float32 Inf), depth: depth + 1
+        Ray(
+            origin: ORIGIN3D, 
+            dir: refSystem.fromCoeff(newVec3f(cos(phi) * c, sin(phi) * c, s)), 
+            tSpan: (float32 1e-3, float32 Inf), 
+            depth: depth + 1
         )
 
     of SpecularBRDF: 
-        
-        return Ray(
+        Ray(
             origin: ORIGIN3D,
             dir: inWorldDir.normalize - 2 * dot(refSystem.base[2], inWorldDir.normalize) * refSystem.base[2],
-            tspan: (float32 1e-3, float32 Inf), depth: depth + 1
+            tspan: (float32 1e-3, float32 Inf), 
+            depth: depth + 1
         )
 
-proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, sceneTree: SceneNode, maxShapesPerLeaf: int, rg: var PCG): Color =
+
+proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int, rg: var PCG): Color =
     result = scene.bgCol
-    let hitLeafNodes = sceneTree.getHitLeafs(ray)
+
+    let hitLeafNodes = scene.tree.getHitLeafs(ray) 
 
     if hitLeafNodes.isSome:
         case renderer.kind
@@ -86,9 +88,9 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, sceneTree: SceneNode,
             if hitRecord.isSome:
                 let
                     hit = hitRecord.get[0]
-                    material = hit.shape[].material
+                    material = hit.shape.material
                     hitPt = hit.ray.at(hit.t)
-                    surfPt = hit.shape[].getUV(hitPt)
+                    surfPt = hit.shape.getUV(hitPt)
 
                 result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
@@ -101,13 +103,14 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, sceneTree: SceneNode,
             let 
                 hit = hitRecord.get[0]
                 hitPt = hit.ray.at(hit.t)
-                hitNormal = hit.shape[].getNormal(hitPt, ray.dir)
-                hitRefSystem = newReferenceSystem(hitPt, createONB(hitNormal))
-                localSceneTree = hitRefSystem.buildSceneTree(scene, maxShapesPerLeaf)
+                hitNormal = hit.shape.getNormal(hitPt, ray.dir)
+            
+            var localScene = scene.fromObserver(newReferenceSystem(hitPt, hitNormal))
+            localScene.buildBVHTree(maxShapesPerLeaf, skSAH)
 
             let
-                surfacePt = hit.shape[].getUV(hitPt)
-                material = hit.shape[].material
+                surfacePt = hit.shape.getUV(hitPt)
+                material = hit.shape.material
                 radiance = material.radiance.getColor(surfacePt)
 
             var accumulatedRadiance = BLACK
@@ -119,22 +122,23 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, sceneTree: SceneNode,
 
                 var newRay: Ray
                 for _ in 0..<renderer.nRays:
-                    newRay = hitRefSystem.scatterRay(ray.dir, ray.depth, material.brdf, rg)
-                    accumulatedRadiance += hitCol * renderer.sampleRay(newRay, scene, localSceneTree, maxShapesPerLeaf, rg)
+                    newRay = localScene.rs.scatterRay(ray.dir, ray.depth, material.brdf, rg)
+                    accumulatedRadiance += hitCol * renderer.sampleRay(newRay, localScene, maxShapesPerLeaf, rg)
 
-            return radiance + accumulatedRadiance / renderer.nRays.float32
+            result = radiance + accumulatedRadiance / renderer.nRays.float32
 
+    if checkIntersection(scene.tree, ray): result += RED
 
+        
 proc sample*(renderer: Renderer; scene: Scene, maxShapesPerLeaf, samplesPerSide: int, rgState, rgSeq: uint64, displayProgress = true): PixelMap =
     result = newPixelMap(renderer.image.width, renderer.image.height)
-    
-    let camRefSystem = 
-        case renderer.camera.kind
-        of ckOrthogonal: newReferenceSystem(apply(renderer.camera.transform, newPoint3D(-1, 0, 0)), stdONB)
-        of ckPerspective: newReferenceSystem(apply(renderer.camera.transform, newPoint3D(-renderer.camera.distance, 0, 0)), stdONB)
+            
+    var cameraScene = scene.fromObserver(renderer.camera.rs)
 
-    let sceneTree = camRefSystem.buildSceneTree(scene, maxShapesPerLeaf)
-    # let sceneTree = renderer.camera.refSystem.buildSceneTree(scene, maxShapesPerLeaf)
+    cameraScene.buildBVHTree(maxShapesPerLeaf, skSAH)
+
+    echo "totalAABB viewed from origin ": scene.handlers.getTotalAABB
+    echo "totalAABB viewed from camera ": cameraScene.tree.aabb
 
     var rg = newPCG(rgState, rgSeq)
     for y in 0..<renderer.image.height:
@@ -147,26 +151,27 @@ proc sample*(renderer: Renderer; scene: Scene, maxShapesPerLeaf, samplesPerSide:
                             1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / renderer.image.height.float32
                         )
                     )
-                    result[renderer.image[].pixelOffset(x, y)] = renderer.sampleRay(ray, scene, sceneTree, maxShapesPerLeaf, rg) / (samplesPerSide * samplesPerSide).float32 
+
+                    result[renderer.image[].pixelOffset(x, y)] = renderer.sampleRay(ray, cameraScene, maxShapesPerLeaf, rg) / (samplesPerSide * samplesPerSide).float32 
                             
         if displayProgress: displayProgress(y + 1, renderer.image.height)
         
     if displayProgress: stdout.eraseLine; stdout.resetAttributes
 
 
-proc sampleParallel*(renderer: var Renderer; scene: Scene, samplesPerSide, nSnaps: int, rgState: uint64 = 42, rgSeq: uint64 = 54) =
-    proc sampleScene(imageLock: ptr Lock, renderer: ptr Renderer, scene: ptr Scene, samplesPerSide: int, rgState, rgSeq: uint64) =
-        withLock imageLock[]:
-            let sampleRays = renderer[].sample(scene[], samplesPerSide, rgState, rgSeq, displayProgress = false)
-            for i in 0..<renderer.image.height * renderer.image.width:
-                renderer.image[].pixels[i] += sampleRays[i]
+# proc sampleParallel*(renderer: var Renderer; scene: Scene, samplesPerSide, nSnaps: int, rgState: uint64 = 42, rgSeq: uint64 = 54) =
+#     proc sampleScene(imageLock: ptr Lock, renderer: ptr Renderer, scene: ptr Scene, samplesPerSide: int, rgState, rgSeq: uint64) =
+#         withLock imageLock[]:
+#             let sampleRays = renderer[].sample(scene[], samplesPerSide, rgState, rgSeq, displayProgress = false)
+#             for i in 0..<renderer.image.height * renderer.image.width:
+#                 renderer.image[].pixels[i] += sampleRays[i]
 
-    var rg = newPCG(rgState, rgSeq)
-    var imageLock: Lock; initLock(imageLock) 
+#     var rg = newPCG(rgState, rgSeq)
+#     var imageLock: Lock; initLock(imageLock) 
 
-    for i in 0..<nSnaps: 
-        spawnX sampleScene(addr imageLock, addr renderer, addr scene, samplesPerSide, rg.random, rg.random)
-        displayProgress(i, nSnaps)
+#     for i in 0..<nSnaps: 
+#         spawnX sampleScene(addr imageLock, addr renderer, addr scene, samplesPerSide, rg.random, rg.random)
+#         displayProgress(i, nSnaps)
 
-    sync()
-    renderer.image[].pixels.apply(proc(pix: Color): Color = pix / nSnaps.float32)
+#     sync()
+#     renderer.image[].pixels.apply(proc(pix: Color): Color = pix / nSnaps.float32)

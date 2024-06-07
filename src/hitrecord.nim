@@ -6,9 +6,21 @@ from std/math import sqrt, arctan2, PI
 from std/sequtils import concat, map, foldl, filter
 from std/algorithm import sorted
 
+proc checkIntersection(aabb: Interval[Point3D], ray: Ray): bool =
+    assert ray.origin == ORIGIN3D
+    let
+        txspan = newInterval(aabb.min.x / ray.dir[0], aabb.max.x / ray.dir[0])
+        tyspan = newInterval(aabb.min.y / ray.dir[1], aabb.max.y / ray.dir[1])
+
+    if txspan.min > tyspan.max or tyspan.min > txspan.max: return false
+
+    let tzspan = newInterval(aabb.min.z / ray.dir[2], aabb.max.z / ray.dir[2])
+    
+    var hitspan = newInterval(max(txspan.min, tyspan.min), min(txspan.max, tyspan.max))
+    if hitspan.min > tzspan.max or tzspan.min > hitspan.max: return false
+
 
 proc checkIntersection*(handler: ShapeHandler, ray: Ray): bool =
-
     case handler.shape.kind
     of skAABox:
         let invRay = ray.transform(handler.transformation.inverse)
@@ -93,26 +105,27 @@ proc checkIntersection*(handler: ShapeHandler, ray: Ray): bool =
         return true
 
 
-proc checkIntersection(node: SceneNode, ray: Ray): bool =
-    let boxHandler = (shape: newAABox(node.aabb), transformation: IDENTITY)
-    if not checkIntersection(boxHandler, ray): return false
-    if node.kind == nkLeaf:
+proc checkIntersection*(node: SceneNode, ray: Ray): bool =
+    if not checkIntersection(node.aabb, ray): return false
+
+    case node.kind
+    of nkLeaf:
         for handler in node.handlers:
-            if checkIntersection(handler, ray): return true
+            if checkIntersection(handler.getAABB, ray): return true
         return false
 
-    if (node.left != nil and checkIntersection(node.left, ray)) or 
-        (node.right != nil and checkIntersection(node.right, ray)): return true
+    of nkBranch:
+        if (node.left != nil and checkIntersection(node.left, ray)) or 
+            (node.right != nil and checkIntersection(node.right, ray)): return true
     
 
 proc getHitLeafs*(node: SceneNode; ray: Ray): Option[seq[SceneNode]] =
-    let boxHandler = (shape: newAABox(node.aabb), transformation: IDENTITY)
-    if not checkIntersection(boxHandler, ray): return none seq[SceneNode]
+    if not checkIntersection(node.aabb, ray): return none seq[SceneNode]
 
     var sceneNodes: seq[SceneNode]
     case node.kind
     of nkLeaf: sceneNodes.add node
-    of nkRoot, nkBranch:
+    of nkBranch:
         for node in [node.left, node.right]:
             if node != nil:
                 let hits = node.getHitLeafs(ray)
@@ -122,7 +135,7 @@ proc getHitLeafs*(node: SceneNode; ray: Ray): Option[seq[SceneNode]] =
 
 
 type HitPayload* = object
-    shape*: ptr Shape
+    shape*: Shape
     ray*: Ray
     t*: float32
     
@@ -148,7 +161,7 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
         let tHit = if handler.shape.aabb.contains(invRay.origin): tHitMax else: tHitMin
         if not invRay.tspan.contains(tHit): return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
 
     of skTriangle:
         let 
@@ -163,7 +176,7 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
         if not invRay.tspan.contains(sol[2]): return none HitPayload
         if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: sol[2])
+        return some HitPayload(shape: handler.shape, ray: invRay, t: sol[2])
 
     of skSphere:
         let (a, b, c) = (norm2(invRay.dir), dot(invRay.origin.Vec3f, invRay.dir), norm2(invRay.origin.Vec3f) - handler.shape.radius * handler.shape.radius)
@@ -173,14 +186,14 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
         let tHit = if ray.tspan.contains(t_l): t_l elif ray.tspan.contains(t_r): t_r else: return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
 
     of skPlane:
         if abs(invRay.dir[2]) < epsilon(float32): return none HitPayload
         let tHit = -invRay.origin.z / invRay.dir[2]
         if not ray.tspan.contains(t_hit): return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
 
     of skCylinder:
         let
@@ -214,7 +227,7 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
             if phi < 0.0: phi += 2.0 * PI
             if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax: return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
 
 
 proc getHitPayloads*(node: SceneNode; ray: Ray): seq[HitPayload] =
