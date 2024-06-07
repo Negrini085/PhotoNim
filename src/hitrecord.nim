@@ -122,7 +122,7 @@ proc getHitLeafs*(node: SceneNode; ray: Ray): Option[seq[SceneNode]] =
 
 
 type HitPayload* = object
-    shape*: ptr Shape
+    shape*: Shape
     ray*: Ray
     t*: float32
     
@@ -148,7 +148,7 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
         let tHit = if handler.shape.aabb.contains(invRay.origin): tHitMax else: tHitMin
         if not invRay.tspan.contains(tHit): return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
 
     of skTriangle:
         let 
@@ -163,7 +163,7 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
         if not invRay.tspan.contains(sol[2]): return none HitPayload
         if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: sol[2])
+        return some HitPayload(shape: handler.shape, ray: invRay, t: sol[2])
 
     of skSphere:
         let (a, b, c) = (norm2(invRay.dir), dot(invRay.origin.Vec3f, invRay.dir), norm2(invRay.origin.Vec3f) - handler.shape.radius * handler.shape.radius)
@@ -173,14 +173,14 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
         let tHit = if ray.tspan.contains(t_l): t_l elif ray.tspan.contains(t_r): t_r else: return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
 
     of skPlane:
         if abs(invRay.dir[2]) < epsilon(float32): return none HitPayload
         let tHit = -invRay.origin.z / invRay.dir[2]
         if not ray.tspan.contains(t_hit): return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
 
     of skCylinder:
         let
@@ -214,7 +214,7 @@ proc newHitPayload*(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
             if phi < 0.0: phi += 2.0 * PI
             if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax: return none HitPayload
 
-        return some HitPayload(shape: addr handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
 
 
 proc getHitPayloads*(node: SceneNode; ray: Ray): seq[HitPayload] =

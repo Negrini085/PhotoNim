@@ -85,9 +85,9 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, sceneTree: SceneNode,
             if hitRecord.isSome:
                 let
                     hit = hitRecord.get[0]
-                    material = hit.shape[].material
+                    material = hit.shape.material
                     hitPt = hit.ray.at(hit.t)
-                    surfPt = hit.shape[].getUV(hitPt)
+                    surfPt = hit.shape.getUV(hitPt)
 
                 result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
@@ -105,8 +105,8 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, sceneTree: SceneNode,
                 localSceneTree = hitRefSystem.buildSceneTree(scene, maxShapesPerLeaf)
 
             let
-                surfacePt = hit.shape[].getUV(hitPt)
-                material = hit.shape[].material
+                surfacePt = hit.shape.getUV(hitPt)
+                material = hit.shape.material
                 radiance = material.radiance.getColor(surfacePt)
 
             var accumulatedRadiance = BLACK
