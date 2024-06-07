@@ -373,19 +373,36 @@ proc newTransformation*(mat, inv_mat: Mat4f): Transformation =
     assert areClose(dot(mat, inv_mat), Mat4f.id), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
     Transformation(kind: tkGeneric, mat: mat, inv_mat: inv_mat)
 
-proc newTranslation*(v: Vec3f): Transformation {.inline.} =
+proc newTranslation*(vec: Vec3f): Transformation {.inline.} =
     Transformation(
         kind: tkTranslation,
         mat: [
-            [1.0, 0.0, 0.0, v[0]], 
-            [0.0, 1.0, 0.0, v[1]], 
-            [0.0, 0.0, 1.0, v[2]], 
+            [1.0, 0.0, 0.0, vec[0]], 
+            [0.0, 1.0, 0.0, vec[1]], 
+            [0.0, 0.0, 1.0, vec[2]], 
             [0.0, 0.0, 0.0, 1.0]
         ],
         inv_mat: [
-            [1.0, 0.0, 0.0, -v[0]], 
-            [0.0, 1.0, 0.0, -v[1]], 
-            [0.0, 0.0, 1.0, -v[2]], 
+            [1.0, 0.0, 0.0, -vec[0]], 
+            [0.0, 1.0, 0.0, -vec[1]], 
+            [0.0, 0.0, 1.0, -vec[2]], 
+            [0.0, 0.0, 0.0,  1.0]   
+        ]
+    )
+
+proc newTranslation*(pt: Point3D): Transformation {.inline.} =
+    Transformation(
+        kind: tkTranslation,
+        mat: [
+            [1.0, 0.0, 0.0, pt.x], 
+            [0.0, 1.0, 0.0, pt.y], 
+            [0.0, 0.0, 1.0, pt.z], 
+            [0.0, 0.0, 0.0, 1.0]
+        ],
+        inv_mat: [
+            [1.0, 0.0, 0.0, -pt.x], 
+            [0.0, 1.0, 0.0, -pt.y], 
+            [0.0, 0.0, 1.0, -pt.z], 
             [0.0, 0.0, 0.0,  1.0]   
         ]
     )
