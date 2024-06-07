@@ -79,7 +79,7 @@ proc newBVHNode(refSystem: ReferenceSystem, shapeHandlers: seq[ShapeHandler], ma
 
 
 proc buildSceneTree*(refSystem: ReferenceSystem; scene: Scene, maxShapesPerLeaf: int): SceneNode =  
-    result = newBVHNode(refSystem, scene.handlers.map(), maxShapesPerLeaf, depth = 0)
+    result = newBVHNode(refSystem, scene.handlers, maxShapesPerLeaf, depth = 0)
     result.kind = nkRoot
 
 proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.inline.} = 
