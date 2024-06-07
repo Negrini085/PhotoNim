@@ -2,29 +2,6 @@ import geometry, hdrimage, shapes
 
 from std/sequtils import concat, apply, map, foldl, toSeq
 from std/algorithm import sorted
-from std/math import copySign
-
-
-type ReferenceSystem* = tuple[origin: Point3D, base: Mat3f]
-
-proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = (origin, base)
-
-proc newONB(normal: Normal): Mat3f = 
-    let
-        sign = copySign(1.0, normal.z)
-        a = -1.0 / (sign + normal.z)
-        b = a * normal.x * normal.y
-
-    [
-        newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
-        newVec3f(b, sign + a * normal.y * normal.y, -normal.y), 
-        normal.Vec3f
-    ]
-
-proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = (origin, newONB(normal)) 
-
-proc coeff*(refSystem: ReferenceSystem, pt: Vec3f): Vec3f {.inline.} = dot(refSystem.base, pt)
-proc fromCoeff*(refSystem: ReferenceSystem, coeff: Vec3f): Vec3f {.inline.} = dot(refSystem.base.T, coeff)
 
 
 type ShapeHandler* = tuple[shape: Shape, transformation: Transformation]
@@ -74,7 +51,7 @@ proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.
 
 proc fromObserver*(scene: Scene; refSystem: ReferenceSystem): Scene =
     let ## here we need to use the complete transformation, not just the translation!
-        localTransformation = newTranslation(refSystem.origin)
+        localTransformation = newComposition(newTranslation(refSystem.origin), newTransformation(refSystem.base.toMat4, refSystem.base.toMat4))
         localShapeHandlers = scene.handlers.map(proc(handler: ShapeHandler): ShapeHandler = 
             (shape: handler.shape, transformation: newComposition(localTransformation.inverse, handler.transformation))
         ) # these must be local shapeHandlers! 

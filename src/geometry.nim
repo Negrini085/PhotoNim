@@ -225,6 +225,17 @@ proc newMat2*[V](x, y: array[2, V]): Mat2[V] {.inline.} = newMat([x, y])
 proc newMat3*[V](x, y, z: array[3, V]): Mat3[V] {.inline.} = newMat([x, y, z])
 proc newMat4*[V](x, y, z, w: array[4, V]): Mat4[V] {.inline.} = newMat([x, y, z, w])
 
+proc toMat3*(mat: Mat4f): Mat3f {.inline.} = 
+    for i in 0..<3:
+        for j in 0..<3: result[i][j] = mat[i][j]
+
+proc toMat4*(mat: Mat3f): Mat4f =
+    for i in 0..<3:
+        for j in 0..<3: result[i][j] = mat[i][j]
+
+    result[3][3] = 1.0
+
+
 proc areClose*[M, N: static[int], V](a, b: Mat[M, N, V]; eps: V = epsilon(V)): bool = 
     for i in 0..<M: 
         for j in 0..<N:
@@ -611,6 +622,53 @@ proc apply*[T](transf: Transformation, x: T): T =
             result = x
             for i in countdown(transf.transformations.len-1, 0):
                 result = apply(transf.transformations[i], result)
+
+
+
+type ReferenceSystem* = tuple[origin: Point3D, base: Mat3f]
+
+proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = (origin, base)
+
+proc newONB(normal: Normal): Mat3f = 
+    let
+        sign = copySign(1.0, normal.z)
+        a = -1.0 / (sign + normal.z)
+        b = a * normal.x * normal.y
+        
+    [
+        newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
+        newVec3f(b, sign + a * normal.y * normal.y, -normal.y), 
+        normal.Vec3f
+    ]
+
+
+proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = (origin, newONB(normal)) 
+
+proc newReferenceSystem*(transformation: Transformation): ReferenceSystem =
+    case transformation.kind
+    of tkComposition:
+        discard
+    else: discard
+
+proc coeff*(refSystem: ReferenceSystem, pt: Vec3f): Vec3f {.inline.} = dot(refSystem.base, pt)
+proc fromCoeff*(refSystem: ReferenceSystem, coeff: Vec3f): Vec3f {.inline.} = dot(refSystem.base.T, coeff)
+
+
+proc extractRotation(mat: Mat4f): Mat3f =
+  result = [
+    [mat[0][0], mat[0][1], mat[0][2]],
+    [mat[1][0], mat[1][1], mat[1][2]],
+    [mat[2][0], mat[2][1], mat[2][2]]
+  ]
+
+
+proc newReferenceSystem*(transformation: Transformation): ReferenceSystem =
+    proc extractTranslation(mat: Mat4f): Point3D {.inline.} = newPoint3D(mat[0][3], mat[1][3], mat[2][3])
+
+    case transformation.kind
+    of tkIdentity: discard
+    of tkComposition: discard
+    else: discard
 
 
 type 
