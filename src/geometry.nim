@@ -603,13 +603,14 @@ proc apply*[T](transf: Transformation, x: T): T =
             return x
 
     of tkComposition:
+        # What if len is zero?   
         if transf.transformations.len == 1: return apply(transf.transformations[0], x)
         when T is Normal:
             return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(a, b))).toNormal
         else:
-            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldr(dot(a, b))
-            when T is Point3D: return dot(mat, x.toVec4).toPoint3D
-            else: return dot(mat, x) 
+            result = x
+            for i in countdown(transf.transformations.len-1, 0):
+                result = apply(transf.transformations[i], result)
 
 
 type 
