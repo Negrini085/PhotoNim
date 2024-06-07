@@ -1,9 +1,9 @@
 import geometry, hdrimage, camera, shapes
 
-import std/options
-from std/strformat import fmt
 from std/sequtils import concat, apply, map, foldl, toSeq
 from std/algorithm import sorted
+from std/math import copySign
+
 
 type ReferenceSystem* = ref object
     origin*: Point3D

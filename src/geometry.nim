@@ -355,24 +355,17 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
     result[2] = matZ.det / det
 
 
-
-#---------------------------------------#
-#          Transformation type          #
-#---------------------------------------#
 type 
     TransformationKind* = enum
         tkIdentity, tkGeneric, tkTranslation, tkScaling, tkRotation, tkComposition
 
-    Transformation* = object
+    Transformation* = ref object
         case kind*: TransformationKind
         of tkIdentity: discard
         of tkGeneric, tkTranslation, tkScaling, tkRotation:
             mat*, inv_mat*: Mat4f
         of tkComposition: 
             transformations*: seq[Transformation]
-
-
-const IDENTITY* = Transformation(kind: tkIdentity)
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
 
@@ -408,7 +401,7 @@ proc newScaling*[T](x: T): Transformation =
         return Transformation(kind: tkScaling, mat: mat, inv_mat: inv_mat)
 
     elif T is Vec3f: 
-        return Transformation(
+        Transformation(
             kind: tkScaling,
             mat: [
                 [x[0], 0.0, 0.0, 0.0], 
@@ -528,7 +521,7 @@ proc newComposition*(transformations: varargs[Transformation]): Transformation =
 proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
-    of tkIdentity: return IDENTITY
+    of tkIdentity: return Transformation.id
     of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.map(inverse))
     else: return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
 

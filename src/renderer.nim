@@ -1,8 +1,7 @@
 import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 
 from std/strformat import fmt
-from std/sequtils import apply
-import std/[options, strutils, threadpool, locks, terminal]
+import std/[options, strutils, terminal]
 
 
 type

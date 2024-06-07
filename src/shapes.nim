@@ -172,7 +172,7 @@ type
         edges*: seq[int]
 
 
-proc newMesh*(kind: MeshKind, nodes: seq[Point3D], edges: seq[int]; transformation = IDENTITY): Mesh {.inline.} = 
+proc newMesh*(kind: MeshKind, nodes: seq[Point3D], edges: seq[int]; transformation = Transformation): Mesh {.inline.} = 
     Mesh(kind: kind, nodes: if transformation.kind == tkIdentity: nodes else: nodes.map(proc(pt: Point3D): Point3D = apply(transformation, pt)), edges: edges)
 
 iterator items*(mesh: Mesh): Shape =
@@ -183,6 +183,6 @@ iterator items*(mesh: Mesh): Shape =
 
     of mkSquared: discard
 
-proc newTriangularMesh*(nodes: seq[Point3D], edges: seq[int]; transformation = IDENTITY): Mesh {.inline.} = 
+proc newTriangularMesh*(nodes: seq[Point3D], edges: seq[int]; transformation = Transformation): Mesh {.inline.} = 
     assert edges.len mod 3 == 0, fmt"Error in creating a triangular Mesh! The length of the edges sequence must be a multiple of 3."
     newMesh(mkTriangular, nodes, edges, transformation)

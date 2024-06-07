@@ -1,4 +1,4 @@
-import geometry, hdrimage, pcg
+import geometry, hdrimage
 
 from std/fenv import epsilon 
 from std/sequtils import apply, map
@@ -23,10 +23,10 @@ type
         tspan*: Interval[float32]
         depth*: int
 
-proc newOrthogonalCamera*(a: float32, transform = IDENTITY): Camera {.inline.} = 
+proc newOrthogonalCamera*(a: float32, transform = Transformation.id): Camera {.inline.} = 
     Camera(kind: ckOrthogonal, transform: transform, aspect_ratio: a)
 
-proc newPerspectiveCamera*(a, d: float32, transform = IDENTITY): Camera {.inline.} = 
+proc newPerspectiveCamera*(a, d: float32, transform = Transformation.id): Camera {.inline.} = 
     Camera(kind: ckPerspective, transform: transform, aspect_ratio: a, distance: d)
 
 proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline.} = 
