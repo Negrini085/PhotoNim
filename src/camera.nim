@@ -16,7 +16,7 @@ type
         of ckPerspective: 
             distance*: float32 
 
-    Ray* = object
+    Ray* = ref object
         origin*: Point3D
         dir*: Vec3f
         tspan*: Interval[float32]
