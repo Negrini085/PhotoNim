@@ -659,7 +659,7 @@ suite "ReferenceSystem":
     
 
     test "fromCoeff proc":
-        # Checking fromCoeff proc, useful to get vectors given coefficients and reference system
+        # Checking fromCoeff proc, useful to get vectors in World given coefficients and reference system
         let
             coeff1 = newVec3f(0, 0, 0)
             coeff2 = newVec3f(1, 2, 3)
@@ -675,3 +675,32 @@ suite "ReferenceSystem":
         # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
         check areClose(refSyst3.fromCoeff(coeff1), newVec3f(0, 0, 0))
         check areClose(refSyst3.fromCoeff(coeff2), newVec3f(1, 3, -2))
+
+    
+    test "getTransformation proc":
+        # Checking get transformation proc, useful to map a world reference system in another one
+        var appo: Transformation
+
+        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
+        appo = refSyst1.getTransformation()
+        check appo.kind == tkComposition and appo.transformations.len == 2
+        check appo.transformations[0].kind == tkTranslation
+        check appo.transformations[1].kind == tkGeneric
+        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(2, 3, 1, 1)].T)
+        check areClose(appo.transformations[1].mat, Mat4f.id)
+
+        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
+        appo = refSyst2.getTransformation()
+        check appo.kind == tkComposition and appo.transformations.len == 2
+        check appo.transformations[0].kind == tkTranslation
+        check appo.transformations[1].kind == tkGeneric
+        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(1, 2, 3, 1)].T)
+        check areClose(appo.transformations[1].mat, [eX.toVec4, eZ.toVec4, -eY.toVec4, newVec4f(0, 0, 0, 1)], eps = 1e-6)
+
+        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
+        appo = refSyst3.getTransformation()
+        check appo.kind == tkComposition and appo.transformations.len == 2
+        check appo.transformations[0].kind == tkTranslation
+        check appo.transformations[1].kind == tkGeneric
+        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(1, 0, 0, 1)].T)
+        check areClose(appo.transformations[1].mat, [eX.toVec4, -eZ.toVec4, eY.toVec4, newVec4f(0, 0, 0, 1)])
