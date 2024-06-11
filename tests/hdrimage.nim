@@ -97,6 +97,19 @@ suite "Color":
         check areClose(col1, newColor(1, 0.5, 0.3))
         check areClose(col2, newColor(0.3, 0.2, 1))
 
+    
+    test "r, g, b procs":
+        # Checks r, g, b procs
+
+        check areClose(col1.r, 1)
+        check areClose(col1.g, 0.5)
+        check areClose(col1.b, 0.3)
+
+        check areClose(col2.r, 0.3)
+        check areClose(col2.g, 0.2)
+        check areClose(col2.b, 1)
+
+
 
 #-------------------------------------#
 #      HdrImage type test suite       #
