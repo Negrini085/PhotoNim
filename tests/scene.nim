@@ -43,4 +43,26 @@ suite "ShapeHandler":
         check sphand.transformation.kind == tkTranslation
         check areClose(sphand.transformation.mat, newTranslation(newVec3f(1, 2, 3)).mat)
 
+        # newPlane proc
+        check plhand.shape.kind == skPlane
+        check areClose(plhand.transformation.mat, newRotZ(45).mat, eps = 1e-6)
+
+
+    test "getAABB proc (no ReferenceSystem)":
+        # Checking AABB in World frame of reference
+        var appo: Interval[Point3D]
+
+        appo = getAABB(shand)
+        check areClose(appo.min, ORIGIN3D)
+        check areClose(appo.max, newPoint3D(1, 1, 1))
+        
+        appo = getAABB(usphand)
+        check areClose(appo.min, ORIGIN3D)
+        check areClose(appo.max, newPoint3D(2, 2, 2))
+        
+        appo = getAABB(sphand)
+        check areClose(appo.min, newPoint3D(-2, -1, 0))
+        check areClose(appo.max, newPoint3D(4, 5, 6))
+
+
         
