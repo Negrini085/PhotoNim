@@ -108,6 +108,28 @@ suite "Color":
         check areClose(col2.r, 0.3)
         check areClose(col2.g, 0.2)
         check areClose(col2.b, 1)
+    
+
+    test "Color operations":
+        # Checks operations defined on colors
+        var appo = newColor(0, 0, 0)
+
+        check areClose(col1+col2, newColor(1.3, 0.7, 1.3))
+        check areClose(col1-col2, newColor(0.7, 0.3, -0.7))
+
+        appo += col1; check areClose(appo, col1)
+        appo -= col1; check areClose(appo, BLACK)
+
+        check areClose(2 * col1, newColor(2, 1, 0.6))
+        check areClose(col2 * 2, newColor(0.6, 0.4, 2))
+        check areClose(col1/2, newColor(0.5, 0.25, 0.15))
+
+        appo = col1
+        appo *= 2; check areClose(appo, newColor(2, 1, 0.6))
+        appo /= 2; check areClose(appo, col1)
+
+        check areClose(col1*col2, newColor(0.3, 0.1, 0.3))
+
 
 
 
