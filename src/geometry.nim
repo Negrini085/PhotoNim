@@ -626,7 +626,7 @@ proc apply*[T](transf: Transformation, x: T): T =
 
 type ReferenceSystem* = tuple[origin: Point3D, base: Mat3f]
 
-proc newONB(normal: Normal): Mat3f = 
+proc newONB*(normal: Normal): Mat3f = 
     let
         sign = copySign(1.0, normal.z)
         a = -1.0 / (sign + normal.z)

@@ -255,25 +255,25 @@ suite "Transformation unittest":
     setup:
         let
             mat: Mat4f = [[1.0, 0.0, 0.0, 4.0], [0.0, 1.0, 0.0, 3.0], [0.0, 0.0, 1.0, -1.0], [0.0, 0.0, 0.0, 1.0]]
-            inv_mat: Mat4f = [[1.0, 0.0, 0.0, -4.0], [0.0, 1.0, 0.0, -3.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]]
-        var t1 = newTransformation(mat, inv_mat)
+            matInv: Mat4f = [[1.0, 0.0, 0.0, -4.0], [0.0, 1.0, 0.0, -3.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]]
+        var t1 = newTransformation(mat, matInv)
 
     teardown:
-        discard mat; discard inv_mat; discard t1
+        discard mat; discard matInv; discard t1
 
 
     test "newTransformation proc":
         
         check t1.kind == tkGeneric
         check areClose(t1.mat, mat)
-        check areClose(t1.inv_mat, inv_mat)
+        check areClose(t1.matInv, matInv)
 
 
     test "inverse proc":
 
         let t2 = t1.inverse()
-        check areClose(t2.mat, t1.inv_mat)
-        check areClose(t2.inv_mat, t1.mat)
+        check areClose(t2.mat, t1.matInv)
+        check areClose(t2.matInv, t1.mat)
 
 
     test "`*` proc":
@@ -283,9 +283,9 @@ suite "Transformation unittest":
             t3 = t1 * scal
 
         check areClose(t2.mat, mat * scal)
-        check areClose(t2.inv_mat, inv_mat / scal)
+        check areClose(t2.matInv, matInv / scal)
         check areClose(t3.mat, mat * scal)
-        check areClose(t3.inv_mat, inv_mat / scal)
+        check areClose(t3.matInv, matInv / scal)
 
     test "`/` proc":
         let 
@@ -293,7 +293,7 @@ suite "Transformation unittest":
             t2 = t1 / scal
 
         check areClose(t2.mat, mat / scal)
-        check areClose(t2.inv_mat, inv_mat * scal)
+        check areClose(t2.matInv, matInv * scal)
 
 
     test "apply on Vec4f":
@@ -544,30 +544,14 @@ suite "Derived Transformation test":
 suite "OrthoNormal Basis":
 
     setup:
-        var onb = newONB(newVec3f(sqrt(2.0), sqrt(2.0), 0).normalize, 
-                          newVec3f(-sqrt(2.0), sqrt(2.0), 0).normalize,
-                          newVec3f(0, 0, 1))
-    
-    teardown:
-        discard onb
+        var onb = newONB(newNormal(0, 0, 1))
+        
     
     test "newONB proc":
-        var    
-            colSeq = columns(stdONB).toSeq()
-            (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])
-            
-        # Checkig newONB proc
-        check areClose(e1, eX)
-        check areClose(e2, eY)
-        check areClose(e3, eZ)
-
-
-        colSeq = columns(onb).toSeq()
-        (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
-
-        check areClose(e1, newVec3f(sqrt(2.0), sqrt(2.0), 0).normalize)
-        check areClose(e2, newVec3f(-sqrt(2.0), sqrt(2.0), 0).normalize)
-        check areClose(e3, eZ)
+        # Checking newONB proc
+        check areClose(onb[0], eZ)
+        check areClose(onb[1], eX)
+        check areClose(onb[2], eY)
     
 
     test "ONB random testing":
@@ -576,50 +560,18 @@ suite "OrthoNormal Basis":
         var 
             pcg = newPCG()
             normal: Normal  
-            colSeq: seq[Vec3f]
-            e1, e2, e3: Vec3f
 
 
         for i in 0..<1000:
             normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
-            onb = createONB(normal)
-   
-            colSeq = columns(onb).toSeq()
-            (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])
+            onb = newONB(normal)
 
-            check areClose(e3, normal.toVec3)
+            check areClose(onb[0], normal.Vec3f)
 
-            check areClose(dot(e1, e2), 0, eps = 1e-6)
-            check areClose(dot(e2, e3), 0, eps = 1e-6)
-            check areClose(dot(e3, e1), 0, eps = 1e-6)
+            check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
+            check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)
+            check areClose(dot(onb[2], onb[0]), 0, eps = 1e-6)
 
-            check areClose(e1.norm, 1, eps = 1e-6)
-            check areClose(e2.norm, 1, eps = 1e-6)
-            check areClose(e3.norm, 1, eps = 1e-6)
-
-
-    test "getComponents proc":
-        var 
-            appo: array[3, float32]
-            vec = newVec3f(1, 4, 3)
-
-        appo = stdONB.getComponents(vec)
-        check areClose(appo[0], vec[0])
-        check areClose(appo[1], vec[1])
-        check areClose(appo[2], vec[2])
-
-        appo = onb.getComponents(vec)
-        check areClose(appo[0], 5 * cos(PI/4), eps = 1e-6)
-        check areClose(appo[1], 3 * sin(PI/4), eps = 1e-6)
-        check areClose(appo[2], vec[2])
-    
-
-    test "getVector proc":
-        var
-            x = 1.0.float32
-            y = 2.0.float32
-            z = 1.5.float32
-        
-        check areClose(newVec3f(1, 2, 1.5), stdONB.getVector(newVec3f(x, y, z))) 
-        check areClose(newVec3f(0, 2, 1.5), onb.getVector(newVec3f(sqrt(2.float32), sqrt(2.float32), z))) 
-
+            check areClose(onb[0].norm, 1, eps = 1e-6)
+            check areClose(onb[1].norm, 1, eps = 1e-6)
+            check areClose(onb[2].norm, 1, eps = 1e-6)
