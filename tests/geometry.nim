@@ -616,6 +616,7 @@ suite "ReferenceSystem":
         discard refSyst2
         discard refSyst3
 
+
     test "newReferenceSystem proc":
         # Checking three different reference system building proc
 
@@ -636,4 +637,22 @@ suite "ReferenceSystem":
         check areClose(refSyst3.base[0], eX)
         check areClose(refSyst3.base[1], -eZ)
         check areClose(refSyst3.base[2], eY)
-        
+
+    
+    test "coeff proc":
+        # Checking coeff proc, useful to get projections along reference system axis
+        let
+            v1 =  ORIGIN3D.Vec3f
+            v2 = newVec3f(1, 2, 3)
+
+        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
+        check areClose(refSyst1.coeff(v1), newVec3f(0, 0, 0))
+        check areClose(refSyst1.coeff(v2), newVec3f(1, 2, 3))
+
+        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
+        check areClose(refSyst2.coeff(v1), newVec3f(0, 0, 0), eps = 1e-6)
+        check areClose(refSyst2.coeff(v2), newVec3f(1, 3, -2), eps = 1e-6)
+
+        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
+        check areClose(refSyst3.coeff(v1), newVec3f(0, 0, 0))
+        check areClose(refSyst3.coeff(v2), newVec3f(1, -3, 2))
