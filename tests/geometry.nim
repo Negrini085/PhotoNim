@@ -575,3 +575,22 @@ suite "OrthoNormal Basis":
             check areClose(onb[0].norm, 1, eps = 1e-6)
             check areClose(onb[1].norm, 1, eps = 1e-6)
             check areClose(onb[2].norm, 1, eps = 1e-6)
+
+
+    test "newRightHandedBase proc":
+        # Checking newRightHanded proc
+        var
+            m1 = [eX, eY, eZ]
+            m2 = [eX, eZ, eY]
+
+        m1 = newRightHandedBase(m1)
+        # Here i don't expect nothing to change
+        check areClose(m1[0], eX)
+        check areClose(m1[1], eY)
+        check areClose(m1[2], eZ)
+
+        m2 = newRightHandedBase(m2)
+        # Here i would like to switch eY and eZ
+        check areClose(m2[0], eX)
+        check areClose(m2[1], eY)
+        check areClose(m2[2], eZ)
