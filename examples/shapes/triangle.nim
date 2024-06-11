@@ -5,27 +5,26 @@ from std/streams import newFileStream, close
 from std/osproc import execCmd
 
 let 
-    (width, height) = (900, 600)
+    viewport = (900, 600)
     filename = "assets/images/examples/triangle"
 
-var handler: seq[ShapeHandler]
-handler.add newUnitarySphere(ORIGIN3D - eY * 2)
-handler.add newUnitarySphere(ORIGIN3D + eY)
-handler.add newShapeHandler(
+var handlers: seq[ShapeHandler]
+handlers.add newUnitarySphere(ORIGIN3D - eY * 2)
+handlers.add newUnitarySphere(ORIGIN3D + eY)
+handlers.add newShapeHandler(
     newTriangle(newPoint3D(0.0, 2.0, 3.0), newPoint3D(0.0, -2.0, 2.0), newPoint3D(0.0, -1.0, -1.0)), 
     newComposition(newTranslation(eY * 4.0), newRotZ(-10), newRotY(10))
 )
 
-handler.add newShapeHandler(newCylinder(), newComposition(newTranslation([float32 0.0, 0.0, 1.5]), newRotY(10)))
-handler.add newShapeHandler(newAABox(), newComposition(newTranslation([float32 -0.5, -2.5, 2.0]), newRotX(50)))
+handlers.add newShapeHandler(newCylinder(), newComposition(newTranslation([float32 0.0, 0.0, 1.5]), newRotY(10)))
+handlers.add newShapeHandler(newAABox(), newComposition(newTranslation([float32 -0.5, -2.5, 2.0]), newRotX(50)))
 
-var 
-    scene = newScene(handler)
-    image = newHDRImage(width, height)
-    camera = newPerspectiveCamera(width / height, 1.0, newTranslation([float32 -4, 0, 0]))
-    renderer = newFlatRenderer(addr image, camera)
+let
+    scene = newScene(handlers)
+    camera = newPerspectiveCamera(viewport, 1.0, newPoint3D(-4, 0, 0))
+    renderer = newFlatRenderer(camera)
 
-image.pixels = renderer.sample(scene, samplesPerSide = 4)
+    image = renderer.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 3, maxShapesPerLeaf = 1)
 
 var stream = newFileStream(filename & ".pfm", fmWrite)
 stream.writePFM image

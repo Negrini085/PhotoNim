@@ -6,35 +6,22 @@ from std/math import sqrt, arctan2, PI
 from std/sequtils import concat, map, foldl, filter
 from std/algorithm import sorted
 
-proc checkIntersection(aabb: Interval[Point3D], ray: Ray): bool =
-    assert ray.origin == ORIGIN3D
-    let
-        txspan = newInterval(aabb.min.x / ray.dir[0], aabb.max.x / ray.dir[0])
-        tyspan = newInterval(aabb.min.y / ray.dir[1], aabb.max.y / ray.dir[1])
-
-    if txspan.min > tyspan.max or tyspan.min > txspan.max: return false
-
-    let tzspan = newInterval(aabb.min.z / ray.dir[2], aabb.max.z / ray.dir[2])
-    
-    var hitspan = newInterval(max(txspan.min, tyspan.min), min(txspan.max, tyspan.max))
-    if hitspan.min > tzspan.max or tzspan.min > hitspan.max: return false
-
 
 proc checkIntersection*(handler: ShapeHandler, ray: Ray): bool =
     case handler.shape.kind
     of skAABox:
-        let invRay = ray.transform(handler.transformation.inverse)
-        let (min, max) = (handler.shape.aabb.min - invRay.origin, handler.shape.aabb.max - invRay.origin)
-        let
-            txspan = newInterval(min.x / invRay.dir[0], max.x / invRay.dir[0])
-            tyspan = newInterval(min.y / invRay.dir[1], max.y / invRay.dir[1])
+        let 
+            invRay = ray.transform(handler.transformation.inverse)
+            (min, max) = (handler.shape.aabb.min - invRay.origin, handler.shape.aabb.max - invRay.origin)
+            txSpan = newInterval(min.x / invRay.dir[0], max.x / invRay.dir[0])
+            tySpan = newInterval(min.y / invRay.dir[1], max.y / invRay.dir[1])
 
-        if txspan.min > tyspan.max or tyspan.min > txspan.max: return false
+        if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return false
 
-        let tzspan = newInterval(min.z / invRay.dir[2], max.z / invRay.dir[2])
+        let tzSpan = newInterval(min.z / invRay.dir[2], max.z / invRay.dir[2])
         
-        var hitspan = newInterval(max(txspan.min, tyspan.min), min(txspan.max, tyspan.max))
-        if hitspan.min > tzspan.max or tzspan.min > hitspan.max: return false
+        var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
+        if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return false
 
         return true
 
@@ -104,6 +91,7 @@ proc checkIntersection*(handler: ShapeHandler, ray: Ray): bool =
 
         return true
 
+proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} = checkIntersection(newShapeHandler(newAABox(aabb)), ray)
 
 proc checkIntersection*(node: SceneNode, ray: Ray): bool =
     if not checkIntersection(node.aabb, ray): return false

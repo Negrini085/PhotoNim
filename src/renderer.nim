@@ -9,7 +9,6 @@ type
         rkOnOff, rkFlat, rkPathTracer
 
     Renderer* = object
-        image*: ptr HDRImage
         camera*: Camera
 
         case kind*: RendererKind
@@ -22,14 +21,14 @@ type
             nRays*, maxDepth*, rouletteLim*: int
 
 
-proc newOnOffRenderer*(image: ptr HDRImage, camera: Camera, hitCol = WHITE): Renderer {.inline.} =
-    Renderer(kind: rkOnOff, image: image, camera: camera, hitCol: hitCol,)
+proc newOnOffRenderer*(camera: Camera, hitCol = WHITE): Renderer {.inline.} =
+    Renderer(kind: rkOnOff, camera: camera, hitCol: hitCol,)
 
-proc newFlatRenderer*(image: ptr HDRImage, camera: Camera): Renderer {.inline.} =
-    Renderer(kind: rkFlat, image: image, camera: camera)
+proc newFlatRenderer*(camera: Camera): Renderer {.inline.} =
+    Renderer(kind: rkFlat, camera: camera)
 
-proc newPathTracer*(image: ptr HDRImage, camera: Camera, nRays = 25, maxDepth = 10, rouletteLim = 3): Renderer {.inline.} =
-    Renderer(kind: rkPathTracer, image: image, camera: camera, nRays: nRays, maxDepth: maxDepth, rouletteLim: rouletteLim)
+proc newPathTracer*(camera: Camera, nRays = 25, maxDepth = 10, rouletteLim = 3): Renderer {.inline.} =
+    Renderer(kind: rkPathTracer, camera: camera, nRays: nRays, maxDepth: maxDepth, rouletteLim: rouletteLim)
 
 
 proc displayProgress(current, total: int) =
@@ -45,7 +44,7 @@ proc displayProgress(current, total: int) =
 
 from std/math import cos, sin, sqrt, PI
 
-proc scatterRay*(refSystem: ReferenceSystem, inWorldDir: Vec3f, depth: int, brdf: BRDF, rg: var PCG): Ray =
+proc scatterRay*(refSystem: ReferenceSystem, brdf: BRDF, ray: Ray, rg: var PCG): Ray =
     case brdf.kind:
     of DiffuseBRDF:
         let 
@@ -55,25 +54,24 @@ proc scatterRay*(refSystem: ReferenceSystem, inWorldDir: Vec3f, depth: int, brdf
         
         Ray(
             origin: ORIGIN3D, 
-            dir: refSystem.fromCoeff(newVec3f(cos(phi) * c, sin(phi) * c, s)), 
+            dir: refSystem.fromCoeff([float32 c * cos(phi), c * sin(phi), s]), 
             tSpan: (float32 1e-3, float32 Inf), 
-            depth: depth + 1
+            depth: ray.depth + 1
         )
 
     of SpecularBRDF: 
         Ray(
             origin: ORIGIN3D,
-            dir: inWorldDir.normalize - 2 * dot(refSystem.base[2], inWorldDir.normalize) * refSystem.base[2],
+            dir: ray.dir.normalize - 2 * dot(refSystem.base[2], ray.dir.normalize) * refSystem.base[2],
             tspan: (float32 1e-3, float32 Inf), 
-            depth: depth + 1
+            depth: ray.depth + 1
         )
 
 
 proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int, rg: var PCG): Color =
     result = scene.bgCol
 
-    let hitLeafNodes = scene.tree.getHitLeafs(ray) 
-
+    let hitLeafNodes = scene.tree.getHitLeafs(ray)
     if hitLeafNodes.isSome:
         case renderer.kind
         of rkOnOff:
@@ -95,66 +93,64 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int
                 result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
         of rkPathTracer: 
-            if (ray.depth > renderer.maxDepth): return result
+            if (ray.depth > renderer.maxDepth): return BLACK
 
             let hitRecord = newHitRecord(hitLeafNodes.get, ray)
             if hitRecord.isNone: return result
         
             let 
                 hit = hitRecord.get[0]
+
                 hitPt = hit.ray.at(hit.t)
                 hitNormal = hit.shape.getNormal(hitPt, ray.dir)
-            
-            var localScene = scene.fromObserver(newReferenceSystem(hitPt, hitNormal))
-            localScene.buildBVHTree(maxShapesPerLeaf, skSAH)
 
-            let
-                surfacePt = hit.shape.getUV(hitPt)
+                rs = newReferenceSystem(hitPt, hitNormal)
+                localScene = scene.fromObserver(rs, maxShapesPerLeaf)
+
                 material = hit.shape.material
-                radiance = material.radiance.getColor(surfacePt)
+                surfacePt = hit.shape.getUV(hitPt)
+                
+            result = material.radiance.getColor(surfacePt)
 
-            var accumulatedRadiance = BLACK
+            var hitCol = material.brdf.pigment.getColor(surfacePt)
             if ray.depth >= renderer.rouletteLim:
-                var hitCol = material.brdf.pigment.getColor(surfacePt)
-                let q = max(0.05, 1 - max(hitCol.r, max(hitCol.g, hitCol.b)))
-                if rg.rand < q: return radiance
-                hitCol /= (1.0 - q)
+                let q = max(0.05, 1 - hitCol.luminosity)
+                if rg.rand > q: hitCol /= (1.0 - q)
+                else: return result
 
-                var newRay: Ray
-                for _ in 0..<renderer.nRays:
-                    newRay = localScene.rs.scatterRay(ray.dir, ray.depth, material.brdf, rg)
-                    accumulatedRadiance += hitCol * renderer.sampleRay(newRay, localScene, maxShapesPerLeaf, rg)
-
-            result = radiance + accumulatedRadiance / renderer.nRays.float32
-
-    if checkIntersection(scene.tree, ray): result += RED
-
+            if hitCol.luminosity > 0.0:
+                var accumulatedRadiance = BLACK
+                for _ in 0..<renderer.nRays: 
+                    let ray = rs.scatterRay(material.brdf, ray, rg)
+                    accumulatedRadiance += hitCol * renderer.sampleRay(ray, localScene, maxShapesPerLeaf, rg)
+                
+                result += accumulatedRadiance / renderer.nRays.float32
         
-proc sample*(renderer: Renderer; scene: Scene, maxShapesPerLeaf, samplesPerSide: int, rgState, rgSeq: uint64, displayProgress = true): PixelMap =
-    result = newPixelMap(renderer.image.width, renderer.image.height)
+proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPerSide, maxShapesPerLeaf: int, displayProgress = true): HDRImage =
+    result = newHDRImage(renderer.camera.viewport.width, renderer.camera.viewport.height)
             
-    var cameraScene = scene.fromObserver(renderer.camera.rs)
-
-    cameraScene.buildBVHTree(maxShapesPerLeaf, skSAH)
-
-    echo "totalAABB viewed from origin ": scene.handlers.getTotalAABB
-    echo "totalAABB viewed from camera ": cameraScene.tree.aabb
+    let cameraScene = scene.fromObserver(renderer.camera.rs, maxShapesPerLeaf)
 
     var rg = newPCG(rgState, rgSeq)
-    for y in 0..<renderer.image.height:
-        for x in 0..<renderer.image.width:
+    for y in 0..<renderer.camera.viewport.height:
+        for x in 0..<renderer.camera.viewport.width:
+            var 
+                accumulatedColor = BLACK
+                ray: Ray
+
             for u in 0..<samplesPerSide:
                 for v in 0..<samplesPerSide:
-                    let ray = renderer.camera.fireRay(
+                    ray = renderer.camera.fireRay(
                         newPoint2D(
-                            (x.float32 + (u.float32 + rg.rand) / samplesPerSide.float32) / renderer.image.width.float32,
-                            1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / renderer.image.height.float32
+                            (x.float32 + (u.float32 + rg.rand) / samplesPerSide.float32) / renderer.camera.viewport.width.float32,
+                            1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / renderer.camera.viewport.height.float32
                         )
                     )
+                    accumulatedColor += renderer.sampleRay(ray, cameraScene, maxShapesPerLeaf, rg)
 
-                    result[renderer.image[].pixelOffset(x, y)] = renderer.sampleRay(ray, cameraScene, maxShapesPerLeaf, rg) / (samplesPerSide * samplesPerSide).float32 
+            result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
                             
-        if displayProgress: displayProgress(y + 1, renderer.image.height)
+        if displayProgress: displayProgress(y + 1, renderer.camera.viewport.height)
         
     if displayProgress: stdout.eraseLine; stdout.resetAttributes
 

@@ -6,32 +6,24 @@ from std/streams import newFileStream, close
 from std/osproc import execCmd
 
 
-let timeStart = cpuTime()
+let 
+    timeStart = cpuTime()
+    renderer = newOnOffRenderer(newPerspectiveCamera((900, 600), 1.0, newPoint3D(-10, 0, 0)))
 
 var 
-    shapes: seq[Shape]
-    pcg = newPCG()
+    rg = newPCG()
+    shapes = newSeq[ShapeHandler](500)
 
-for i in 0..<300:
-    shapes.add newSphere(newPoint3D(pcg.rand(-5, 5), pcg.rand(-5, 5), pcg.rand(-5, 5)), radius = pcg.rand(0.1, 1.0))
-    shapes.add newSphere(newPoint3D(pcg.rand(-5, 5), pcg.rand(-5, 5), pcg.rand(-5, 5)), radius = pcg.rand(0.1, 1.0))
+for i in 0..<500: shapes[i] = newSphere(newPoint3D(rg.rand(-5, 5), rg.rand(-5, 5), rg.rand(-5, 5)), radius = rg.rand(0.1, 1.0))
+
 
 let
-    filename = "assets/images/examples/nspheresBounded"
-    image = newHDRImage(900, 600)
-
-var 
     scene = newScene(shapes)
-    renderer = newOnOffRenderer(
-        addr image, 
-        newPerspectiveCamera(image.width / image.height, 1.0, newTranslation(newVec3f(-10, 0, 0))),
-        aa = 4
-    )
+    image = renderer.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 4, maxShapesPerLeaf = 4)
 
-scene.buildTree(4)
-renderer.render(scene)
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
+let filename = "assets/images/examples/nspheres"
 var stream = newFileStream(filename & ".pfm", fmWrite)
 stream.writePFM image
 stream.close

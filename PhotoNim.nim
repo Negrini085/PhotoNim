@@ -137,7 +137,7 @@ Options:
     --angle=<angle>         Rotation angle around z axis. [default: 10]
 """
 
-proc demo*(renderer: var Renderer) =
+proc demo*(renderer: Renderer, pfmOut, pngOut: string) =
     let timeStart = cpuTime()
 
     let
@@ -207,18 +207,17 @@ proc demo*(renderer: var Renderer) =
                 )   
             )                
 
-    var scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-    renderer.image[].pixels = renderer.sample(scene, maxShapesPerLeaf = 2, samplesPerSide = 4, rgState = 42, rgSeq = 4)
+    let 
+        scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+        image = renderer.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 4, maxShapesPerLeaf = 2)
+
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
+    
+    var stream = newFileStream(pfmOut, fmWrite) 
+    stream.writePFM(image)
+    stream.close
 
-
-proc earth*(renderer: var Renderer) = 
-    var 
-        stream = newFileStream("assets/images/textures/earth.pfm", fmRead)
-        texture = try: stream.readPFM.img except: quit fmt"Could not read texture!" finally: stream.close
-        scene = newScene(@[newUnitarySphere(ORIGIN3D, newMaterial(newDiffuseBRDF(newTexturePigment(texture)), newTexturePigment(texture)))])
-
-    renderer.image.pixels = renderer.sample(scene, maxShapesPerLeaf = 4, samplesPerSide = 2, rgState = 42, rgSeq = 4)
+    pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
 
 
 when isMainModule: 
@@ -311,25 +310,17 @@ Options:
             except: echo "Warning: angle must be an integer. Default value is used."
             
             
-        var image = newHDRImage(width, height)
-
-        let transform = newComposition(newTranslation(newVec3f(-1, 0, 0)), newRotZ(angle))
         let camera = 
-            if args["persp"]: newPerspectiveCamera(width / height, 1.0, transform) 
-            else: newOrthogonalCamera(width / height, transform)
+            if args["persp"]: newPerspectiveCamera((width, height), 1.0, newPoint3D(-1, 0, 0), newRotZ(angle)) 
+            else: newOrthogonalCamera((width, height), newPoint3D(-1, 0, 0), newRotZ(angle))
     
-        var render = 
-            if args["OnOff"]: newOnOffRenderer(addr image, camera, hitCol = newColor(1, 215.0 / 255, 0))
-            elif args["Flat"]: newFlatRenderer(addr image, camera)
-            else: newPathTracer(addr image, camera, nRays = 25, maxDepth = 10, rouletteLim = 3)
+        var renderer = 
+            if args["OnOff"]: newOnOffRenderer(camera, hitCol = newColor(1, 215.0 / 255, 0))
+            elif args["Flat"]: newFlatRenderer(camera)
+            else: newPathTracer(camera, nRays = 9, maxDepth = 6, rouletteLim = 3)
 
-        demo(render)
+        demo(renderer, pfmOut, pngOut)
 
-        var stream = newFileStream(pfmOut, fmWrite) 
-        stream.writePFM(image)
-        stream.close
-
-        pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
 
     elif args["earth"]:
         let 
@@ -354,17 +345,22 @@ Options:
             except: echo "Warning: angle must be an integer. Default value is used."
             
             
-        let camera = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-1, 0, 0)) @ newRotZ(angle)) 
-        var 
-            image = newHDRImage(width, height)
-            renderer = newFlatRenderer(addr image, camera)
-            stream = newFileStream(pfmOut, fmWrite) 
+        let 
+            camera = newPerspectiveCamera(viewport = (width, height), distance = 1.0, origin = newPoint3D(-1, 0, 0), newRotZ(angle)) 
+            renderer = newFlatRenderer(camera)
 
-        earth(renderer)
-
+        var stream = newFileStream("assets/images/textures/earth.pfm", fmRead)
+            
+        let
+            texture = try: stream.readPFM.img except: quit fmt"Could not read texture!" finally: stream.close
+            scene = newScene(@[newUnitarySphere(ORIGIN3D, newMaterial(newDiffuseBRDF(newTexturePigment(texture)), newTexturePigment(texture)))])
+            image = renderer.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 2, maxShapesPerLeaf = 4)
+        
+        stream = newFileStream(pfmOut, fmWrite) 
         stream.writePFM(image)
         stream.close
 
         pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
+
 
     else: quit PhotoNimDoc

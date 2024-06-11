@@ -7,29 +7,16 @@ from std/algorithm import sorted
 type ShapeHandler* = tuple[shape: Shape, transformation: Transformation]
     
 proc getAABB*(handler: ShapeHandler): Interval[Point3D] {.inline.} =
-    # This assumes the handler is in the local reference system
     getAABB(handler.shape.getVertices.map(proc(v: Point3D): Point3D = apply(handler.transformation, v)))
 
 proc getAABB*(refSystem: ReferenceSystem, handler: ShapeHandler): Interval[Point3D] {.inline.} =
-    # This assumes the handler is in the global reference system and the function must return the aabb from the handler in the local reference system,
-    # so we need to use the complete transformation, not just the translation!
-    let transformation = newComposition(newTranslation(refSystem.origin).inverse, handler.transformation) 
-    getAABB(handler.shape.getVertices.map(proc(v: Point3D): Point3D = refSystem.coeff(apply(transformation, v).Vec3f).Point3D))
-
-proc getTotalAABB*(shapeHandlers: seq[ShapeHandler]): Interval[Point3D] =
-    # This assumes the handlers are in the local reference system
-    if shapeHandlers.len == 0: return (ORIGIN3D, ORIGIN3D)
-
-    result = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
-
-    var aabb: Interval[Point3D]
-    for i in 0..<shapeHandlers.len:
-        aabb = shapeHandlers[i].getAABB
-        result = newInterval(newInterval(aabb.min, result.min).min, newInterval(aabb.max, result.max).max)
+    let localTransformation = newComposition(handler.transformation, refSystem.getTransformation.inverse) 
+    getAABB(handler.shape.getVertices.map(proc(v: Point3D): Point3D = apply(localTransformation, v)))
 
 
 type
     SceneNodeKind* = enum nkBranch, nkLeaf
+    BVHStrategy* = enum skMedian, skSAH
 
     SceneNode* = ref object
         aabb*: Interval[Point3D]
@@ -43,44 +30,42 @@ type
     Scene* = object
         bgCol*: Color
         handlers*: seq[ShapeHandler]
-        rs*: ReferenceSystem = newReferenceSystem(ORIGIN3D) # maybe this is not useful to store
         tree*: SceneNode = nil
 
-
-proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.inline.} = Scene(bgCol: bgCol, handlers: shapeHandlers)
-
-proc fromObserver*(scene: Scene; refSystem: ReferenceSystem): Scene =
-    let ## here we need to use the complete transformation, not just the translation!
-        localTransformation = newComposition(newTranslation(refSystem.origin), newTransformation(refSystem.base.toMat4, refSystem.base.toMat4))
-        localShapeHandlers = scene.handlers.map(proc(handler: ShapeHandler): ShapeHandler = 
-            (shape: handler.shape, transformation: newComposition(localTransformation.inverse, handler.transformation))
-        ) # these must be local shapeHandlers! 
-
-    Scene(bgCol: scene.bgCol, handlers: localShapeHandlers, rs: refSystem)
-
-
-type BVHStrategy* = enum skMedian, skSAH
 
 proc newBVHNode(shapeHandlers: seq[ShapeHandler], maxShapesPerLeaf, depth: int, strategy: BVHStrategy): SceneNode =   
     if shapeHandlers.len == 0: return nil
 
-    let aabb = shapeHandlers.getTotalAABB
+    var aabb = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
+    let handlersAABB = shapeHandlers.map(proc(handler: ShapeHandler): Interval[Point3D] = handler.getAABB)
+    for box in handlersAABB.items: aabb = newInterval(newInterval(box.min, aabb.min).min, newInterval(box.max, aabb.max).max)
 
     if shapeHandlers.len <= maxShapesPerLeaf: return SceneNode(kind: nkLeaf, aabb: aabb, handlers: shapeHandlers)
 
-    let 
-        sortedShapes = shapeHandlers.sorted(
-            proc(a, b: ShapeHandler): int =
-                cmp(a.getAABB.min.Vec3f[depth mod 3], b.getAABB.min.Vec3f[depth mod 3]) # here something is wrong
-        )
+    let
+        sortedShapes = shapeHandlers.sorted(proc(a, b: ShapeHandler): int = cmp(a.getAABB.min.x, b.getAABB.min.x))
         leftNode = newBVHNode(sortedShapes[0..<sortedShapes.len div 2], maxShapesPerLeaf, depth + 1, strategy)
         rightNode = newBVHNode(sortedShapes[sortedShapes.len div 2..<sortedShapes.len], maxShapesPerLeaf, depth + 1, strategy)
     
     SceneNode(kind: nkBranch, aabb: aabb, left: leftNode, right: rightNode)
 
-proc buildBVHTree*(scene: var Scene; maxShapesPerLeaf: int, strategy: BVHStrategy) {.inline.} = 
-    # Scene.handlers is always referred from the local reference system
-    scene.tree = newBVHNode(scene.handlers, maxShapesPerLeaf, depth = 0, strategy)
+
+proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.inline.} = 
+    Scene(bgCol: bgCol, handlers: shapeHandlers)
+
+proc fromObserver*(scene: Scene; refSystem: ReferenceSystem, maxShapesPerLeaf: int): Scene =
+    let localHandlers = scene.handlers.map(proc(handler: ShapeHandler): ShapeHandler = 
+        (
+            shape: handler.shape, 
+            transformation: newComposition(handler.transformation, refSystem.getTransformation.inverse)
+        )
+    )
+
+    Scene(
+        bgCol: scene.bgCol, 
+        handlers: localHandlers,
+        tree: newBVHNode(localHandlers, maxShapesPerLeaf, depth = 0, skSAH)
+    )
 
 
 proc loadMesh*(world: Scene, source: string) = quit "to implement"
@@ -95,3 +80,6 @@ proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): Sha
 
 proc newUnitarySphere*(center: Point3D; material = newMaterial()): ShapeHandler {.inline.} = 
     newShapeHandler(newSphere(1.0, material), if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
+
+proc newPlane*(material = newMaterial(), transformation = Transformation.id): ShapeHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPlane, material: material), transformation)

@@ -374,15 +374,15 @@ type
         case kind*: TransformationKind
         of tkIdentity: discard
         of tkGeneric, tkTranslation, tkScaling, tkRotation:
-            mat*, inv_mat*: Mat4f
+            mat*, matInv*: Mat4f
         of tkComposition: 
             transformations*: seq[Transformation]
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
 
-proc newTransformation*(mat, inv_mat: Mat4f): Transformation = 
-    assert areClose(dot(mat, inv_mat), Mat4f.id), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
-    Transformation(kind: tkGeneric, mat: mat, inv_mat: inv_mat)
+proc newTransformation*(mat, matInv: Mat4f): Transformation = 
+    assert areClose(dot(mat, matInv), Mat4f.id, eps = 1e-6), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
+    Transformation(kind: tkGeneric, mat: mat, matInv: matInv)
 
 proc newTranslation*(vec: Vec3f): Transformation {.inline.} =
     Transformation(
@@ -393,7 +393,7 @@ proc newTranslation*(vec: Vec3f): Transformation {.inline.} =
             [0.0, 0.0, 1.0, vec[2]], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
+        matInv: [
             [1.0, 0.0, 0.0, -vec[0]], 
             [0.0, 1.0, 0.0, -vec[1]], 
             [0.0, 0.0, 1.0, -vec[2]], 
@@ -410,7 +410,7 @@ proc newTranslation*(pt: Point3D): Transformation {.inline.} =
             [0.0, 0.0, 1.0, pt.z], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
+        matInv: [
             [1.0, 0.0, 0.0, -pt.x], 
             [0.0, 1.0, 0.0, -pt.y], 
             [0.0, 0.0, 1.0, -pt.z], 
@@ -424,9 +424,9 @@ proc newScaling*[T](x: T): Transformation =
         assert x != 0, "Cannot create a new scaling Transformation with zero as factor."
         var 
             mat = Mat4f.id * x
-            inv_mat = Mat4f.id / x
-        mat[3][3] = 1.0; inv_mat[3][3] = 1.0
-        return Transformation(kind: tkScaling, mat: mat, inv_mat: inv_mat)
+            matInv = Mat4f.id / x
+        mat[3][3] = 1.0; matInv[3][3] = 1.0
+        return Transformation(kind: tkScaling, mat: mat, matInv: matInv)
 
     elif T is Vec3f: 
         Transformation(
@@ -437,7 +437,7 @@ proc newScaling*[T](x: T): Transformation =
                 [0.0, 0.0, x[2], 0.0], 
                 [0.0, 0.0,  0.0, 1.0]
             ],
-            inv_mat: [
+            matInv: [
                 [1/x[0], 0.0, 0.0, 0.0], 
                 [0.0, 1/x[1], 0.0, 0.0], 
                 [0.0, 0.0, 1/x[2], 0.0], 
@@ -459,7 +459,7 @@ proc newRotX*(angle: SomeNumber): Transformation =
             [0.0,   s,   c, 0.0], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
+        matInv: [
             [1.0, 0.0, 0.0, 0.0], 
             [0.0,   c,   s, 0.0], 
             [0.0,  -s,   c, 0.0], 
@@ -481,7 +481,7 @@ proc newRotY*(angle: SomeNumber): Transformation =
             [ -s, 0.0,   c, 0.0], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
+        matInv: [
             [  c, 0.0,  -s, 0.0], 
             [0.0, 1.0, 0.0, 0.0], 
             [  s, 0.0,   c, 0.0], 
@@ -503,7 +503,7 @@ proc newRotZ*(angle: SomeNumber): Transformation =
             [0.0, 0.0, 1.0, 0.0], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
+        matInv: [
             [  c,   s, 0.0, 0.0], 
             [ -s,   c, 0.0, 0.0], 
             [0.0, 0.0, 1.0, 0.0], 
@@ -528,8 +528,7 @@ proc `@`*(a, b: Transformation): Transformation =
         transforms = b.transformations
         transforms.insert(a, 0)
 
-    else: 
-        transforms.add a; transforms.add b
+    else: transforms.add a; transforms.add b
 
     Transformation(kind: tkComposition, transformations: transforms)
 
@@ -551,16 +550,16 @@ proc inverse*(transf: Transformation): Transformation =
     case kind
     of tkIdentity: return Transformation.id
     of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.map(inverse))
-    else: return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
+    else: return Transformation(kind: kind, mat: transf.matInv, matInv: transf.mat)
 
 
 proc `*`*(transf: Transformation, scal: float32): Transformation = 
     let kind = transf.kind
     case kind:
     of tkIdentity: 
-        return Transformation(kind: tkGeneric, mat: Mat4f.id * scal, inv_mat: Mat4f.id / scal)
+        return Transformation(kind: tkGeneric, mat: Mat4f.id * scal, matInv: Mat4f.id / scal)
     of tkGeneric, tkTranslation, tkScaling, tkRotation:
-        return Transformation(kind: kind, mat: transf.mat * scal, inv_mat: transf.inv_mat / scal)
+        return Transformation(kind: kind, mat: transf.mat * scal, matInv: transf.matInv / scal)
     of tkComposition:
         var transfs = newSeq[Transformation](transf.transformations.len)
         for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] * scal
@@ -572,9 +571,9 @@ proc `/`*(transf: Transformation, scal: float32): Transformation =
     let kind = transf.kind
     case kind:
     of tkIdentity: 
-        return Transformation(kind: tkGeneric, mat: Mat4f.id / scal, inv_mat: Mat4f.id * scal)
+        return Transformation(kind: tkGeneric, mat: Mat4f.id / scal, matInv: Mat4f.id * scal)
     of tkGeneric, tkTranslation, tkScaling, tkRotation:
-        return Transformation(kind: kind, mat: transf.mat / scal, inv_mat: transf.inv_mat * scal)
+        return Transformation(kind: kind, mat: transf.mat / scal, matInv: transf.matInv * scal)
     of tkComposition:
         var transfs = newSeq[Transformation](transf.transformations.len)
         for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] / scal
@@ -589,7 +588,7 @@ proc apply*[T](transf: Transformation, x: T): T =
         when T is Point3D: 
             return dot(transf.mat, x.toVec4).toPoint3D
         elif T is Normal:
-            return dot(x, transf.inv_mat).toNormal
+            return dot(x, transf.matInv).toNormal
         else: 
             return dot(transf.mat, x) 
 
@@ -614,20 +613,18 @@ proc apply*[T](transf: Transformation, x: T): T =
             return x
 
     of tkComposition:
-        # What if len is zero?   
         if transf.transformations.len == 1: return apply(transf.transformations[0], x)
+
         when T is Normal:
-            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(a, b))).toNormal
+            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.matInv).foldl(dot(a, b))).toNormal
         else:
             result = x
-            for i in countdown(transf.transformations.len-1, 0):
+            for i in countdown(transf.transformations.len - 1, 0):
                 result = apply(transf.transformations[i], result)
 
 
 
 type ReferenceSystem* = tuple[origin: Point3D, base: Mat3f]
-
-proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = (origin, base)
 
 proc newONB(normal: Normal): Mat3f = 
     let
@@ -636,39 +633,49 @@ proc newONB(normal: Normal): Mat3f =
         b = a * normal.x * normal.y
         
     [
+        normal.Vec3f,
         newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
-        newVec3f(b, sign + a * normal.y * normal.y, -normal.y), 
-        normal.Vec3f
+        newVec3f(b, sign + a * normal.y * normal.y, -normal.y)
     ]
 
+proc newRightHandedBase*(mat: Mat3f): Mat3f = 
+    if mat.det > 0: return mat
+    else: result[0] = mat[0]; result[1] = mat[2]; result[2] = mat[1]
 
-proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = (origin, newONB(normal)) 
+proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = (origin, newRightHandedBase(base))
 
-proc newReferenceSystem*(transformation: Transformation): ReferenceSystem =
-    case transformation.kind
-    of tkComposition:
-        discard
-    else: discard
+proc newReferenceSystem*(origin: Point3D, rotation: Transformation): ReferenceSystem = 
+    result = newReferenceSystem(origin, [eX, eY, eZ])
+
+    case rotation.kind
+    of tkIdentity: discard
+
+    of tkRotation: 
+        result.base = newRightHandedBase([
+            apply(rotation, eX),
+            apply(rotation, eY),
+            apply(rotation, eZ)
+        ])
+        
+    of tkComposition: 
+        for rot in rotation.transformations: 
+            assert rot.kind == tkRotation: "No other transformation are accepted for the camera translation rather than tkRotation and tkComposition of tkRotation."
+            result.base = newRightHandedBase([
+                apply(rot, result.base[0]),
+                apply(rot, result.base[1]),
+                apply(rot, result.base[2])
+            ])
+
+    else: quit "No other transformation are accepted for the camera translation rather than tkRotation and tkComposition of tkRotation."
+
+proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = (origin, newRightHandedBase(newONB(normal))) 
+
 
 proc coeff*(refSystem: ReferenceSystem, pt: Vec3f): Vec3f {.inline.} = dot(refSystem.base, pt)
 proc fromCoeff*(refSystem: ReferenceSystem, coeff: Vec3f): Vec3f {.inline.} = dot(refSystem.base.T, coeff)
 
-
-proc extractRotation(mat: Mat4f): Mat3f =
-  result = [
-    [mat[0][0], mat[0][1], mat[0][2]],
-    [mat[1][0], mat[1][1], mat[1][2]],
-    [mat[2][0], mat[2][1], mat[2][2]]
-  ]
-
-
-proc newReferenceSystem*(transformation: Transformation): ReferenceSystem =
-    proc extractTranslation(mat: Mat4f): Point3D {.inline.} = newPoint3D(mat[0][3], mat[1][3], mat[2][3])
-
-    case transformation.kind
-    of tkIdentity: discard
-    of tkComposition: discard
-    else: discard
+proc getTransformation*(refSystem: ReferenceSystem): Transformation {.inline.} =
+    newComposition(newTranslation(refSystem.origin), newTransformation(refSystem.base.toMat4, refSystem.base.toMat4.T))
 
 
 type 

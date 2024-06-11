@@ -6,9 +6,7 @@ from std/math import sgn, floor, arccos, arctan2, PI
 
 
 type 
-    Material* = object
-        brdf*: BRDF
-        radiance*: Pigment
+    Material* = tuple[brdf: BRDF, radiance: Pigment]
 
     ShapeKind* = enum
         skAABox, skTriangle, skSphere, skPlane, skCylinder
@@ -33,8 +31,7 @@ type
         of skPlane: discard
 
 
-proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = 
-    Material(brdf: brdf, radiance: pigment)
+proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = (brdf: brdf, radiance: pigment)
 
 
 proc getAABB*(points: seq[Point3D]): Interval[Point3D] =
@@ -46,7 +43,6 @@ proc getAABB*(points: seq[Point3D]): Interval[Point3D] =
         z = points.map(proc(pt: Point3D): float32 = pt.z)
 
     (newPoint3D(x.min, y.min, z.min), newPoint3D(x.max, y.max, z.max))
-
 
 proc getVertices*(aabb: Interval[Point3D]): array[8, Point3D] =
     return [
@@ -155,8 +151,6 @@ proc newTriangle*(a, b, c: Point3D; material = newMaterial()): Shape {.inline.} 
 
 proc newTriangle*(vertices: array[3, Point3D]; material = newMaterial()): Shape {.inline.} = 
     Shape(kind: skTriangle, material: material, vertices: vertices)
-
-proc newPlane*(material = newMaterial()): Shape {.inline.} = Shape(kind: skPlane, material: material)
 
 proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material = newMaterial()): Shape {.inline.} =
     Shape(kind: skCylinder, material: material, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax)

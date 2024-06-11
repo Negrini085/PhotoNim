@@ -71,14 +71,22 @@ suite "Scene unittest":
 
     
     test "buildBVHTree proc":
-        var subScene = scene.fromObserver(newReferenceSystem(newPoint3D(5.0, 0.0, 0.0), [-eX, eY, -eZ]))
+        var subScene = scene.fromObserver(newReferenceSystem(newPoint3D(5.0, 0.0, 0.0)))
 
         check subScene.tree.isNil
         subScene.buildBVHTree(1, skSAH)
         check not subScene.tree.isNil
 
+        check subScene.tree.aabb.min == newPoint3D(-5, -2, -2)
+        check subScene.tree.aabb.max == newPoint3D(-2, 4, 1)
+
+        subScene = scene.fromObserver(newReferenceSystem(newPoint3D(5.0, 0.0, 0.0), [-eX, eY, -eZ]))
+        subScene.buildBVHTree(1, skSAH)
+
         check subScene.tree.aabb.min == newPoint3D(2, -2, -1)
         check subScene.tree.aabb.max == newPoint3D(5, 4, 2)
+
+        
 
 
 # =======

@@ -3,66 +3,66 @@ import geometry, hdrimage
 from std/fenv import epsilon 
 from std/math import floor, cos, sin, arccos, degToRad, PI
 
+
+type Ray* = ref object
+    origin*: Point3D
+    dir*: Vec3f
+    tSpan*: Interval[float32]
+    depth*: int
+
+proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline.} = 
+    Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: 0)  
+
+proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
+    areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
+
+proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
+    case transformation.kind: 
+    of tkIdentity: ray
+    of tkTranslation, tkScaling: 
+        Ray(
+            origin: apply(transformation, ray.origin), 
+            dir: ray.dir, 
+            tSpan: ray.tSpan, depth: ray.depth
+        )
+    of tkGeneric, tkRotation, tkComposition: 
+        Ray(
+            origin: apply(transformation, ray.origin), 
+            dir: apply(transformation, ray.dir), 
+            tSpan: ray.tSpan, depth: ray.depth
+        )
+
+proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
+
+
 type
     CameraKind* = enum
         ckOrthogonal, ckPerspective
 
     Camera* = object
         rs*: ReferenceSystem
-        aspectRatio*: float32
+        viewport*: tuple[width, height: int]
 
         case kind*: CameraKind
         of ckOrthogonal: discard
         of ckPerspective: 
             distance*: float32 
 
-    Ray* = ref object
-        origin*: Point3D
-        dir*: Vec3f
-        tSpan*: Interval[float32]
-        depth*: int
+proc aspectRatio*(camera: Camera): float32 {.inline.} = camera.viewport.width.float32 / camera.viewport.height.float32
 
 
-#     case renderer.camera.kind
-#     of ckOrthogonal: newReferenceSystem(apply(renderer.camera.transform, newPoint3D(-1, 0, 0)), renderer.camera.transform.mat.toMat3)
-#     of ckPerspective: newReferenceSystem(apply(renderer.camera.transform, newPoint3D(-renderer.camera.distance, 0, 0)), renderer.camera.transform.mat.toMat3)
-# )
+proc newOrthogonalCamera*(viewport: tuple[width, height: int], origin: Point3D = ORIGIN3D, rotation = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckOrthogonal, viewport: viewport, rs: newReferenceSystem(origin, rotation))
 
-proc newOrthogonalCamera*(a: float32, transformation = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckOrthogonal, aspectRatio: a)
-
-proc newPerspectiveCamera*(a, d: float32, transformation = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckPerspective, aspectRatio: a, distance: d)
-
-proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, tSpan: (epsilon(float32), Inf.float32), depth: 0)  
-
-proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
-    areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
-
-proc transform*(ray: Ray; transf: Transformation): Ray {.inline.} =
-    case transf.kind: 
-    of tkIdentity: return ray
-    of tkTranslation, tkScaling: 
-        return Ray(origin: apply(transf, ray.origin), dir: ray.dir, tSpan: ray.tSpan, depth: ray.depth)
-    of tkGeneric, tkRotation, tkComposition:
-        return Ray(origin: apply(transf, ray.origin), dir: apply(transf, ray.dir), tSpan: ray.tSpan, depth: ray.depth)
-
-proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
+proc newPerspectiveCamera*(viewport: tuple[width, height: int], distance: float32, origin: Point3D = ORIGIN3D, rotation = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckPerspective, viewport: viewport, distance: distance, rs: newReferenceSystem(origin, rotation))
 
 
-proc fireRay*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
-    case cam.kind
-    of ckOrthogonal:
-        result = newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspectRatio, 2 * pixel.v - 1), eX)
-    of ckPerspective:
-        result = newRay(newPoint3D(-cam.distance, 0, 0), newVec3(cam.distance, (1 - 2 * pixel.u) * cam.aspectRatio, 2 * pixel.v - 1))
+proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} = 
+    case camera.kind
+    of ckOrthogonal: newRay(newPoint3D(-1, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
+    of ckPerspective: newRay(newPoint3D(-camera.distance, 0, 0), newVec3f(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
     
-    # here we must change something. 
-    # Since we generate a subScene viewed from the camera point after its transformation, 
-    # each ray should be casted from the origin of that ref system. 
-    # result = result.transform(cam.transform)
-
 
 type
     PigmentKind* = enum
@@ -72,10 +72,8 @@ type
         case kind*: PigmentKind
         of pkUniform: 
             color*: Color
-
         of pkTexture: 
             texture*: ptr HDRImage
-
         of pkCheckered:
             grid*: tuple[color1, color2: Color, nsteps: int]
 
@@ -85,8 +83,7 @@ proc newCheckeredPigment*(color1, color2: Color, nsteps: int): Pigment {.inline.
 
 proc getColor*(pigment: Pigment; uv: Point2D): Color =
     case pigment.kind: 
-    of pkUniform: 
-        return pigment.color
+    of pkUniform: pigment.color
 
     of pkTexture: 
         var (col, row) = (floor(uv.u * pigment.texture.width.float32).int, floor(uv.v * pigment.texture.height.float32).int)

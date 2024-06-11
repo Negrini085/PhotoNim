@@ -26,7 +26,7 @@ proc earthRotation(angle: float32) =
         camera = newPerspectiveCamera(width / height, 1.0, newTranslation([float32 -1, 0, 0]) @ newRotZ(angle))
         renderer = newFlatRenderer(addr image, camera)
 
-    image.pixels = renderer.sample(scene, samplesPerSide = 4)
+    image.pixels = renderer.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 4, maxShapesPerLeaf = 1)
 
     stream = newFileStream(filePath & "frames/" & fileOut & ".pfm", fmWrite)
     stream.writePFM image
