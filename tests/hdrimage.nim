@@ -8,6 +8,7 @@ proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 
     if endianness == littleEndian: littleEndian32(addr result, addr tmp)
     else: bigEndian32(addr result, addr tmp)
 
+
 proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
     ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32
@@ -17,6 +18,7 @@ proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = little
 
 
 proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.raises: [CatchableError].} =
+    ## Procedure to read a PFM file
     assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
     let sizes = stream.readLine.split(" ")
     assert sizes.len == 2, "Invalid image size specification: required 'width height'."
@@ -49,7 +51,9 @@ proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.ra
             b = readFloat(stream, result.endian)
             result.img.setPixel(x, y, newColor(r, g, b))
 
+
 proc writePFM*(stream: FileStream, img: HDRImage, endian: Endianness = littleEndian) = 
+    ## Procedure to write a PFM file
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
     stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
@@ -63,7 +67,41 @@ proc writePFM*(stream: FileStream, img: HDRImage, endian: Endianness = littleEnd
             stream.writeFloat(c.b, endian)
 
 
-suite "HDRImage unittest":
+#------------------------------------#
+#       Color type test suite        #
+#------------------------------------#
+suite "Color":
+
+    setup:
+        var 
+            col1 = newColor(1, 0.5, 0.3)
+            col2 = newColor(0.3, 0.2, 1)
+    
+    teardown:
+        discard col1
+        discard col2
+    
+    test "Const":
+        # Checks wether constants are well defined or not
+
+        check areClose(BLACK, newColor(0, 0, 0))
+        check areClose(WHITE, newColor(1, 1, 1))
+        check areClose(RED,   newColor(1, 0, 0))
+        check areClose(GREEN, newColor(0, 1, 0))
+        check areClose(BLUE,  newColor(0, 0, 1))
+    
+
+    test "newColor proc":
+        # Checks newColor proc
+    
+        check areClose(col1, newColor(1, 0.5, 0.3))
+        check areClose(col2, newColor(0.3, 0.2, 1))
+
+
+#-------------------------------------#
+#      HdrImage type test suite       #
+#-------------------------------------#
+suite "HDRImage":
     
     setup:
         var img = newHDRImage(4, 2)
@@ -99,7 +137,11 @@ suite "HDRImage unittest":
         newImg.setPixel(1, 0, newColor(0.0, 1.5, 2.0)); newImg.setPixel(1, 1, newColor(2.0, 10.0, 3.0))
         check areClose(newImg.avLuminosity(0.0), pow(36, 0.25))
     
-    
+
+
+#-------------------------------------#
+#       ToneMapping test suite        #
+#-------------------------------------#    
 suite "ToneMapping test":
     setup:
         var img = newHDRImage(2, 2)
