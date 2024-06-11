@@ -656,3 +656,22 @@ suite "ReferenceSystem":
         # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
         check areClose(refSyst3.coeff(v1), newVec3f(0, 0, 0))
         check areClose(refSyst3.coeff(v2), newVec3f(1, -3, 2))
+    
+
+    test "fromCoeff proc":
+        # Checking fromCoeff proc, useful to get vectors given coefficients and reference system
+        let
+            coeff1 = newVec3f(0, 0, 0)
+            coeff2 = newVec3f(1, 2, 3)
+
+        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
+        check areClose(refSyst1.fromCoeff(coeff1), newVec3f(0, 0, 0))
+        check areClose(refSyst1.fromCoeff(coeff2), newVec3f(1, 2, 3))
+
+        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
+        check areClose(refSyst2.fromCoeff(coeff1), newVec3f(0, 0, 0), eps = 1e-6)
+        check areClose(refSyst2.fromCoeff(coeff2), newVec3f(1, -3, 2), eps = 1e-6)
+
+        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
+        check areClose(refSyst3.fromCoeff(coeff1), newVec3f(0, 0, 0))
+        check areClose(refSyst3.fromCoeff(coeff2), newVec3f(1, 3, -2))
