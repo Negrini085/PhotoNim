@@ -131,6 +131,13 @@ suite "Color":
         check areClose(col1*col2, newColor(0.3, 0.1, 0.3))
 
 
+    test "luminosity proc":
+        # Checks color luminosity (we will use it in order to clamp images)
+        
+        check areClose(col1.luminosity(), 0.65)
+        check areClose(col2.luminosity(), 0.6)
+
+
 
 
 #-------------------------------------#
