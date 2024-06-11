@@ -545,6 +545,9 @@ suite "OrthoNormal Basis":
 
     setup:
         var onb = newONB(newNormal(0, 0, 1))
+
+    teardown:
+        discard onb
         
     
     test "newONB proc":
@@ -594,3 +597,43 @@ suite "OrthoNormal Basis":
         check areClose(m2[0], eX)
         check areClose(m2[1], eY)
         check areClose(m2[2], eZ)
+
+
+
+#-----------------------------------------#
+#       Reference system test suite       #
+#-----------------------------------------#
+suite "ReferenceSystem":
+
+    setup:
+        var 
+            refSyst1 = newReferenceSystem(newPoint3D(2, 3, 1), [eX, eZ, eY])
+            refSyst2 = newReferenceSystem(newPoint3D(1, 2, 3), newRotX(90))
+            refSyst3 = newReferenceSystem(newPoint3D(1, 0, 0), newNormal(1, 0, 0))
+    
+    teardown:
+        discard refSyst1
+        discard refSyst2
+        discard refSyst3
+
+    test "newReferenceSystem proc":
+        # Checking three different reference system building proc
+
+        # First kind: input are origin point and ONB matrix
+        check areClose(refSyst1.origin, newPoint3D(2, 3, 1))
+        check areClose(refSyst1.base[0], eX)
+        check areClose(refSyst1.base[1], eY)
+        check areClose(refSyst1.base[2], eZ)
+
+        # Second kind: input are origin and rotation around the X-axis
+        check areClose(refSyst2.origin, newPoint3D(1, 2, 3))
+        check areClose(refSyst2.base[0], eX, eps = 1e-6)
+        check areClose(refSyst2.base[1], eZ, eps = 1e-6)
+        check areClose(refSyst2.base[2], -eY, eps = 1e-6)
+
+        # Third kind: input are origin and a normal (this time is the X-axis)
+        check areClose(refSyst3.origin, newPoint3D(1, 0, 0))
+        check areClose(refSyst3.base[0], eX)
+        check areClose(refSyst3.base[1], -eZ)
+        check areClose(refSyst3.base[2], eY)
+        
