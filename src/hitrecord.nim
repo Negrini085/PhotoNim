@@ -3,7 +3,7 @@ import geometry, shapes, scene, camera
 import std/options
 from std/fenv import epsilon
 from std/math import sqrt, arctan2, PI
-from std/sequtils import concat, map, foldl, filter
+from std/sequtils import concat, foldl, mapIt, filterIt
 from std/algorithm import sorted
 
 
@@ -223,15 +223,17 @@ proc getHitPayloads*(node: SceneNode; ray: Ray): seq[HitPayload] =
 
     if hitLeafs.isNone: return @[]
     hitLeafs.get
-        .map(proc(node: SceneNode): Option[HitPayload] = newHitPayload(node.handlers[0], ray))
-        .filter(proc(x: Option[HitPayload]): bool = x.isSome)
-        .map(proc(hit: Option[HitPayload]): HitPayload = hit.get)
+        .mapIt(newHitPayload(it.handlers[0], ray))
+        .filterIt(it.isSome)
+        .mapIt(it.get)
 
 
 proc newHitRecord*(hitLeafs: seq[SceneNode], ray: Ray): Option[seq[HitPayload]] =
     let hitPayloads = hitLeafs
-        .map(proc(node: SceneNode): seq[HitPayload] = node.getHitPayloads(ray))
-        .filter(proc(hits: seq[HitPayload]): bool = hits.len > 0)
+        .mapIt(it.getHitPayloads(ray))
+        .filterIt(it.len > 0)
 
     if hitPayloads.len == 0: return none seq[HitPayload]
-    some hitPayloads.foldl(concat(a, b)).sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
+    some hitPayloads
+        .foldl(concat(a, b))
+        .sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
