@@ -1,6 +1,7 @@
 import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 
 from std/strformat import fmt
+from std/math import cos, sin, sqrt, PI
 import std/[options, strutils, terminal]
 
 
@@ -42,7 +43,6 @@ proc displayProgress(current, total: int) =
     stdout.styledWrite(fgWhite, "Rendering progress: ", fgRed, "0% ", fgWhite, bar, color, fmt" {percentage}%")
     stdout.flushFile
 
-from std/math import cos, sin, sqrt, PI
 
 proc scatterRay*(refSystem: ReferenceSystem, brdf: BRDF, ray: Ray, rg: var PCG): Ray =
     case brdf.kind:
@@ -126,6 +126,7 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int
                 
                 result += accumulatedRadiance / renderer.nRays.float32
         
+
 proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPerSide, maxShapesPerLeaf: int, displayProgress = true): HDRImage =
     result = newHDRImage(renderer.camera.viewport.width, renderer.camera.viewport.height)
             

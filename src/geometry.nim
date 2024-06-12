@@ -671,7 +671,7 @@ proc newReferenceSystem*(origin: Point3D, rotation: Transformation): ReferenceSy
 proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = (origin, newRightHandedBase(newONB(normal))) 
 
 
-proc coeff*(refSystem: ReferenceSystem, pt: Vec3f): Vec3f {.inline.} = dot(refSystem.base, pt)
+proc coeff*[T](refSystem: ReferenceSystem, pt: T): T {.inline.} = dot(refSystem.base, when T is Vec3f: pt else: pt.Vec3f).T
 proc fromCoeff*(refSystem: ReferenceSystem, coeff: Vec3f): Vec3f {.inline.} = dot(refSystem.base.T, coeff)
 
 proc getTransformation*(refSystem: ReferenceSystem): Transformation {.inline.} =
