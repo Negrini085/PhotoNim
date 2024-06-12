@@ -171,74 +171,36 @@ suite "Scene":
         check sc3.tree.isNil
 
 
-
-
-suite "Scene unittest":
-    setup:
-        let 
-            triangle = newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0))
-            scene = newScene(@[newShapeHandler(triangle), newShapeHandler(triangle, newTranslation([float32 1, 1, -2]))])
-
-    # test "getTotalAABB proc":
-    #     let aabb = scene.handlers.getTotalAABB
-
-    #     check aabb.min == newPoint3D(0, -2, -2)
-    #     check aabb.max == newPoint3D(3, 4, 1)
-        
     test "fromObserver proc":
-        var subScene = scene.fromObserver(newReferenceSystem(newPoint3D(5.0, 0.0, 0.0), [-eX, eY, -eZ]), maxShapesPerLeaf = 2)
+        var 
+            rs = newReferenceSystem(newPoint3D(5, 3, 1), [-eX, eY, -eZ])
+            subScene: Scene
 
+        # First scene, only triangles
+        subScene = sc1.fromObserver(rs, maxShapesPerLeaf = 2)
+        
         check subScene.bgCol == BLACK
-
-        check subScene.handlers.len == 2
-        check subScene.handlers[0].shape.kind == skTriangle and subScene.handlers[1].shape.kind == skTriangle
-
-        check subScene.handlers[0].transformation != scene.handlers[0].transformation
-        check subScene.handlers[1].transformation != scene.handlers[1].transformation
-
-    
-    test "buildBVHTree proc":
-        var subScene = scene.fromObserver(newReferenceSystem(newPoint3D(5.0, 0.0, 0.0)), 1)
         check not subScene.tree.isNil
 
-        check subScene.tree.aabb.min == newPoint3D(-5, -2, -2)
-        check subScene.tree.aabb.max == newPoint3D(-2, 4, 1)
-
-        # subScene = scene.fromObserver(newReferenceSystem(newPoint3D(5.0, 0.0, 0.0), [-eX, eY, -eZ]), 1)
-
-        # check subScene.tree.aabb.min == newPoint3D(2, -2, -1)
-        # check subScene.tree.aabb.max == newPoint3D(5, 4, 2)
-
-        
+        check areClose(subScene.tree.aabb.min, newPoint3D(2, -5, 0))
+        check areClose(subScene.tree.aabb.max, newPoint3D(5, 1, 3))
 
 
-# =======
-#         check areClose(worldAABB1.min, newPoint3D(0, -2, 0))
-#         check areClose(worldAABB1.max, newPoint3D(2, 3, 1))
+        # Second scene, only spheres
+        subscene = sc2.fromObserver(rs, maxShapesPerLeaf = 2)
 
-#         check areClose(worldAABB2.min, newPoint3D(0, -2, 0))
-#         check areClose(worldAABB2.max, newPoint3D(2, 3, 1))
+        check subScene.bgCol == newColor(1, 0.3, 0.7)
+        check not subScene.tree.isNil
 
-#         check areClose(firstAABB.min, newPoint3D(3, -2, -1))
-#         check areClose(firstAABB.max, newPoint3D(5, 3, 0))
+        check areClose(subScene.tree.aabb.min, newPoint3D(0, -6, -4))
+        check areClose(subScene.tree.aabb.max, newPoint3D(8, 2, 4))
 
-#         check areClose(secondAABB.min, newPoint3D(-5, -2, 0))
-#         check areClose(secondAABB.max, newPoint3D(-3, 3, 1))
-        
 
-#     test "getAABB proc":
-#         let 
-#             handler1 = (newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0)), newTranslation([float32 1, 1, -2]))
-#             handler2 = (newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0)), IDENTITY)
-#             worldRefSystem = newReferenceSystem(ORIGIN3D, stdONB)
-#             firstRefSystem = newReferenceSystem(newPoint3D(5.0, 0.0, 0.0), newONB(-eX, eY, -eZ))
-        
-#             worldRefAABB = worldRefSystem.getAABB(@[handler1, handler2])
-#             firstRefAABB = firstRefSystem.getAABB(@[handler1, handler2])
+        # Third scene, one sphere and one triangle
+        subscene = sc3.fromObserver(rs, maxShapesPerLeaf = 2)
 
-#         check areClose(worldRefAABB.min.Vec3f, newVec3f(0, -2, -2))
-#         check areClose(worldRefAABB.max.Vec3f, newVec3f(3, 4, 1))
+        check subScene.bgCol == BLACK
+        check not subScene.tree.isNil
 
-#         check areClose(firstRefAABB.min.Vec3f, newVec3f(2, -2, -1))
-#         check areClose(firstRefAABB.max.Vec3f, newVec3f(5, 4, 2))
-# >>>>>>> 7494311a94fe161f921b1250bd5afa995aa1844f
+        check areClose(subScene.tree.aabb.min, newPoint3D(1, -5, -3))
+        check areClose(subScene.tree.aabb.max, newPoint3D(5, 1, 1))
