@@ -37,19 +37,19 @@ type
         tree*: SceneNode = nil
 
 
-proc newBVHNode(shapeHandlers: seq[ShapeHandler], maxShapesPerLeaf, depth: int, strategy: BVHStrategy): SceneNode =   
+proc newBVHNode(refSystem: ReferenceSystem, shapeHandlers: seq[ShapeHandler], maxShapesPerLeaf, depth: int, strategy: BVHStrategy): SceneNode =   
     if shapeHandlers.len == 0: return nil
 
     var aabb = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
-    let handlersAABB = shapeHandlers.map(proc(handler: ShapeHandler): Interval[Point3D] = handler.getAABB)
+    let handlersAABB = shapeHandlers.map(proc(handler: ShapeHandler): Interval[Point3D] = refSystem.getAABB(handler))
     for box in handlersAABB.items: aabb = newInterval(newInterval(box.min, aabb.min).min, newInterval(box.max, aabb.max).max)
 
     if shapeHandlers.len <= maxShapesPerLeaf: return SceneNode(kind: nkLeaf, aabb: aabb, handlers: shapeHandlers)
 
     let
         sortedShapes = shapeHandlers.sorted(proc(a, b: ShapeHandler): int = cmp(a.getAABB.min.x, b.getAABB.min.x))
-        leftNode = newBVHNode(sortedShapes[0..<sortedShapes.len div 2], maxShapesPerLeaf, depth + 1, strategy)
-        rightNode = newBVHNode(sortedShapes[sortedShapes.len div 2..<sortedShapes.len], maxShapesPerLeaf, depth + 1, strategy)
+        leftNode = refSystem.newBVHNode(sortedShapes[0..<sortedShapes.len div 2], maxShapesPerLeaf, depth + 1, strategy)
+        rightNode = refSystem.newBVHNode(sortedShapes[sortedShapes.len div 2..<sortedShapes.len], maxShapesPerLeaf, depth + 1, strategy)
     
     SceneNode(kind: nkBranch, aabb: aabb, left: leftNode, right: rightNode)
 
@@ -58,17 +58,11 @@ proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.
     Scene(bgCol: bgCol, handlers: shapeHandlers)
 
 proc fromObserver*(scene: Scene; refSystem: ReferenceSystem, maxShapesPerLeaf: int): Scene =
-    let localHandlers = scene.handlers.map(proc(handler: ShapeHandler): ShapeHandler = 
-        (
-            shape: handler.shape, 
-            transformation: newComposition(handler.transformation, refSystem.getTransformation.inverse)
-        )
-    )
 
     Scene(
         bgCol: scene.bgCol, 
-        handlers: localHandlers,
-        tree: newBVHNode(localHandlers, maxShapesPerLeaf, depth = 0, skSAH)
+        handlers: scene.handlers,
+        tree: newBVHNode(refSystem, scene.handlers, maxShapesPerLeaf, depth = 0, skSAH)
     )
 
 
