@@ -65,4 +65,40 @@ suite "ShapeHandler":
         check areClose(appo.max, newPoint3D(4, 5, 6))
 
 
+    test "getAABB proc (with ReferenceSystem)":
+        # Checking AABB in generic reference system
+        var
+            sdr1 = newReferenceSystem(newPoint3D(0, 0, 0), [eX, eY, eZ])
+            sdr2 = newReferenceSystem(newPoint3D(1, 1, 1), [eX, -eZ, eY])
+            appo: Interval[Point3D]
+
+        #----------------------------------#
+        #      World reference system      #
+        #----------------------------------# 
+        appo = sdr1.getAABB(shand)
+        check areClose(appo.min, ORIGIN3D)
+        check areClose(appo.max, newPoint3D(1, 1, 1))
         
+        appo = sdr1.getAABB(usphand)
+        check areClose(appo.min, ORIGIN3D)
+        check areClose(appo.max, newPoint3D(2, 2, 2))
+        
+        appo = sdr1.getAABB(sphand)
+        check areClose(appo.min, newPoint3D(-2, -1, 0))
+        check areClose(appo.max, newPoint3D(4, 5, 6))
+
+
+        #---------------------------------#
+        #    Specific reference system    #
+        #---------------------------------#
+        appo = sdr2.getAABB(shand)
+        echo appo.min
+        echo appo.max
+        
+        appo = sdr2.getAABB(usphand)
+        echo appo.min
+        echo appo.max        
+        
+        appo = sdr2.getAABB(sphand)
+        echo appo.min
+        echo appo.max
