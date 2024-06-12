@@ -1,17 +1,17 @@
 import geometry, hdrimage, shapes
 
-from std/sequtils import concat, apply, map, foldl, toSeq, filterIt, mapIt
+from std/sequtils import concat, foldl, toSeq, filterIt, mapIt
 from std/algorithm import sorted
 
 
 type ShapeHandler* = tuple[shape: Shape, transformation: Transformation]
     
 proc getAABB*(handler: ShapeHandler): Interval[Point3D] {.inline.} =
-    getAABB(handler.shape.getVertices.map(proc(v: Point3D): Point3D = apply(handler.transformation, v)))
+    getAABB(handler.shape.getVertices.mapIt(apply(handler.transformation, it)))
 
-proc getAABB*(refSystem: ReferenceSystem, handler: ShapeHandler): Interval[Point3D] {.inline.} =
+proc getLocalAABB*(refSystem: ReferenceSystem, handler: ShapeHandler): Interval[Point3D] {.inline.} =
     let localTransformation = newComposition(handler.transformation, newTranslation(refSystem.origin).inverse)
-    getAABB(handler.shape.getVertices.map(proc(v: Point3D): Point3D = refSystem.coeff(apply(localTransformation, v))))
+    getAABB(handler.shape.getVertices.mapIt(refSystem.coeff(apply(localTransformation, it)).Point3D))
 
 
 type
@@ -32,43 +32,45 @@ type
         of nkLeaf:
             handlers*: seq[ShapeHandler]
 
-    Scene* = object
-        bgCol*: Color
-        handlers*: seq[ShapeHandler]
-        tree*: SceneNode = nil
+    Scene* = tuple[bgCol: Color, handlers: seq[ShapeHandler]]
+
+    SubScene* = tuple[rs: ReferenceSystem, tree: SceneNode]
 
 
-proc newBVHNode(refSystem: ReferenceSystem, shapeHandlers: seq[ShapeHandler], maxShapesPerLeaf, depth: int, strategy: BVHStrategy): SceneNode =   
+proc newBVHNode(shapeHandlers: seq[ShapeHandler], localTotalAABB: Interval[Point3D], localAABBs: seq[Interval[Point3D]], depth, maxShapesPerLeaf: int, strategy: BVHStrategy): SceneNode =   
     if shapeHandlers.len == 0: return nil
-
-    var aabb = (min: newPoint3D(Inf, Inf, Inf), max: newPoint3D(-Inf, -Inf, -Inf))
-    let handlersAABB = shapeHandlers.map(proc(handler: ShapeHandler): Interval[Point3D] = refSystem.getAABB(handler))
-    for box in handlersAABB.items: aabb = newInterval(newInterval(box.min, aabb.min).min, newInterval(box.max, aabb.max).max)
-
-    if shapeHandlers.len <= maxShapesPerLeaf: return SceneNode(kind: nkLeaf, aabb: aabb, handlers: shapeHandlers)
+    if shapeHandlers.len <= maxShapesPerLeaf: return SceneNode(kind: nkLeaf, aabb: localTotalAABB, handlers: shapeHandlers)
 
     let 
-        sortedHandlers = countup(0, shapeHandlers.len - 1).toSeq
-            .filterIt(handlersAABB[it].max.x > 0.0) # here it would be usefull only the first round
-            .sorted(proc(a, b: int): int = cmp(handlersAABB[a].min.Vec3f[depth mod 3], handlersAABB[b].min.Vec3f[depth mod 3]))
-            .mapIt(shapeHandlers[it])
+        sortedIndexes = countup(0, shapeHandlers.len - 1).toSeq
+            .sorted(proc(a, b: int): int = cmp(localAABBs[a].min.Vec3f[depth mod 3], localAABBs[b].min.Vec3f[depth mod 3]))
+            
+        sortedHandlers = sortedIndexes.mapIt(shapeHandlers[it])
+        sortedAABBs = sortedIndexes.mapIt(localAABBs[it])
 
-        leftNode = refSystem.newBVHNode(sortedHandlers[0..<sortedHandlers.len div 2], maxShapesPerLeaf, depth + 1, strategy)
-        rightNode = refSystem.newBVHNode(sortedHandlers[sortedHandlers.len div 2..<sortedHandlers.len], maxShapesPerLeaf, depth + 1, strategy)
+        mid = sortedIndexes.len div 2
+        (handlersLeft, handlersRight) = (sortedHandlers[0..<mid], sortedHandlers[mid..<sortedIndexes.len])
+        (localAABBsLeft, localAABBsRight) = (sortedAABBs[0..<mid], sortedAABBs[mid..<sortedIndexes.len])
+        (aabbLeft, aabbRight) = (getTotalAABB(localAABBsLeft), getTotalAABB(localAABBsRight))
+
+        leftNode = newBVHNode(handlersLeft, aabbLeft, localAABBsLeft, maxShapesPerLeaf, depth + 1, strategy)
+        rightNode = newBVHNode(handlersRight, aabbRight, localAABBsRight, maxShapesPerLeaf, depth + 1, strategy)
     
-    SceneNode(kind: nkBranch, aabb: aabb, left: leftNode, right: rightNode)
+    SceneNode(kind: nkBranch, aabb: localTotalAABB, left: leftNode, right: rightNode)
 
 
-proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.inline.} = 
-    Scene(bgCol: bgCol, handlers: shapeHandlers)
+proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.inline.} = (bgCol, shapeHandlers)
 
-proc fromObserver*(scene: Scene; refSystem: ReferenceSystem, maxShapesPerLeaf: int): Scene =
+proc fromObserver*(scene: Scene; refSystem: ReferenceSystem, maxShapesPerLeaf: int): SubScene =
+    let 
+        localAABBs = scene.handlers.mapIt(refSystem.getLocalAABB(it))
 
-    Scene(
-        bgCol: scene.bgCol, 
-        handlers: scene.handlers,
-        tree: newBVHNode(refSystem, scene.handlers, maxShapesPerLeaf, depth = 0, skSAH)
-    )
+        # visibleIndexes = countup(0, scene.handlers.len - 1).toSeq.filter()
+
+        # visibleHandlers = visibleIndexes.mapIt(scene.handlers[it]) 
+        # visibleAABBs = visibleIndexes.mapIt(localAABBs[it]) 
+
+    (refSystem, newBVHNode(scene.handlers, getTotalAABB(localAABBs), localAABBs, depth = 0, maxShapesPerLeaf, skSAH))
 
 
 proc loadMesh*(world: Scene, source: string) = quit "to implement"
@@ -86,3 +88,6 @@ proc newUnitarySphere*(center: Point3D; material = newMaterial()): ShapeHandler 
 
 proc newPlane*(material = newMaterial(), transformation = Transformation.id): ShapeHandler {.inline.} = 
     newShapeHandler(Shape(kind: skPlane, material: material), transformation)
+
+proc newBox*(aabb: Interval[Point3D], material = newMaterial(), transformation = Transformation.id): ShapeHandler {.inline.} =
+    newShapeHandler(Shape(kind: skAABox, aabb: aabb, material: material), transformation)
