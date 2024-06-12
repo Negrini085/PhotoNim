@@ -1,6 +1,6 @@
 import geometry, hdrimage, shapes
 
-from std/sequtils import concat, apply, map, foldl, toSeq
+from std/sequtils import concat, apply, map, foldl, toSeq, filterIt, mapIt
 from std/algorithm import sorted
 
 
@@ -10,16 +10,17 @@ proc getAABB*(handler: ShapeHandler): Interval[Point3D] {.inline.} =
     getAABB(handler.shape.getVertices.map(proc(v: Point3D): Point3D = apply(handler.transformation, v)))
 
 proc getAABB*(refSystem: ReferenceSystem, handler: ShapeHandler): Interval[Point3D] {.inline.} =
-    let 
-        localTransformation = newComposition(handler.transformation, newTranslation(refSystem.origin).inverse)
-    getAABB(handler.shape.getVertices.
-                map(proc(v: Point3D): Point3D = apply(localTransformation, v)).
-                map(proc(v: Point3D): Point3D = refSystem.coeff(v.Vec3f).Point3D)
-            )
+    let localTransformation = newComposition(handler.transformation, newTranslation(refSystem.origin).inverse)
+    getAABB(handler.shape.getVertices.map(proc(v: Point3D): Point3D = refSystem.coeff(apply(localTransformation, v))))
 
 
 type
-    SceneNodeKind* = enum nkBranch, nkLeaf
+    SceneNodeKind* = enum 
+        nkBranch, nkLeaf
+
+    # BranchNodeKind* = enum 
+    #     bkBinary, bkTernary, bkQuaternary, bkOctonary
+
     BVHStrategy* = enum skMedian, skSAH
 
     SceneNode* = ref object
@@ -46,10 +47,14 @@ proc newBVHNode(refSystem: ReferenceSystem, shapeHandlers: seq[ShapeHandler], ma
 
     if shapeHandlers.len <= maxShapesPerLeaf: return SceneNode(kind: nkLeaf, aabb: aabb, handlers: shapeHandlers)
 
-    let
-        sortedShapes = shapeHandlers.sorted(proc(a, b: ShapeHandler): int = cmp(a.getAABB.min.x, b.getAABB.min.x))
-        leftNode = refSystem.newBVHNode(sortedShapes[0..<sortedShapes.len div 2], maxShapesPerLeaf, depth + 1, strategy)
-        rightNode = refSystem.newBVHNode(sortedShapes[sortedShapes.len div 2..<sortedShapes.len], maxShapesPerLeaf, depth + 1, strategy)
+    let 
+        sortedHandlers = countup(0, shapeHandlers.len - 1).toSeq
+            .filterIt(handlersAABB[it].max.x > 0.0) # here it would be usefull only the first round
+            .sorted(proc(a, b: int): int = cmp(handlersAABB[a].min.Vec3f[depth mod 3], handlersAABB[b].min.Vec3f[depth mod 3]))
+            .mapIt(shapeHandlers[it])
+
+        leftNode = refSystem.newBVHNode(sortedHandlers[0..<sortedHandlers.len div 2], maxShapesPerLeaf, depth + 1, strategy)
+        rightNode = refSystem.newBVHNode(sortedHandlers[sortedHandlers.len div 2..<sortedHandlers.len], maxShapesPerLeaf, depth + 1, strategy)
     
     SceneNode(kind: nkBranch, aabb: aabb, left: leftNode, right: rightNode)
 
