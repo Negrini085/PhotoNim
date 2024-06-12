@@ -1,7 +1,7 @@
 from std/strformat import fmt
 from std/fenv import epsilon
 from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI, copySign
-from std/sequtils import toSeq, concat, map, foldl, foldr
+from std/sequtils import toSeq, concat, mapIt, foldl, foldr
 from std/algorithm import reversed
 
 
@@ -549,7 +549,7 @@ proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
     of tkIdentity: return Transformation.id
-    of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.map(inverse))
+    of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.mapIt(it.inverse))
     else: return Transformation(kind: kind, mat: transf.matInv, matInv: transf.mat)
 
 
@@ -616,7 +616,7 @@ proc apply*[T](transf: Transformation, x: T): T =
         if transf.transformations.len == 1: return apply(transf.transformations[0], x)
 
         when T is Normal:
-            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.matInv).foldl(dot(a, b))).toNormal
+            return dot(x, transf.transformations.mapIt(it.matInv).foldl(dot(a, b))).toNormal
         else:
             result = x
             for i in countdown(transf.transformations.len - 1, 0):
