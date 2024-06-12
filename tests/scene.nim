@@ -93,17 +93,16 @@ suite "ShapeHandler":
         #    Specific reference system    #
         #---------------------------------#
         appo = sdr2.getAABB(shand)
-        echo appo.min
-        echo appo.max
+        check areClose(appo.min, newPoint3D(-1, 0, -1), eps = 1e-6)
+        check areClose(appo.max, newPoint3D(0, 1, 0), eps = 1e-6)
         
         appo = sdr2.getAABB(usphand)
-        echo appo.min
-        echo appo.max        
+        check areClose(appo.min, newPoint3D(-1, -1, -1), eps = 1e-6)
+        check areClose(appo.max, newPoint3D(1, 1, 1), eps = 1e-6)
         
         appo = sdr2.getAABB(sphand)
-        echo appo.min
-        echo appo.max
-
+        check areClose(appo.min, newPoint3D(-3, -5, -2), eps = 1e-6)
+        check areClose(appo.max, newPoint3D(3, 1, 4), eps = 1e-6)
 
         #---------------------------------#
         #    Specific reference system    #
@@ -119,43 +118,6 @@ suite "ShapeHandler":
         appo = sdr3.getAABB(sphand)
         check areClose(appo.min, newPoint3D(-3, -2, -1))
         check areClose(appo.max, newPoint3D(3, 4, 5))
-
-
-
-suite "RefSystem":
-
-    setup:
-        let
-            rs1 = newReferenceSystem(newPoint3D(0, 0, 0))
-            rs2 = newReferenceSystem(newPoint3D(1, 3, 3), [eY, eX, eZ])
-    
-    teardown:
-        discard rs1
-        discard rs2
-
-    # test "newRefSystem proc":
-        
-    #     var
-    #         colSeq: seq[Vec3f]
-    #         e1, e2, e3: Vec3f
-
-
-    #     colSeq = columns(rs1.base).toSeq()
-    #     (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
-        
-    #     check areClose(rs1.origin, newPoint3D(0, 0, 0))
-    #     check areClose(e1, newVec3f(1, 0, 0))
-    #     check areClose(e2, newVec3f(0, 1, 0))
-    #     check areClose(e3, newVec3f(0, 0, 1))
-
-
-    #     colSeq = columns(rs2.base).toSeq()
-    #     (e1, e2, e3) = (colSeq[0], colSeq[1], colSeq[2])   
-
-    #     check areClose(rs2.origin, newPoint3D(1, 3, 3))
-    #     check areClose(e1, newVec3f(0, 1, 0))
-    #     check areClose(e2, newVec3f(1, 0, 0))
-    #     check areClose(e3, newVec3f(0, 0, 1))
 
 
 
