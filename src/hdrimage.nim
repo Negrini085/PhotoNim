@@ -3,7 +3,7 @@ import geometry
 from std/strformat import fmt
 from std/fenv import epsilon 
 from std/math import sum, pow, log10
-from std/sequtils import apply, map
+from std/sequtils import applyIt, mapIt
 
 
 type Color* {.borrow: `.`.} = distinct Vec3f
@@ -62,7 +62,7 @@ proc setPixel*(img: var HDRImage; x, y: int, color: Color) {.inline.} =
     img.pixels[img.pixelOffset(x, y)] = color
 
 proc avLuminosity*(img: HDRImage; eps = epsilon(float32)): float32 {.inline.} =
-    pow(10, sum(img.pixels.map(proc(pix: Color): float32 = log10(eps + pix.luminosity))) / img.pixels.len.float32)
+    pow(10, sum(img.pixels.mapIt(log10(eps + it.luminosity))) / img.pixels.len.float32)
 
 
 proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
@@ -71,8 +71,8 @@ proc clamp(x: Color): Color {.inline.} = newColor(clamp(x.r), clamp(x.g), clamp(
 proc toneMap*(img: HDRImage; alpha, gamma, avLum: float32): HDRImage =
     result = newHDRImage(img.width, img.height) 
     let lum = if avLum == 0.0: img.avLuminosity else: avLum
-    result.pixels = img.pixels.map(proc(pix: Color): Color = clamp(pix * (alpha / lum)))
+    result.pixels = img.pixels.mapIt(clamp(it * (alpha / lum)))
 
 proc applyToneMap*(img: var HDRImage; alpha, gamma, avLum: float32) =
     let lum = if avLum == 0.0: img.avLuminosity else: avLum
-    img.pixels.apply(proc(pix: Color): Color = clamp(pix * (alpha / lum)))
+    img.pixels.applyIt(clamp(it * (alpha / lum)))
