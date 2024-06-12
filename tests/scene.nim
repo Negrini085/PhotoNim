@@ -70,6 +70,7 @@ suite "ShapeHandler":
         var
             sdr1 = newReferenceSystem(newPoint3D(0, 0, 0), [eX, eY, eZ])
             sdr2 = newReferenceSystem(newPoint3D(1, 1, 1), [eX, -eZ, eY])
+            sdr3 = newReferenceSystem(newPoint3D(1, 1, 1), [eX, eY, eZ])
             appo: Interval[Point3D]
 
         #----------------------------------#
@@ -102,6 +103,22 @@ suite "ShapeHandler":
         appo = sdr2.getAABB(sphand)
         echo appo.min
         echo appo.max
+
+
+        #---------------------------------#
+        #    Specific reference system    #
+        #---------------------------------# 
+        appo = sdr3.getAABB(shand)
+        check areClose(appo.min, newPoint3D(-1, -1, -1))
+        check areClose(appo.max, ORIGIN3D)
+        
+        appo = sdr3.getAABB(usphand)
+        check areClose(appo.min, newPoint3D(-1, -1, -1))
+        check areClose(appo.max, newPoint3D(1, 1, 1))
+        
+        appo = sdr3.getAABB(sphand)
+        check areClose(appo.min, newPoint3D(-3, -2, -1))
+        check areClose(appo.max, newPoint3D(3, 4, 5))
 
 
 
