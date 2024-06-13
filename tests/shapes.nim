@@ -282,140 +282,21 @@ suite "Triangle":
 
         check areClose(tri.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
     
-#------------------------------#
-#       Plane test suite       #
-#------------------------------#
-#suite "Plane":
-#    setup:
-#        var plane = newPlane(Transformation.id)
-#
-#    test "PlaneConstructor":
-#        check plane.transform.kind == tkIdentity
-#
-#    
-#    test "RayIntersection: no transformation":
-#        # Checking ray intersection procedure on plane: no trasformation is performed
-#        var
-#            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-#            ray2 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
-#            ray3 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
-#
-#        check areClose(plane.rayIntersection(ray1).get.world_pt, ORIGIN3D)
-#        check areClose(plane.rayIntersection(ray1).get.normal, newNormal(0, 0, 1))
-#        check areClose(plane.rayIntersection(ray1).get.t, 2)
-#        check areClose(plane.rayIntersection(ray1).get.surface_pt, newPoint2D(0, 0))
-#
-#        check areClose(plane.rayIntersection(ray2).get.world_pt, newPoint3D(1, 2, 0))
-#        check areClose(plane.rayIntersection(ray2).get.normal, newNormal(0, 0, -1))
-#        check areClose(plane.rayIntersection(ray2).get.t, 5)
-#        check areClose(plane.rayIntersection(ray2).get.surface_pt, newPoint2D(0, 0))
-#
-#        check not plane.rayIntersection(ray3).isSome
-#
-#
-#    test "RayIntersection: with transformation":
-#        # Checking ray intersection procedure on plane: a translation along the z axis is performed
-#        var
-#            tr = newTranslation(newVec3f(0, 0, 3))
-#            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-#            ray2 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
-#            ray3 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
-#        
-#        plane.transform = tr
-#
-#        check not plane.rayIntersection(ray1).isSome
-#        check not plane.rayIntersection(ray2).isSome
-#
-#        check areClose(plane.rayIntersection(ray3).get().world_pt, newPoint3D(1, 6, 3))
-#        check areClose(plane.rayIntersection(ray3).get().normal, newNormal(0, 0, -1))
-#        check areClose(plane.rayIntersection(ray3).get().t, 10)
-#        check areClose(plane.rayIntersection(ray3).get().surface_pt, newPoint2D(0, 0))
-#    
-#
-#    test "FastIntersection":
-#        # Checking Fast intersection method
-#        var
-#            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-#            ray2 = newRay(newPoint3D(1, 0, 1), newVec3f(0, 0, 1))
-#            ray3 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
-#        
-#        check plane.fastIntersection(ray1)
-#        check not plane.fastIntersection(ray2)
-#        check not plane.fastIntersection(ray3)
-#
-#
-#suite "AABox":
-#
-#    setup: 
-#        let box = newAABox()
-#
-#    teardown:
-#        discard box
-#
-#    test "fastIntersection": 
-#        check fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 0.0), eX))
-#        check not fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 2.0), eX))
-#
-#        check fastIntersection(box, newRay(newPoint3D(0.0, 2.0, 0.0), -eY))
-#        check not fastIntersection(box, newRay(newPoint3D(0.0, -2.0, 0.0), -eY))
-#
-#        check fastIntersection(box, newRay(newPoint3D(0.0, 0.0, -1.5), eZ))
-#        check not fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 1.5), eZ))
-#
-##-----------------------------------------#
-##            World type test              #
-##-----------------------------------------#
-#
-#suite "World":
-#    
-#    setup:
-#        var 
-#            s1 = newSphere(newPoint3D(1, 1, 0), 1)
-#            s2 = newSphere(newPoint3D(1, 0, 1), 0.5)
-#            scenery = newWorld(@[s1, s2])
-#
-#    teardown: 
-#        discard scenary
-#            
-#    
-#    test "add/get proc":
-#        # Testing add/get procedure
-#
-#        scenery.shapes.add newUnitarySphere(newPoint3D(0, 0, 0))
-#        check areClose(scenery.shapes[2].transf.mat, Mat4f.id)
-#        check areClose(scenery.shapes[2].transf.inv_mat, Mat4f.id)
-#
-#
-#    test "fastIntersection proc":
-#        # Testing fastIntersection procedure on world scenery
-#
-#        var
-#            ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
-#            ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
-#        
-#        check fastIntersection(scenery, ray1)
-#        check not fastIntersection(scenery, ray2)
-#    
-#
-#    test "rayIntersection proc":
-#
-#        var
-#            ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
-#            ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
-#            hit: Option[HitRecord]
-#        
-#        scenery.shapes = @[s1, s2]
-#        
-#        # Intersection with first ray, we expect to have hit
-#        # in (1, 0, 0) at time t = 2
-#        hit = rayIntersection(scenery, ray1)
-#        check hit.isSome
-#        check areClose(hit.get.world_pt, newPoint3D(1, 0, 0))
-#        check areClose(hit.get.t, 2)
-#        check areClose(hit.get.normal.toVec3, newVec3f(0, -1, 0))
-#        check areClose(hit.get.surface_pt, newPoint2D(0.75, 0.5))
-#
-#        # Intersection with second ray, we expect not to have a hit
-#        hit = rayIntersection(scenery, ray2)
-#        check hit.isNone
-#
+
+    test "getAABB proc":
+        # Cheking getAABB proc, gives aabb in local shape reference system
+        let aabb = getAABB(tri)
+
+        check areClose(aabb.min, newPoint3D(0, 0, 0))
+        check areClose(aabb.max, newPoint3D(1, 1, 1))
+    
+
+    test "getVertices proc":
+        # Checking getVertices proc, gives aabb vertices in local shape reference system
+        let
+            aabb = getAABB(tri)
+            vert = getVertices(tri)
+        
+        check areClose(vert[0], tri.vertices[0])
+        check areClose(vert[1], tri.vertices[1])
+        check areClose(vert[2], tri.vertices[2])
