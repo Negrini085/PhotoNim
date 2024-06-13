@@ -1,7 +1,7 @@
 import geometry, hdrimage, camera
 
 from std/strformat import fmt
-from std/sequtils import concat, apply, map, foldl, toSeq
+from std/sequtils import concat, mapIt, foldl, toSeq
 from std/math import sgn, floor, arccos, arctan2, PI
 
 
@@ -38,11 +38,25 @@ proc getAABB*(points: seq[Point3D]): Interval[Point3D] =
     if points.len == 1: return (points[0], points[0])
 
     let 
-        x = points.map(proc(pt: Point3D): float32 = pt.x) 
-        y = points.map(proc(pt: Point3D): float32 = pt.y)
-        z = points.map(proc(pt: Point3D): float32 = pt.z)
+        x = points.mapIt(it.x) 
+        y = points.mapIt(it.y)
+        z = points.mapIt(it.z)
 
     (newPoint3D(x.min, y.min, z.min), newPoint3D(x.max, y.max, z.max))
+
+proc getTotalAABB*(aabbSeq: seq[Interval[Point3D]]): Interval[Point3D] =
+    if aabbSeq.len == 0: return (newPoint3D(Inf, Inf, Inf), newPoint3D(-Inf, -Inf, -Inf))
+    if aabbSeq.len == 1: return aabbSeq[0]
+
+    let
+        minX = aabbSeq.mapIt(it.min.x).min
+        minY = aabbSeq.mapIt(it.min.y).min
+        minZ = aabbSeq.mapIt(it.min.z).min
+        maxX = aabbSeq.mapIt(it.max.x).max
+        maxY = aabbSeq.mapIt(it.max.y).max
+        maxZ = aabbSeq.mapIt(it.max.z).max
+
+    (newPoint3D(minX, minY, minZ), newPoint3D(maxX, maxY, maxZ))
 
 proc getVertices*(aabb: Interval[Point3D]): array[8, Point3D] =
     return [
@@ -167,7 +181,7 @@ type
 
 
 proc newMesh*(kind: MeshKind, nodes: seq[Point3D], edges: seq[int]; transformation = Transformation): Mesh {.inline.} = 
-    Mesh(kind: kind, nodes: if transformation.kind == tkIdentity: nodes else: nodes.map(proc(pt: Point3D): Point3D = apply(transformation, pt)), edges: edges)
+    Mesh(kind: kind, nodes: if transformation.kind == tkIdentity: nodes else: nodes.mapIt(apply(transformation, it)), edges: edges)
 
 iterator items*(mesh: Mesh): Shape =
     case mesh.kind

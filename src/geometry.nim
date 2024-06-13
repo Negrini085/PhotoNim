@@ -1,7 +1,7 @@
 from std/strformat import fmt
 from std/fenv import epsilon
 from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI, copySign
-from std/sequtils import toSeq, concat, map, foldl, foldr
+from std/sequtils import toSeq, concat, mapIt, foldl, foldr
 from std/algorithm import reversed
 
 
@@ -549,7 +549,7 @@ proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
     of tkIdentity: return Transformation.id
-    of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.map(inverse))
+    of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.mapIt(it.inverse))
     else: return Transformation(kind: kind, mat: transf.matInv, matInv: transf.mat)
 
 
@@ -616,7 +616,7 @@ proc apply*[T](transf: Transformation, x: T): T =
         if transf.transformations.len == 1: return apply(transf.transformations[0], x)
 
         when T is Normal:
-            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.matInv).foldl(dot(a, b))).toNormal
+            return dot(x, transf.transformations.mapIt(it.matInv).foldl(dot(a, b))).toNormal
         else:
             result = x
             for i in countdown(transf.transformations.len - 1, 0):
@@ -624,7 +624,9 @@ proc apply*[T](transf: Transformation, x: T): T =
 
 
 
-type ReferenceSystem* = tuple[origin: Point3D, base: Mat3f]
+type ReferenceSystem* = ref object 
+    origin*: Point3D
+    base*: Mat3f
 
 proc newONB*(normal: Normal): Mat3f = 
     let
@@ -642,7 +644,8 @@ proc newRightHandedBase*(mat: Mat3f): Mat3f =
     if mat.det > 0: return mat
     else: result[0] = mat[0]; result[1] = mat[2]; result[2] = mat[1]
 
-proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = (origin, newRightHandedBase(base))
+proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = 
+    ReferenceSystem(origin: origin, base: newRightHandedBase(base))
 
 proc newReferenceSystem*(origin: Point3D, rotation: Transformation): ReferenceSystem = 
     result = newReferenceSystem(origin, [eX, eY, eZ])
@@ -668,14 +671,15 @@ proc newReferenceSystem*(origin: Point3D, rotation: Transformation): ReferenceSy
 
     else: quit "No other transformation are accepted for the camera translation rather than tkRotation and tkComposition of tkRotation."
 
-proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = (origin, newRightHandedBase(newONB(normal))) 
+proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = 
+    newReferenceSystem(origin, newRightHandedBase(newONB(normal))) 
 
 
-proc coeff*[T](refSystem: ReferenceSystem, pt: T): T {.inline.} = dot(refSystem.base, when T is Vec3f: pt else: pt.Vec3f).T
+proc coeff*[T](refSystem: ReferenceSystem, pt: T): Vec3f {.inline.} = dot(refSystem.base, when T is Vec3f: pt else: pt.Vec3f)
 proc fromCoeff*(refSystem: ReferenceSystem, coeff: Vec3f): Vec3f {.inline.} = dot(refSystem.base.T, coeff)
 
 proc getTransformation*(refSystem: ReferenceSystem): Transformation {.inline.} =
-    newComposition(newTranslation(refSystem.origin), newTransformation(refSystem.base.toMat4, refSystem.base.toMat4.T))
+    newComposition(newTranslation(refSystem.origin), newTransformation(refSystem.base.toMat4.T, refSystem.base.toMat4))
 
 
 type 

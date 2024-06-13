@@ -3,6 +3,7 @@ import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 from std/strformat import fmt
 from std/math import cos, sin, sqrt, PI
 import std/[options, strutils, terminal]
+from std/math import cos, sin, sqrt, PI
 
 
 type
@@ -68,21 +69,22 @@ proc scatterRay*(refSystem: ReferenceSystem, brdf: BRDF, ray: Ray, rg: var PCG):
         )
 
 
-proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int, rg: var PCG): Color =
+proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, maxShapesPerLeaf: int, rg: var PCG): Color =
     result = scene.bgCol
 
-    let hitLeafNodes = scene.tree.getHitLeafs(ray)
+    let hitLeafNodes = subScene.getHitLeafs(ray)
     if hitLeafNodes.isSome:
+
         case renderer.kind
         of rkOnOff:
             for node in hitLeafNodes.get:
                 for handler in node.handlers:
-                    if checkIntersection(handler, ray): 
+                    if checkIntersection(handler, ray.transform(subScene.rs.getTransformation)): 
                         result = renderer.hitCol
                         break
 
         of rkFlat:
-            let hitRecord = newHitRecord(hitLeafNodes.get, ray)
+            let hitRecord = newHitRecord(subScene.rs, hitLeafNodes.get, ray)
             if hitRecord.isSome:
                 let
                     hit = hitRecord.get[0]
@@ -95,9 +97,9 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int
         of rkPathTracer: 
             if (ray.depth > renderer.maxDepth): return BLACK
 
-            let hitRecord = newHitRecord(hitLeafNodes.get, ray)
+            let hitRecord = newHitRecord(subScene.rs, hitLeafNodes.get, ray)
             if hitRecord.isNone: return result
-        
+
             let 
                 hit = hitRecord.get[0]
 
@@ -111,7 +113,7 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int
                 surfacePt = hit.shape.getUV(hitPt)
                 
             result = material.radiance.getColor(surfacePt)
-
+            
             var hitCol = material.brdf.pigment.getColor(surfacePt)
             if ray.depth >= renderer.rouletteLim:
                 let q = max(0.05, 1 - hitCol.luminosity)
@@ -120,12 +122,13 @@ proc sampleRay(renderer: Renderer; ray: Ray, scene: Scene, maxShapesPerLeaf: int
 
             if hitCol.luminosity > 0.0:
                 var accumulatedRadiance = BLACK
-                for _ in 0..<renderer.nRays: 
+                for i in 0..<renderer.nRays: 
                     let ray = rs.scatterRay(material.brdf, ray, rg)
-                    accumulatedRadiance += hitCol * renderer.sampleRay(ray, localScene, maxShapesPerLeaf, rg)
+                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, ray, maxShapesPerLeaf, rg)
                 
                 result += accumulatedRadiance / renderer.nRays.float32
-        
+    
+    
 proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPerSide, maxShapesPerLeaf: int, displayProgress = true): HDRImage =
     result = newHDRImage(renderer.camera.viewport.width, renderer.camera.viewport.height)
             
@@ -146,7 +149,7 @@ proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPe
                             1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / renderer.camera.viewport.height.float32
                         )
                     )
-                    accumulatedColor += renderer.sampleRay(ray, cameraScene, maxShapesPerLeaf, rg)
+                    accumulatedColor += renderer.sampleRay(scene, cameraScene, ray, maxShapesPerLeaf, rg)
 
             result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
                             
