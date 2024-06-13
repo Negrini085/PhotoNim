@@ -1,6 +1,7 @@
 import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 
 from std/strformat import fmt
+from std/math import cos, sin, sqrt, PI
 import std/[options, strutils, terminal]
 
 
@@ -42,7 +43,6 @@ proc displayProgress(current, total: int) =
     stdout.styledWrite(fgWhite, "Rendering progress: ", fgRed, "0% ", fgWhite, bar, color, fmt" {percentage}%")
     stdout.flushFile
 
-from std/math import cos, sin, sqrt, PI
 
 proc scatterRay*(refSystem: ReferenceSystem, brdf: BRDF, ray: Ray, rg: var PCG): Ray =
     case brdf.kind:
