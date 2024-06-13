@@ -47,11 +47,20 @@ suite "AABox & AABB":
             box1 = newAABox()
             box2 = newAABox(newPoint3D(-1, -2, -3), newPoint3D(3, 4, 1), newMaterial(newSpecularBRDF(), newUniformPigment(WHITE)))
             box3 = newAABox(box2.aabb, newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(0.3, 0.7, 1))))
+
+            p1 = ORIGIN3D
+            p2 = newPoint3D(1, 2, 3)
+            p3 = newPoint3D(-2, 4, -8)
+            p4 = newPoint3D(-1, 2, 2)
     
     teardown:
         discard box1
         discard box2
         discard box3
+        discard p1
+        discard p2
+        discard p3
+        discard p4
 
     
     test "newAABox proc":
@@ -81,23 +90,16 @@ suite "AABox & AABB":
 
 
     test "getAABB (from points) proc":
-        let
-            p1 = ORIGIN3D
-            p2 = newPoint3D(1, 2, 3)
-            p3 = newPoint3D(-2, 4, -8)
-            p4 = newPoint3D(-1, 2, 2)
-            appo = getAABB(@[p1, p2, p3, p4])
+        # Checking getAABB (from points) proc
+        let appo = getAABB(@[p1, p2, p3, p4])
 
         check areClose(appo.min, newPoint3D(-2, 0, -8))
         check areClose(appo.max, newPoint3D(1, 4, 3))
     
 
     test "getTotalAABB proc":
+        # Checking getTotalAABB proc
         let
-            p1 = ORIGIN3D
-            p2 = newPoint3D(1, 2, 3)
-            p3 = newPoint3D(-2, 4, -8)
-            p4 = newPoint3D(-1, 2, 2)
             aabb1 = getAABB(@[p1, p2])
             aabb2 = getAABB(@[p3, p4])
             aabbTot = getTotalAABB(@[aabb1, aabb2])
@@ -111,6 +113,21 @@ suite "AABox & AABB":
         check areClose(aabbTot.min, newPoint3D(-2, 0, -8))
         check areClose(aabbTot.max, newPoint3D(1, 4, 3))
 
+
+    test "getVertices proc":
+        # Checking getVertices proc
+        let 
+            aabb = getAABB(@[p3, p4])
+            appo = aabb.getVertices()
+
+        check areClose(appo[0], aabb.min)
+        check areClose(appo[1], aabb.max)
+        check areClose(appo[2], newPoint3D(-2, 2, 2))
+        check areClose(appo[3], newPoint3D(-2, 4, -8))
+        check areClose(appo[4], newPoint3D(-2, 4, 2))
+        check areClose(appo[5], newPoint3D(-1, 2, -8))
+        check areClose(appo[6], newPoint3D(-1, 2, 2))
+        check areClose(appo[7], newPoint3D(-1, 4, -8))
 
 
 #suite "Sphere":
