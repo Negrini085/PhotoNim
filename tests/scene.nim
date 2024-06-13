@@ -1,5 +1,5 @@
 import std/unittest
-import PhotoNim
+import ../src/[scene, geometry, shapes, hdrimage]
 
 
 suite "ShapeHandler":
@@ -48,7 +48,7 @@ suite "ShapeHandler":
         check areClose(plhand.transformation.mat, newRotZ(45).mat, eps = 1e-6)
 
 
-    test "getAABB proc (no ReferenceSystem)":
+    test "getAABB proc":
         # Checking AABB in World frame of reference
         var appo: Interval[Point3D]
 
@@ -65,7 +65,7 @@ suite "ShapeHandler":
         check areClose(appo.max, newPoint3D(4, 5, 6))
 
 
-    test "getAABB proc (with ReferenceSystem)":
+    test "getLocalAABB proc":
         # Checking AABB in generic reference system
         var
             sdr1 = newReferenceSystem(newPoint3D(0, 0, 0), [eX, eY, eZ])
@@ -76,15 +76,15 @@ suite "ShapeHandler":
         #----------------------------------#
         #      World reference system      #
         #----------------------------------# 
-        appo = sdr1.getAABB(shand)
+        appo = sdr1.getLocalAABB(shand)
         check areClose(appo.min, ORIGIN3D)
         check areClose(appo.max, newPoint3D(1, 1, 1))
         
-        appo = sdr1.getAABB(usphand)
+        appo = sdr1.getLocalAABB(usphand)
         check areClose(appo.min, ORIGIN3D)
         check areClose(appo.max, newPoint3D(2, 2, 2))
         
-        appo = sdr1.getAABB(sphand)
+        appo = sdr1.getLocalAABB(sphand)
         check areClose(appo.min, newPoint3D(-2, -1, 0))
         check areClose(appo.max, newPoint3D(4, 5, 6))
 
@@ -92,30 +92,30 @@ suite "ShapeHandler":
         #---------------------------------#
         #    Specific reference system    #
         #---------------------------------#
-        appo = sdr2.getAABB(shand)
+        appo = sdr2.getLocalAABB(shand)
         check areClose(appo.min, newPoint3D(-1, 0, -1), eps = 1e-6)
         check areClose(appo.max, newPoint3D(0, 1, 0), eps = 1e-6)
         
-        appo = sdr2.getAABB(usphand)
+        appo = sdr2.getLocalAABB(usphand)
         check areClose(appo.min, newPoint3D(-1, -1, -1), eps = 1e-6)
         check areClose(appo.max, newPoint3D(1, 1, 1), eps = 1e-6)
         
-        appo = sdr2.getAABB(sphand)
+        appo = sdr2.getLocalAABB(sphand)
         check areClose(appo.min, newPoint3D(-3, -5, -2), eps = 1e-6)
         check areClose(appo.max, newPoint3D(3, 1, 4), eps = 1e-6)
 
         #---------------------------------#
         #    Specific reference system    #
         #---------------------------------# 
-        appo = sdr3.getAABB(shand)
+        appo = sdr3.getLocalAABB(shand)
         check areClose(appo.min, newPoint3D(-1, -1, -1))
         check areClose(appo.max, ORIGIN3D)
         
-        appo = sdr3.getAABB(usphand)
+        appo = sdr3.getLocalAABB(usphand)
         check areClose(appo.min, newPoint3D(-1, -1, -1))
         check areClose(appo.max, newPoint3D(1, 1, 1))
         
-        appo = sdr3.getAABB(sphand)
+        appo = sdr3.getLocalAABB(sphand)
         check areClose(appo.min, newPoint3D(-3, -2, -1))
         check areClose(appo.max, newPoint3D(3, 4, 5))
 
@@ -148,7 +148,6 @@ suite "Scene":
         check sc1.handlers[0].shape.kind == skTriangle and sc1.handlers[1].shape.kind == skTriangle
         check areClose(sc1.handlers[0].shape.vertices[0], newPoint3D(0, -2, 0))
         check areClose(apply(sc1.handlers[1].transformation, sc1.handlers[1].shape.vertices[0]), newPoint3D(1, -1, -2))
-        check sc1.tree.isNil
 
         # Second scene --> only Spheres
         check sc2.bgCol == newColor(1, 0.3, 0.7)
@@ -158,7 +157,6 @@ suite "Scene":
         check areClose(sc2.handlers[1].shape.radius, 1)
         check areClose(apply(sc2.handlers[0].transformation, ORIGIN3D), ORIGIN3D)
         check areClose(apply(sc2.handlers[1].transformation, ORIGIN3D), newPoint3D(4, 4, 4))
-        check sc2.tree.isNil
 
         # Third scene --> one Sphere and one Triangle
         # Checking newScene proc
@@ -168,20 +166,17 @@ suite "Scene":
         check areClose(sc3.handlers[0].shape.radius, 1)
         check areClose(apply(sc3.handlers[0].transformation, ORIGIN3D), newPoint3D(3, 3, 3))
         check areClose(sc3.handlers[1].shape.vertices[0], newPoint3D(0, -2, 0))
-        check sc3.tree.isNil
 
 
     test "fromObserver proc":
         var 
             rs = newReferenceSystem(newPoint3D(5, 3, 1), [-eX, eY, -eZ])
-            subScene: Scene
+            subScene: SubScene
 
         # First scene, only triangles
         subScene = sc1.fromObserver(rs, maxShapesPerLeaf = 2)
         
-        check subScene.bgCol == BLACK
         check not subScene.tree.isNil
-
         check areClose(subScene.tree.aabb.min, newPoint3D(2, -5, 0))
         check areClose(subScene.tree.aabb.max, newPoint3D(5, 1, 3))
 
@@ -189,9 +184,8 @@ suite "Scene":
         # Second scene, only spheres
         subscene = sc2.fromObserver(rs, maxShapesPerLeaf = 2)
 
-        check subScene.bgCol == newColor(1, 0.3, 0.7)
-        check not subScene.tree.isNil
 
+        check not subScene.tree.isNil
         check areClose(subScene.tree.aabb.min, newPoint3D(0, -6, -4))
         check areClose(subScene.tree.aabb.max, newPoint3D(8, 2, 4))
 
@@ -199,8 +193,7 @@ suite "Scene":
         # Third scene, one sphere and one triangle
         subscene = sc3.fromObserver(rs, maxShapesPerLeaf = 2)
 
-        check subScene.bgCol == BLACK
-        check not subScene.tree.isNil
 
+        check not subScene.tree.isNil
         check areClose(subScene.tree.aabb.min, newPoint3D(1, -5, -3))
         check areClose(subScene.tree.aabb.max, newPoint3D(5, 1, 1))
