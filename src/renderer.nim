@@ -77,11 +77,8 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
 
         case renderer.kind
         of rkOnOff:
-            for node in hitLeafNodes.get:
-                for handler in node.handlers:
-                    if checkIntersection(handler, ray.transform(subScene.rs.getTransformation)): 
-                        result = renderer.hitCol
-                        break
+            if newHitRecord(subScene.rs, hitLeafNodes.get, ray).isSome:
+                result = renderer.hitCol
 
         of rkFlat:
             let hitRecord = newHitRecord(subScene.rs, hitLeafNodes.get, ray)
