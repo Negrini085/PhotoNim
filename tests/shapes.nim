@@ -229,16 +229,58 @@ suite "Sphere":
         check areClose(vert1[7], newPoint3D( 1,  1, -1))
 
         # Sphere with arbitrary radius       
-        check areClose(vert1[0], newPoint3D(-1, -1, -1))
-        check areClose(vert1[1], newPoint3D( 1,  1,  1))
-        check areClose(vert1[2], newPoint3D(-1, -1,  1))
-        check areClose(vert1[3], newPoint3D(-1,  1, -1))
-        check areClose(vert1[4], newPoint3D(-1,  1,  1))
-        check areClose(vert1[5], newPoint3D( 1, -1, -1))
-        check areClose(vert1[6], newPoint3D( 1, -1,  1))
-        check areClose(vert1[7], newPoint3D( 1,  1, -1))
+        check areClose(vert2[0], newPoint3D(-3, -3, -3))
+        check areClose(vert2[1], newPoint3D( 3,  3,  3))
+        check areClose(vert2[2], newPoint3D(-3, -3,  3))
+        check areClose(vert2[3], newPoint3D(-3,  3, -3))
+        check areClose(vert2[4], newPoint3D(-3,  3,  3))
+        check areClose(vert2[5], newPoint3D( 3, -3, -3))
+        check areClose(vert2[6], newPoint3D( 3, -3,  3))
+        check areClose(vert2[7], newPoint3D( 3,  3, -3))
 
 
+
+#-------------------------------#
+#      Triangle test suite      #
+#-------------------------------#
+suite "Triangle":
+    
+    setup:
+        let tri =  newTriangle(
+            eX.Point3D, eY.Point3D, eZ.Point3D,
+            newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 3))
+            )
+    
+    teardown:
+        discard tri
+    
+    
+    test "newTriangle proc":
+        # Checking newTriangle proc
+        
+        check areClose(tri.vertices[0], eX.Point3D)
+        check areClose(tri.vertices[1], eY.Point3D)
+        check areClose(tri.vertices[2], eZ.Point3D)
+
+        check tri.material.brdf.kind == SpecularBRDF
+        check tri.material.radiance.kind == pkCheckered
+        check tri.material.radiance.grid.nsteps == 3
+        check areClose(tri.material.radiance.grid.color1, WHITE)
+        check areClose(tri.material.radiance.grid.color2, BLACK)
+    
+
+    test "getNormal proc":
+        # Checking getNormal proc
+        let pt = newPoint3D(0.2, 0.2, 0.6)
+
+        check areClose(tri.getNormal(pt, newVec3f(-1, 0, 0)).Vec3f, newVec3f(1, 1, 1).normalize)
+    
+
+    test "getUV proc":
+        # Checking getNormal proc
+        let pt = newPoint3D(0.2, 0.2, 0.6)
+
+        check areClose(tri.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
     
 #------------------------------#
 #       Plane test suite       #
