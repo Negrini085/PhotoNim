@@ -130,24 +130,44 @@ suite "AABox & AABB":
         check areClose(appo[7], newPoint3D(-1, 4, -8))
 
 
+
+#------------------------------#
+#       Sphere test suite      #
+#------------------------------#
+suite "Sphere":
+
+    setup:
+        var 
+            usphere = newUnitarySphere(newMaterial(newSpecularBRDF(), newCheckeredPigment(BLACK, WHITE, 2)))
+            sphere = newSphere(3.0)
+
+    teardown: 
+        discard usphere
+        discard sphere
+
+    test "newUnitarySphere proc":
+        # Checking newUnitarySphere proc
+        check usphere.radius == 1.0
+
+        check usphere.material.brdf.kind == SpecularBRDF
+        check usphere.material.radiance.kind == pkCheckered
+        check usphere.material.radiance.grid.nsteps == 2.int
+        check areClose(usphere.material.radiance.grid.color1, BLACK)
+        check areClose(usphere.material.radiance.grid.color2, WHITE)
+
+    test "newSphere proc":
+        # Checking newSphere proc
+        check sphere.radius == 3.0
+
+        check sphere.material.brdf.kind == DiffuseBRDF
+        check sphere.material.radiance.kind == pkUniform
+        check areClose(sphere.material.radiance.color, WHITE)
+
+
+    
 #suite "Sphere":
 #
-#    setup:
-#        var sphere = newUnitarySphere(ORIGIN3D)
-#        var sphere1 = newSphere(newPoint3D(0, 1, 0), 3.0)
 #
-#    teardown: 
-#        discard sphere; discard sphere1
-#
-#    test "newUnitarySphere proc":
-#        check sphere.transform.kind == tkIdentity
-#        check sphere.radius == 1.0
-#
-#    test "newSphere proc":
-#        check sphere1.radius == 3.0
-#        check areClose(apply(sphere1.transform, ORIGIN3D), newPoint3D(0, 1, 0))
-#
-#        check areClose(sphere1.transform.mat, newTranslation(newVec3f(0, 1, 0)).mat)
 #
 #
 #    test "Surface Normal":
