@@ -80,6 +80,16 @@ suite "AABox & AABB":
         check areClose(box3.material.radiance.getColor(newPoint2D(0.5, 0.5)), newColor(0.3, 0.7, 1))
 
 
+    test "getAABB (from points) proc":
+        let
+            p1 = ORIGIN3D
+            p2 = newPoint3D(1, 2, 3)
+            p3 = newPoint3D(-2, 4, -8)
+            p4 = newPoint3D(-1, 2, 2)
+            appo = getAABB(@[p1, p2, p3, p4])
+
+        check areClose(appo.min, newPoint3D(-2, 0, -8))
+        check areClose(appo.max, newPoint3D(1, 4, 3))
 
 
 
