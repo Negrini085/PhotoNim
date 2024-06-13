@@ -4,7 +4,7 @@ import PhotoNim
 #---------------------------#
 #    Ray type test suite    #
 #---------------------------#
-suite "Ray unittest":
+suite "Ray":
 
     setup:
         var 
@@ -65,18 +65,28 @@ suite "Ray unittest":
         check areClose(ray1.transform(T1), newRay(newPoint3D(2, 4, 6), newVec3f(1, 0, 0)))
         check areClose(ray1.transform(T2), newRay(newPoint3D(-1, 2, -3), newVec3f(-1, 0, 0)), 1e-6)
 
+        # Second ray
+        check areClose(ray2.transform(T1), newRay(newPoint3D(2, 4, 3), newVec3f(1, 0, 0)))
+        check areClose(ray2.transform(T2), newRay(newPoint3D(-1, 2, 0), newVec3f(-1, 0, 0)), 1e-6)
 
-#suite "Camera unittest":
+
+#suite "Camera":
 #
 #    setup:
 #        var 
+#            rs = newReferenceSystem(newPoint3D(-1, 0, 0), [eX, -eZ, eY])
 #            oCam = newOrthogonalCamera(viewport = (12, 10))
-#            pCam = newPerspectiveCamera(viewport = (12, 10), distance = 5, newTranslation([float32 -1, 0, 0]), newRotX(90))
+#            pCam = newPerspectiveCamera(rs, viewport = (12, 10), distance = 5, newTranslation([float32 -1, 0, 0]))
 #
 #    teardown:
-#        discard oCam; discard pCam
+#        discard rs
+#        discard oCam
+#        discard pCam
+#
 #
 #    test "newOrthogonalCamera proc":
+#        # Checking newOrthogonalCamera proc
+#
 #        check areClose(oCam.aspect_ratio, 1.2)
 #        check oCam.rs.origin == ORIGIN3D 
 #        check oCam.rs.base == Mat3f.id
@@ -89,11 +99,11 @@ suite "Ray unittest":
 #        check areClose(pCam.rs.base[2], -eY)
 #    
 #
-#    test "Orthogonal fireRay proc":
-#        var 
-#            ray1 = oCam.fireRay(newPoint2D(0, 0))
-#            ray2 = oCam.fireRay(newPoint2D(1, 0))
-#            ray3 = oCam.fireRay(newPoint2D(0, 1))
+##    test "Orthogonal fireRay proc":
+##        var 
+##            ray1 = oCam.fireRay(newPoint2D(0, 0))
+##            ray2 = oCam.fireRay(newPoint2D(1, 0))
+##            ray3 = oCam.fireRay(newPoint2D(0, 1))
 #            ray4 = oCam.fireRay(newPoint2D(1, 1))
 #        
 #        # Testing ray parallelism
@@ -156,120 +166,115 @@ suite "Ray unittest":
 #        check checkIntersection(cameraScene.tree, pCam.fireRay(newPoint2D(0.5, 0.5)))
 #
 #
-#suite "Pigment unittest":
-#
-#    setup: 
-#        let
-#            color1 = newColor(1.0, 2.0, 3.0)
-#            color2 = newColor(2.0, 3.0, 1.0)
-#            color3 = newColor(2.0, 1.0, 3.0)
-#            color4 = newColor(3.0, 2.0, 1.0)
-#
-#    teardown:
-#        discard color1; discard color2; discard color3; discard color4
-#
-#    test "color * proc":
-#        var
-#            c1 = newColor(1, 2 ,3)
-#            c2 = newColor(4, 5 ,6)
-#        
-#        c2 = c1 * c2
-#        check areClose(c2.r, 4.0)
-#        check areClose(c2.g, 10.0)
-#        check areClose(c2.b, 18.0)
-#
-#    test "newUniformPigment proc":
-#        let pigment = newUniformPigment(color1)
-#        check areClose(pigment.getColor(newPoint2D(0.0, 0.0)), color1)
-#        check areClose(pigment.getColor(newPoint2D(1.0, 0.0)), color1)
-#        check areClose(pigment.getColor(newPoint2D(0.0, 1.0)), color1)
-#        check areClose(pigment.getColor(newPoint2D(1.0, 1.0)), color1)
-#    
-#    test "newTexturePigment proc":
-#        var image = newHDRImage(2, 2)
-#        image.setPixel(0, 0, color1); image.setPixel(1, 0, color2)
-#        image.setPixel(0, 1, color3); image.setPixel(1, 1, color4)
-#
-#        let pigment = newTexturePigment(image)
-#        check areClose(pigment.getColor(newPoint2D(0.0, 0.0)), color1)
-#        check areClose(pigment.getColor(newPoint2D(1.0, 0.0)), newColor(2.0, 3.0, 1.0))
-#        check areClose(pigment.getColor(newPoint2D(0.0, 1.0)), newColor(2.0, 1.0, 3.0))
-#        check areClose(pigment.getColor(newPoint2D(1.0, 1.0)), newColor(3.0, 2.0, 1.0))
-#    
-#    test "newCheckeredPigment proc":
-#        let pigment = newCheckeredPigment(color1, color2, 2)
-#        check areClose(pigment.getColor(newPoint2D(0.25, 0.25)), color1)
-#        check areClose(pigment.getColor(newPoint2D(0.75, 0.25)), color2)
-#        check areClose(pigment.getColor(newPoint2D(0.25, 0.75)), color2)
-#        check areClose(pigment.getColor(newPoint2D(0.75, 0.75)), color1)
-#
-#
-#suite "BRDF":
-#
-#    setup:
-#        var
-#            dif = newDiffuseBRDF(newUniformPigment(newColor(1, 2, 3)), 0.2)
-#            spe = newSpecularBRDF(newUniformPigment(newColor(1, 2, 3)), 110)
-#
-#    teardown:
-#        discard dif
-#        discard spe
-#
-#
-#    test "newBRDF proc":
-#        check areClose(dif.pigment.color.r, 1)
-#        check areClose(dif.pigment.color.g, 2)
-#        check areClose(dif.pigment.color.b, 3)
-#        check areClose(dif.reflectance, 0.2)
-#
-#        check areClose(spe.pigment.color.r, 1)
-#        check areClose(spe.pigment.color.g, 2)
-#        check areClose(spe.pigment.color.b, 3)
-#        check areClose(spe.threshold_angle, 0.1 * degToRad(110.0).float32)
-#    
-#
-#    test "eval proc":
-#
-#        var
-#            norm = newNormal(1, 0, 0)
-#            in_dir = newVec3f(1, 2, -1)
-#            out_dir = newVec3f(1, 2, 1)
-#            uv = newPoint2D(0.3, 0.5)
-#            appo: Color
-#        
-#        appo = dif.eval(norm, in_dir, out_dir, uv)
-#        check areClose(appo.r, 1 * 0.2/PI)
-#        check areClose(appo.g, 2 * 0.2/PI)
-#        check areClose(appo.b, 3 * 0.2/PI)
-#
-#        appo = spe.eval(norm, in_dir, out_dir, uv)
-#        check areClose(appo.r, 1)
-#        check areClose(appo.g, 2)
-#        check areClose(appo.b, 3)
-#
-#
-#    # test "scatterRay proc":
-#
-#    #     var
-#    #         pcg = newPCG()
-#    #         pcg1 = newPCG()
-#    #         appo: Ray
-#    #         norm = newNormal(0, 0, 1)
-#    #         in_dir = newVec3f(-1, 0, -1)
-#    #         int_point = newPoint3D(0, 0, 0)
-#    #         cos2 = pcg1.rand
-#    #         c = sqrt(cos2)
-#    #         s = sqrt(1 - cos2)
-#    #         phi = 2 * PI * pcg1.rand
-#
-#    #     appo = dif.scatterRay(pcg, in_dir, int_point, norm, 0)
-#    #     check areClose(appo, newRay(int_point, eX * cos(phi)*c + eY * sin(phi) * c + eZ * s))
-#
-#    #     appo = spe.scatterRay(pcg, in_dir, int_point, norm, 0)
-#    #     check areClose(appo,
-#    #         newRay(
-#    #             int_point, 
-#    #             in_dir.normalize-2*dot(norm.normalize.toVec3, in_dir.normalize)*norm.normalize.toVec3
-#    #             ))
-#
-#
+
+
+#-------------------------------#
+#       Pigment test suite      #
+#-------------------------------#
+suite "Pigment":
+
+    setup: 
+        let
+            color1 = newColor(1.0, 2.0, 3.0)
+            color2 = newColor(2.0, 3.0, 1.0)
+            color3 = newColor(2.0, 1.0, 3.0)
+            color4 = newColor(3.0, 2.0, 1.0)
+
+    teardown:
+        discard color1
+        discard color2
+        discard color3
+        discard color4
+
+
+    test "color * proc":
+        # Checking color tensor product proc
+        var appo: Color
+
+        appo = color1 * color2
+        check areClose(appo.r, 2.0)
+        check areClose(appo.g, 6.0)
+        check areClose(appo.b, 3.0)
+
+
+    test "newUniformPigment proc":
+        # Checking newUniformPigment proc 
+        let pigment = newUniformPigment(color1)
+
+        check areClose(pigment.getColor(newPoint2D(0.0, 0.0)), color1)
+        check areClose(pigment.getColor(newPoint2D(1.0, 0.0)), color1)
+        check areClose(pigment.getColor(newPoint2D(0.0, 1.0)), color1)
+        check areClose(pigment.getColor(newPoint2D(1.0, 1.0)), color1)
+    
+
+    test "newTexturePigment proc":
+        # Checking newTexturePigment proc
+        var image = newHDRImage(2, 2)
+        image.setPixel(0, 0, color1); image.setPixel(1, 0, color2)
+        image.setPixel(0, 1, color3); image.setPixel(1, 1, color4)
+
+        let pigment = newTexturePigment(image)
+        check areClose(pigment.getColor(newPoint2D(0.0, 0.0)), color1)
+        check areClose(pigment.getColor(newPoint2D(1.0, 0.0)), newColor(2.0, 3.0, 1.0))
+        check areClose(pigment.getColor(newPoint2D(0.0, 1.0)), newColor(2.0, 1.0, 3.0))
+        check areClose(pigment.getColor(newPoint2D(1.0, 1.0)), newColor(3.0, 2.0, 1.0))
+    
+
+    test "newCheckeredPigment proc":
+        # Checking newCheckeredPigment proc
+        let pigment = newCheckeredPigment(color1, color2, 2)
+
+        check areClose(pigment.getColor(newPoint2D(0.25, 0.25)), color1)
+        check areClose(pigment.getColor(newPoint2D(0.75, 0.25)), color2)
+        check areClose(pigment.getColor(newPoint2D(0.25, 0.75)), color2)
+        check areClose(pigment.getColor(newPoint2D(0.75, 0.75)), color1)
+
+
+
+#-----------------------------------#
+#          BRDF test suite          #
+#-----------------------------------#
+suite "BRDF":
+
+    setup:
+        var
+            dif = newDiffuseBRDF(newUniformPigment(newColor(1, 2, 3)), 0.2)
+            spe = newSpecularBRDF(newUniformPigment(newColor(1, 2, 3)), 110)
+
+    teardown:
+        discard dif
+        discard spe
+
+
+    test "newBRDF proc":
+        # Checking constructor procedures
+
+        check areClose(dif.pigment.color.r, 1)
+        check areClose(dif.pigment.color.g, 2)
+        check areClose(dif.pigment.color.b, 3)
+        check areClose(dif.reflectance, 0.2)
+
+        check areClose(spe.pigment.color.r, 1)
+        check areClose(spe.pigment.color.g, 2)
+        check areClose(spe.pigment.color.b, 3)
+        check areClose(spe.threshold_angle, 0.1 * degToRad(110.0).float32)
+    
+
+    test "eval proc":
+        # Checking brdf evaluation
+        var
+            norm = newNormal(1, 0, 0)
+            in_dir = newVec3f(1, 2, -1)
+            out_dir = newVec3f(1, 2, 1)
+            uv = newPoint2D(0.3, 0.5)
+            appo: Color
+        
+        appo = dif.eval(norm, in_dir, out_dir, uv)
+        check areClose(appo.r, 1 * 0.2/PI)
+        check areClose(appo.g, 2 * 0.2/PI)
+        check areClose(appo.b, 3 * 0.2/PI)
+
+        appo = spe.eval(norm, in_dir, out_dir, uv)
+        check areClose(appo.r, 1)
+        check areClose(appo.g, 2)
+        check areClose(appo.b, 3)
