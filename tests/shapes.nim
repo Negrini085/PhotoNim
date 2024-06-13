@@ -3,6 +3,9 @@ import ../src/[shapes, geometry, camera, hdrimage]
 
 
 
+#-----------------------------------#
+#        Material test suite        #
+#-----------------------------------#
 suite "Material":
 
     setup:
@@ -31,6 +34,52 @@ suite "Material":
         check areClose(mat2.radiance.getColor(newPoint2D(0.5, 0.5)), newColor(0.3, 0.7, 1))
         check areClose(mat2.brdf.eval(eZ.Normal, newVec3f(0, 1, -1).normalize, newVec3f(0, 1, 1).normalize, newPoint2D(0.5, 0.5)), 
                     newColor(1, 1, 1)/PI)
+
+
+
+#-----------------------------------#
+#          AABB test suite          #
+#-----------------------------------#
+suite "AABox & AABB":
+
+    setup:
+        let
+            box1 = newAABox()
+            box2 = newAABox(newPoint3D(-1, -2, -3), newPoint3D(3, 4, 1), newMaterial(newSpecularBRDF(), newUniformPigment(WHITE)))
+            box3 = newAABox(box2.aabb, newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(0.3, 0.7, 1))))
+    
+    teardown:
+        discard box1
+        discard box2
+        discard box3
+
+    
+    test "newAABox proc":
+        # Checking newAABox procs
+
+        # box1 --> default constructor
+        check areClose(box1.aabb.min, ORIGIN3D)
+        check areClose(box1.aabb.max, newPoint3D(1, 1, 1))
+        check box1.material.brdf.kind == DiffuseBRDF
+        check box1.material.radiance.kind == pkUniform
+        check areClose(box1.material.radiance.getColor(newPoint2D(0.5, 0.5)), WHITE)
+
+        # box2 --> giving min and max as input
+        check areClose(box2.aabb.min, newPoint3D(-1, -2, -3))
+        check areClose(box2.aabb.max, newPoint3D(3, 4, 1))
+        check box2.material.brdf.kind == SpecularBRDF
+        check box2.material.radiance.kind == pkUniform
+        check areClose(box2.material.radiance.getColor(newPoint2D(0.5, 0.5)), WHITE)
+
+
+        # box3 --> giving aabb as input
+        check areClose(box3.aabb.min, newPoint3D(-1, -2, -3))
+        check areClose(box3.aabb.max, newPoint3D(3, 4, 1))
+        check box3.material.brdf.kind == DiffuseBRDF
+        check box3.material.radiance.kind == pkUniform 
+        check areClose(box3.material.radiance.getColor(newPoint2D(0.5, 0.5)), newColor(0.3, 0.7, 1))
+
+
 
 
 
