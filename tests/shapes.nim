@@ -172,6 +172,53 @@ suite "AABox & AABB":
         check areClose(box2.getUV(pt5), newPoint2D(0.5, 5/6))
         check areClose(box2.getUV(pt6), newPoint2D(0.25, 0.5))
     
+    
+    test "getAABB (from AABox shape) proc":
+        let 
+            aabb1 = getAABB(box1)
+            aabb2 = getAABB(box2)
+            aabb3 = getAABB(box3)
+        
+        check areClose(aabb1.min, box1.aabb.min)
+        check areClose(aabb1.max, box1.aabb.max)
+
+        check areClose(aabb2.min, box2.aabb.min)
+        check areClose(aabb2.max, box2.aabb.max)
+
+        check areClose(aabb3.min, box3.aabb.min)
+        check areClose(aabb3.max, box3.aabb.max)
+    
+
+    test "getVertices (from AABox shape) proc":
+        var
+            vert = getVertices(box1.aabb)
+            vertBox = getVertices(box1)
+        
+        # box1 --> default constructor
+        check vert.len == vertBox.len
+        for i in 0..<vert.len:
+            check areClose(vert[i], vertBox[i])
+        
+
+        # box2 --> giving min and max as input
+        vert = getVertices(box2.aabb)
+        vertBox = getVertices(box2)
+        
+        check vert.len == vertBox.len
+        for i in 0..<vert.len:
+            check areClose(vert[i], vertBox[i])
+
+        
+        # box3 --> giving aabb as input
+        vert = getVertices(box3.aabb)
+        vertBox = getVertices(box3)
+        
+        check vert.len == vertBox.len
+        for i in 0..<vert.len:
+            check areClose(vert[i], vertBox[i])
+
+
+
 
     test "getAABB (from points) proc":
         # Checking getAABB (from points) proc
