@@ -1,5 +1,5 @@
 import std/[unittest, streams, math, sequtils, endians, strutils]
-import PhotoNim
+import ../src/[hdrimage, geometry]
 
 
 proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
@@ -101,13 +101,13 @@ suite "Color":
     test "r, g, b procs":
         # Checks r, g, b procs
 
-        check areClose(col1.r, 1)
+        check areClose(col1.r, 1.0)
         check areClose(col1.g, 0.5)
         check areClose(col1.b, 0.3)
 
         check areClose(col2.r, 0.3)
         check areClose(col2.g, 0.2)
-        check areClose(col2.b, 1)
+        check areClose(col2.b, 1.0)
     
 
     test "Color operations":
