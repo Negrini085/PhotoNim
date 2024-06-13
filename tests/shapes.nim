@@ -128,7 +128,50 @@ suite "AABox & AABB":
         check areClose(box3.getNormal(pt4, newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
         check areClose(box3.getNormal(pt5, newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
         check areClose(box3.getNormal(pt6, newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
+    
 
+    test "getUV proc":
+        # Checking getUV proc test
+        var 
+            pt1 = newPoint3D(0, 0.3, 0.7)
+            pt2 = newPoint3D(1, 0.2, 0.9)
+            pt3 = newPoint3D(0.5, 0, 0.3)
+            pt4 = newPoint3D(0.6, 1, 0.5)
+            pt5 = newPoint3D(0.5, 0.4, 0)
+            pt6 = newPoint3D(0.2, 0.5, 1)
+
+        # box1 --> default constructor
+        check areClose(box1.getUV(pt1), newPoint2D(0.3, 0.7))
+        check areClose(box1.getUV(pt2), newPoint2D(0.2, 0.9))
+        check areClose(box1.getUV(pt3), newPoint2D(0.5, 0.3))
+        check areClose(box1.getUV(pt4), newPoint2D(0.6, 0.5))
+        check areClose(box1.getUV(pt5), newPoint2D(0.5, 0.4))
+        check areClose(box1.getUV(pt6), newPoint2D(0.2, 0.5))
+
+        
+        # box2 --> giving min and max as input
+        pt1 = newPoint3D(-1, 1, -1); pt2 = newPoint3D(3, 1, -1); pt3 = newPoint3D(1, -2, -1)
+        pt4 = newPoint3D(1, 4, -1); pt5 = newPoint3D(1, 1, -3); pt6 = newPoint3D(1, 1, 1)
+
+        check areClose(box2.getUV(pt1), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt2), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt3), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt4), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt5), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt6), newPoint2D(0.5, 0.5))
+
+
+        # box3 --> giving aabb as input
+        pt1 = newPoint3D(-1, 2, 0); pt2 = newPoint3D(3, 0, -2); pt3 = newPoint3D(2, -2, 0)
+        pt4 = newPoint3D(0, 4, 0); pt5 = newPoint3D(1, 3, -3); pt6 = newPoint3D(0, 1, 1)
+
+        check areClose(box2.getUV(pt1), newPoint2D(2/3, 0.75))
+        check areClose(box2.getUV(pt2), newPoint2D(1/3, 0.25))
+        check areClose(box2.getUV(pt3), newPoint2D(0.75, 0.75))
+        check areClose(box2.getUV(pt4), newPoint2D(0.25, 0.75))
+        check areClose(box2.getUV(pt5), newPoint2D(0.5, 5/6))
+        check areClose(box2.getUV(pt6), newPoint2D(0.25, 0.5))
+    
 
     test "getAABB (from points) proc":
         # Checking getAABB (from points) proc
