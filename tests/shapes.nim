@@ -196,11 +196,54 @@ suite "Sphere":
         check areClose(sphere.getUV((3.float32*pt1.Vec3f).Point3D), newPoint2D(0, 0.5))
         check areClose(sphere.getUV((3.float32*pt2.Vec3f).Point3D), newPoint2D(1/6, 0.5))
 
+    
+    test "getAABB proc":
+        # Checking getAABB proc, gives AABB in shape local reference system
+        let
+            aabb1 = getAABB(usphere)
+            aabb2 = getAABB(sphere)
+        
+        # Unitary sphere
+        check areClose(aabb1.min, newPoint3D(-1, -1, -1))
+        check areClose(aabb1.max, newPoint3D( 1,  1,  1))
 
+        # Sphere with arbitrary radius
+        check areClose(aabb2.min, newPoint3D(-3, -3, -3))
+        check areClose(aabb2.max, newPoint3D( 3,  3,  3))
     
 
+    test "getVertices proc":
+        # Checking getVertices proc, gives AABB box vertices in shape local reference system
+        let 
+            vert1 = getVertices(usphere)
+            vert2 = getVertices(sphere)
+        
+        # Unitary sphere        
+        check areClose(vert1[0], newPoint3D(-1, -1, -1))
+        check areClose(vert1[1], newPoint3D( 1,  1,  1))
+        check areClose(vert1[2], newPoint3D(-1, -1,  1))
+        check areClose(vert1[3], newPoint3D(-1,  1, -1))
+        check areClose(vert1[4], newPoint3D(-1,  1,  1))
+        check areClose(vert1[5], newPoint3D( 1, -1, -1))
+        check areClose(vert1[6], newPoint3D( 1, -1,  1))
+        check areClose(vert1[7], newPoint3D( 1,  1, -1))
+
+        # Sphere with arbitrary radius       
+        check areClose(vert1[0], newPoint3D(-1, -1, -1))
+        check areClose(vert1[1], newPoint3D( 1,  1,  1))
+        check areClose(vert1[2], newPoint3D(-1, -1,  1))
+        check areClose(vert1[3], newPoint3D(-1,  1, -1))
+        check areClose(vert1[4], newPoint3D(-1,  1,  1))
+        check areClose(vert1[5], newPoint3D( 1, -1, -1))
+        check areClose(vert1[6], newPoint3D( 1, -1,  1))
+        check areClose(vert1[7], newPoint3D( 1,  1, -1))
+
+
+    
+#------------------------------#
+#       Plane test suite       #
+#------------------------------#
 #suite "Plane":
-#
 #    setup:
 #        var plane = newPlane(Transformation.id)
 #
