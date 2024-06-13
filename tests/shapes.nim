@@ -367,14 +367,58 @@ suite "Cylinder":
 
     test "getUV proc":
         # Checking getUV proc
-        discard
-    
+        var
+            pt1 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
+            pt2 = newPoint3D(1, 0, 0.3)
+        
+        # First cylinder: default constructor
+        check areClose(cyl1.getUV(pt1).Vec2f, newVec2f(1/6, 0.5))
+        check areClose(cyl1.getUV(pt2).Vec2f, newVec2f(0.0, 0.3))
+
+        # Second cylinder: specific build
+        check areClose(cyl1.getUV((2.float32*pt1.Vec3f).Point3D).Vec2f, newVec2f(1/6, 1))
+        check areClose(cyl1.getUV((2.float32*pt2.VEc3f).Point3D).Vec2f, newVec2f(0.0, 0.6))
+
 
     test "getAABB proc":
         # Cheking getAABB proc, gives aabb in local shape reference system
-        discard
+        let
+            aabb1 = getAABB(cyl1)
+            aabb2 = getAABB(cyl2)
+        
+        # First cylinder: default constructor
+        check areClose(aabb1.min, newPoint3D(-1, -1, 0))
+        check areClose(aabb1.max, newPoint3D(1, 1, 1))
+
+        # Second cylinder: specific build
+        check areClose(aabb2.min, newPoint3D(-2, -2, 0))
+        check areClose(aabb2.max, newPoint3D(2, 2, 1))
     
 
     test "getVertices proc":
         # Checking getVertices proc, gives aabb vertices in local shape reference system
-        discard
+        let
+            aabb1 = getAABB(cyl1)
+            aabb2 = getAABB(cyl2)
+            vert1 = getVertices(cyl1)
+            vert2 = getVertices(cyl2)
+        
+        # First cylinder: default constructor
+        check areClose(vert1[0], aabb1.min)
+        check areClose(vert1[1], aabb1.max)
+        check areClose(vert1[2], newPoint3D(-1, -1, 1))
+        check areClose(vert1[3], newPoint3D(-1,  1, 0))
+        check areClose(vert1[4], newPoint3D(-1,  1, 1))
+        check areClose(vert1[5], newPoint3D( 1, -1, 0))
+        check areClose(vert1[6], newPoint3D( 1, -1, 1))
+        check areClose(vert1[7], newPoint3D( 1,  1, 0))
+
+        # Second cylinder: specific build
+        check areClose(vert2[0], aabb2.min)
+        check areClose(vert2[1], aabb2.max)
+        check areClose(vert2[2], newPoint3D(-2, -2, 1))
+        check areClose(vert2[3], newPoint3D(-2,  2, 0))
+        check areClose(vert2[4], newPoint3D(-2,  2, 1))
+        check areClose(vert2[5], newPoint3D( 2, -2, 0))
+        check areClose(vert2[6], newPoint3D( 2, -2, 1))
+        check areClose(vert2[7], newPoint3D( 2,  2, 0))
