@@ -145,15 +145,17 @@ suite "Sphere":
         discard usphere
         discard sphere
 
+
     test "newUnitarySphere proc":
         # Checking newUnitarySphere proc
         check usphere.radius == 1.0
 
         check usphere.material.brdf.kind == SpecularBRDF
-        check usphere.material.radiance.kind == pkCheckered
+        check usphere.material.radiance.kind == pkCheckered 
         check usphere.material.radiance.grid.nsteps == 2.int
         check areClose(usphere.material.radiance.grid.color1, BLACK)
         check areClose(usphere.material.radiance.grid.color2, WHITE)
+
 
     test "newSphere proc":
         # Checking newSphere proc
@@ -163,148 +165,40 @@ suite "Sphere":
         check sphere.material.radiance.kind == pkUniform
         check areClose(sphere.material.radiance.color, WHITE)
 
+    
+    test "getNormal proc":
+        # Checking sphere normal computation method
+        var
+            pt1 = newPoint3D(1, 0 ,0)
+            pt2 = newPoint3D(cos(PI/3), sin(PI/3) ,0)
+            d = newVec3f(-1, 2, 0)
+        
+        # Unitary sphere
+        check areClose(usphere.getNormal(pt1, d), newNormal(1, 0, 0))
+        check areClose(usphere.getNormal(pt2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
+
+        # Sphere with arbitrary radius
+        check areClose(sphere.getNormal((3.float32*pt1.Vec3f).Point3D, d), newNormal(1, 0, 0))
+        check areClose(sphere.getNormal((3.float32*pt2.Vec3f).Point3D, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
 
     
-#suite "Sphere":
-#
-#
-#
-#
-#    test "Surface Normal":
-#        # Checking sphere normal computation method
-#        var
-#            p1 = newPoint3D(1, 0 ,0)
-#            p2 = newPoint3D(cos(PI/3), sin(PI/3) ,0)
-#            d = newVec3f(-1, 2, 0)
-#        
-#        check areClose(sphere.normal(p1, d), newNormal(1, 0, 0))
-#        check areClose(sphere.normal(p2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
-#
-#    
-#    test "(u, v) coordinates":
-#        # Checking (u, v) coordinates computation
-#        var
-#            p1 = newPoint3D(1, 0, 1)
-#            p2 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
-#
-#        check areClose(sphere.uv(p1), newPoint2D(0, 0))
-#        check areClose(sphere.uv(p2), newPoint2D(1/6, 1/3))
-#    
-#
-#    test "RayIntersection: no transformation":
-#        # Checking ray intersection procedure on unitary shperical surface: no traslation is performed on sphere
-#        var
-#            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-#            ray2 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
-#            ray3 = newRay(ORIGIN3D, newVec3f(1, 0, 0))
-#
-#        let 
-#            hit1 = sphere.rayIntersection(ray1).get
-#            hit2 = sphere.rayIntersection(ray2).get
-#            hit3 = sphere.rayIntersection(ray3).get
-#
-#        check areClose(hit1.world_pt, newPoint3D(0, 0, 1))
-#        check areClose(hit1.normal, newNormal(0, 0, 1))
-#        check areClose(hit1.t, 1)
-#        check areClose(hit1.surface_pt, newPoint2D(0, 0))
-#
-#        check areClose(hit2.world_pt, newPoint3D(1, 0, 0))
-#        check areClose(hit2.normal, newNormal(1, 0, 0))
-#        check areClose(hit2.t, 2)
-#        check areClose(hit1.surface_pt, newPoint2D(0, 0))
-#
-#        check areClose(hit3.world_pt, newPoint3D(1, 0, 0))
-#        check areClose(hit3.normal, newNormal(-1, 0, 0))
-#        check areClose(hit3.t, 1)
-#        check areClose(hit1.surface_pt, newPoint2D(0, 0))
-#    
-#
-#    test "RayIntersection: with transformation":
-#        # Checking ray intersection procedure: we are transforming the sphere
-#        var
-#            tr = newTranslation(newVec3f(10, 0, 0))
-#
-#            ray1 = newRay(newPoint3D(10, 0, 2), newVec3f(0, 0, -1))
-#            ray2 = newRay(newPoint3D(13, 0, 0), newVec3f(-1, 0, 0))
-#            ray3 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-#            ray4 = newRay(newPoint3D(-10, 0, 0), newVec3f(0, 0, -1))
-#        
-#        sphere.transform = tr
-#        let 
-#            intersect1 = sphere.rayIntersection(ray1).get
-#            intersect2 = sphere.rayIntersection(ray2).get
-#
-#        check areClose(intersect1.world_pt, newPoint3D(10, 0, 1))
-#        check areClose(intersect1.normal, newNormal(0, 0, 1))
-#        check areClose(intersect1.t, 1)
-#        check areClose(intersect1.surface_pt, newPoint2D(0, 0))
-#
-#        check areClose(intersect2.world_pt, newPoint3D(11, 0, 0))
-#        check areClose(intersect2.normal, newNormal(1, 0, 0))
-#        check areClose(intersect2.t, 2)
-#        check areClose(intersect2.surface_pt, newPoint2D(0, 0.5))
-#
-#        sphere.transform = Transformation.id
-#        check sphere.rayIntersection(ray3).isSome
-#        check not sphere.rayIntersection(ray4).isSome
-#    
-#
-#    test "FastIntersection proc":
-#        # Checking Fast intersection method
-#        var
-#            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-#            ray2 = newRay(newPoint3D(-10, 0, 0), newVec3f(0, 0, -1))
-#        
-#        check sphere.fastIntersection(ray1)
-#        check not sphere.fastIntersection(ray2)
-#    
-#    test "allHitTimes proc":
-#        # Checking all hit times procedure
-#
-#        var
-#            ray1 = newRay(newPoint3D(2, 0, 0), newVec3f(-1, 0 ,0))
-#            ray2 = newRay(newPoint3D(0, -3, 0), newVec3f(0, 1, 0))
-#            ray3 = newRay(newPoint3D(0, -3, 0), newVec3f(1, 0, 0))
-#            appo: Option[seq[float32]]
-#        
-#
-#        #----------------------------#
-#        #       Unitary sphere       #
-#        #----------------------------#  
-#        appo = allHitTimes(sphere, ray1)
-#        check appo.isSome
-#        check areClose(appo.get[0], 1.0)
-#        check areClose(appo.get[1], 3.0)
-#
-#        appo = allHitTimes(sphere, ray2)
-#        check appo.isSome
-#        check areClose(appo.get[0], 2.0)
-#        check areClose(appo.get[1], 4.0)
-#
-#        appo = allHitTimes(sphere, ray3)
-#        check not appo.isSome
-#
-#
-#        #----------------------------#
-#        #      Ordinary sphere       #
-#        #----------------------------#
-#        ray1.origin = newPoint3D(4, 1, 0)
-#        appo = allHitTimes(sphere1, ray1)
-#        check appo.isSome
-#        echo appo.get[0]
-#        check areClose(appo.get[0], 1.0, eps = 1e-6)
-#        check areClose(appo.get[1], 7.0, eps = 1e-6)
-#
-#        appo = allHitTimes(sphere1, ray2)
-#        check appo.isSome
-#        check areClose(appo.get[0], 1.0, eps = 1e-6)
-#        check areClose(appo.get[1], 7.0, eps = 1e-6)
-#
-#        appo = allHitTimes(sphere1, ray3)
-#        check not appo.isSome
-#
-#
-#
+    test "getUV proc":
+        # Checking (u, v) coordinates computation
+        var
+            pt1 = newPoint3D(1, 0, 0)
+            pt2 = newPoint3D(cos(PI/3), sin(PI/3), 0)
+
+        # Unitary sphere
+        check areClose(usphere.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(usphere.getUV(pt2), newPoint2D(1/6, 0.5))
+
+        # Sphere with arbitrary radius
+        check areClose(sphere.getUV((3.float32*pt1.Vec3f).Point3D), newPoint2D(0, 0.5))
+        check areClose(sphere.getUV((3.float32*pt2.Vec3f).Point3D), newPoint2D(1/6, 0.5))
+
+
+    
+
 #suite "Plane":
 #
 #    setup:
