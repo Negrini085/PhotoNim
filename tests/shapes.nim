@@ -73,6 +73,7 @@ suite "AABox & AABB":
         check box1.material.radiance.kind == pkUniform
         check areClose(box1.material.radiance.getColor(newPoint2D(0.5, 0.5)), WHITE)
 
+
         # box2 --> giving min and max as input
         check areClose(box2.aabb.min, newPoint3D(-1, -2, -3))
         check areClose(box2.aabb.max, newPoint3D(3, 4, 1))
@@ -87,6 +88,46 @@ suite "AABox & AABB":
         check box3.material.brdf.kind == DiffuseBRDF
         check box3.material.radiance.kind == pkUniform 
         check areClose(box3.material.radiance.getColor(newPoint2D(0.5, 0.5)), newColor(0.3, 0.7, 1))
+    
+
+    test "getNormal proc":
+        # Checking getNormal proc
+        var 
+            pt1 = newPoint3D(0, 0.5, 0.5)
+            pt2 = newPoint3D(1, 0.5, 0.5)
+            pt3 = newPoint3D(0.5, 0, 0.5)
+            pt4 = newPoint3D(0.5, 1, 0.5)
+            pt5 = newPoint3D(0.5, 0.5, 0)
+            pt6 = newPoint3D(0.5, 0.5, 1)
+        
+        # box1 --> default constructor
+        check areClose(box1.getNormal(pt1, newVec3f( 1, 0, 0)).Vec3f, newVec3f(-1, 0, 0))
+        check areClose(box1.getNormal(pt2, newVec3f(-1, 0, 0)).Vec3f, newVec3f( 1, 0, 0))
+        check areClose(box1.getNormal(pt3, newVec3f(0,  1, 0)).Vec3f, newVec3f(0, -1, 0))
+        check areClose(box1.getNormal(pt4, newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
+        check areClose(box1.getNormal(pt5, newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
+        check areClose(box1.getNormal(pt6, newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
+
+        
+        # box2 --> giving min and max as input
+        pt1 = newPoint3D(-1, 1, -1); pt2 = newPoint3D(3, 1, -1); pt3 = newPoint3D(1, -2, -1)
+        pt4 = newPoint3D(1, 4, -1); pt5 = newPoint3D(1, 1, -3); pt6 = newPoint3D(1, 1, 1)
+
+        check areClose(box2.getNormal(pt1, newVec3f( 1, 0, 0)).Vec3f, newVec3f(-1, 0, 0))
+        check areClose(box2.getNormal(pt2, newVec3f(-1, 0, 0)).Vec3f, newVec3f( 1, 0, 0))
+        check areClose(box2.getNormal(pt3, newVec3f(0,  1, 0)).Vec3f, newVec3f(0, -1, 0))
+        check areClose(box2.getNormal(pt4, newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
+        check areClose(box2.getNormal(pt5, newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
+        check areClose(box2.getNormal(pt6, newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
+
+
+        # box3 --> giving aabb as input
+        check areClose(box3.getNormal(pt1, newVec3f( 1, 0, 0)).Vec3f, newVec3f(-1, 0, 0))
+        check areClose(box3.getNormal(pt2, newVec3f(-1, 0, 0)).Vec3f, newVec3f( 1, 0, 0))
+        check areClose(box3.getNormal(pt3, newVec3f(0,  1, 0)).Vec3f, newVec3f(0, -1, 0))
+        check areClose(box3.getNormal(pt4, newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
+        check areClose(box3.getNormal(pt5, newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
+        check areClose(box3.getNormal(pt6, newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
 
 
     test "getAABB (from points) proc":
@@ -97,7 +138,7 @@ suite "AABox & AABB":
         check areClose(appo.max, newPoint3D(1, 4, 3))
     
 
-    test "getTotalAABB proc":
+    test "getTotalAABB (from aabb) proc":
         # Checking getTotalAABB proc
         let
             aabb1 = getAABB(@[p1, p2])
@@ -114,7 +155,7 @@ suite "AABox & AABB":
         check areClose(aabbTot.max, newPoint3D(1, 4, 3))
 
 
-    test "getVertices proc":
+    test "getVertices (from aabb) proc":
         # Checking getVertices proc
         let 
             aabb = getAABB(@[p3, p4])
