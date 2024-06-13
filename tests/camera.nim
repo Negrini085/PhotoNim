@@ -1,4 +1,5 @@
-import std/[unittest, math]
+import std/[unittest, options]
+from math import sqrt, degToRad, PI
 import PhotoNim
 
 #---------------------------#
@@ -70,102 +71,108 @@ suite "Ray":
         check areClose(ray2.transform(T2), newRay(newPoint3D(-1, 2, 0), newVec3f(-1, 0, 0)), 1e-6)
 
 
-#suite "Camera":
-#
-#    setup:
-#        var 
-#            rs = newReferenceSystem(newPoint3D(-1, 0, 0), [eX, -eZ, eY])
-#            oCam = newOrthogonalCamera(viewport = (12, 10))
-#            pCam = newPerspectiveCamera(rs, viewport = (12, 10), distance = 5, newTranslation([float32 -1, 0, 0]))
-#
-#    teardown:
-#        discard rs
-#        discard oCam
-#        discard pCam
-#
-#
-#    test "newOrthogonalCamera proc":
-#        # Checking newOrthogonalCamera proc
-#
-#        check areClose(oCam.aspect_ratio, 1.2)
-#        check oCam.rs.origin == ORIGIN3D 
-#        check oCam.rs.base == Mat3f.id
-#    
-#    test "newPerspectiveCamera proc":       
-#        check areClose(pCam.aspect_ratio, 1.2)
-#        check pCam.rs.origin == newPoint3D(-1, 0, 0) 
-#        check areClose(pCam.rs.base[0], eX)
-#        check areClose(pCam.rs.base[1], eZ)
-#        check areClose(pCam.rs.base[2], -eY)
-#    
-#
-##    test "Orthogonal fireRay proc":
-##        var 
-##            ray1 = oCam.fireRay(newPoint2D(0, 0))
-##            ray2 = oCam.fireRay(newPoint2D(1, 0))
-##            ray3 = oCam.fireRay(newPoint2D(0, 1))
-#            ray4 = oCam.fireRay(newPoint2D(1, 1))
-#        
-#        # Testing ray parallelism
-#        check areClose(0.0, cross(ray1.dir, ray2.dir).norm)
-#        check areClose(0.0, cross(ray1.dir, ray3.dir).norm)
-#        check areClose(0.0, cross(ray1.dir, ray4.dir).norm)
-#
-#        # Testing direction
-#        check areClose(ray1.dir, eX)
-#        check areClose(ray2.dir, eX)
-#        check areClose(ray3.dir, eX)
-#        check areClose(ray4.dir, eX)
-#
-#        # Testing arrive point
-#        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
-#        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
-#        check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
-#        check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
-#    
-#
-#    test "Perspective fireRay proc":
-#        var 
-#            ray1 = pCam.fireRay(newPoint2D(0, 0))
-#            ray2 = pCam.fireRay(newPoint2D(1, 0))
-#            ray3 = pCam.fireRay(newPoint2D(0, 1))
-#            ray4 = pCam.fireRay(newPoint2D(1, 1))
-#
-#        # # Checking wether all rays share the same origin
-#        check areClose(ray1.origin, ray2.origin)
-#        check areClose(ray1.origin, ray3.origin)
-#        check areClose(ray1.origin, ray4.origin)
-#        
-#        # # Checking directions
-#        check areClose(ray1.dir, newVec3f(5,  1.2, -1))
-#        check areClose(ray2.dir, newVec3f(5, -1.2, -1))
-#        check areClose(ray3.dir, newVec3f(5,  1.2,  1))
-#        check areClose(ray4.dir, newVec3f(5, -1.2,  1))
-#
-#        # Testing arrive point
-#        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
-#        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
-#        check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
-#        check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
-#
-#
-#    test "checkIntersection proc":
-#        let scene = newScene(@[newSphere(newPoint3D(2, 0, 0), 0.5)])
-#
-#        var cameraScene = scene.fromObserver(pCam.rs)
-#        check cameraScene.handlers[0].shape == scene.handlers[0].shape
-#        check cameraScene.handlers[0].transformation != scene.handlers[0].transformation
-#        
-#        check checkIntersection(cameraScene.handlers[0], pCam.fireRay(newPoint2D(0.5, 0.5)))
-#
-#        # check checkIntersection(cameraScene.handlers[0].getAABB, pCam.fireRay(newPoint2D(0.5, 0.5)))
-#        check checkIntersection(newShapeHandler(newAABox(cameraScene.handlers[0].getAABB)), pCam.fireRay(newPoint2D(0.5, 0.5)))
-#
-#        cameraScene.buildBVHTree(1, skSAH)
-#
-#        check checkIntersection(cameraScene.tree, pCam.fireRay(newPoint2D(0.5, 0.5)))
-#
-#
+
+suite "Camera":
+
+    setup:
+        var 
+            rs = newReferenceSystem(newPoint3D(-1, 0, 0), [eX, -eZ, eY])
+            oCam = newOrthogonalCamera(viewport = (12, 10), newPoint3D(-4, 0, 0))
+            pCam = newPerspectiveCamera(viewport = (12, 10), distance = 5, newPoint3D(-1, 0, 0), newRotX(45))
+
+    teardown:
+        discard rs
+        discard oCam
+        discard pCam
+
+
+    test "newCamera procs":
+        # Checking Camera vaiables constructor
+
+        # OrthogonalCamera
+        check ocam.kind == ckOrthogonal
+        check ocam.viewport.width == 12
+        check ocam.viewport.height == 10
+        check areClose(oCam.aspect_ratio, 1.2)
+
+        check areClose(oCam.rs.origin, newPoint3D(-4, 0, 0)) 
+        check oCam.rs.base == Mat3f.id
+    
+
+        # Perspective Camera
+        check pcam.kind == ckPerspective
+        check pcam.viewport.width == 12
+        check pcam.viewport.height == 10
+        check areClose(pCam.aspect_ratio, 1.2)
+
+        check areClose(pCam.rs.origin, newPoint3D(-1, 0, 0)) 
+        check areClose(pCam.rs.base[0], eX)
+        check areClose(pCam.rs.base[1], newVec3f(0, sqrt(2.float32)/2, sqrt(2.float32)/2), eps = 1e-6)
+        check areClose(pCam.rs.base[2], newVec3f(0, -sqrt(2.float32)/2, sqrt(2.float32)/2), eps = 1e-6)
+
+    
+
+    test "Orthogonal fireRay proc":
+        var 
+            ray1 = oCam.fireRay(newPoint2D(0, 0))
+            ray2 = oCam.fireRay(newPoint2D(1, 0))
+            ray3 = oCam.fireRay(newPoint2D(0, 1))
+            ray4 = oCam.fireRay(newPoint2D(1, 1))
+        
+        # Testing ray parallelism
+        check areClose(0.0, cross(ray1.dir, ray2.dir).norm)
+        check areClose(0.0, cross(ray1.dir, ray3.dir).norm)
+        check areClose(0.0, cross(ray1.dir, ray4.dir).norm)
+
+        # Testing direction
+        check areClose(ray1.dir, eX)
+        check areClose(ray2.dir, eX)
+        check areClose(ray3.dir, eX)
+        check areClose(ray4.dir, eX)
+
+        # Testing arrive point
+        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
+        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
+        check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
+        check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
+    
+
+    test "Perspective fireRay proc":
+        var 
+            ray1 = pCam.fireRay(newPoint2D(0, 0))
+            ray2 = pCam.fireRay(newPoint2D(1, 0))
+            ray3 = pCam.fireRay(newPoint2D(0, 1))
+            ray4 = pCam.fireRay(newPoint2D(1, 1))
+
+        # # Checking wether all rays share the same origin
+        check areClose(ray1.origin, ray2.origin)
+        check areClose(ray1.origin, ray3.origin)
+        check areClose(ray1.origin, ray4.origin)
+        
+        # # Checking directions
+        check areClose(ray1.dir, newVec3f(5,  1.2, -1))
+        check areClose(ray2.dir, newVec3f(5, -1.2, -1))
+        check areClose(ray3.dir, newVec3f(5,  1.2,  1))
+        check areClose(ray4.dir, newVec3f(5, -1.2,  1))
+
+        # Testing arrive point
+        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
+        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
+        check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
+        check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
+
+
+    test "checkIntersection proc":
+        let 
+            scene = newScene(@[newSphere(newPoint3D(2, 0, 0), 0.5)])
+            cameraScene = scene.fromObserver(pCam.rs, 1)
+            ray = pCam.fireRay(newPoint2D(0.5, 0.5))
+        
+        check checkIntersection(cameraScene.tree.aabb, ray)
+
+        var appo = newHitRecord(pcam.rs, getHitLeafs(cameraScene, ray).get, ray)
+        check appo.isSome
+        check areClose(ray.at(appo.get[0].t), newPoint3D(2.5, 0, 0))
 
 
 #-------------------------------#
