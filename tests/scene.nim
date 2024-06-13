@@ -184,7 +184,6 @@ suite "Scene":
         # Second scene, only spheres
         subscene = sc2.fromObserver(rs, maxShapesPerLeaf = 2)
 
-
         check not subScene.tree.isNil
         check areClose(subScene.tree.aabb.min, newPoint3D(0, -6, -4))
         check areClose(subScene.tree.aabb.max, newPoint3D(8, 2, 4))
@@ -192,7 +191,6 @@ suite "Scene":
 
         # Third scene, one sphere and one triangle
         subscene = sc3.fromObserver(rs, maxShapesPerLeaf = 2)
-
 
         check not subScene.tree.isNil
         check areClose(subScene.tree.aabb.min, newPoint3D(1, -5, -3))
