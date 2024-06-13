@@ -90,6 +90,26 @@ suite "AABox & AABB":
 
         check areClose(appo.min, newPoint3D(-2, 0, -8))
         check areClose(appo.max, newPoint3D(1, 4, 3))
+    
+
+    test "getTotalAABB proc":
+        let
+            p1 = ORIGIN3D
+            p2 = newPoint3D(1, 2, 3)
+            p3 = newPoint3D(-2, 4, -8)
+            p4 = newPoint3D(-1, 2, 2)
+            aabb1 = getAABB(@[p1, p2])
+            aabb2 = getAABB(@[p3, p4])
+            aabbTot = getTotalAABB(@[aabb1, aabb2])
+        
+        check areClose(aabb1.min, ORIGIN3D)
+        check areClose(aabb1.max, p2)
+
+        check areClose(aabb2.min, newPoint3D(-2, 2, -8))
+        check areClose(aabb2.max, newPoint3D(-1, 4, 2))
+
+        check areClose(aabbTot.min, newPoint3D(-2, 0, -8))
+        check areClose(aabbTot.max, newPoint3D(1, 4, 3))
 
 
 
