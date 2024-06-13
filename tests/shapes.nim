@@ -277,7 +277,7 @@ suite "Triangle":
     
 
     test "getUV proc":
-        # Checking getNormal proc
+        # Checking getUV proc
         let pt = newPoint3D(0.2, 0.2, 0.6)
 
         check areClose(tri.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
@@ -295,8 +295,86 @@ suite "Triangle":
         # Checking getVertices proc, gives aabb vertices in local shape reference system
         let
             aabb = getAABB(tri)
-            vert = getVertices(tri)
+            vert1 = getVertices(tri)
+            vert2 = getVertices(aabb)
         
-        check areClose(vert[0], tri.vertices[0])
-        check areClose(vert[1], tri.vertices[1])
-        check areClose(vert[2], tri.vertices[2])
+        # Triangle vertices
+        check areClose(vert1[0], tri.vertices[0])
+        check areClose(vert1[1], tri.vertices[1])
+        check areClose(vert1[2], tri.vertices[2])
+
+        # Triangle AABB vertices
+        check areClose(vert2[0], aabb.min)
+        check areClose(vert2[1], aabb.max)
+        check areClose(vert2[2], newPoint3D(0, 0, 1))
+        check areClose(vert2[3], newPoint3D(0, 1, 0))
+        check areClose(vert2[4], newPoint3D(0, 1, 1))
+        check areClose(vert2[5], newPoint3D(1, 0, 0))
+        check areClose(vert2[6], newPoint3D(1, 0, 1))
+        check areClose(vert2[7], newPoint3D(1, 1, 0))
+
+
+
+#----------------------------#
+#    Cylinder test suite     #
+#----------------------------# 
+suite "Cylinder":
+
+    setup:
+        let 
+            cyl1 = newCylinder()
+            cyl2 = newCylinder(R = 2.0, material = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2)))
+    
+    teardown:
+        discard cyl1
+        discard cyl2
+    
+    
+    test "newCylinder proc":
+        # Checking newTriangle proc
+        
+        # First cylinder: default constructor
+        check cyl1.R == 1.0
+        check areClose(cyl1.phiMax, 2*PI)
+        check cyl1.zSpan.min == 0.0 and cyl1.zSpan.max == 1.0
+
+        check cyl1.material.brdf.kind == DiffuseBRDF
+        check cyl1.material.radiance.kind == pkUniform
+        check areClose(cyl1.material.radiance.color, WHITE)
+    
+
+        # Second cylinder: specific build
+        check cyl2.R == 2.0
+        check areClose(cyl2.phiMax, 2*PI)
+        check cyl2.zSpan.min == 0.0 and cyl1.zSpan.max == 1.0
+
+        check cyl2.material.brdf.kind == SpecularBRDF
+        check cyl2.material.radiance.kind == pkCheckered
+        check cyl2.material.radiance.grid.nsteps == 2
+        check areClose(cyl2.material.radiance.grid.color1, WHITE)
+        check areClose(cyl2.material.radiance.grid.color2, BLACK)
+
+
+    test "getNormal proc":
+        # Checking getNormal proc
+        var
+            pt1 = newPoint3D(1, 0, 0.5)
+            pt2 = newPoint3D(2, 0, 0.5)
+        
+        check areClose(cyl1.getNormal(pt1, newVec3f(0, 0, -1)).Vec3f, newVec3f(1, 0, 0))
+        check areClose(cyl2.getNormal(pt2, newVec3f(0, 0, -1)).Vec3f, newVec3f(1, 0, 0))
+    
+
+    test "getUV proc":
+        # Checking getUV proc
+        discard
+    
+
+    test "getAABB proc":
+        # Cheking getAABB proc, gives aabb in local shape reference system
+        discard
+    
+
+    test "getVertices proc":
+        # Checking getVertices proc, gives aabb vertices in local shape reference system
+        discard
