@@ -45,7 +45,7 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc scatterRay*(refSystem: ReferenceSystem, brdf: BRDF, ray: Ray, rg: var PCG): Ray =
+proc scatterRay*(refSystem: ReferenceSystem, localRay: Ray, brdf: BRDF, rg: var PCG): Ray =
     case brdf.kind:
     of DiffuseBRDF:
         let 
@@ -55,17 +55,17 @@ proc scatterRay*(refSystem: ReferenceSystem, brdf: BRDF, ray: Ray, rg: var PCG):
         
         Ray(
             origin: ORIGIN3D, 
-            dir: refSystem.fromCoeff([float32 c * cos(phi), c * sin(phi), s]), 
+            dir: [float32 c * cos(phi), c * sin(phi), s], 
             tSpan: (float32 1e-3, float32 Inf), 
-            depth: ray.depth + 1
+            depth: localRay.depth + 1
         )
 
     of SpecularBRDF: 
         Ray(
             origin: ORIGIN3D,
-            dir: ray.dir.normalize - 2 * dot(refSystem.base[0], ray.dir.normalize) * refSystem.base[0],
+            dir: localRay.dir - 2 * dot(refSystem.base[0], localRay.dir) * refSystem.base[0],
             tspan: (float32 1e-3, float32 Inf), 
-            depth: ray.depth + 1
+            depth: localRay.depth + 1
         )
 
 
@@ -77,14 +77,16 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
 
         case renderer.kind
         of rkOnOff:
+            let worldRay = newRay(apply(newTranslation(subScene.rs.origin), ray.origin), subScene.rs.compose(ray.dir))
+
             for node in hitLeafNodes.get:
                 for handler in node.handlers:
-                    if subScene.rs.newHitPayload(ray, handler).isSome: 
+                    if newHitPayload(worldRay, handler).isSome: 
                         result = renderer.hitCol
                         break
 
         of rkFlat:
-            let hitRecord = newHitRecord(subScene.rs, hitLeafNodes.get, ray)
+            let hitRecord = subScene.rs.getHitRecord(ray, hitLeafNodes.get)
             if hitRecord.isSome:
                 let
                     hit = hitRecord.get[0]
@@ -97,24 +99,25 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
         of rkPathTracer: 
             if (ray.depth > renderer.maxDepth): return BLACK
 
-            let hitRecord = newHitRecord(subScene.rs, hitLeafNodes.get, ray)
+            let hitRecord = subScene.rs.getHitRecord(ray, hitLeafNodes.get)
             if hitRecord.isNone: return result
 
-            let 
+            let                
                 hit = hitRecord.get[0]
 
-                hitPt = hit.ray.at(hit.t)                              # In local framework
-                hitNormal = hit.handler.shape.getNormal(hitPt, ray.dir)        # In local framework
+                hitPt = hit.ray.at(hit.t)                                       # In shape reference system
+                hitNormal = hit.handler.shape.getNormal(hitPt, hit.ray.dir)     # In shape reference system
 
-                rs = newReferenceSystem(
-                    subScene.rs.fromCoeff(hitPt).Point3D + subScene.rs.origin.Vec3f, 
-                    subScene.rs.fromCoeff(hitNormal).Normal
-                    )    # In world           
-                localScene = scene.fromObserver(rs, maxShapesPerLeaf)
+                localRS = newReferenceSystem(apply(hit.handler.transformation, hitPt), apply(hit.handler.transformation, hitNormal))               
+                localRay = newRay(
+                    apply(newTranslation(localRS.origin), hit.ray.origin), 
+                    localRS.project(hit.ray.dir).normalize,
+                    ray.depth
+                )
+                localScene = scene.fromObserver(localRS, maxShapesPerLeaf)
 
                 material = hit.handler.shape.material
-                # Need to change it to shape reference system
-                surfacePt = hit.handler.shape.getUV(apply(hit.handler.transformation.inverse,subScene.rs.fromCoeff(hitPt) + subScene.rs.origin))              
+                surfacePt = hit.handler.shape.getUV(hitPt)
                 
             result = material.radiance.getColor(surfacePt)
             
@@ -127,16 +130,7 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
             if hitCol.luminosity > 0.0:
                 var accumulatedRadiance = BLACK
                 for i in 0..<renderer.nRays: 
-                    
-                    var appo = ray
-                    appo.origin = subScene.rs.fromCoeff(ray.origin).Point3D + subScene.rs.origin.Vec3f        # In world
-                    appo.dir = subScene.rs.fromCoeff(ray.dir)                                                 # In world
-
-                    appo.origin = rs.coeff(appo.origin).Point3D                # In HitReference system
-                    appo.dir = rs.coeff(appo.dir)                              # In HitReference system
-
-                    let ray1 = rs.scatterRay(material.brdf, appo, rg)
-                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, ray1, maxShapesPerLeaf, rg)
+                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, localRS.scatterRay(localRay, material.brdf, rg), maxShapesPerLeaf, rg)
                 
                 result += accumulatedRadiance / renderer.nRays.float32
     

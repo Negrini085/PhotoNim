@@ -675,8 +675,8 @@ proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inl
     newReferenceSystem(origin, newRightHandedBase(newONB(normal))) 
 
 
-proc coeff*[V](refSystem: ReferenceSystem, pt: V): Vec3f {.inline.} = dot(refSystem.base, when V is Vec3f: pt else: pt.Vec3f)
-proc fromCoeff*[V](refSystem: ReferenceSystem, coeff: V): Vec3f {.inline.} = dot(refSystem.base.T, when V is Vec3f: coeff else: coeff.Vec3f)
+proc project*[V](refSystem: ReferenceSystem, pt: V): Vec3f {.inline.} = dot(refSystem.base, when V is Vec3f: pt else: pt.Vec3f)
+proc compose*[V](refSystem: ReferenceSystem, coeff: V): Vec3f {.inline.} = dot(refSystem.base.T, when V is Vec3f: coeff else: coeff.Vec3f)
 
 proc getTransformation*(refSystem: ReferenceSystem): Transformation {.inline.} =
     newComposition(newTranslation(refSystem.origin), newTransformation(refSystem.base.toMat4.T, refSystem.base.toMat4))
