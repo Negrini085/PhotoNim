@@ -103,10 +103,13 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
             let 
                 hit = hitRecord.get[0]
 
-                hitPt = hit.ray.at(hit.t)
-                hitNormal = hit.shape.getNormal(hitPt, ray.dir)
+                hitPt = hit.ray.at(hit.t)                               # In shape reference system
+                hitNormal = hit.shape.getNormal(hitPt, ray.dir)         # In shape reference system
 
-                rs = newReferenceSystem(hitPt, hitNormal)
+                rs = newReferenceSystem(                                # In world reference system
+                        apply(hit.handler.transformation, hitPt),       # Need appl to get to world
+                        apply(hit.handler.transformation, hitNormal)
+                    )               
                 localScene = scene.fromObserver(rs, maxShapesPerLeaf)
 
                 material = hit.shape.material
