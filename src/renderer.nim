@@ -3,7 +3,6 @@ import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 from std/strformat import fmt
 from std/math import cos, sin, sqrt, PI
 import std/[options, strutils, terminal]
-from std/math import cos, sin, sqrt, PI
 
 
 type
@@ -81,7 +80,7 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
 
             for node in hitLeafNodes.get:
                 for handler in node.handlers:
-                    if newHitPayload(worldRay, handler).isSome: 
+                    if handler.getHitPayload(worldRay.transform(handler.transformation.inverse)).isSome: 
                         result = renderer.hitCol
                         break
 
@@ -103,22 +102,20 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
             if hitRecord.isNone: return result
 
             let                
-                hit = hitRecord.get[0]
+                closestHit = hitRecord.get[0]
 
-                hitPt = hit.ray.at(hit.t)                                       # In shape reference system
-                hitNormal = hit.handler.shape.getNormal(hitPt, hit.ray.dir)     # In shape reference system
+                shapeLocalHitPt = closestHit.ray.at(closestHit.t)                                       # In shape reference system
+                hitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)     # In shape reference system
 
-                localRS = newReferenceSystem(apply(hit.handler.transformation, hitPt), apply(hit.handler.transformation, hitNormal))               
-                localRay = newRay(
-                    apply(newTranslation(localRS.origin), hit.ray.origin), 
-                    localRS.project(hit.ray.dir).normalize,
-                    ray.depth
-                )
+                localRS = newReferenceSystem(apply(closestHit.handler.transformation, shapeLocalHitPt), apply(closestHit.handler.transformation, hitNormal)) 
                 localScene = scene.fromObserver(localRS, maxShapesPerLeaf)
 
-                material = hit.handler.shape.material
-                surfacePt = hit.handler.shape.getUV(hitPt)
-                
+                worldRay = closestHit.ray.transform(closestHit.handler.transformation)
+                localRay = newRay(apply(newTranslation(localRS.origin), worldRay.origin), localRS.project(worldRay.dir).normalize, closestHit.ray.depth)
+
+                material = closestHit.handler.shape.material
+                surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
+
             result = material.radiance.getColor(surfacePt)
             
             var hitCol = material.brdf.pigment.getColor(surfacePt)
@@ -130,7 +127,7 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
             if hitCol.luminosity > 0.0:
                 var accumulatedRadiance = BLACK
                 for i in 0..<renderer.nRays: 
-                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, localRS.scatterRay(localRay, material.brdf, rg), maxShapesPerLeaf, rg)
+                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, localRS.scatterRay(ray, material.brdf, rg), maxShapesPerLeaf, rg)
                 
                 result += accumulatedRadiance / renderer.nRays.float32
     
