@@ -88,9 +88,9 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
             if hitRecord.isSome:
                 let
                     hit = hitRecord.get[0]
-                    material = hit.shape.material
+                    material = hit.handler.shape.material
                     hitPt = hit.ray.at(hit.t)
-                    surfPt = hit.shape.getUV(hitPt)
+                    surfPt = hit.handler.shape.getUV(hitPt)
 
                 result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
@@ -103,17 +103,18 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
             let 
                 hit = hitRecord.get[0]
 
-                hitPt = hit.ray.at(hit.t)                               # In shape reference system
-                hitNormal = hit.shape.getNormal(hitPt, ray.dir)         # In shape reference system
+                hitPt = hit.ray.at(hit.t)                              # In local framework
+                hitNormal = hit.handler.shape.getNormal(hitPt, ray.dir)        # In local framework
 
-                rs = newReferenceSystem(                                # In world reference system
-                        apply(hit.handler.transformation, hitPt),       # Need appl to get to world
-                        apply(hit.handler.transformation, hitNormal)
-                    )               
+                rs = newReferenceSystem(
+                    subScene.rs.fromCoeff(hitPt).Point3D + subScene.rs.origin.Vec3f, 
+                    subScene.rs.fromCoeff(hitNormal).Normal
+                    )    # In world           
                 localScene = scene.fromObserver(rs, maxShapesPerLeaf)
 
-                material = hit.shape.material
-                surfacePt = hit.shape.getUV(hitPt)
+                material = hit.handler.shape.material
+                # Need to change it to shape reference system
+                surfacePt = hit.handler.shape.getUV(apply(hit.handler.transformation.inverse,subScene.rs.fromCoeff(hitPt) + subScene.rs.origin))              
                 
             result = material.radiance.getColor(surfacePt)
             
@@ -126,8 +127,16 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
             if hitCol.luminosity > 0.0:
                 var accumulatedRadiance = BLACK
                 for i in 0..<renderer.nRays: 
-                    let ray = rs.scatterRay(material.brdf, ray, rg)
-                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, ray, maxShapesPerLeaf, rg)
+                    
+                    var appo = ray
+                    appo.origin = subScene.rs.fromCoeff(ray.origin).Point3D + subScene.rs.origin.Vec3f        # In world
+                    appo.dir = subScene.rs.fromCoeff(ray.dir)                                                 # In world
+
+                    appo.origin = rs.coeff(appo.origin).Point3D                # In HitReference system
+                    appo.dir = rs.coeff(appo.dir)                              # In HitReference system
+
+                    let ray1 = rs.scatterRay(material.brdf, appo, rg)
+                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, ray1, maxShapesPerLeaf, rg)
                 
                 result += accumulatedRadiance / renderer.nRays.float32
     

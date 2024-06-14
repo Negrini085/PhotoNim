@@ -16,8 +16,8 @@ let
 
     plane = newPlane(
         newMaterial(
-            newDiffuseBRDF(newCheckeredPigment(RED, WHITE, 4)), 
-            newCheckeredPigment(RED, WHITE, 4)
+            newDiffuseBRDF(newCheckeredPigment(RED, WHITE, 2, 2)), 
+            newCheckeredPigment(RED, WHITE, 2, 2)
         )
     )
 
