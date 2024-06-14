@@ -1,6 +1,7 @@
 import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 
 from std/strformat import fmt
+from std/math import cos, sin, sqrt, PI
 import std/[options, strutils, terminal]
 from std/math import cos, sin, sqrt, PI
 

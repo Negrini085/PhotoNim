@@ -1,331 +1,555 @@
 import std/[unittest, math, options]
-import PhotoNim
-
-proc areClose(a, b: HitRecord): bool {.inline.} = 
-    areClose(a.ray, b.ray) and areClose(a.t, b.t) and 
-    areClose(a.world_pt, b.world_pt) and areClose(a.surface_pt, b.surface_pt) and 
-    areClose(a.normal, b.normal) 
+import ../src/[shapes, geometry, camera, hdrimage]
 
 
-suite "HitRecord":
+
+#-----------------------------------#
+#        Material test suite        #
+#-----------------------------------#
+suite "Material":
 
     setup:
-        var 
-            hit1 = HitRecord(ray: newRay(ORIGIN3D, newVec3f(0, 1, 0)), t: float32(0.5), world_pt: newPoint3D(1, 2, 3), surface_pt: newPoint2D(1, 0), normal: newNormal(1, 0, 0))
-            hit2 = HitRecord(ray: newRay(newPoint3D(0, 0, 2), newVec3f(1, 1, 0)), t: float32(0.6), world_pt: newPoint3D(1, 0, 0), surface_pt: newPoint2D(0.5, 0.5), normal: newNormal(0, 1, 0))
+        let
+            mat1 = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2))
+            mat2 = newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(0.3, 0.7, 1)))
 
     teardown:
-        discard hit1; discard hit2
+        discard mat1
+        discard mat2 
 
-    test "newHitRecord":
-        # Checking newHitRecord procedure
-        check areClose(hit1.world_pt, newPoint3D(1, 2, 3))
-        check areClose(hit1.surface_pt, newPoint2D(1, 0))
-        check areClose(hit1.normal, newNormal(1, 0, 0))
-        check areClose(hit1.t, 0.5)
-        check areClose(hit1.ray, newRay(ORIGIN3D, newVec3f(0, 1, 0)))
+    test "newMaterial proc":
+        # Checking newMaterial proc
+        check mat1.brdf.kind == SpecularBRDF
+        check mat1.radiance.kind == pkCheckered
+        check areClose(mat1.radiance.getColor(newPoint2D(0.3, 0.2)), WHITE)
+        check areClose(mat1.radiance.getColor(newPoint2D(0.8, 0.7)), WHITE)
+        check areClose(mat1.radiance.getColor(newPoint2D(0.8, 0.2)), BLACK)
+        check areClose(mat1.radiance.getColor(newPoint2D(0.3, 0.7)), BLACK)
+        check areClose(mat1.brdf.eval(eZ.Normal, newVec3f(0, 1, -1).normalize, newVec3f(0, 1, 1).normalize, newPoint2D(0.5, 0.5)), 
+                    BLACK)
 
 
-    test "areClose":
-        # Checking areClose procedure for HitRecord variables
-        check areClose(hit1, hit1)
-
-        check not areClose(hit1.world_pt, hit2.world_pt)
-        check not areClose(hit1.normal, hit2.normal)
-        check not areClose(hit1.ray, hit2.ray)
-        check not areClose(hit1.surface_pt, hit2.surface_pt)
-        check not areClose(hit1.t, hit2.t)
-
-        check not areClose(hit1, hit2)
+        check mat2.brdf.kind == DiffuseBRDF
+        check mat2.radiance.kind == pkUniform
+        check areClose(mat2.radiance.getColor(newPoint2D(0.5, 0.5)), newColor(0.3, 0.7, 1))
+        check areClose(mat2.brdf.eval(eZ.Normal, newVec3f(0, 1, -1).normalize, newVec3f(0, 1, 1).normalize, newPoint2D(0.5, 0.5)), 
+                    newColor(1, 1, 1)/PI)
 
 
 
+#-----------------------------------#
+#          AABB test suite          #
+#-----------------------------------#
+suite "AABox & AABB":
+
+    setup:
+        let
+            box1 = newAABox()
+            box2 = newAABox(newPoint3D(-1, -2, -3), newPoint3D(3, 4, 1), newMaterial(newSpecularBRDF(), newUniformPigment(WHITE)))
+            box3 = newAABox(box2.aabb, newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(0.3, 0.7, 1))))
+
+            p1 = ORIGIN3D
+            p2 = newPoint3D(1, 2, 3)
+            p3 = newPoint3D(-2, 4, -8)
+            p4 = newPoint3D(-1, 2, 2)
+    
+    teardown:
+        discard box1
+        discard box2
+        discard box3
+        discard p1
+        discard p2
+        discard p3
+        discard p4
+
+    
+    test "newAABox proc":
+        # Checking newAABox procs
+
+        # box1 --> default constructor
+        check areClose(box1.aabb.min, ORIGIN3D)
+        check areClose(box1.aabb.max, newPoint3D(1, 1, 1))
+        check box1.material.brdf.kind == DiffuseBRDF
+        check box1.material.radiance.kind == pkUniform
+        check areClose(box1.material.radiance.getColor(newPoint2D(0.5, 0.5)), WHITE)
+
+
+        # box2 --> giving min and max as input
+        check areClose(box2.aabb.min, newPoint3D(-1, -2, -3))
+        check areClose(box2.aabb.max, newPoint3D(3, 4, 1))
+        check box2.material.brdf.kind == SpecularBRDF
+        check box2.material.radiance.kind == pkUniform
+        check areClose(box2.material.radiance.getColor(newPoint2D(0.5, 0.5)), WHITE)
+
+
+        # box3 --> giving aabb as input
+        check areClose(box3.aabb.min, newPoint3D(-1, -2, -3))
+        check areClose(box3.aabb.max, newPoint3D(3, 4, 1))
+        check box3.material.brdf.kind == DiffuseBRDF
+        check box3.material.radiance.kind == pkUniform 
+        check areClose(box3.material.radiance.getColor(newPoint2D(0.5, 0.5)), newColor(0.3, 0.7, 1))
+    
+
+    test "getNormal proc":
+        # Checking getNormal proc
+        var 
+            pt1 = newPoint3D(0, 0.5, 0.5)
+            pt2 = newPoint3D(1, 0.5, 0.5)
+            pt3 = newPoint3D(0.5, 0, 0.5)
+            pt4 = newPoint3D(0.5, 1, 0.5)
+            pt5 = newPoint3D(0.5, 0.5, 0)
+            pt6 = newPoint3D(0.5, 0.5, 1)
+        
+        # box1 --> default constructor
+        check areClose(box1.getNormal(pt1, newVec3f( 1, 0, 0)).Vec3f, newVec3f(-1, 0, 0))
+        check areClose(box1.getNormal(pt2, newVec3f(-1, 0, 0)).Vec3f, newVec3f( 1, 0, 0))
+        check areClose(box1.getNormal(pt3, newVec3f(0,  1, 0)).Vec3f, newVec3f(0, -1, 0))
+        check areClose(box1.getNormal(pt4, newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
+        check areClose(box1.getNormal(pt5, newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
+        check areClose(box1.getNormal(pt6, newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
+
+        
+        # box2 --> giving min and max as input
+        pt1 = newPoint3D(-1, 1, -1); pt2 = newPoint3D(3, 1, -1); pt3 = newPoint3D(1, -2, -1)
+        pt4 = newPoint3D(1, 4, -1); pt5 = newPoint3D(1, 1, -3); pt6 = newPoint3D(1, 1, 1)
+
+        check areClose(box2.getNormal(pt1, newVec3f( 1, 0, 0)).Vec3f, newVec3f(-1, 0, 0))
+        check areClose(box2.getNormal(pt2, newVec3f(-1, 0, 0)).Vec3f, newVec3f( 1, 0, 0))
+        check areClose(box2.getNormal(pt3, newVec3f(0,  1, 0)).Vec3f, newVec3f(0, -1, 0))
+        check areClose(box2.getNormal(pt4, newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
+        check areClose(box2.getNormal(pt5, newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
+        check areClose(box2.getNormal(pt6, newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
+
+
+        # box3 --> giving aabb as input
+        check areClose(box3.getNormal(pt1, newVec3f( 1, 0, 0)).Vec3f, newVec3f(-1, 0, 0))
+        check areClose(box3.getNormal(pt2, newVec3f(-1, 0, 0)).Vec3f, newVec3f( 1, 0, 0))
+        check areClose(box3.getNormal(pt3, newVec3f(0,  1, 0)).Vec3f, newVec3f(0, -1, 0))
+        check areClose(box3.getNormal(pt4, newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
+        check areClose(box3.getNormal(pt5, newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
+        check areClose(box3.getNormal(pt6, newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
+    
+
+    test "getUV proc":
+        # Checking getUV proc test
+        var 
+            pt1 = newPoint3D(0, 0.3, 0.7)
+            pt2 = newPoint3D(1, 0.2, 0.9)
+            pt3 = newPoint3D(0.5, 0, 0.3)
+            pt4 = newPoint3D(0.6, 1, 0.5)
+            pt5 = newPoint3D(0.5, 0.4, 0)
+            pt6 = newPoint3D(0.2, 0.5, 1)
+
+        # box1 --> default constructor
+        check areClose(box1.getUV(pt1), newPoint2D(0.3, 0.7))
+        check areClose(box1.getUV(pt2), newPoint2D(0.2, 0.9))
+        check areClose(box1.getUV(pt3), newPoint2D(0.5, 0.3))
+        check areClose(box1.getUV(pt4), newPoint2D(0.6, 0.5))
+        check areClose(box1.getUV(pt5), newPoint2D(0.5, 0.4))
+        check areClose(box1.getUV(pt6), newPoint2D(0.2, 0.5))
+
+        
+        # box2 --> giving min and max as input
+        pt1 = newPoint3D(-1, 1, -1); pt2 = newPoint3D(3, 1, -1); pt3 = newPoint3D(1, -2, -1)
+        pt4 = newPoint3D(1, 4, -1); pt5 = newPoint3D(1, 1, -3); pt6 = newPoint3D(1, 1, 1)
+
+        check areClose(box2.getUV(pt1), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt2), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt3), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt4), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt5), newPoint2D(0.5, 0.5))
+        check areClose(box2.getUV(pt6), newPoint2D(0.5, 0.5))
+
+
+        # box3 --> giving aabb as input
+        pt1 = newPoint3D(-1, 2, 0); pt2 = newPoint3D(3, 0, -2); pt3 = newPoint3D(2, -2, 0)
+        pt4 = newPoint3D(0, 4, 0); pt5 = newPoint3D(1, 3, -3); pt6 = newPoint3D(0, 1, 1)
+
+        check areClose(box2.getUV(pt1), newPoint2D(2/3, 0.75))
+        check areClose(box2.getUV(pt2), newPoint2D(1/3, 0.25))
+        check areClose(box2.getUV(pt3), newPoint2D(0.75, 0.75))
+        check areClose(box2.getUV(pt4), newPoint2D(0.25, 0.75))
+        check areClose(box2.getUV(pt5), newPoint2D(0.5, 5/6))
+        check areClose(box2.getUV(pt6), newPoint2D(0.25, 0.5))
+    
+    
+    test "getAABB (from AABox shape) proc":
+        let 
+            aabb1 = getAABB(box1)
+            aabb2 = getAABB(box2)
+            aabb3 = getAABB(box3)
+        
+        check areClose(aabb1.min, box1.aabb.min)
+        check areClose(aabb1.max, box1.aabb.max)
+
+        check areClose(aabb2.min, box2.aabb.min)
+        check areClose(aabb2.max, box2.aabb.max)
+
+        check areClose(aabb3.min, box3.aabb.min)
+        check areClose(aabb3.max, box3.aabb.max)
+    
+
+    test "getVertices (from AABox shape) proc":
+        var
+            vert = getVertices(box1.aabb)
+            vertBox = getVertices(box1)
+        
+        # box1 --> default constructor
+        check vert.len == vertBox.len
+        for i in 0..<vert.len:
+            check areClose(vert[i], vertBox[i])
+        
+
+        # box2 --> giving min and max as input
+        vert = getVertices(box2.aabb)
+        vertBox = getVertices(box2)
+        
+        check vert.len == vertBox.len
+        for i in 0..<vert.len:
+            check areClose(vert[i], vertBox[i])
+
+        
+        # box3 --> giving aabb as input
+        vert = getVertices(box3.aabb)
+        vertBox = getVertices(box3)
+        
+        check vert.len == vertBox.len
+        for i in 0..<vert.len:
+            check areClose(vert[i], vertBox[i])
+
+
+
+
+    test "getAABB (from points) proc":
+        # Checking getAABB (from points) proc
+        let appo = getAABB(@[p1, p2, p3, p4])
+
+        check areClose(appo.min, newPoint3D(-2, 0, -8))
+        check areClose(appo.max, newPoint3D(1, 4, 3))
+    
+
+    test "getTotalAABB (from aabb) proc":
+        # Checking getTotalAABB proc
+        let
+            aabb1 = getAABB(@[p1, p2])
+            aabb2 = getAABB(@[p3, p4])
+            aabbTot = getTotalAABB(@[aabb1, aabb2])
+        
+        check areClose(aabb1.min, ORIGIN3D)
+        check areClose(aabb1.max, p2)
+
+        check areClose(aabb2.min, newPoint3D(-2, 2, -8))
+        check areClose(aabb2.max, newPoint3D(-1, 4, 2))
+
+        check areClose(aabbTot.min, newPoint3D(-2, 0, -8))
+        check areClose(aabbTot.max, newPoint3D(1, 4, 3))
+
+
+    test "getVertices (from aabb) proc":
+        # Checking getVertices proc
+        let 
+            aabb = getAABB(@[p3, p4])
+            appo = aabb.getVertices()
+
+        check areClose(appo[0], aabb.min)
+        check areClose(appo[1], aabb.max)
+        check areClose(appo[2], newPoint3D(-2, 2, 2))
+        check areClose(appo[3], newPoint3D(-2, 4, -8))
+        check areClose(appo[4], newPoint3D(-2, 4, 2))
+        check areClose(appo[5], newPoint3D(-1, 2, -8))
+        check areClose(appo[6], newPoint3D(-1, 2, 2))
+        check areClose(appo[7], newPoint3D(-1, 4, -8))
+
+
+
+#------------------------------#
+#       Sphere test suite      #
+#------------------------------#
 suite "Sphere":
 
     setup:
-        var sphere = newUnitarySphere(ORIGIN3D)
-        var sphere1 = newSphere(newPoint3D(0, 1, 0), 3.0)
+        var 
+            usphere = newUnitarySphere(newMaterial(newSpecularBRDF(), newCheckeredPigment(BLACK, WHITE, 2)))
+            sphere = newSphere(3.0)
 
     teardown: 
-        discard sphere; discard sphere1
+        discard usphere
+        discard sphere
+
 
     test "newUnitarySphere proc":
-        check sphere.transform.kind == tkIdentity
-        check sphere.radius == 1.0
+        # Checking newUnitarySphere proc
+        check usphere.radius == 1.0
+
+        check usphere.material.brdf.kind == SpecularBRDF
+        check usphere.material.radiance.kind == pkCheckered 
+        check usphere.material.radiance.grid.nsteps == 2.int
+        check areClose(usphere.material.radiance.grid.color1, BLACK)
+        check areClose(usphere.material.radiance.grid.color2, WHITE)
+
 
     test "newSphere proc":
-        check sphere1.radius == 3.0
-        check areClose(apply(sphere1.transform, ORIGIN3D), newPoint3D(0, 1, 0))
+        # Checking newSphere proc
+        check sphere.radius == 3.0
 
-        check areClose(sphere1.transform.mat, newTranslation(newVec3f(0, 1, 0)).mat)
+        check sphere.material.brdf.kind == DiffuseBRDF
+        check sphere.material.radiance.kind == pkUniform
+        check areClose(sphere.material.radiance.color, WHITE)
 
-
-    test "Surface Normal":
+    
+    test "getNormal proc":
         # Checking sphere normal computation method
         var
-            p1 = newPoint3D(1, 0 ,0)
-            p2 = newPoint3D(cos(PI/3), sin(PI/3) ,0)
+            pt1 = newPoint3D(1, 0 ,0)
+            pt2 = newPoint3D(cos(PI/3), sin(PI/3) ,0)
             d = newVec3f(-1, 2, 0)
         
-        check areClose(sphere.normal(p1, d), newNormal(1, 0, 0))
-        check areClose(sphere.normal(p2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
+        # Unitary sphere
+        check areClose(usphere.getNormal(pt1, d), newNormal(1, 0, 0))
+        check areClose(usphere.getNormal(pt2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
+
+        # Sphere with arbitrary radius
+        check areClose(sphere.getNormal((3.float32*pt1.Vec3f).Point3D, d), newNormal(1, 0, 0))
+        check areClose(sphere.getNormal((3.float32*pt2.Vec3f).Point3D, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
 
     
-    test "(u, v) coordinates":
+    test "getUV proc":
         # Checking (u, v) coordinates computation
         var
-            p1 = newPoint3D(1, 0, 1)
-            p2 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
+            pt1 = newPoint3D(1, 0, 0)
+            pt2 = newPoint3D(cos(PI/3), sin(PI/3), 0)
 
-        check areClose(sphere.uv(p1), newPoint2D(0, 0))
-        check areClose(sphere.uv(p2), newPoint2D(1/6, 1/3))
+        # Unitary sphere
+        check areClose(usphere.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(usphere.getUV(pt2), newPoint2D(1/6, 0.5))
+
+        # Sphere with arbitrary radius
+        check areClose(sphere.getUV((3.float32*pt1.Vec3f).Point3D), newPoint2D(0, 0.5))
+        check areClose(sphere.getUV((3.float32*pt2.Vec3f).Point3D), newPoint2D(1/6, 0.5))
+
+    
+    test "getAABB proc":
+        # Checking getAABB proc, gives AABB in shape local reference system
+        let
+            aabb1 = getAABB(usphere)
+            aabb2 = getAABB(sphere)
+        
+        # Unitary sphere
+        check areClose(aabb1.min, newPoint3D(-1, -1, -1))
+        check areClose(aabb1.max, newPoint3D( 1,  1,  1))
+
+        # Sphere with arbitrary radius
+        check areClose(aabb2.min, newPoint3D(-3, -3, -3))
+        check areClose(aabb2.max, newPoint3D( 3,  3,  3))
     
 
-    test "RayIntersection: no transformation":
-        # Checking ray intersection procedure on unitary shperical surface: no traslation is performed on sphere
-        var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-            ray2 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
-            ray3 = newRay(ORIGIN3D, newVec3f(1, 0, 0))
-
+    test "getVertices proc":
+        # Checking getVertices proc, gives AABB box vertices in shape local reference system
         let 
-            hit1 = sphere.rayIntersection(ray1).get
-            hit2 = sphere.rayIntersection(ray2).get
-            hit3 = sphere.rayIntersection(ray3).get
-
-        check areClose(hit1.world_pt, newPoint3D(0, 0, 1))
-        check areClose(hit1.normal, newNormal(0, 0, 1))
-        check areClose(hit1.t, 1)
-        check areClose(hit1.surface_pt, newPoint2D(0, 0))
-
-        check areClose(hit2.world_pt, newPoint3D(1, 0, 0))
-        check areClose(hit2.normal, newNormal(1, 0, 0))
-        check areClose(hit2.t, 2)
-        check areClose(hit1.surface_pt, newPoint2D(0, 0))
-
-        check areClose(hit3.world_pt, newPoint3D(1, 0, 0))
-        check areClose(hit3.normal, newNormal(-1, 0, 0))
-        check areClose(hit3.t, 1)
-        check areClose(hit1.surface_pt, newPoint2D(0, 0))
-    
-
-    test "RayIntersection: with transformation":
-        # Checking ray intersection procedure: we are transforming the sphere
-        var
-            tr = newTranslation(newVec3f(10, 0, 0))
-
-            ray1 = newRay(newPoint3D(10, 0, 2), newVec3f(0, 0, -1))
-            ray2 = newRay(newPoint3D(13, 0, 0), newVec3f(-1, 0, 0))
-            ray3 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-            ray4 = newRay(newPoint3D(-10, 0, 0), newVec3f(0, 0, -1))
+            vert1 = getVertices(usphere)
+            vert2 = getVertices(sphere)
         
-        sphere.transform = tr
-        let 
-            intersect1 = sphere.rayIntersection(ray1).get
-            intersect2 = sphere.rayIntersection(ray2).get
+        # Unitary sphere        
+        check areClose(vert1[0], newPoint3D(-1, -1, -1))
+        check areClose(vert1[1], newPoint3D( 1,  1,  1))
+        check areClose(vert1[2], newPoint3D(-1, -1,  1))
+        check areClose(vert1[3], newPoint3D(-1,  1, -1))
+        check areClose(vert1[4], newPoint3D(-1,  1,  1))
+        check areClose(vert1[5], newPoint3D( 1, -1, -1))
+        check areClose(vert1[6], newPoint3D( 1, -1,  1))
+        check areClose(vert1[7], newPoint3D( 1,  1, -1))
 
-        check areClose(intersect1.world_pt, newPoint3D(10, 0, 1))
-        check areClose(intersect1.normal, newNormal(0, 0, 1))
-        check areClose(intersect1.t, 1)
-        check areClose(intersect1.surface_pt, newPoint2D(0, 0))
+        # Sphere with arbitrary radius       
+        check areClose(vert2[0], newPoint3D(-3, -3, -3))
+        check areClose(vert2[1], newPoint3D( 3,  3,  3))
+        check areClose(vert2[2], newPoint3D(-3, -3,  3))
+        check areClose(vert2[3], newPoint3D(-3,  3, -3))
+        check areClose(vert2[4], newPoint3D(-3,  3,  3))
+        check areClose(vert2[5], newPoint3D( 3, -3, -3))
+        check areClose(vert2[6], newPoint3D( 3, -3,  3))
+        check areClose(vert2[7], newPoint3D( 3,  3, -3))
 
-        check areClose(intersect2.world_pt, newPoint3D(11, 0, 0))
-        check areClose(intersect2.normal, newNormal(1, 0, 0))
-        check areClose(intersect2.t, 2)
-        check areClose(intersect2.surface_pt, newPoint2D(0, 0.5))
 
-        sphere.transform = Transformation.id
-        check sphere.rayIntersection(ray3).isSome
-        check not sphere.rayIntersection(ray4).isSome
+
+#-------------------------------#
+#      Triangle test suite      #
+#-------------------------------#
+suite "Triangle":
     
-
-    test "FastIntersection proc":
-        # Checking Fast intersection method
-        var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-            ray2 = newRay(newPoint3D(-10, 0, 0), newVec3f(0, 0, -1))
-        
-        check sphere.fastIntersection(ray1)
-        check not sphere.fastIntersection(ray2)
-    
-    test "allHitTimes proc":
-        # Checking all hit times procedure
-
-        var
-            ray1 = newRay(newPoint3D(2, 0, 0), newVec3f(-1, 0 ,0))
-            ray2 = newRay(newPoint3D(0, -3, 0), newVec3f(0, 1, 0))
-            ray3 = newRay(newPoint3D(0, -3, 0), newVec3f(1, 0, 0))
-            appo: Option[seq[float32]]
-        
-
-        #----------------------------#
-        #       Unitary sphere       #
-        #----------------------------#  
-        appo = allHitTimes(sphere, ray1)
-        check appo.isSome
-        check areClose(appo.get[0], 1.0)
-        check areClose(appo.get[1], 3.0)
-
-        appo = allHitTimes(sphere, ray2)
-        check appo.isSome
-        check areClose(appo.get[0], 2.0)
-        check areClose(appo.get[1], 4.0)
-
-        appo = allHitTimes(sphere, ray3)
-        check not appo.isSome
-
-
-        #----------------------------#
-        #      Ordinary sphere       #
-        #----------------------------#
-        ray1.origin = newPoint3D(4, 1, 0)
-        appo = allHitTimes(sphere1, ray1)
-        check appo.isSome
-        echo appo.get[0]
-        check areClose(appo.get[0], 1.0, eps = 1e-6)
-        check areClose(appo.get[1], 7.0, eps = 1e-6)
-
-        appo = allHitTimes(sphere1, ray2)
-        check appo.isSome
-        check areClose(appo.get[0], 1.0, eps = 1e-6)
-        check areClose(appo.get[1], 7.0, eps = 1e-6)
-
-        appo = allHitTimes(sphere1, ray3)
-        check not appo.isSome
-
-
-
-suite "Plane":
-
     setup:
-        var plane = newPlane(Transformation.id)
-
-    test "PlaneConstructor":
-        check plane.transform.kind == tkIdentity
-
+        let tri =  newTriangle(
+            eX.Point3D, eY.Point3D, eZ.Point3D,
+            newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 3))
+            )
     
-    test "RayIntersection: no transformation":
-        # Checking ray intersection procedure on plane: no trasformation is performed
-        var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-            ray2 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
-            ray3 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
-
-        check areClose(plane.rayIntersection(ray1).get.world_pt, ORIGIN3D)
-        check areClose(plane.rayIntersection(ray1).get.normal, newNormal(0, 0, 1))
-        check areClose(plane.rayIntersection(ray1).get.t, 2)
-        check areClose(plane.rayIntersection(ray1).get.surface_pt, newPoint2D(0, 0))
-
-        check areClose(plane.rayIntersection(ray2).get.world_pt, newPoint3D(1, 2, 0))
-        check areClose(plane.rayIntersection(ray2).get.normal, newNormal(0, 0, -1))
-        check areClose(plane.rayIntersection(ray2).get.t, 5)
-        check areClose(plane.rayIntersection(ray2).get.surface_pt, newPoint2D(0, 0))
-
-        check not plane.rayIntersection(ray3).isSome
-
-
-    test "RayIntersection: with transformation":
-        # Checking ray intersection procedure on plane: a translation along the z axis is performed
-        var
-            tr = newTranslation(newVec3f(0, 0, 3))
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-            ray2 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
-            ray3 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
-        
-        plane.transform = tr
-
-        check not plane.rayIntersection(ray1).isSome
-        check not plane.rayIntersection(ray2).isSome
-
-        check areClose(plane.rayIntersection(ray3).get().world_pt, newPoint3D(1, 6, 3))
-        check areClose(plane.rayIntersection(ray3).get().normal, newNormal(0, 0, -1))
-        check areClose(plane.rayIntersection(ray3).get().t, 10)
-        check areClose(plane.rayIntersection(ray3).get().surface_pt, newPoint2D(0, 0))
-    
-
-    test "FastIntersection":
-        # Checking Fast intersection method
-        var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-            ray2 = newRay(newPoint3D(1, 0, 1), newVec3f(0, 0, 1))
-            ray3 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
-        
-        check plane.fastIntersection(ray1)
-        check not plane.fastIntersection(ray2)
-        check not plane.fastIntersection(ray3)
-
-
-suite "AABox":
-
-    setup: 
-        let box = newAABox()
-
     teardown:
-        discard box
-
-    test "fastIntersection": 
-        check fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 0.0), eX))
-        check not fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 2.0), eX))
-
-        check fastIntersection(box, newRay(newPoint3D(0.0, 2.0, 0.0), -eY))
-        check not fastIntersection(box, newRay(newPoint3D(0.0, -2.0, 0.0), -eY))
-
-        check fastIntersection(box, newRay(newPoint3D(0.0, 0.0, -1.5), eZ))
-        check not fastIntersection(box, newRay(newPoint3D(0.0, 0.0, 1.5), eZ))
-
-#-----------------------------------------#
-#            World type test              #
-#-----------------------------------------#
-
-suite "World":
+        discard tri
     
+    
+    test "newTriangle proc":
+        # Checking newTriangle proc
+        
+        check areClose(tri.vertices[0], eX.Point3D)
+        check areClose(tri.vertices[1], eY.Point3D)
+        check areClose(tri.vertices[2], eZ.Point3D)
+
+        check tri.material.brdf.kind == SpecularBRDF
+        check tri.material.radiance.kind == pkCheckered
+        check tri.material.radiance.grid.nsteps == 3
+        check areClose(tri.material.radiance.grid.color1, WHITE)
+        check areClose(tri.material.radiance.grid.color2, BLACK)
+    
+
+    test "getNormal proc":
+        # Checking getNormal proc
+        let pt = newPoint3D(0.2, 0.2, 0.6)
+
+        check areClose(tri.getNormal(pt, newVec3f(-1, 0, 0)).Vec3f, newVec3f(1, 1, 1).normalize)
+    
+
+    test "getUV proc":
+        # Checking getUV proc
+        let pt = newPoint3D(0.2, 0.2, 0.6)
+
+        check areClose(tri.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
+    
+
+    test "getAABB proc":
+        # Cheking getAABB proc, gives aabb in local shape reference system
+        let aabb = getAABB(tri)
+
+        check areClose(aabb.min, newPoint3D(0, 0, 0))
+        check areClose(aabb.max, newPoint3D(1, 1, 1))
+    
+
+    test "getVertices proc":
+        # Checking getVertices proc, gives aabb vertices in local shape reference system
+        let
+            aabb = getAABB(tri)
+            vert1 = getVertices(tri)
+            vert2 = getVertices(aabb)
+        
+        # Triangle vertices
+        check areClose(vert1[0], tri.vertices[0])
+        check areClose(vert1[1], tri.vertices[1])
+        check areClose(vert1[2], tri.vertices[2])
+
+        # Triangle AABB vertices
+        check areClose(vert2[0], aabb.min)
+        check areClose(vert2[1], aabb.max)
+        check areClose(vert2[2], newPoint3D(0, 0, 1))
+        check areClose(vert2[3], newPoint3D(0, 1, 0))
+        check areClose(vert2[4], newPoint3D(0, 1, 1))
+        check areClose(vert2[5], newPoint3D(1, 0, 0))
+        check areClose(vert2[6], newPoint3D(1, 0, 1))
+        check areClose(vert2[7], newPoint3D(1, 1, 0))
+
+
+
+#----------------------------#
+#    Cylinder test suite     #
+#----------------------------# 
+suite "Cylinder":
+
     setup:
-        var 
-            s1 = newSphere(newPoint3D(1, 1, 0), 1)
-            s2 = newSphere(newPoint3D(1, 0, 1), 0.5)
-            scenery = newWorld(@[s1, s2])
-
-    teardown: 
-        discard scenary
-            
+        let 
+            cyl1 = newCylinder()
+            cyl2 = newCylinder(R = 2.0, material = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2)))
     
-    test "add/get proc":
-        # Testing add/get procedure
-
-        scenery.shapes.add newUnitarySphere(newPoint3D(0, 0, 0))
-        check areClose(scenery.shapes[2].transf.mat, Mat4f.id)
-        check areClose(scenery.shapes[2].transf.inv_mat, Mat4f.id)
-
-
-    test "fastIntersection proc":
-        # Testing fastIntersection procedure on world scenery
-
-        var
-            ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
-            ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
+    teardown:
+        discard cyl1
+        discard cyl2
+    
+    
+    test "newCylinder proc":
+        # Checking newTriangle proc
         
-        check fastIntersection(scenery, ray1)
-        check not fastIntersection(scenery, ray2)
+        # First cylinder: default constructor
+        check cyl1.R == 1.0
+        check areClose(cyl1.phiMax, 2*PI)
+        check cyl1.zSpan.min == 0.0 and cyl1.zSpan.max == 1.0
+
+        check cyl1.material.brdf.kind == DiffuseBRDF
+        check cyl1.material.radiance.kind == pkUniform
+        check areClose(cyl1.material.radiance.color, WHITE)
     
 
-    test "rayIntersection proc":
+        # Second cylinder: specific build
+        check cyl2.R == 2.0
+        check areClose(cyl2.phiMax, 2*PI)
+        check cyl2.zSpan.min == 0.0 and cyl1.zSpan.max == 1.0
 
+        check cyl2.material.brdf.kind == SpecularBRDF
+        check cyl2.material.radiance.kind == pkCheckered
+        check cyl2.material.radiance.grid.nsteps == 2
+        check areClose(cyl2.material.radiance.grid.color1, WHITE)
+        check areClose(cyl2.material.radiance.grid.color2, BLACK)
+
+
+    test "getNormal proc":
+        # Checking getNormal proc
         var
-            ray1 = newRay(newPoint3D(1, -2, 0), newVec3f(0, 1, 0))
-            ray2 = newRay(newPoint3D(1, 3, 0), newVec3f(0, 1, 0))
-            hit: Option[HitRecord]
+            pt1 = newPoint3D(1, 0, 0.5)
+            pt2 = newPoint3D(2, 0, 0.5)
         
-        scenery.shapes = @[s1, s2]
-        
-        # Intersection with first ray, we expect to have hit
-        # in (1, 0, 0) at time t = 2
-        hit = rayIntersection(scenery, ray1)
-        check hit.isSome
-        check areClose(hit.get.world_pt, newPoint3D(1, 0, 0))
-        check areClose(hit.get.t, 2)
-        check areClose(hit.get.normal.toVec3, newVec3f(0, -1, 0))
-        check areClose(hit.get.surface_pt, newPoint2D(0.75, 0.5))
+        check areClose(cyl1.getNormal(pt1, newVec3f(0, 0, -1)).Vec3f, newVec3f(1, 0, 0))
+        check areClose(cyl2.getNormal(pt2, newVec3f(0, 0, -1)).Vec3f, newVec3f(1, 0, 0))
+    
 
-        # Intersection with second ray, we expect not to have a hit
-        hit = rayIntersection(scenery, ray2)
-        check hit.isNone
+    test "getUV proc":
+        # Checking getUV proc
+        var
+            pt1 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
+            pt2 = newPoint3D(1, 0, 0.3)
+        
+        # First cylinder: default constructor
+        check areClose(cyl1.getUV(pt1).Vec2f, newVec2f(1/6, 0.5))
+        check areClose(cyl1.getUV(pt2).Vec2f, newVec2f(0.0, 0.3))
+
+        # Second cylinder: specific build
+        check areClose(cyl1.getUV((2.float32*pt1.Vec3f).Point3D).Vec2f, newVec2f(1/6, 1))
+        check areClose(cyl1.getUV((2.float32*pt2.VEc3f).Point3D).Vec2f, newVec2f(0.0, 0.6))
+
+
+    test "getAABB proc":
+        # Cheking getAABB proc, gives aabb in local shape reference system
+        let
+            aabb1 = getAABB(cyl1)
+            aabb2 = getAABB(cyl2)
+        
+        # First cylinder: default constructor
+        check areClose(aabb1.min, newPoint3D(-1, -1, 0))
+        check areClose(aabb1.max, newPoint3D(1, 1, 1))
+
+        # Second cylinder: specific build
+        check areClose(aabb2.min, newPoint3D(-2, -2, 0))
+        check areClose(aabb2.max, newPoint3D(2, 2, 1))
+    
+
+    test "getVertices proc":
+        # Checking getVertices proc, gives aabb vertices in local shape reference system
+        let
+            aabb1 = getAABB(cyl1)
+            aabb2 = getAABB(cyl2)
+            vert1 = getVertices(cyl1)
+            vert2 = getVertices(cyl2)
+        
+        # First cylinder: default constructor
+        check areClose(vert1[0], aabb1.min)
+        check areClose(vert1[1], aabb1.max)
+        check areClose(vert1[2], newPoint3D(-1, -1, 1))
+        check areClose(vert1[3], newPoint3D(-1,  1, 0))
+        check areClose(vert1[4], newPoint3D(-1,  1, 1))
+        check areClose(vert1[5], newPoint3D( 1, -1, 0))
+        check areClose(vert1[6], newPoint3D( 1, -1, 1))
+        check areClose(vert1[7], newPoint3D( 1,  1, 0))
+
+        # Second cylinder: specific build
+        check areClose(vert2[0], aabb2.min)
+        check areClose(vert2[1], aabb2.max)
+        check areClose(vert2[2], newPoint3D(-2, -2, 1))
+        check areClose(vert2[3], newPoint3D(-2,  2, 0))
+        check areClose(vert2[4], newPoint3D(-2,  2, 1))
+        check areClose(vert2[5], newPoint3D( 2, -2, 0))
+        check areClose(vert2[6], newPoint3D( 2, -2, 1))
+        check areClose(vert2[7], newPoint3D( 2,  2, 0))

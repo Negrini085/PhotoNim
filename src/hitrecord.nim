@@ -7,7 +7,7 @@ from std/sequtils import concat, foldl, mapIt, filterIt
 from std/algorithm import sorted
 
 
-proc checkIntersection(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
+proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
     # this is done in the same reference system
     let 
         (min, max) = (aabb.min - ray.origin, aabb.max - ray.origin)

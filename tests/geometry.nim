@@ -695,7 +695,7 @@ suite "ReferenceSystem":
         check appo.transformations[0].kind == tkTranslation
         check appo.transformations[1].kind == tkGeneric
         check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(1, 2, 3, 1)].T)
-        check areClose(appo.transformations[1].mat, [eX.toVec4, eZ.toVec4, -eY.toVec4, newVec4f(0, 0, 0, 1)], eps = 1e-6)
+        check areClose(appo.transformations[1].mat, [eX.toVec4, eZ.toVec4, -eY.toVec4, newVec4f(0, 0, 0, 1)].T, eps = 1e-6)
 
         # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
         appo = refSyst3.getTransformation()
@@ -703,4 +703,4 @@ suite "ReferenceSystem":
         check appo.transformations[0].kind == tkTranslation
         check appo.transformations[1].kind == tkGeneric
         check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(1, 0, 0, 1)].T)
-        check areClose(appo.transformations[1].mat, [eX.toVec4, -eZ.toVec4, eY.toVec4, newVec4f(0, 0, 0, 1)])
+        check areClose(appo.transformations[1].mat, [eX.toVec4, -eZ.toVec4, eY.toVec4, newVec4f(0, 0, 0, 1)].T)
