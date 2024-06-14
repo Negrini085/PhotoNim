@@ -48,8 +48,11 @@ type HitPayload* = object
     ray*: Ray
     t*: float32
     
-proc newHitPayload(handler: ShapeHandler, ray: Ray): Option[HitPayload] =
-    let invRay = ray.transform(handler.transformation.inverse) 
+proc newHitPayload*(refSystem: ReferenceSystem, ray: Ray, handler: ShapeHandler): Option[HitPayload] =
+    let 
+        worldOrigin = apply(newTranslation(refSystem.origin), refSystem.fromCoeff(ray.origin).Point3D)
+        worldRay = newRay(worldOrigin, refSystem.fromCoeff(ray.dir))
+        invRay = worldRay.transform(handler.transformation.inverse) 
 
     case handler.shape.kind
     of skAABox:
@@ -148,7 +151,7 @@ proc getHitPayloads(subScene: SubScene; ray: Ray): seq[HitPayload] =
     if hittedHandlers.len == 0: return @[]
 
     hittedHandlers
-        .mapIt(newHitPayload(it, ray.transform(subScene.rs.getTransformation)))
+        .mapIt(subScene.rs.newHitPayload(ray, it))
         .filterIt(it.isSome)
         .mapIt(it.get)
 

@@ -163,7 +163,7 @@ suite "Pigment unittest":
         check areClose(pigment.getColor(newPoint2D(1.0, 1.0)), newColor(3.0, 2.0, 1.0))
     
     test "newCheckeredPigment proc":
-        let pigment = newCheckeredPigment(color1, color2, 2)
+        let pigment = newCheckeredPigment(color1, color2, 2, 2)
         check areClose(pigment.getColor(newPoint2D(0.25, 0.25)), color1)
         check areClose(pigment.getColor(newPoint2D(0.75, 0.25)), color2)
         check areClose(pigment.getColor(newPoint2D(0.25, 0.75)), color2)

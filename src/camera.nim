@@ -19,13 +19,13 @@ proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} =
 proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
     case transformation.kind: 
     of tkIdentity: ray
-    of tkTranslation, tkScaling: 
+    of tkTranslation: 
         Ray(
             origin: apply(transformation, ray.origin), 
             dir: ray.dir, 
             tSpan: ray.tSpan, depth: ray.depth
         )
-    of tkGeneric, tkRotation, tkComposition: 
+    else: 
         Ray(
             origin: apply(transformation, ray.origin), 
             dir: apply(transformation, ray.dir), 
@@ -75,11 +75,11 @@ type
         of pkTexture: 
             texture*: ptr HDRImage
         of pkCheckered:
-            grid*: tuple[color1, color2: Color, nsteps: int]
+            grid*: tuple[c1, c2: Color, nRows, nCols: int]
 
 proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
 proc newTexturePigment*(texture: HDRImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: addr texture)
-proc newCheckeredPigment*(color1, color2: Color, nsteps: int): Pigment {.inline.} = Pigment(kind: pkCheckered, grid: (color1, color2, nsteps))
+proc newCheckeredPigment*(color1, color2: Color, nRows, nCols: int): Pigment {.inline.} = Pigment(kind: pkCheckered, grid: (color1, color2, nRows, nCols))
 
 proc getColor*(pigment: Pigment; uv: Point2D): Color =
     case pigment.kind: 
@@ -93,8 +93,8 @@ proc getColor*(pigment: Pigment; uv: Point2D): Color =
         return pigment.texture[].getPixel(col, row)
 
     of pkCheckered:
-        let (col, row) = (floor(uv.u * pigment.grid.nsteps.float32).int, floor(uv.v * pigment.grid.nsteps.float32).int)
-        return (if (col mod 2) == (row mod 2): pigment.grid.color1 else: pigment.grid.color2)
+        let (col, row) = (floor(uv.u * pigment.grid.nCols.float32).int, floor(uv.v * pigment.grid.nRows.float32).int)
+        return (if (col mod 2) == (row mod 2): pigment.grid.c1 else: pigment.grid.c2)
 
 
 type 
@@ -124,6 +124,6 @@ proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Col
         return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
 
     of SpecularBRDF: 
-        if abs(arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))) < brdf.threshold_angle: 
+        if abs(arccos(dot(normal.Vec3f, in_dir.normalize)) - arccos(dot(normal.Vec3f, out_dir.normalize))) <= brdf.threshold_angle: 
             return brdf.pigment.getColor(uv)
         else: return BLACK

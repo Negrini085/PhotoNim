@@ -168,7 +168,7 @@ proc demo*(renderer: Renderer, pfmOut, pngOut: string) =
         s4 = newSphere(
             center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1,
             newMaterial(newDiffuseBRDF(reflectance = 0), 
-                    newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 4)
+                    newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 2, 4)
                 )
             )
         

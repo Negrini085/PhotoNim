@@ -10,7 +10,8 @@ from std/sequtils import map
 
 let 
     timeStart = cpuTime()
-    camera = newPerspectiveCamera(viewport = (900, 600), distance = 1.0, origin = newPoint3D(-5, -5, 1))
+    camera = newPerspectiveCamera(viewport = (300, 200), distance = 1.0, origin = newPoint3D(-5, -5, 1))
+    # renderer = newFlatRenderer(camera)
     renderer = newPathTracer(camera, nRays = 4, maxDepth = 5)
 
     plane = newPlane(
@@ -20,8 +21,8 @@ let
         )
     )
 
-    sphere = newSphere(
-        newPoint3D(1.0, 1.0, 1.0), radius = 3, 
+    sphere = newUnitarySphere(
+        ORIGIN3D,
         newMaterial(newSpecularBRDF(), newUniformPigment(BLUE))
     )
 

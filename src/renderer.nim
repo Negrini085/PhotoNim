@@ -62,7 +62,7 @@ proc scatterRay*(refSystem: ReferenceSystem, brdf: BRDF, ray: Ray, rg: var PCG):
     of SpecularBRDF: 
         Ray(
             origin: ORIGIN3D,
-            dir: ray.dir.normalize - 2 * dot(refSystem.base[2], ray.dir.normalize) * refSystem.base[2],
+            dir: ray.dir.normalize - 2 * dot(refSystem.base[0], ray.dir.normalize) * refSystem.base[0],
             tspan: (float32 1e-3, float32 Inf), 
             depth: ray.depth + 1
         )
@@ -78,7 +78,7 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
         of rkOnOff:
             for node in hitLeafNodes.get:
                 for handler in node.handlers:
-                    if checkIntersection(handler, ray.transform(subScene.rs.getTransformation)): 
+                    if subScene.rs.newHitPayload(ray, handler).isSome: 
                         result = renderer.hitCol
                         break
 
