@@ -308,6 +308,7 @@ To apply the transformations defined previously, it is possible to use the ```ap
 With the goal of having a high-performance ray tracer, we carried out some calculations explicitly in order to avoid doing a lot of useless multiplication such as in applying a scaling, which has a transformation matrix that has almost all entries equal to zero.
 
 ```nim
+
 proc apply*[T](transf: Transformation, x: T): T =
     case transf.kind
     of tkIdentity: return x
@@ -316,7 +317,7 @@ proc apply*[T](transf: Transformation, x: T): T =
         when T is Point3D: 
             return dot(transf.mat, x.toVec4).toPoint3D
         elif T is Normal:
-            return dot(x, transf.inv_mat).toNormal
+            return dot(x, transf.matInv).toNormal
         else: 
             return dot(transf.mat, x) 
 
@@ -341,13 +342,16 @@ proc apply*[T](transf: Transformation, x: T): T =
             return x
 
     of tkComposition:
+        if transf.transformations.len == 1: return apply(transf.transformations[0], x)
+
         when T is Normal:
-            return dot(x, transf.transformations.map(proc(t: Transformation): Mat4f = t.inv_mat).foldl(dot(b, a))).toNormal
+            return dot(x, transf.transformations.mapIt(it.matInv).foldl(dot(a, b))).toNormal
         else:
-            let mat = transf.transformations.map(proc(t: Transformation): Mat4f = t.mat).foldl(dot(a, b))
-            when T is Point3D: return dot(mat, x.toVec4).toPoint3D
-            else: return dot(mat, x) 
+            result = x
+            for i in countdown(transf.transformations.len - 1, 0):
+                result = apply(transf.transformations[i], result)
 ```
+To make the application of a composition of transformations as efficient as possible, the individual transformations are applied in PhotoNim; instead of computing the composition matrix.
 
 <div style="height: 25px;"></div>
 <div style="text-align: left;">
@@ -394,31 +398,32 @@ echo "Point3D inverse transformation: ", inv.apply(p)         # You should get (
 </div>
 <div style="height: 40px;"></div>
 
-So far, we have defined geometric constructs that enable us to work with shapes and describe the propagation of rays, but we have yet to address the interaction of rays with shapes. 
-Orthonormal bases fill this gap, serving as the reference system in which ray reflections will be handled.
-We implemented orthonormal basis such as following:
+So far, we have defined geometric constructs that enable us to work with shapes and describe the propagation of rays, but we have yet to address the frame of reference we are working into. 
+We implemented reference systems such as following:
 
 ```nim
-type ONB* = array[3, Vec3f]
+type ReferenceSystem* = ref object 
+    origin*: Point3D
+    base*: Mat3f
 ```
-
-The most important procedure regarding orthonormal basis is ```createONB```, which create an ONB when a normal is given as input using the _Duff et al. algorithm_.
+where origin is the world point serving as origin for the new reference system, whilst base is a ONB.
+One important procedure regarding reference systems is ```newONB``` proc, which creates an ONB when a normal is given as input using the [_Duff et al. algorithm_](https://graphics.pixar.com/library/OrthonormalB/paper.pdf)
 
 ```nim
-proc createONB*(normal: Normal): ONB = 
+proc newONB*(normal: Normal): Mat3f = 
     let
         sign = copySign(1.0, normal.z)
         a = -1.0 / (sign + normal.z)
-        b = normal.x * normal.y * a
-    
-    newONB(
-        newVec3f(1.0 + sign * normal.x * normal.x * a, sign * b, -sign * normal.x),
-        newVec3f(b, sign + normal.y * normal.y * a, -normal.y), 
-        normal.Vec3f
-    )
-
+        b = a * normal.x * normal.y
+        
+    [
+        normal.Vec3f,
+        newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
+        newVec3f(b, sign + a * normal.y * normal.y, -normal.y)
+    ]
 ```
 
+The first vector given of the ONB is the surface normal in the origin point, denoting the direction toward we are watching.
 This procedure is tested by means of a method known as random testing: what we are doing in the following code block is generating randomly 1000 ONB and actually checking if ONB properties are verified or not.
 
 ```nim
@@ -427,14 +432,14 @@ This procedure is tested by means of a method known as random testing: what we a
         # We are gonna random test it, so we will check random normals as input
         var 
             pcg = newPCG()
-            normal: Normal
+            normal: Normal  
 
 
         for i in 0..<1000:
             normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
-            onb = createONB(normal)
+            onb = newONB(normal)
 
-            check areClose(onb[2], normal.toVec3)
+            check areClose(onb[0], normal.Vec3f)
 
             check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
             check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)
@@ -445,4 +450,82 @@ This procedure is tested by means of a method known as random testing: what we a
             check areClose(onb[2].norm, 1, eps = 1e-6)
 ```
 
-If you want to get vector components in a particular frame of reference ```getComponents*(onb: ONB, vec: Vec3f)``` is available, as well as ```getVector```, which builds a vector given components in a specific ONB.
+You can initialize a new ReferenceSystem variable using three different procedures:
+
+1. ```newReferenceSystem*(origin: Point3D, base = Mat3f.id)```, which requires a Point3D and a 3x3 matrix which will than be used as ONB.
+
+2. ```newReferenceSystem*(origin: Point3D, rotation: Transformation)```. Here you can only give a rotation or a composition of rotations as transormation input.
+
+3. ```newReferenceSystem*(origin: Point3D, normal: Normal)```, which than uses [_Duff et al. algorithm_](https://graphics.pixar.com/library/OrthonormalB/paper.pdf) in order to create an orthonormal base.
+
+If you want to get vector components in a particular frame of reference ```coeff*[T](refSystem: ReferenceSystem, pt: T)``` is available, as well as ```coeff*[T](refSystem: ReferenceSystem, pt: T)```, which builds a vector given from its components.
+
+
+<div style="height: 25px;"></div>
+<div style="text-align: left;">
+    <span style="color: blue; font-size: 20px;"> Example </span>
+</div>
+<div style="height: 25px;"></div>
+
+
+```nim
+import std/unittest
+import geometry
+
+let
+    refSyst1 = newReferenceSystem(newPoint3D(2, 3, 1))
+    refSyst2 = newReferenceSystem(newPoint3D(1, 2, 3), newRotX(90))
+    refSyst3 = newReferenceSystem(newPoint3D(1, 0, 0), newNormal(1, 0, 0))
+
+#-------------------------------------------------#
+#      Checking Reference System constructor      #
+#-------------------------------------------------#
+echo "First reference system origin: " , refSyst1.origin         # You should get (2, 3, 1)
+echo "Second reference system origin: ", refSyst2.origin         # You should get (1, 2, 3)
+echo "Third reference system origin: " , refSyst3.origin         # You should get (1, 0, 0)
+
+echo refSyst1.base
+# Checking base elements
+check areClose(refSyst1.base[0],  eX, eps = 1e-7)   
+check areClose(refSyst1.base[1],  eY, eps = 1e-7)   
+check areClose(refSyst2.base[2], -eY, eps = 1e-7)   
+check areClose(refSyst2.base[0],  eX, eps = 1e-7)   
+check areClose(refSyst3.base[1], -eZ, eps = 1e-7)   
+check areClose(refSyst3.base[2],  eY, eps = 1e-7)   
+
+
+
+#-----------------------------------------------#
+#          Change of reference system           #
+#-----------------------------------------------#
+let 
+    v1 = newVec3f(1, 2, 3)
+    p1 = newPoint3D(4, 5, 6)
+
+# Getting coefficients, here we are only focused on ONB change compared with
+# the default orthonormal base (eX, eY, eZ)
+echo '\n',"Getting components in first frame of reference: " , refSyst1.coeff(v1)     # You should get (1,  2,  3)
+echo "Getting components in second frame of reference: "     , refSyst2.coeff(v1)     # You should get (1,  3, -2)
+echo "Getting components in third frame of reference: "      , refSyst3.coeff(v1)     # You should get (1, -3,  2)
+
+echo '\n',"Getting components in first frame of reference: " , refSyst1.coeff(p1)     # You should get (4,  5,  6)
+echo "Getting components in second frame of reference: "     , refSyst2.coeff(p1)     # You should get (4,  6, -5)
+echo "Getting components in third frame of reference: "      , refSyst3.coeff(p1)     # You should get (4, -6,  5)
+
+
+# If you want to account also for the frame of reference translation, you have
+# to do it externally
+echo '\n',"Getting components in first frame of reference: " , refSyst1.coeff(v1-refSyst1.origin.Vec3f)     # You should get (-1, -1,  2)
+echo "Getting components in second frame of reference: "     , refSyst2.coeff(v1-refSyst2.origin.Vec3f)     # You should get ( 0,  0,  0)
+echo "Getting components in third frame of reference: "      , refSyst3.coeff(v1-refSyst3.origin.Vec3f)     # You should get ( 0, -3,  2)
+
+echo '\n',"Getting components in first frame of reference: " , refSyst1.coeff(p1-refSyst1.origin.Vec3f)     # You should get (1,  2,  5)
+echo "Getting components in second frame of reference: "     , refSyst2.coeff(p1-refSyst2.origin.Vec3f)     # You should get (3,  3, -3)
+echo "Getting components in third frame of reference: "      , refSyst3.coeff(p1-refSyst3.origin.Vec3f)     # You should get (3, -6,  5)
+
+
+# Getting vector in standard base from coefficients in a particular reference system
+echo refSyst1.fromCoeff(v1)         # You should get (1,  2,  3)
+echo refSyst2.fromCoeff(v1)         # You should get (1, -3,  2)
+echo refSyst3.fromCoeff(v1)         # You should get (1,  3, -2)
+```
