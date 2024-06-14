@@ -10,8 +10,8 @@ type Ray* = ref object
     tSpan*: Interval[float32]
     depth*: int
 
-proc newRay*(origin: Point3D, direction: Vec3f): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: 0)  
+proc newRay*(origin: Point3D, direction: Vec3f, depth: int = 0): Ray {.inline.} = 
+    Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: depth)  
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
     areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)

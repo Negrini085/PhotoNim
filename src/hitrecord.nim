@@ -44,15 +44,12 @@ proc getHitLeafs*(subScene: SubScene; ray: Ray): Option[seq[SceneNode]] =
 
 
 type HitPayload* = object
-    shape*: Shape
+    handler*: ShapeHandler
     ray*: Ray
     t*: float32
     
-proc newHitPayload*(refSystem: ReferenceSystem, ray: Ray, handler: ShapeHandler): Option[HitPayload] =
-    let 
-        worldOrigin = apply(newTranslation(refSystem.origin), refSystem.fromCoeff(ray.origin).Point3D)
-        worldRay = newRay(worldOrigin, refSystem.fromCoeff(ray.dir))
-        invRay = worldRay.transform(handler.transformation.inverse) 
+proc newHitPayload*(ray: Ray, handler: ShapeHandler): Option[HitPayload] =
+    let invRay = ray.transform(handler.transformation.inverse) 
 
     case handler.shape.kind
     of skAABox:
@@ -73,7 +70,7 @@ proc newHitPayload*(refSystem: ReferenceSystem, ray: Ray, handler: ShapeHandler)
         let tHit = if handler.shape.aabb.contains(invRay.origin): tHitMax else: tHitMin
         if not invRay.tspan.contains(tHit): return none HitPayload
 
-        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(handler: handler, ray: invRay, t: tHit)
 
     of skTriangle:
         let 
@@ -88,7 +85,7 @@ proc newHitPayload*(refSystem: ReferenceSystem, ray: Ray, handler: ShapeHandler)
         if not invRay.tspan.contains(sol[2]): return none HitPayload
         if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return none HitPayload
 
-        return some HitPayload(shape: handler.shape, ray: invRay, t: sol[2])
+        return some HitPayload(handler: handler, ray: invRay, t: sol[2])
 
     of skSphere:
         let (a, b, c) = (norm2(invRay.dir), dot(invRay.origin.Vec3f, invRay.dir), norm2(invRay.origin.Vec3f) - handler.shape.radius * handler.shape.radius)
@@ -98,14 +95,14 @@ proc newHitPayload*(refSystem: ReferenceSystem, ray: Ray, handler: ShapeHandler)
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
         let tHit = if ray.tspan.contains(t_l): t_l elif ray.tspan.contains(t_r): t_r else: return none HitPayload
 
-        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(handler: handler, ray: invRay, t: tHit)
 
     of skPlane:
         if abs(invRay.dir[2]) < epsilon(float32): return none HitPayload
         let tHit = -invRay.origin.z / invRay.dir[2]
         if not ray.tspan.contains(t_hit): return none HitPayload
 
-        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(handler: handler, ray: invRay, t: tHit)
 
     of skCylinder:
         let
@@ -139,25 +136,26 @@ proc newHitPayload*(refSystem: ReferenceSystem, ray: Ray, handler: ShapeHandler)
             if phi < 0.0: phi += 2.0 * PI
             if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax: return none HitPayload
 
-        return some HitPayload(shape: handler.shape, ray: invRay, t: tHit)
+        return some HitPayload(handler: handler, ray: invRay, t: tHit)
+
 
 proc getHitPayloads(subScene: SubScene; ray: Ray): seq[HitPayload] =
-    assert subScene.tree.kind == nkLeaf, "Cannot get an HitPayload from a SceneNode of kind different from nkLeaf."
-
     var hittedHandlers: seq[ShapeHandler]
     for handler in subScene.tree.handlers:
-        if checkIntersection(subScene.rs.getLocalAABB(handler), ray): hittedHandlers.add handler
+        if checkIntersection(subScene.rs.getLocalAABB(handler), ray): 
+            hittedHandlers.add handler
 
     if hittedHandlers.len == 0: return @[]
 
+    let worldRay = newRay(apply(newTranslation(subScene.rs.origin), ray.origin), subScene.rs.compose(ray.dir))
     hittedHandlers
-        .mapIt(subScene.rs.newHitPayload(ray, it))
+        .mapIt(newHitPayload(worldRay, it))
         .filterIt(it.isSome)
         .mapIt(it.get)
 
-proc newHitRecord*(refSystem: ReferenceSystem, hitLeafs: seq[SceneNode], ray: Ray): Option[seq[HitPayload]] =
+proc getHitRecord*(refSystem: ReferenceSystem, ray: Ray, hitLeafs: seq[SceneNode]): Option[seq[HitPayload]] =
     let hitPayloads = hitLeafs
-        .mapIt(getHitPayloads((refSystem, it), ray))
+        .mapIt((refSystem, it).getHitPayloads(ray))
         .filterIt(it.len > 0)
 
     if hitPayloads.len == 0: return none seq[HitPayload]

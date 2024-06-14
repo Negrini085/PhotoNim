@@ -5,19 +5,17 @@ from std/strformat import fmt
 from std/streams import newFileStream, close
 from std/osproc import execCmd
 
-from std/sequtils import map
-
 
 let 
     timeStart = cpuTime()
-    camera = newPerspectiveCamera(viewport = (300, 200), distance = 1.0, origin = newPoint3D(-5, -5, 1))
+    camera = newPerspectiveCamera(viewport = (900, 600), distance = 1.0, origin = newPoint3D(-5, -5, 1))
     # renderer = newFlatRenderer(camera)
-    renderer = newPathTracer(camera, nRays = 4, maxDepth = 5)
+    renderer = newPathTracer(camera, nRays = 4, maxDepth = 1)
 
     plane = newPlane(
         newMaterial(
-            newDiffuseBRDF(newCheckeredPigment(RED, WHITE, 4)), 
-            newCheckeredPigment(RED, WHITE, 4)
+            newDiffuseBRDF(newCheckeredPigment(RED, WHITE, 3, 4)), 
+            newCheckeredPigment(RED, WHITE, 3, 4)
         )
     )
 
