@@ -91,3 +91,90 @@ suite "HitLeafs":
 
 
 
+#-------------------------------------------#
+#           HitPayload test suite           #
+#-------------------------------------------#    
+suite "HitPayload":
+
+    setup:
+        let
+            stdRS = newReferenceSystem(ORIGIN3D, [eX, eY, eZ])
+            speRS = newReferenceSystem(ORIGIN3D, [eX, eZ, -eY])
+
+        var
+            scene: Scene
+            sceneTree: SceneNode
+
+            hitPayload: Option[HitPayload]
+    
+    teardown:
+        discard hitPayload
+        discard sceneTree
+        discard stdRS
+        discard speRS
+        discard scene
+
+
+    test "getHitPayload proc (Sphere)":
+        # Checking getHitPayload for a Sphere-Ray intersection
+        let 
+            usphere = newUnitarySphere(ORIGIN3D)
+            sphere = newSphere(newPoint3D(0, 1, 0), 3.0)
+
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
+            ray2 = newRay(newPoint3D(3, 0, 0), newVec3(float32 -1, 0, 0))
+            ray3 = newRay(ORIGIN3D, newVec3(float32 1, 0, 0))
+
+        
+        #------------------------------------#
+        #           Unitary sphere           #
+        #------------------------------------#
+        hitPayload = getHitPayload(usphere, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 1
+        check hitPayload.get.handler.shape.kind == skSphere and hitPayload.get.handler.shape.radius == 1
+        check areClose(hitPayload.get.ray.dir, -eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, 2))
+
+        hitPayload = getHitPayload(usphere, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skSphere and hitPayload.get.handler.shape.radius == 1
+        check areClose(hitPayload.get.ray.dir, -eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(3, 0, 0))
+
+        hitPayload = getHitPayload(usphere, ray3)
+        check hitPayload.isSome
+        check hitPayload.get.t == 1
+        check hitPayload.get.handler.shape.kind == skSphere and hitPayload.get.handler.shape.radius == 1
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, ORIGIN3D)
+    
+
+        #-------------------------------------#
+        #           Generic sphere            #
+        #-------------------------------------#
+        ray1.origin = newPoint3D(0, 0, 5)
+        ray2.origin = newPoint3D(4, 0, 0)
+
+        hitPayload = getHitPayload(sphere, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skSphere and hitPayload.get.handler.shape.radius == 3
+        check areClose(hitPayload.get.ray.dir, -eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, 5))
+
+        hitPayload = getHitPayload(sphere, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 1
+        check hitPayload.get.handler.shape.kind == skSphere and hitPayload.get.handler.shape.radius == 3
+        check areClose(hitPayload.get.ray.dir, -eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 0, 0))
+
+        hitPayload = getHitPayload(sphere, ray3)
+        check hitPayload.isSome
+        check hitPayload.get.t == 3
+        check hitPayload.get.handler.shape.kind == skSphere and hitPayload.get.handler.shape.radius == 3
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, ORIGIN3D)
