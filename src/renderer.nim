@@ -76,7 +76,10 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
 
         case renderer.kind
         of rkOnOff:
-            let worldRay = newRay(apply(newTranslation(subScene.rs.origin), ray.origin), subScene.rs.compose(ray.dir))
+            let worldRay = newRay(
+                apply(newTranslation(subScene.rs.origin), ray.origin).Point3D, 
+                subScene.rs.compose(ray.dir)
+                )
 
             for node in hitLeafNodes.get:
                 for handler in node.handlers:
