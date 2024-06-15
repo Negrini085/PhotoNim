@@ -9,7 +9,7 @@ from std/algorithm import sorted
 
 proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
     # this is done in the same reference system
-    let 
+    let
         (min, max) = (aabb.min - ray.origin, aabb.max - ray.origin)
         txSpan = newInterval(min.x / ray.dir[0], max.x / ray.dir[0])
         tySpan = newInterval(min.y / ray.dir[1], max.y / ray.dir[1])
@@ -17,9 +17,16 @@ proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
     if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return false
 
     let tzSpan = newInterval(min.z / ray.dir[2], max.z / ray.dir[2])
-    
     var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
+    
     if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return false
+
+    if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
+    if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
+                
+    let tHit = if aabb.contains(ray.origin): hitSpan.max else: hitSpan.min
+    if not ray.tspan.contains(tHit): return false
+
     return true
 
 
