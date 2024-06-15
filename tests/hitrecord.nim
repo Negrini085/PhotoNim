@@ -1,4 +1,4 @@
-import std/unittest
+import std/[    unittest, options]
 import PhotoNim
 
 
@@ -33,3 +33,42 @@ suite "HitLeafs":
         check aabb2.checkIntersection(ray2)
         check not aabb2.checkIntersection(ray3)
         check not aabb2.checkIntersection(ray4)
+  
+
+    test "getHitLeafs proc":
+        # Checking getHitLeafs proc
+        let scene = newScene(@[newSphere(ORIGIN3D, 2), newUnitarySphere(newPoint3D(4, 4, 4))])
+            
+        var
+            ray1 = newRay(newPoint3D(-3, 0, 0), newVec3f(1, 0, 0))
+            ray2 = newRay(newPoint3D(-4, 4, 4), newVec3f(1, 0, 0))
+            ray3 = newRay(newPoint3D(-4, 4, 4), newVec3f(-1, 0, 0))
+        
+            rs = newReferenceSystem(ORIGIN3D, [eX, eY, eZ])
+            toCheck = scene.fromObserver(rs, 1)
+        
+        #------------------------------------------------------------#
+        #       Checking getHitLeafs in world reference system       #
+        #------------------------------------------------------------#
+        check toCheck.getHitLeafs(ray1).isSome
+        check toCheck.getHitLeafs(ray2).isSome
+        check toCheck.getHitLeafs(ray3).isSome
+
+
+        
+        #-------------------------------------------------------------#
+        #       Checking getHitLeafs in specific reference system     #
+        #-------------------------------------------------------------#
+        rs = newReferenceSystem(newPoint3D(1, 0, 0), [eX, eZ, -eY])
+        toCheck = scene.fromObserver(rs, 1)
+
+        check toCheck.getHitLeafs(ray1).isSome
+        check not toCheck.getHitLeafs(ray2).isSome
+        check not toCheck.getHitLeafs(ray3).isSome
+        
+        ray2.origin = newPoint3D(-4, 4, -4);
+        ray3.origin = newPoint3D(6, 4, -4)
+        check toCheck.getHitLeafs(ray2).isSome
+        check toCheck.getHitLeafs(ray3).isSome
+
+        # check toCheck.getHitLeafs(ray3).isSome

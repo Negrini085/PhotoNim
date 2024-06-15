@@ -10,8 +10,7 @@ proc getAABB*(handler: ShapeHandler): Interval[Point3D] {.inline.} =
     getAABB(handler.shape.getVertices.mapIt(apply(handler.transformation, it)))
 
 proc getLocalAABB*(refSystem: ReferenceSystem, handler: ShapeHandler): Interval[Point3D] {.inline.} =
-    let localTransformation = newComposition(handler.transformation, newTranslation(refSystem.origin).inverse)
-    getAABB(handler.shape.getVertices.mapIt(refSystem.project(apply(localTransformation, it.Vec3f)).Point3D))
+    getAABB(handler.shape.getVertices.mapIt(refSystem.project(apply(handler.transformation, it))))
 
 
 type
