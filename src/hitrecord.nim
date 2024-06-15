@@ -148,10 +148,12 @@ proc getHitPayloads(subScene: SubScene; ray: Ray): seq[HitPayload] =
     if hittedHandlers.len == 0: return @[]
 
     let worldRay = newRay(apply(newTranslation(subScene.rs.origin), ray.origin), subScene.rs.compose(ray.dir))
+
     hittedHandlers
         .mapIt(newHitPayload(worldRay, it))
         .filterIt(it.isSome)
         .mapIt(it.get)
+
 
 proc getHitRecord*(refSystem: ReferenceSystem, ray: Ray, hitLeafs: seq[SceneNode]): Option[seq[HitPayload]] =
     let hitPayloads = hitLeafs
