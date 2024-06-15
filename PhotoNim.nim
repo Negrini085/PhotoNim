@@ -317,7 +317,7 @@ Options:
         var renderer = 
             if args["OnOff"]: newOnOffRenderer(camera, hitCol = newColor(1, 215.0 / 255, 0))
             elif args["Flat"]: newFlatRenderer(camera)
-            else: newPathTracer(camera, nRays = 9, maxDepth = 6, rouletteLim = 3)
+            else: newPathTracer(camera, numRays = 9, maxDepth = 6, rouletteLimit = 3)
 
         demo(renderer, pfmOut, pngOut)
 

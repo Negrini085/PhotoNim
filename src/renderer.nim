@@ -19,7 +19,7 @@ type
             hitCol*: Color
 
         of rkPathTracer:
-            nRays*, maxDepth*, rouletteLim*: int
+            numRays*, maxDepth*, rouletteLimit*: int
 
 
 proc newOnOffRenderer*(camera: Camera, hitCol = WHITE): Renderer {.inline.} =
@@ -28,8 +28,8 @@ proc newOnOffRenderer*(camera: Camera, hitCol = WHITE): Renderer {.inline.} =
 proc newFlatRenderer*(camera: Camera): Renderer {.inline.} =
     Renderer(kind: rkFlat, camera: camera)
 
-proc newPathTracer*(camera: Camera, nRays = 25, maxDepth = 10, rouletteLim = 3): Renderer {.inline.} =
-    Renderer(kind: rkPathTracer, camera: camera, nRays: nRays, maxDepth: maxDepth, rouletteLim: rouletteLim)
+proc newPathTracer*(camera: Camera, numRays = 25, maxDepth = 10, rouletteLimit = 3): Renderer {.inline.} =
+    Renderer(kind: rkPathTracer, camera: camera, numRays: numRays, maxDepth: maxDepth, rouletteLimit: rouletteLimit)
 
 
 proc displayProgress(current, total: int) =
@@ -53,7 +53,7 @@ proc scatterRay*(refSystem: ReferenceSystem, localRay: Ray, brdf: BRDF, rg: var 
             phi = 2 * PI * rg.rand
         
         Ray(
-            origin: ORIGIN3D, 
+            origin: refSystem.origin, 
             dir: [float32 c * cos(phi), c * sin(phi), s], 
             tSpan: (float32 1e-3, float32 Inf), 
             depth: localRay.depth + 1
@@ -61,7 +61,7 @@ proc scatterRay*(refSystem: ReferenceSystem, localRay: Ray, brdf: BRDF, rg: var 
 
     of SpecularBRDF: 
         Ray(
-            origin: ORIGIN3D,
+            origin: refSystem.origin,
             dir: localRay.dir - 2 * dot(refSystem.base[0], localRay.dir) * refSystem.base[0],
             tspan: (float32 1e-3, float32 Inf), 
             depth: localRay.depth + 1
@@ -104,32 +104,36 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
             let                
                 closestHit = hitRecord.get[0]
 
-                shapeLocalHitPt = closestHit.ray.at(closestHit.t)                                       # In shape reference system
-                hitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)     # In shape reference system
+                shapeLocalHitPt = closestHit.ray.at(closestHit.t)                                  
+                hitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
+                surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
+                material = closestHit.handler.shape.material
 
                 localRS = newReferenceSystem(apply(closestHit.handler.transformation, shapeLocalHitPt), apply(closestHit.handler.transformation, hitNormal)) 
                 localScene = scene.fromObserver(localRS, maxShapesPerLeaf)
 
-                worldRay = closestHit.ray.transform(closestHit.handler.transformation)
-                localRay = newRay(apply(newTranslation(localRS.origin), worldRay.origin), localRS.project(worldRay.dir).normalize, closestHit.ray.depth)
+                localRay = newRay(
+                    apply(newComposition(newTranslation(localRS.origin), newTranslation(subScene.rs.origin).inverse), ray.origin), 
+                    subScene.rs.project(localRS.compose(ray.dir)).normalize, 
+                    # localRS.project(subScene.rs.compose(ray.dir)).normalize, 
+                    closestHit.ray.depth
+                )
 
-                material = closestHit.handler.shape.material
-                surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
 
             result = material.radiance.getColor(surfacePt)
             
             var hitCol = material.brdf.pigment.getColor(surfacePt)
-            if ray.depth >= renderer.rouletteLim:
+            if ray.depth >= renderer.rouletteLimit:
                 let q = max(0.05, 1 - hitCol.luminosity)
                 if rg.rand > q: hitCol /= (1.0 - q)
                 else: return result
 
             if hitCol.luminosity > 0.0:
                 var accumulatedRadiance = BLACK
-                for i in 0..<renderer.nRays: 
-                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, localRS.scatterRay(ray, material.brdf, rg), maxShapesPerLeaf, rg)
+                for i in 0..<renderer.numRays: 
+                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, localRS.scatterRay(localRay, material.brdf, rg), maxShapesPerLeaf, rg)
                 
-                result += accumulatedRadiance / renderer.nRays.float32
+                result += accumulatedRadiance / renderer.numRays.float32
     
     
 proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPerSide, maxShapesPerLeaf: int, displayProgress = true): HDRImage =
