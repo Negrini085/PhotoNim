@@ -23,18 +23,18 @@ proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
     return true
 
 
-proc getHitLeafs*(subScene: SubScene; ray: Ray): Option[seq[SceneNode]] =
-    if subScene.tree.isNil: return none seq[SceneNode]
-    if not checkIntersection(subScene.tree.aabb, ray): return none seq[SceneNode]
+proc getHitLeafs*(refSystem: ReferenceSystem, sceneTree: SceneNode; ray: Ray): Option[seq[SceneNode]] =
+    if sceneTree.isNil: return none seq[SceneNode]
+    if not checkIntersection(sceneTree.aabb, ray): return none seq[SceneNode]
 
     var sceneNodes: seq[SceneNode]
-    case subScene.tree.kind
+    case sceneTree.kind
     of nkLeaf: 
-        sceneNodes.add subScene.tree
+        sceneNodes.add sceneTree
     of nkBranch:
-        for node in [subScene.tree.left, subScene.tree.right]:
+        for node in [sceneTree.left, sceneTree.right]:
             if node != nil:
-                let hits = getHitLeafs((subScene.rs, node), ray)
+                let hits = refSystem.getHitLeafs(node, ray)
                 if hits.isSome: sceneNodes = concat(sceneNodes, hits.get)
 
         if sceneNodes.len == 0: return none seq[SceneNode]
@@ -140,15 +140,15 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         return some HitPayload(handler: handler, ray: worldInvRay, t: tHit)
 
 
-proc getHitPayloads(subScene: SubScene; localRay: Ray): seq[HitPayload] =
+proc getHitPayloads(refSystem: ReferenceSystem, sceneTree: SceneNode; localRay: Ray): seq[HitPayload] =
     var hittedHandlers: seq[ShapeHandler]
-    for handler in subScene.tree.handlers:
-        if checkIntersection(subScene.rs.getLocalAABB(handler), localRay): 
+    for handler in sceneTree.handlers:
+        if checkIntersection(refSystem.getLocalAABB(handler), localRay): 
             hittedHandlers.add handler
 
     if hittedHandlers.len == 0: return @[]
 
-    let worldRay = newRay(apply(newTranslation(subScene.rs.origin), localRay.origin), subScene.rs.getWorldObject(localRay.dir))
+    let worldRay = newRay(apply(newTranslation(refSystem.origin), localRay.origin), refSystem.getWorldObject(localRay.dir))
     hittedHandlers
         .mapIt(it.getHitPayload(worldRay.transform(it.transformation.inverse)))
         .filterIt(it.isSome)
@@ -156,7 +156,7 @@ proc getHitPayloads(subScene: SubScene; localRay: Ray): seq[HitPayload] =
 
 proc getHitRecord*(refSystem: ReferenceSystem, localRay: Ray, hitLeafs: seq[SceneNode]): Option[seq[HitPayload]] =
     let hitPayloads = hitLeafs
-        .mapIt((refSystem, it).getHitPayloads(localRay))
+        .mapIt(refSystem.getHitPayloads(it, localRay))
         .filterIt(it.len > 0)
 
     if hitPayloads.len == 0: return none seq[HitPayload]

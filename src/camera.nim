@@ -1,7 +1,7 @@
-import geometry, hdrimage
+import geometry, hdrimage, pcg
 
 from std/fenv import epsilon 
-from std/math import floor, cos, sin, arccos, degToRad, PI
+from std/math import floor, sqrt, cos, sin, arccos, degToRad, PI
 
 
 type Ray* = ref object
@@ -127,3 +127,27 @@ proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Col
         if abs(arccos(dot(normal.Vec3f, in_dir.normalize)) - arccos(dot(normal.Vec3f, out_dir.normalize))) <= brdf.threshold_angle: 
             return brdf.pigment.getColor(uv)
         else: return BLACK
+
+
+proc scatter*(refSystem: ReferenceSystem, hitRay: Ray, brdf: BRDF, rg: var PCG): Ray =
+    case brdf.kind:
+    of DiffuseBRDF:
+        let 
+            cos2 = rg.rand
+            (c, s) = (sqrt(cos2), sqrt(1 - cos2))
+            phi = 2 * PI * rg.rand
+        
+        Ray(
+            origin: ORIGIN3D, 
+            dir: [float32 c * cos(phi), c * sin(phi), s], 
+            tSpan: (float32 1e-3, float32 Inf), 
+            depth: hitRay.depth + 1
+        )
+
+    of SpecularBRDF: 
+        Ray(
+            origin: ORIGIN3D,
+            dir: refSystem.project(hitRay.dir - 2 * dot(refSystem.base[0], hitRay.dir) * refSystem.base[0]),
+            tspan: (float32 1e-3, float32 Inf), 
+            depth: hitRay.depth + 1
+        )

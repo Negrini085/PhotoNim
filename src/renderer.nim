@@ -1,9 +1,9 @@
 import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
 
 from std/strformat import fmt
-from std/math import cos, sin, sqrt, PI
-import std/[options, strutils, terminal]
-
+from std/strutils import repeat
+import std/[options, terminal]
+from std/sequtils import mapIt
 
 type
     RendererKind* = enum
@@ -44,42 +44,18 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc scatterRay*(refSystem: ReferenceSystem, localRay: Ray, brdf: BRDF, rg: var PCG): Ray =
-    case brdf.kind:
-    of DiffuseBRDF:
-        let 
-            cos2 = rg.rand
-            (c, s) = (sqrt(cos2), sqrt(1 - cos2))
-            phi = 2 * PI * rg.rand
-        
-        Ray(
-            origin: refSystem.origin, 
-            dir: [float32 c * cos(phi), c * sin(phi), s], 
-            tSpan: (float32 1e-3, float32 Inf), 
-            depth: localRay.depth + 1
-        )
-
-    of SpecularBRDF: 
-        Ray(
-            origin: refSystem.origin,
-            dir: localRay.dir - 2 * dot(refSystem.base[0], localRay.dir) * refSystem.base[0],
-            tspan: (float32 1e-3, float32 Inf), 
-            depth: localRay.depth + 1
-        )
-
-
-proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, maxShapesPerLeaf: int, rg: var PCG): Color =
+proc sampleRay(renderer: Renderer; scene: Scene, sceneTree: SceneNode, ray: Ray, refSystem: ReferenceSystem, maxShapesPerLeaf: int, rg: var PCG): Color =
     result = scene.bgCol
-
-    let hitLeafNodes = subScene.getHitLeafs(ray)
+    
+    let hitLeafNodes = refSystem.getHitLeafs(sceneTree, ray)
     if hitLeafNodes.isSome:
 
         case renderer.kind
         of rkOnOff:
             let worldRay = newRay(
-                apply(newTranslation(subScene.rs.origin), ray.origin), 
-                subScene.rs.getWorldObject(ray.dir)
-                )
+                apply(newTranslation(refSystem.origin), ray.origin), 
+                refSystem.getWorldObject(ray.dir)
+            )
 
             for node in hitLeafNodes.get:
                 for handler in node.handlers:
@@ -88,7 +64,7 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
                         break
 
         of rkFlat:
-            let hitRecord = subScene.rs.getHitRecord(ray, hitLeafNodes.get)
+            let hitRecord = refSystem.getHitRecord(ray, hitLeafNodes.get)
             if hitRecord.isSome:
                 let
                     hit = hitRecord.get[0]
@@ -101,40 +77,38 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
         of rkPathTracer: 
             if (ray.depth > renderer.maxDepth): return BLACK
 
-            let hitRecord = subScene.rs.getHitRecord(ray, hitLeafNodes.get)
+            let hitRecord = refSystem.getHitRecord(ray, hitLeafNodes.get)
             if hitRecord.isNone: return result
 
             let                
                 closestHit = hitRecord.get[0]
 
-                shapeLocalHitPt = closestHit.ray.at(closestHit.t)                                  
-                hitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
-                surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
-                material = closestHit.handler.shape.material
+                hitShape = closestHit.handler.shape
+                hitWorldTransformation = closestHit.handler.transformation
+                hitMaterial = hitShape.material
 
-                localRS = newReferenceSystem(apply(closestHit.handler.transformation, shapeLocalHitPt), apply(closestHit.handler.transformation, hitNormal)) 
-                localScene = scene.fromObserver(localRS, maxShapesPerLeaf)
-
-                localRay = newRay(
-                    apply(newComposition(newTranslation(localRS.origin), newTranslation(subScene.rs.origin).inverse), ray.origin), 
-                    subScene.rs.project(localRS.getWorldObject(ray.dir)).normalize, 
-                    # localRS.project(subScene.rs.getWorldObject(ray.dir)).normalize, 
-                    closestHit.ray.depth
-                )
-
-
-            result = material.radiance.getColor(surfacePt)
+                hitPt = closestHit.ray.at(closestHit.t)                                  
+                hitNormal = hitShape.getNormal(hitPt, closestHit.ray.dir)
+                surfacePt = hitShape.getUV(hitPt)
+                
+            result = hitMaterial.radiance.getColor(surfacePt)
             
-            var hitCol = material.brdf.pigment.getColor(surfacePt)
+            var hitCol = hitMaterial.brdf.pigment.getColor(surfacePt)
             if ray.depth >= renderer.rouletteLimit:
                 let q = max(0.05, 1 - hitCol.luminosity)
                 if rg.rand > q: hitCol /= (1.0 - q)
                 else: return result
 
             if hitCol.luminosity > 0.0:
+                let 
+                    localRS = newReferenceSystem(apply(hitWorldTransformation, hitPt), apply(hitWorldTransformation, hitNormal)) 
+                    localSceneTree = localRS.getSceneTree(scene, maxShapesPerLeaf) 
+                    
+                    worldRay = closestHit.ray.transform(hitWorldTransformation)
+
                 var accumulatedRadiance = BLACK
                 for i in 0..<renderer.numRays: 
-                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localScene, localRS.scatterRay(localRay, material.brdf, rg), maxShapesPerLeaf, rg)
+                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localSceneTree, localRS.scatter(worldRay, hitMaterial.brdf, rg), localRS, maxShapesPerLeaf, rg)
                 
                 result += accumulatedRadiance / renderer.numRays.float32
     
@@ -142,24 +116,23 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
 proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPerSide, maxShapesPerLeaf: int, displayProgress = true): HDRImage =
     result = newHDRImage(renderer.camera.viewport.width, renderer.camera.viewport.height)
             
-    let cameraScene = scene.fromObserver(renderer.camera.rs, maxShapesPerLeaf)
-
+    let sceneTree = renderer.camera.rs.getSceneTree(scene, maxShapesPerLeaf)
     var rg = newPCG(rgState, rgSeq)
     for y in 0..<renderer.camera.viewport.height:
         for x in 0..<renderer.camera.viewport.width:
-            var 
-                accumulatedColor = BLACK
-                ray: Ray
 
+            var accumulatedColor = BLACK
             for u in 0..<samplesPerSide:
                 for v in 0..<samplesPerSide:
-                    ray = renderer.camera.fireRay(
+
+                    let ray = renderer.camera.fireRay(
                         newPoint2D(
                             (x.float32 + (u.float32 + rg.rand) / samplesPerSide.float32) / renderer.camera.viewport.width.float32,
                             1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / renderer.camera.viewport.height.float32
                         )
                     )
-                    accumulatedColor += renderer.sampleRay(scene, cameraScene, ray, maxShapesPerLeaf, rg)
+                    
+                    accumulatedColor += renderer.sampleRay(scene, sceneTree, ray, renderer.camera.rs, maxShapesPerLeaf, rg)
 
             result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
                             

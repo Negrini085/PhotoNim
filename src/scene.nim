@@ -33,10 +33,8 @@ type
 
     Scene* = tuple[bgCol: Color, handlers: seq[ShapeHandler]]
 
-    SubScene* = tuple[rs: ReferenceSystem, tree: SceneNode]
 
-
-proc newBVHNode(shapeHandlers: seq[ShapeHandler], localAABBs: seq[Interval[Point3D]], totalAABB: Interval[Point3D], depth, maxShapesPerLeaf: int, strategy: BVHStrategy): SceneNode =   
+proc newBVHNode*(shapeHandlers: seq[ShapeHandler], localAABBs: seq[Interval[Point3D]], totalAABB: Interval[Point3D], depth, maxShapesPerLeaf: int, strategy: BVHStrategy): SceneNode =   
     if shapeHandlers.len == 0: return nil
     if shapeHandlers.len <= maxShapesPerLeaf: return SceneNode(kind: nkLeaf, aabb: totalAABB, handlers: shapeHandlers)
 
@@ -59,10 +57,9 @@ proc newBVHNode(shapeHandlers: seq[ShapeHandler], localAABBs: seq[Interval[Point
 
 proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.inline.} = (bgCol, shapeHandlers)
 
-proc fromObserver*(scene: Scene; refSystem: ReferenceSystem, maxShapesPerLeaf: int): SubScene =
+proc getSceneTree*(refSystem: ReferenceSystem; scene: Scene, maxShapesPerLeaf: int): SceneNode = 
     let localAABBs = scene.handlers.mapIt(refSystem.getLocalAABB(it))
-    (refSystem, newBVHNode(scene.handlers, localAABBs, localAABBs.getTotalAABB, depth = 0, maxShapesPerLeaf, skSAH))
-
+    newBVHNode(scene.handlers, localAABBs, localAABBs.getTotalAABB, depth = 0, maxShapesPerLeaf, skSAH)
 
 proc loadMesh*(world: Scene, source: string) = quit "to implement"
 proc loadTexture*(world: Scene, source: string, shape: Shape) = quit "to implement"
