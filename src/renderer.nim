@@ -78,7 +78,7 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
         of rkOnOff:
             let worldRay = newRay(
                 apply(newTranslation(subScene.rs.origin), ray.origin).Point3D, 
-                subScene.rs.compose(ray.dir)
+                subScene.rs.getWorldObject(ray.dir)
                 )
 
             for node in hitLeafNodes.get:
@@ -117,8 +117,8 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
 
                 localRay = newRay(
                     apply(newComposition(newTranslation(localRS.origin), newTranslation(subScene.rs.origin).inverse), ray.origin), 
-                    subScene.rs.project(localRS.compose(ray.dir)).normalize, 
-                    # localRS.project(subScene.rs.compose(ray.dir)).normalize, 
+                    subScene.rs.project(localRS.getWorldObject(ray.dir)).normalize, 
+                    # localRS.project(subScene.rs.getWorldObject(ray.dir)).normalize, 
                     closestHit.ray.depth
                 )
 

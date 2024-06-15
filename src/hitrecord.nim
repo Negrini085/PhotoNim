@@ -149,7 +149,7 @@ proc getHitPayloads(subScene: SubScene; localRay: Ray): seq[HitPayload] =
 
     if hittedHandlers.len == 0: return @[]
 
-    let worldRay = newRay(apply(newTranslation(subScene.rs.origin), localRay.origin), subScene.rs.compose(localRay.dir))
+    let worldRay = newRay(apply(newTranslation(subScene.rs.origin), localRay.origin), subScene.rs.getWorldObject(localRay.dir))
     hittedHandlers
         .mapIt(it.getHitPayload(worldRay.transform(it.transformation.inverse)))
         .filterIt(it.isSome)
