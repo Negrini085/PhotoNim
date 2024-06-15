@@ -639,42 +639,42 @@ suite "ReferenceSystem":
         check areClose(refSyst3.base[2], eY)
 
     
-    test "coeff proc":
-        # Checking coeff proc, useful to get projections along reference system axis
+    test "project proc":
+        # Checking project proc, useful to get projections along reference system axis
         let
             v1 =  ORIGIN3D.Vec3f
             v2 = newVec3f(1, 2, 3)
 
         # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
-        check areClose(refSyst1.coeff(v1), newVec3f(0, 0, 0))
-        check areClose(refSyst1.coeff(v2), newVec3f(1, 2, 3))
+        check areClose(refSyst1.project(v1), newVec3f(0, 0, 0))
+        check areClose(refSyst1.project(v2), newVec3f(1, 2, 3))
 
         # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
-        check areClose(refSyst2.coeff(v1), newVec3f(0, 0, 0), eps = 1e-6)
-        check areClose(refSyst2.coeff(v2), newVec3f(1, 3, -2), eps = 1e-6)
+        check areClose(refSyst2.project(v1), newVec3f(0, 0, 0), eps = 1e-6)
+        check areClose(refSyst2.project(v2), newVec3f(1, 3, -2), eps = 1e-6)
 
         # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
-        check areClose(refSyst3.coeff(v1), newVec3f(0, 0, 0))
-        check areClose(refSyst3.coeff(v2), newVec3f(1, -3, 2))
+        check areClose(refSyst3.project(v1), newVec3f(0, 0, 0))
+        check areClose(refSyst3.project(v2), newVec3f(1, -3, 2))
     
 
-    test "fromCoeff proc":
-        # Checking fromCoeff proc, useful to get vectors in World given coefficients and reference system
+    test "compose proc":
+        # Checking compose proc, useful to get vectors in World given coefficients and reference system
         let
             coeff1 = newVec3f(0, 0, 0)
             coeff2 = newVec3f(1, 2, 3)
 
         # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
-        check areClose(refSyst1.fromCoeff(coeff1), newVec3f(0, 0, 0))
-        check areClose(refSyst1.fromCoeff(coeff2), newVec3f(1, 2, 3))
+        check areClose(refSyst1.compose(coeff1), newVec3f(0, 0, 0))
+        check areClose(refSyst1.compose(coeff2), newVec3f(1, 2, 3))
 
         # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
-        check areClose(refSyst2.fromCoeff(coeff1), newVec3f(0, 0, 0), eps = 1e-6)
-        check areClose(refSyst2.fromCoeff(coeff2), newVec3f(1, -3, 2), eps = 1e-6)
+        check areClose(refSyst2.compose(coeff1), newVec3f(0, 0, 0), eps = 1e-6)
+        check areClose(refSyst2.compose(coeff2), newVec3f(1, -3, 2), eps = 1e-6)
 
         # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
-        check areClose(refSyst3.fromCoeff(coeff1), newVec3f(0, 0, 0))
-        check areClose(refSyst3.fromCoeff(coeff2), newVec3f(1, 3, -2))
+        check areClose(refSyst3.compose(coeff1), newVec3f(0, 0, 0))
+        check areClose(refSyst3.compose(coeff2), newVec3f(1, 3, -2))
 
     
     test "getTransformation proc":
