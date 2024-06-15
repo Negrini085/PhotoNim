@@ -231,3 +231,56 @@ suite "HitPayload":
 
         check not getHitPayload(box, ray3).isSome
 
+
+    test "getHitPayload (Triangle)":
+        # Checking getHitPayload on triangle shape
+        var
+            triangle = newTriangle(newPoint3D(3, 0, 0), newPoint3D(-2, 0, 0), newPoint3D(0.5, 2, 0))
+            shTriangle = newShapeHandler(triangle)
+
+            ray1 = newRay(newPoint3D(0, 1, -2), eZ)
+            ray2 = newRay(newPoint3D(0, 1, -2), eX)
+
+        hitPayload = getHitPayload(shTriangle, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skTriangle
+        check areClose(hitPayload.get.ray.dir, eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 1, -2))
+
+        check not getHitPayload(shTriangle, ray2).isSome
+
+
+    test "getHitPayload (Cylinder)":
+        # Checking getHitPayload on cylinder shape
+        var
+            cylinder = newCylinder(2, -2, 2)
+            shCylinder = newShapeHandler(cylinder)
+
+            ray1 = newRay(ORIGIN3D, eX)
+            ray2 = newRay(newPoint3D(4, 0, 0), -eX)
+            ray3 = newRay(newPoint3D(0, 0, -4), eZ)
+            ray4 = newRay(newPoint3D(2, 3, 1), eY)
+
+        hitPayload = getHitPayload(shCylinder, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skCylinder
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, ORIGIN3D)
+
+        hitPayload = getHitPayload(shCylinder, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skCylinder
+        check areClose(hitPayload.get.ray.dir, -eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 0, 0))
+        
+        hitPayload = getHitPayload(shCylinder, ray3)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2                   # It's none, found another bug
+        check hitPayload.get.handler.shape.kind == skCylinder
+        check areClose(hitPayload.get.ray.dir, eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, -4))
+
+        check not getHitPayload(shCylinder, ray4).isSome
