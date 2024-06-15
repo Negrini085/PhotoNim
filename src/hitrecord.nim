@@ -20,7 +20,6 @@ proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
     
     var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
     if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return false
-
     return true
 
 
