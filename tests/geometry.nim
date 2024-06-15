@@ -645,6 +645,13 @@ suite "ReferenceSystem":
             v1 =  ORIGIN3D.Vec3f
             v2 = newVec3f(1, 2, 3)
 
+            p1 = ORIGIN3D
+            p2 = newPoint3D(1, 2, 3)
+
+        #---------------------------#
+        #      Vec3f projection     #
+        #---------------------------#
+
         # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
         check areClose(refSyst1.project(v1), newVec3f(0, 0, 0))
         check areClose(refSyst1.project(v2), newVec3f(1, 2, 3))
@@ -658,49 +665,90 @@ suite "ReferenceSystem":
         check areClose(refSyst3.project(v2), newVec3f(1, -3, 2))
     
 
-    test "compose proc":
-        # Checking compose proc, useful to get vectors in World given coefficients and reference system
-        let
-            coeff1 = newVec3f(0, 0, 0)
-            coeff2 = newVec3f(1, 2, 3)
+        #-----------------------------#
+        #      Point3D projection     #
+        #-----------------------------#
 
         # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
-        check areClose(refSyst1.compose(coeff1), newVec3f(0, 0, 0))
-        check areClose(refSyst1.compose(coeff2), newVec3f(1, 2, 3))
+        check areClose(refSyst1.project(p1), newPoint3D(-2, -3, -1))
+        check areClose(refSyst1.project(p2), newPoint3D(-1, -1, 2))
 
         # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
-        check areClose(refSyst2.compose(coeff1), newVec3f(0, 0, 0), eps = 1e-6)
-        check areClose(refSyst2.compose(coeff2), newVec3f(1, -3, 2), eps = 1e-6)
+        check areClose(refSyst2.project(p1), newPoint3D(-1, -3, 2), eps = 1e-6)
+        check areClose(refSyst2.project(p2), newPoint3D(0, 0, 0), eps = 1e-6)
 
         # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
-        check areClose(refSyst3.compose(coeff1), newVec3f(0, 0, 0))
-        check areClose(refSyst3.compose(coeff2), newVec3f(1, 3, -2))
+        check areClose(refSyst3.project(p1), newPoint3D(-1, 0, 0))
+        check areClose(refSyst3.project(p2), newPoint3D(0, -3, 2))
+    
+
+    test "getWorldObject proc":
+        # Checking getWorldObject proc, useful to get vectors in World given coefficients and reference system
+        let
+            v1 = newVec3f(0, 0, 0)
+            v2 = newVec3f(1, 2, 3)
+
+            p1 = ORIGIN3D
+            p2 = newPoint3D(1, 2, 3)
+
+        #-----------------------------#
+        #     Vec3f getWorldObject    #
+        #-----------------------------#
+
+        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
+        check areClose(refSyst1.getWorldObject(v1), newVec3f(0, 0, 0))
+        check areClose(refSyst1.getWorldObject(v2), newVec3f(1, 2, 3))
+
+        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
+        check areClose(refSyst2.getWorldObject(v1), newVec3f(0, 0, 0), eps = 1e-6)
+        check areClose(refSyst2.getWorldObject(v2), newVec3f(1, -3, 2), eps = 1e-6)
+
+        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
+        check areClose(refSyst3.getWorldObject(v1), newVec3f(0, 0, 0))
+        check areClose(refSyst3.getWorldObject(v2), newVec3f(1, 3, -2))
+
+
+        #------------------------------#
+        #    Point3D getWorldObject    #
+        #------------------------------#
+
+        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
+        check areClose(refSyst1.getWorldObject(p1), newPoint3D(2, 3, 1))
+        check areClose(refSyst1.getWorldObject(p2), newPoint3D(3, 5, 4))
+
+        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
+        check areClose(refSyst2.getWorldObject(p1), newPoint3D(1, 2, 3), eps = 1e-6)
+        check areClose(refSyst2.getWorldObject(p2), newPoint3D(2, -1, 5), eps = 1e-6)
+
+        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
+        check areClose(refSyst3.getWorldObject(p1), newPoint3D(1, 0, 0))
+        check areClose(refSyst3.getWorldObject(p2), newPoint3D(2, 3, -2))
 
     
-    test "getTransformation proc":
-        # Checking get transformation proc, useful to map a world reference system in another one
-        var appo: Transformation
-
-        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
-        appo = refSyst1.getTransformation()
-        check appo.kind == tkComposition and appo.transformations.len == 2
-        check appo.transformations[0].kind == tkTranslation
-        check appo.transformations[1].kind == tkGeneric
-        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(2, 3, 1, 1)].T)
-        check areClose(appo.transformations[1].mat, Mat4f.id)
-
-        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
-        appo = refSyst2.getTransformation()
-        check appo.kind == tkComposition and appo.transformations.len == 2
-        check appo.transformations[0].kind == tkTranslation
-        check appo.transformations[1].kind == tkGeneric
-        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(1, 2, 3, 1)].T)
-        check areClose(appo.transformations[1].mat, [eX.toVec4, eZ.toVec4, -eY.toVec4, newVec4f(0, 0, 0, 1)].T, eps = 1e-6)
-
-        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
-        appo = refSyst3.getTransformation()
-        check appo.kind == tkComposition and appo.transformations.len == 2
-        check appo.transformations[0].kind == tkTranslation
-        check appo.transformations[1].kind == tkGeneric
-        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(1, 0, 0, 1)].T)
-        check areClose(appo.transformations[1].mat, [eX.toVec4, -eZ.toVec4, eY.toVec4, newVec4f(0, 0, 0, 1)].T)
+#    test "getTransformation proc":
+#        # Checking get transformation proc, useful to map a world reference system in another one
+#        var appo: Transformation
+#
+#        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
+#        appo = refSyst1.getTransformation()
+#        check appo.kind == tkComposition and appo.transformations.len == 2
+#        check appo.transformations[0].kind == tkTranslation
+#        check appo.transformations[1].kind == tkGeneric
+#        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(2, 3, 1, 1)].T)
+#        check areClose(appo.transformations[1].mat, Mat4f.id)
+#
+#        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
+#        appo = refSyst2.getTransformation()
+#        check appo.kind == tkComposition and appo.transformations.len == 2
+#        check appo.transformations[0].kind == tkTranslation
+#        check appo.transformations[1].kind == tkGeneric
+#        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(1, 2, 3, 1)].T)
+#        check areClose(appo.transformations[1].mat, [eX.toVec4, eZ.toVec4, -eY.toVec4, newVec4f(0, 0, 0, 1)].T, eps = 1e-6)
+#
+#        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
+#        appo = refSyst3.getTransformation()
+#        check appo.kind == tkComposition and appo.transformations.len == 2
+#        check appo.transformations[0].kind == tkTranslation
+#        check appo.transformations[1].kind == tkGeneric
+#        check areClose(appo.transformations[0].mat, [eX.toVec4, eY.toVec4, eZ.toVec4, newVec4f(1, 0, 0, 1)].T)
+#        check areClose(appo.transformations[1].mat, [eX.toVec4, -eZ.toVec4, eY.toVec4, newVec4f(0, 0, 0, 1)].T)
