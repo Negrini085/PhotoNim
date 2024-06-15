@@ -178,3 +178,56 @@ suite "HitPayload":
         check hitPayload.get.handler.shape.kind == skSphere and hitPayload.get.handler.shape.radius == 3
         check areClose(hitPayload.get.ray.dir, eX)
         check areClose(hitPayload.get.ray.origin, ORIGIN3D)
+
+
+    test "getHitPayload proc (Plane)":
+        # Checking getHitPayloads on Planes
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
+            ray2 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
+            ray3 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
+
+            plane = newPlane()
+        
+        hitPayload = getHitPayload(plane, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skPlane
+        check areClose(hitPayload.get.ray.dir, -eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, 2))
+
+        hitPayload = getHitPayload(plane, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 5
+        check hitPayload.get.handler.shape.kind == skPlane
+        check areClose(hitPayload.get.ray.dir, newVec3f(0, 4/5, 3/5))
+        check areClose(hitPayload.get.ray.origin, newPoint3D(1, -2, -3))
+
+        check not getHitPayload(plane, ray3).isSome
+
+
+    test "getHitPayload proc (AABox)":
+        # Checking getHitPayloads on Planes
+        var
+            ray1 = newRay(newPoint3D(-5, 1, 2), eX)
+            ray2 = newRay(newPoint3D(1, -2, 3), eY)
+            ray3 = newRay(newPoint3D(4, 1, 0), newVec3f(-1, 0, 0))
+
+            box = newBox((newPoint3D(-1, 0, 1), newPoint3D(3, 2, 5)))
+          
+        hitPayload = getHitPayload(box, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 4
+        check hitPayload.get.handler.shape.kind == skAABox
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(-5, 1, 2))
+
+        hitPayload = getHitPayload(box, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skAABox
+        check areClose(hitPayload.get.ray.dir, eY)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(1, -2, 3))
+
+        check not getHitPayload(box, ray3).isSome
+

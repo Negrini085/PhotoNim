@@ -59,21 +59,22 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
     case handler.shape.kind
     of skAABox:
         let
-            xSpan = newInterval((handler.shape.aabb.min.x - worldinvRay.origin.x) / worldinvRay.dir[0], (handler.shape.aabb.max.x - worldinvRay.origin.x) / worldinvRay.dir[0])
-            ySpan = newInterval((handler.shape.aabb.min.y - worldinvRay.origin.y) / worldinvRay.dir[1], (handler.shape.aabb.max.y - worldinvRay.origin.y) / worldinvRay.dir[1])
+            (min, max) = (handler.shape.aabb.min - worldInvRay.origin, handler.shape.aabb.max - worldInvRay.origin)
+            txSpan = newInterval(min.x / worldInvRay.dir[0], max.x / worldInvRay.dir[0])
+            tySpan = newInterval(min.y / worldInvRay.dir[1], max.y / worldInvRay.dir[1])
 
-        if xSpan.min > ySpan.max or ySpan.min > xSpan.max: return none HitPayload
+        if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return none HitPayload
 
-        let zSpan = newInterval((handler.shape.aabb.min.z - worldinvRay.origin.z) / worldinvRay.dir[2], (handler.shape.aabb.min.z - worldinvRay.origin.z) / worldinvRay.dir[2])
-        
-        var (tHitMin, tHitMax) = (max(xSpan.min, ySpan.min), min(xSpan.max, ySpan.max))
-        if tHitMin > zSpan.max or zSpan.min > tHitMax: return none HitPayload
+        let tzSpan = newInterval(min.z / worldInvRay.dir[2], max.z / worldInvRay.dir[2])
+        var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
 
-        if zSpan.min > tHitMin: tHitMin = zSpan.min
-        if zSpan.max < tHitMax: tHitMax = zSpan.max
-                
-        let tHit = if handler.shape.aabb.contains(worldinvRay.origin): tHitMax else: tHitMin
-        if not worldinvRay.tspan.contains(tHit): return none HitPayload
+        if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return none HitPayload
+
+        if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
+        if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
+
+        let tHit = if handler.shape.aabb.contains(worldInvRay.origin): hitSpan.max else: hitSpan.min
+        if not worldInvRay.tspan.contains(tHit): return none HitPayload
 
         return some HitPayload(handler: handler, ray: worldinvRay, t: tHit)
 
