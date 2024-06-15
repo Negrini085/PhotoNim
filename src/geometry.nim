@@ -677,14 +677,12 @@ proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inl
 
 proc project*[V](refSystem: ReferenceSystem, worldObj: V): V {.inline.} = 
     when V is Point3D: dot(refSystem.base, (worldObj - refSystem.origin).Vec3f).Point3D
-    elif V is Vec3f: dot(refSystem.base, worldObj - refSystem.origin.Vec3f)
+    elif V is Vec3f: dot(refSystem.base, worldObj)
 
 proc getWorldObject*[V](refSystem: ReferenceSystem, localObj: V): V {.inline.} = 
     when V is Point3D: refSystem.origin + dot(refSystem.base.T, localObj.Vec3f)
     elif V is Vec3f: dot(refSystem.base.T, localObj)
 
-# proc getTransformation(refSystem: ReferenceSystem): Transformation {.inline.} =
-#     newComposition(newTranslation(refSystem.origin), newTransformation(refSystem.base.toMat4.T, refSystem.base.toMat4))
 
 
 type 
