@@ -165,12 +165,12 @@ suite "Camera":
     test "checkIntersection proc":
         let 
             scene = newScene(@[newSphere(newPoint3D(2, 0, 0), 0.5)])
-            cameraScene = scene.fromObserver(pCam.rs, 1)
+            cameraScene = pCam.rs.getSceneTree(scene, 1)
             ray = pCam.fireRay(newPoint2D(0.5, 0.5))
         
-        check checkIntersection(cameraScene.tree.aabb, ray)
+        check checkIntersection(cameraScene.aabb, ray)
 
-        var appo = newHitRecord(pcam.rs, getHitLeafs(cameraScene, ray).get, ray)
+        var appo = getHitRecord(pcam.rs, ray, pCam.rs.getHitLeafs(cameraScene, ray).get)
         check appo.isSome
         check areClose(ray.at(appo.get[0].t), newPoint3D(2.5, 0, 0))
 
