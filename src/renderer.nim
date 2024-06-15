@@ -77,7 +77,7 @@ proc sampleRay(renderer: Renderer; scene: Scene, subScene: SubScene, ray: Ray, m
         case renderer.kind
         of rkOnOff:
             let worldRay = newRay(
-                apply(newTranslation(subScene.rs.origin), ray.origin).Point3D, 
+                apply(newTranslation(subScene.rs.origin), ray.origin), 
                 subScene.rs.getWorldObject(ray.dir)
                 )
 
