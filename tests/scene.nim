@@ -171,27 +171,27 @@ suite "Scene":
     test "fromObserver proc":
         var 
             rs = newReferenceSystem(newPoint3D(5, 3, 1), [-eX, eY, -eZ])
-            subScene: SubScene
+            scene: SceneNode
 
         # First scene, only triangles
-        subScene = sc1.fromObserver(rs, maxShapesPerLeaf = 2)
+        scene = rs.getSceneTree(sc1, maxShapesPerLeaf = 2)
         
-        check not subScene.tree.isNil
-        check areClose(subScene.tree.aabb.min, newPoint3D(2, -5, 0))
-        check areClose(subScene.tree.aabb.max, newPoint3D(5, 1, 3))
+        check not scene.isNil
+        check areClose(scene.aabb.min, newPoint3D(2, -5, 0))
+        check areClose(scene.aabb.max, newPoint3D(5, 1, 3))
 
 
         # Second scene, only spheres
-        subscene = sc2.fromObserver(rs, maxShapesPerLeaf = 2)
+        scene = rs.getSceneTree(sc2, maxShapesPerLeaf = 2)
 
-        check not subScene.tree.isNil
-        check areClose(subScene.tree.aabb.min, newPoint3D(0, -6, -4))
-        check areClose(subScene.tree.aabb.max, newPoint3D(8, 2, 4))
+        check not scene.isNil
+        check areClose(scene.aabb.min, newPoint3D(0, -6, -4))
+        check areClose(scene.aabb.max, newPoint3D(8, 2, 4))
 
 
         # Third scene, one sphere and one triangle
-        subscene = sc3.fromObserver(rs, maxShapesPerLeaf = 2)
+        scene = rs.getSceneTree(sc3, maxShapesPerLeaf = 2)
 
-        check not subScene.tree.isNil
-        check areClose(subScene.tree.aabb.min, newPoint3D(1, -5, -3))
-        check areClose(subScene.tree.aabb.max, newPoint3D(5, 1, 1))
+        check not scene.isNil
+        check areClose(scene.aabb.min, newPoint3D(1, -5, -3))
+        check areClose(scene.aabb.max, newPoint3D(5, 1, 1))
