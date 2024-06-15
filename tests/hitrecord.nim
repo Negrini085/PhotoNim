@@ -31,7 +31,7 @@ suite "HitLeafs":
         check aabb1.checkIntersection(ray2)
         check not aabb1.checkIntersection(ray3)
         check aabb1.checkIntersection(ray4)
-        check aabb1.checkIntersection(ray5)         # Why is this passing?? That should not happen, negative times
+        check not aabb1.checkIntersection(ray5)
 
 
         # Second aabb
@@ -42,59 +42,52 @@ suite "HitLeafs":
         check not aabb2.checkIntersection(ray5)
   
 
-#    test "getHitLeafs proc":
-#        # Checking getHitLeafs proc
-#        let scene = newScene(@[newSphere(ORIGIN3D, 2), newUnitarySphere(newPoint3D(4, 4, 4))])
-#            
-#        var
-#            ray1 = newRay(newPoint3D(-3, 0, 0), newVec3f(1, 0, 0))
-#            ray2 = newRay(newPoint3D(-4, 4, 4), newVec3f(1, 0, 0))
-#            ray3 = newRay(newPoint3D(-4, 4, 4), newVec3f(-1, 0, 0))
-#        
-#            rs = newReferenceSystem(ORIGIN3D, [eX, eY, eZ])
-#            toCheck = scene.fromObserver(rs, 1)
-#            appo: Option[seq[SceneNode]]
-#        
-#        #------------------------------------------------------------#
-#        #       Checking getHitLeafs in world reference system       #
-#        #------------------------------------------------------------#
-#        appo = toCheck.getHitLeafs(ray1)
-#        check appo.isSome
-#        check appo.get[0].handlers[0].shape.radius == 2
-#
-#        appo = toCheck.getHitLeafs(ray2)
-#        check appo.isSome
-#        check appo.get[0].handlers[0].shape.radius == 1
-#
-#        appo = toCheck.getHitLeafs(ray3)
-#        check appo.isSome      # Why is true (Only if time is negative brodi)
-#        check appo.get[0].handlers[0].shape.radius == 1
-#
-#        
-#        #-------------------------------------------------------------#
-#        #       Checking getHitLeafs in specific reference system     #
-#        #-------------------------------------------------------------#
-#        rs = newReferenceSystem(newPoint3D(1, 0, 0), [eX, eZ, -eY])
-#        toCheck = scene.fromObserver(rs, 1)
-#
-#        appo = toCheck.getHitLeafs(ray1)
-#        check appo.isSome
-#        check appo.get[0].handlers[0].shape.radius == 2
-#
-#        check not toCheck.getHitLeafs(ray2).isSome
-#        check not toCheck.getHitLeafs(ray3).isSome
-#        
-#        # Changing ray origin
-#        ray2.origin = newPoint3D(-4, 4, -4);
-#        ray3.origin = newPoint3D(6, 4, -4)
-#
-#        appo = toCheck.getHitLeafs(ray2)
-#        check appo.isSome
-#        check appo.get[0].handlers[0].shape.radius == 1
-#
-#        appo = toCheck.getHitLeafs(ray3)
-#        check appo.isSome
-#        check appo.get[0].handlers[0].shape.radius == 1
-#
-#
-#
+    test "getHitLeafs proc":
+        # Checking getHitLeafs proc
+        let scene = newScene(@[newSphere(ORIGIN3D, 2), newUnitarySphere(newPoint3D(4, 4, 4))])
+            
+        var
+            ray1 = newRay(newPoint3D(-3, 0, 0), newVec3f(1, 0, 0))
+            ray2 = newRay(newPoint3D(-4, 4, 4), newVec3f(1, 0, 0))
+            ray3 = newRay(newPoint3D(-4, 4, 4), newVec3f(-1, 0, 0))
+        
+            rs = newReferenceSystem(ORIGIN3D, [eX, eY, eZ])
+            toCheck = rs.getSceneTree(scene, 1)
+            appo: Option[seq[SceneNode]]
+        
+        #------------------------------------------------------------#
+        #       Checking getHitLeafs in world reference system       #
+        #------------------------------------------------------------#
+        appo = rs.getHitLeafs(toCheck, ray1); check appo.isSome
+        check appo.get[0].handlers[0].shape.radius == 2
+
+        appo = rs.getHitLeafs(toCheck, ray2); check appo.isSome
+        check appo.get[0].handlers[0].shape.radius == 1
+
+        check not rs.getHitLeafs(toCheck, ray3).isSome
+
+        
+        #-------------------------------------------------------------#
+        #       Checking getHitLeafs in specific reference system     #
+        #-------------------------------------------------------------#
+        rs = newReferenceSystem(newPoint3D(1, 0, 0), [eX, eZ, -eY])
+        toCheck = rs.getSceneTree(scene, 1)
+
+        appo = rs.getHitLeafs(toCheck, ray1); check appo.isSome
+        check appo.get[0].handlers[0].shape.radius == 2
+
+        check not rs.getHitLeafs(toCheck, ray2).isSome
+        check not rs.getHitLeafs(toCheck, ray3).isSome
+        
+        # Changing ray origin
+        ray2.origin = newPoint3D(-4, 4, -4);
+        ray3.origin = newPoint3D(6, 4, -4)
+
+        appo = rs.getHitLeafs(toCheck, ray2); check appo.isSome
+        check appo.get[0].handlers[0].shape.radius == 1
+
+        appo = rs.getHitLeafs(toCheck, ray3); check appo.isSome
+        check appo.get[0].handlers[0].shape.radius == 1
+
+
+
