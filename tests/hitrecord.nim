@@ -591,3 +591,83 @@ suite "HitPayload":
         check stdRS.getHitLeafs(sceneTree, ray3).isSome
         check stdRS.getHitLeafs(sceneTree, ray3).get.len == 2
         check not stdRS.getHitRecord(ray3, stdRS.getHitLeafs(sceneTree, ray3).get).isSome
+
+
+    test "getHitRecord (Specific Reference System)":
+        # Checking getHitRecord proc in specific reference system
+        let
+            shsp1 = newSphere(ORIGIN3D, 2)
+            shsp2 = newSphere(newPoint3D(5, 0, 0), 2)
+            shsp3 = newUnitarySphere(newPoint3D(5, 5, 5))
+            box = newBox((newPoint3D(-6, -6, -6), newPoint3D(-4, -4, -4)))
+        
+            # Be careful here, point and vectors must be in local reference system frame
+            ray1 = newRay(newPoint3D(-4, -3, 2), newVec3f(1, 0, 0))
+            ray2 = newRay(newPoint3D(-6, -11, 7), newVec3f(0, 1, 0))
+            ray3 = newRay(newPoint3D(-4, -1.1, 0.1), newVec3f(1, 0, 0))
+            ray4 = newRay(newPoint3D(-1, -3, 2), newVec3f(0, 0, -1))
+
+        var hitRecord: seq[HitPayload]
+
+        # Creating scene and sceneTree in Specific Reference System
+        # Remember: ray are given in shape local rfame of reference
+        scene = newScene(@[shsp1, shsp2, shsp3, box])
+        sceneTree = speRS.getSceneTree(scene, 1)
+
+        #--------------------------#
+        #         First ray        #
+        #--------------------------#
+        check speRS.getHitLeafs(sceneTree, ray1).isSome
+        check speRS.getHitLeafs(sceneTree, ray1).get.len == 2
+
+        check speRS.getHitRecord(ray1, speRS.getHitLeafs(sceneTree, ray1).get).isSome
+        hitRecord = speRS.getHitRecord(ray1, speRS.getHitLeafs(sceneTree, ray1).get).get
+        check hitRecord.len == 2 and hitRecord[0].t <= hitRecord[1].t
+
+        check (hitRecord[0].handler.shape.kind == skSphere) and (hitRecord[0].handler.shape.radius == 2)
+        check hitRecord[0].t == 1
+        check areClose(hitRecord[0].ray.origin, newPoint3D(-3, 0, 0))
+        check areClose(hitRecord[0].ray.dir, eX)
+
+        check (hitRecord[1].handler.shape.kind == skSphere) and (hitRecord[1].handler.shape.radius == 2)
+        check hitRecord[1].t == 6
+        check areClose(hitRecord[1].ray.origin, newPoint3D(-8, 0, 0))
+        check areClose(hitRecord[1].ray.dir, eX)
+
+        #--------------------------#
+        #        Second ray        #
+        #--------------------------#
+        check speRS.getHitLeafs(sceneTree, ray2).isSome
+        check speRS.getHitLeafs(sceneTree, ray2).get.len == 1
+
+        check speRS.getHitRecord(ray2, speRS.getHitLeafs(sceneTree, ray2).get).isSome
+        hitRecord = speRS.getHitRecord(ray2, speRS.getHitLeafs(sceneTree, ray2).get).get
+        check hitRecord.len == 1
+
+        check (hitRecord[0].handler.shape.kind == skAABox) and hitRecord[0].t == 2
+        check areClose(hitRecord[0].handler.shape.aabb.min, newPoint3D(-6, -6, -6))
+        check areClose(hitRecord[0].handler.shape.aabb.max, newPoint3D(-4, -4, -4))
+        check areClose(hitRecord[0].ray.origin, newPoint3D(-5, -5, -8))     # Box has not a specific reference system
+        check areClose(hitRecord[0].ray.dir, eZ)
+
+        #-------------------------#
+        #        Third ray        #
+        #-------------------------#
+        check speRS.getHitLeafs(sceneTree, ray3).isSome
+        check speRS.getHitLeafs(sceneTree, ray3).get.len == 2
+        check not speRS.getHitRecord(ray3, speRS.getHitLeafs(sceneTree, ray3).get).isSome
+
+        #--------------------------#
+        #        Fourth ray        #
+        #--------------------------#
+        check speRS.getHitLeafs(sceneTree, ray4).isSome
+        check speRS.getHitLeafs(sceneTree, ray4).get.len == 1
+
+        check speRS.getHitRecord(ray4, speRS.getHitLeafs(sceneTree, ray4).get).isSome
+        hitRecord = speRS.getHitRecord(ray4, speRS.getHitLeafs(sceneTree, ray4).get).get
+        check hitRecord.len == 1
+
+        check (hitRecord[0].handler.shape.kind == skSphere) and (hitRecord[0].handler.shape.radius == 2)
+        check hitRecord[0].t == 2
+        check areClose(hitRecord[0].ray.origin, ORIGIN3D)
+        check areClose(hitRecord[0].ray.dir, eY)
