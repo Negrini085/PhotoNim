@@ -10,7 +10,7 @@ suite "Material":
 
     setup:
         let
-            mat1 = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2))
+            mat1 = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2, 2))
             mat2 = newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(0.3, 0.7, 1)))
 
     teardown:
@@ -269,7 +269,7 @@ suite "Sphere":
 
     setup:
         var 
-            usphere = newUnitarySphere(newMaterial(newSpecularBRDF(), newCheckeredPigment(BLACK, WHITE, 2)))
+            usphere = newUnitarySphere(newMaterial(newSpecularBRDF(), newCheckeredPigment(BLACK, WHITE, 2, 2)))
             sphere = newSphere(3.0)
 
     teardown: 
@@ -283,9 +283,10 @@ suite "Sphere":
 
         check usphere.material.brdf.kind == SpecularBRDF
         check usphere.material.radiance.kind == pkCheckered 
-        check usphere.material.radiance.grid.nsteps == 2.int
-        check areClose(usphere.material.radiance.grid.color1, BLACK)
-        check areClose(usphere.material.radiance.grid.color2, WHITE)
+        check usphere.material.radiance.grid.nCols == 2.int
+        check usphere.material.radiance.grid.nRows == 2.int
+        check areClose(usphere.material.radiance.grid.c1, BLACK)
+        check areClose(usphere.material.radiance.grid.c2, WHITE)
 
 
     test "newSphere proc":
@@ -379,7 +380,7 @@ suite "Triangle":
     setup:
         let tri =  newTriangle(
             eX.Point3D, eY.Point3D, eZ.Point3D,
-            newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 3))
+            newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 3, 3))
             )
     
     teardown:
@@ -395,9 +396,10 @@ suite "Triangle":
 
         check tri.material.brdf.kind == SpecularBRDF
         check tri.material.radiance.kind == pkCheckered
-        check tri.material.radiance.grid.nsteps == 3
-        check areClose(tri.material.radiance.grid.color1, WHITE)
-        check areClose(tri.material.radiance.grid.color2, BLACK)
+        check tri.material.radiance.grid.nCols == 3
+        check tri.material.radiance.grid.nRows == 3
+        check areClose(tri.material.radiance.grid.c1, WHITE)
+        check areClose(tri.material.radiance.grid.c2, BLACK)
     
 
     test "getNormal proc":
@@ -454,7 +456,7 @@ suite "Cylinder":
     setup:
         let 
             cyl1 = newCylinder()
-            cyl2 = newCylinder(R = 2.0, material = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2)))
+            cyl2 = newCylinder(R = 2.0, material = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2, 2)))
     
     teardown:
         discard cyl1
@@ -481,9 +483,10 @@ suite "Cylinder":
 
         check cyl2.material.brdf.kind == SpecularBRDF
         check cyl2.material.radiance.kind == pkCheckered
-        check cyl2.material.radiance.grid.nsteps == 2
-        check areClose(cyl2.material.radiance.grid.color1, WHITE)
-        check areClose(cyl2.material.radiance.grid.color2, BLACK)
+        check cyl2.material.radiance.grid.nRows == 2
+        check cyl2.material.radiance.grid.nCols == 2
+        check areClose(cyl2.material.radiance.grid.c1, WHITE)
+        check areClose(cyl2.material.radiance.grid.c2, BLACK)
 
 
     test "getNormal proc":

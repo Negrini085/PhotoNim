@@ -682,9 +682,8 @@ proc project*[V](refSystem: ReferenceSystem, worldObj: V): V {.inline.} =
 proc getWorldObject*[V](refSystem: ReferenceSystem, localObj: V): V {.inline.} = 
     when V is Point3D: refSystem.origin + dot(refSystem.base.T, localObj.Vec3f)
     elif V is Vec3f: dot(refSystem.base.T, localObj)
+    else:  dot(refSystem.base.T, localObj.Vec3f).V
 
-# proc getTransformation(refSystem: ReferenceSystem): Transformation {.inline.} =
-#     newComposition(newTranslation(refSystem.origin), newTransformation(refSystem.base.toMat4.T, refSystem.base.toMat4))
 
 
 type 
