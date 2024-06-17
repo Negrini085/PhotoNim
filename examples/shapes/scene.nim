@@ -12,7 +12,7 @@ let
     
     # renderer = newOnOffRenderer(camera)
     # renderer = newFlatRenderer(camera)
-    renderer = newPathTracer(camera, numRays = 2, maxDepth = 1)
+    renderer = newPathTracer(camera, numRays = 4, maxDepth = 2)
 
 
     plane = newPlane(
@@ -22,7 +22,7 @@ let
         )
     )
 
-    sphere = newSphere(
+    sphere1 = newSphere(
         ORIGIN3D, 2.0,
         newMaterial(newSpecularBRDF(), newUniformPigment(BLUE))
     )
@@ -32,9 +32,20 @@ let
         newMaterial(newDiffuseBRDF(), newUniformPigment(GREEN))
     )
 
-    scene = newScene(@[plane, sphere, sphere2])
+    sphere3 = newUnitarySphere(
+        Point3D(4.0.float32 * eZ),
+        newMaterial(newDiffuseBRDF(), newUniformPigment(RED))
+    )
 
-    image = renderer.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, maxShapesPerLeaf = 3)
+    sphere4 = newSphere(
+        ORIGIN3D + eX, Inf,
+        newMaterial(newDiffuseBRDF(), newUniformPigment(WHITE))
+    )
+
+
+    scene = newScene(@[plane, sphere1, sphere2, sphere3])
+
+    image = renderer.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 2, maxShapesPerLeaf = 2)
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 

@@ -34,7 +34,7 @@ type
 proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = (brdf: brdf, radiance: pigment)
 
 
-proc getAABB*(points: seq[Point3D]): Interval[Point3D] =
+proc newAABB*(points: seq[Point3D]): Interval[Point3D] =
     if points.len == 1: return (points[0], points[0])
 
     let 
@@ -73,7 +73,7 @@ proc getVertices*(aabb: Interval[Point3D]): array[8, Point3D] =
 proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     case shape.kind
     of skAABox: return shape.aabb
-    of skTriangle: return shape.vertices.toSeq.getAABB
+    of skTriangle: return newAABB(shape.vertices.toSeq)
     of skSphere: return (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
     of skCylinder: return (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
     of skPlane: return (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))

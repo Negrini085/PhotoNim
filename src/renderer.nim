@@ -52,9 +52,10 @@ proc sampleRay(renderer: Renderer; scene: Scene, sceneTree: SceneNode, ray: Ray,
 
         case renderer.kind
         of rkOnOff:
-            let worldRay = newRay(
-                apply(newTranslation(refSystem.origin), ray.origin), 
-                refSystem.getWorldObject(ray.dir)
+            let worldRay = Ray(
+                origin: apply(newTranslation(refSystem.origin), ray.origin), 
+                dir: refSystem.getWorldObject(ray.dir),
+                tSpan: ray.tSpan, depth: ray.depth
             )
 
             for node in hitLeafNodes.get:
@@ -87,12 +88,13 @@ proc sampleRay(renderer: Renderer; scene: Scene, sceneTree: SceneNode, ray: Ray,
                 hitWorldTransformation = closestHit.handler.transformation
                 hitMaterial = hitShape.material
 
-                hitPt = closestHit.ray.at(closestHit.t)                                  
-                hitNormal = hitShape.getNormal(hitPt, closestHit.ray.dir)
-                surfacePt = hitShape.getUV(hitPt)
+                shapeLocalHitPt = closestHit.ray.at(closestHit.t)
+                shapeLocalHitNormal = hitShape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
+                
+                surfacePt = hitShape.getUV(shapeLocalHitPt)
                 
             result = hitMaterial.radiance.getColor(surfacePt)
-            
+
             var hitCol = hitMaterial.brdf.pigment.getColor(surfacePt)
             if ray.depth >= renderer.rouletteLimit:
                 let q = max(0.05, 1 - hitCol.luminosity)
@@ -100,24 +102,38 @@ proc sampleRay(renderer: Renderer; scene: Scene, sceneTree: SceneNode, ray: Ray,
                 else: return result
 
             if hitCol.luminosity > 0.0:
+                # quit ""
                 let 
-                    localRS = newReferenceSystem(apply(hitWorldTransformation, hitPt), apply(hitWorldTransformation, hitNormal)) 
-                    localSceneTree = localRS.getSceneTree(scene, maxShapesPerLeaf) 
-                    
-                    worldRay = closestHit.ray.transform(hitWorldTransformation)
+                    worldHitPt = apply(hitWorldTransformation, shapeLocalHitPt)
+                    worldHitNormal = apply(hitWorldTransformation, shapeLocalHitNormal)
+                    localRS = newReferenceSystem(worldHitPt, worldHitNormal) 
+                    localSceneTree = localRS.getSceneTree(scene, maxShapesPerLeaf, rg.random, rg.random)
 
+                # echo "newSceneTree"
                 var accumulatedRadiance = BLACK
-                for i in 0..<renderer.numRays: 
-                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localSceneTree, localRS.scatter(worldRay, hitMaterial.brdf, rg), localRS, maxShapesPerLeaf, rg)
-                
+                for _ in 0..<renderer.numRays: 
+                    let scatteredRay = Ray(
+                        origin: ORIGIN3D, 
+                        dir: localRS.project(
+                            apply(
+                                hitWorldTransformation, 
+                                hitMaterial.brdf.scatterDir(closestHit.ray.dir, shapeLocalHitNormal, rg)
+                            )
+                        ),
+                        tSpan: (0.0.float32, Inf.float32),
+                        depth: closestHit.ray.depth + 1
+                    )
+
+                    accumulatedRadiance += hitCol * renderer.sampleRay(scene, localSceneTree, scatteredRay, localRS, maxShapesPerLeaf, rg)
+
                 result += accumulatedRadiance / renderer.numRays.float32
     
     
 proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPerSide, maxShapesPerLeaf: int, displayProgress = true): HDRImage =
     result = newHDRImage(renderer.camera.viewport.width, renderer.camera.viewport.height)
-            
-    let sceneTree = renderer.camera.rs.getSceneTree(scene, maxShapesPerLeaf)
     var rg = newPCG(rgState, rgSeq)
+            
+    let sceneTree = renderer.camera.rs.getSceneTree(scene, maxShapesPerLeaf, rg.random, rg.random)
     for y in 0..<renderer.camera.viewport.height:
         for x in 0..<renderer.camera.viewport.width:
 

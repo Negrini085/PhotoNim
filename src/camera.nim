@@ -129,25 +129,13 @@ proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Col
         else: return BLACK
 
 
-proc scatter*(refSystem: ReferenceSystem, hitRay: Ray, brdf: BRDF, rg: var PCG): Ray =
+proc scatterDir*(brdf: BRDF, hitDir: Vec3f, hitNormal: Normal, rg: var PCG): Vec3f =
     case brdf.kind:
     of DiffuseBRDF:
         let 
-            cos2 = rg.rand
-            (c, s) = (sqrt(cos2), sqrt(1 - cos2))
-            phi = 2 * PI * rg.rand
+            (cos2, phi) = (rg.rand, 2 * PI * rg.rand)
+            c = sqrt(cos2)
         
-        Ray(
-            origin: ORIGIN3D, 
-            dir: [float32 c * cos(phi), c * sin(phi), s], 
-            tSpan: (float32 1e-3, float32 Inf), 
-            depth: hitRay.depth + 1
-        )
+        return [float32 c * cos(phi), c * sin(phi), sqrt(1 - cos2)]
 
-    of SpecularBRDF: 
-        Ray(
-            origin: ORIGIN3D,
-            dir: refSystem.project(hitRay.dir - 2 * dot(refSystem.base[0], hitRay.dir) * refSystem.base[0]),
-            tspan: (float32 1e-3, float32 Inf), 
-            depth: hitRay.depth + 1
-        )
+    of SpecularBRDF: hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f

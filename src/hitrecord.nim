@@ -25,17 +25,17 @@ proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
 
 proc getHitLeafs*(refSystem: ReferenceSystem, sceneTree: SceneNode; ray: Ray): Option[seq[SceneNode]] =
     if sceneTree.isNil: return none seq[SceneNode]
+
     if not checkIntersection(sceneTree.aabb, ray): return none seq[SceneNode]
 
     var sceneNodes: seq[SceneNode]
     case sceneTree.kind
-    of nkLeaf: 
-        sceneNodes.add sceneTree
+    of nkLeaf: sceneNodes.add sceneTree
+    
     of nkBranch:
-        for node in [sceneTree.left, sceneTree.right]:
-            if node != nil:
-                let hits = refSystem.getHitLeafs(node, ray)
-                if hits.isSome: sceneNodes = concat(sceneNodes, hits.get)
+        for childNode in sceneTree.children:
+            let hits = refSystem.getHitLeafs(childNode, ray)
+            if hits.isSome: sceneNodes = concat(sceneNodes, hits.get)
 
         if sceneNodes.len == 0: return none seq[SceneNode]
 
@@ -65,7 +65,7 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         if zSpan.min > tHitMin: tHitMin = zSpan.min
         if zSpan.max < tHitMax: tHitMax = zSpan.max
                 
-        let tHit = if handler.shape.aabb.contains(worldinvRay.origin): tHitMax else: tHitMin
+        let tHit = if handler.shape.aabb.contains(worldinvRay.origin): tHitMax else: tHitMin        
         if not worldinvRay.tspan.contains(tHit): return none HitPayload
 
         return some HitPayload(handler: handler, ray: worldinvRay, t: tHit)
@@ -148,7 +148,12 @@ proc getHitPayloads(refSystem: ReferenceSystem, sceneTree: SceneNode; localRay: 
 
     if hittedHandlers.len == 0: return @[]
 
-    let worldRay = newRay(apply(newTranslation(refSystem.origin), localRay.origin), refSystem.getWorldObject(localRay.dir))
+    let worldRay = Ray(
+        origin: apply(newTranslation(refSystem.origin), localRay.origin), 
+        dir: refSystem.getWorldObject(localRay.dir), 
+        tSpan: localRay.tSpan, depth: localRay.depth
+    )
+
     hittedHandlers
         .mapIt(it.getHitPayload(worldRay.transform(it.transformation.inverse)))
         .filterIt(it.isSome)
