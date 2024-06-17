@@ -1,4 +1,4 @@
-import geometry, shapes, scene, camera
+import geometry, scene, camera
 
 import std/options
 from std/fenv import epsilon
@@ -54,6 +54,7 @@ type HitPayload* = object
     ray*: Ray
     t*: float32
     
+
 proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload] =
 
     case handler.shape.kind
@@ -146,6 +147,37 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
             if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax: return none HitPayload
 
         return some HitPayload(handler: handler, ray: worldInvRay, t: tHit)
+
+    of skTriangularMesh: 
+        let localHitLeafNodes = handler.shape.tree.getHitLeafs(worldInvRay)
+        if localHitLeafNodes.isNone: return none HitPayload
+        
+        proc localHitPayloads(sceneTree: SceneNode; worldInvRay: Ray): seq[HitPayload] =
+            var hittedHandlers: seq[ShapeHandler]
+            for handler in sceneTree.handlers:
+                if checkIntersection(handler.getAABB, worldInvRay): hittedHandlers.add handler
+
+            if hittedHandlers.len == 0: return @[]
+
+            hittedHandlers
+                .mapIt(it.getHitPayload(worldInvRay))
+                .filterIt(it.isSome)
+                .mapIt(it.get)
+
+        proc localHitRecord(hitLeafs: seq[SceneNode]; worldInvRay: Ray): Option[seq[HitPayload]] =
+            let hitPayloads = hitLeafs
+                .mapIt(it.localHitPayloads(worldInvRay))
+                .filterIt(it.len > 0)
+
+            if hitPayloads.len == 0: return none seq[HitPayload]
+            
+            some hitPayloads.foldl(concat(a, b))
+                .sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
+                
+        let hitRecord = localHitLeafNodes.get.localHitRecord(worldInvRay)
+        if hitRecord.isNone: return none HitPayload
+        
+        some hitRecord.get[0]
 
 
 proc getHitPayloads(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
