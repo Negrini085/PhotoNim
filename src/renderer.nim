@@ -1,4 +1,4 @@
-import geometry, pcg, hdrimage, camera, shapes, scene, hitrecord
+import geometry, pcg, hdrimage, camera, scene, hitrecord
 
 from std/strformat import fmt
 from std/times import cpuTime
@@ -45,7 +45,7 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleRay(renderer: Renderer; sceneTree: SceneNode, worldRay: Ray, bgColor: Color, maxShapesPerLeaf: int, rg: var PCG): Color =
+proc sampleRay(renderer: Renderer; sceneTree: SceneNode, worldRay: Ray, bgColor: Color, rg: var PCG): Color =
     result = bgColor
     
     let hitLeafNodes = sceneTree.getHitLeafs(worldRay)
@@ -107,18 +107,26 @@ proc sampleRay(renderer: Renderer; sceneTree: SceneNode, worldRay: Ray, bgColor:
                         depth: closestHit.ray.depth + 1
                     )
 
-                    accumulatedRadiance += hitCol * renderer.sampleRay(sceneTree, scatteredRay, bgColor, maxShapesPerLeaf, rg)
+                    accumulatedRadiance += hitCol * renderer.sampleRay(sceneTree, scatteredRay, bgColor, rg)
 
                 result += accumulatedRadiance / renderer.numRays.float32
     
     
-proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPerSide: int = 1, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
+proc sample*(
+    renderer: Renderer; 
+    scene: Scene, 
+    rgState, rgSeq: uint64, samplesPerSide: int = 1, 
+    treeKind: SceneTreeKind = tkBinary, maxShapesPerLeaf: int = 4,
+    displayProgress = true): HDRImage =
+
     result = newHDRImage(renderer.camera.viewport.width, renderer.camera.viewport.height)
     var rg = newPCG(rgState, rgSeq)
 
-    let startTime = cpuTime()
-    let sceneTree = scene.getBVHTree(rg, maxShapesPerLeaf)
+    let 
+        startTime = cpuTime()
+        sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
     echo fmt"BVHTree builded in {cpuTime() - startTime}"
+    echo "AABB ", sceneTree.aabb
 
     for y in 0..<renderer.camera.viewport.height:
         for x in 0..<renderer.camera.viewport.width:
@@ -135,7 +143,7 @@ proc sample*(renderer: Renderer; scene: Scene, rgState, rgSeq: uint64, samplesPe
                     )
                     # echo "fired new ray from the camera"
                     
-                    accumulatedColor += renderer.sampleRay(sceneTree, ray, scene.bgCol, maxShapesPerLeaf, rg)
+                    accumulatedColor += renderer.sampleRay(sceneTree, ray, scene.bgCol, rg)
 
             result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
                             
