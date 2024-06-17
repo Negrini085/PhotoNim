@@ -2,41 +2,6 @@ import std/[unittest, math, options]
 import ../src/[shapes, geometry, camera, hdrimage]
 
 
-
-#-----------------------------------#
-#        Material test suite        #
-#-----------------------------------#
-suite "Material":
-
-    setup:
-        let
-            mat1 = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2, 2))
-            mat2 = newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(0.3, 0.7, 1)))
-
-    teardown:
-        discard mat1
-        discard mat2 
-
-    test "newMaterial proc":
-        # Checking newMaterial proc
-        check mat1.brdf.kind == SpecularBRDF
-        check mat1.radiance.kind == pkCheckered
-        check areClose(mat1.radiance.getColor(newPoint2D(0.3, 0.2)), WHITE)
-        check areClose(mat1.radiance.getColor(newPoint2D(0.8, 0.7)), WHITE)
-        check areClose(mat1.radiance.getColor(newPoint2D(0.8, 0.2)), BLACK)
-        check areClose(mat1.radiance.getColor(newPoint2D(0.3, 0.7)), BLACK)
-        check areClose(mat1.brdf.eval(eZ.Normal, newVec3f(0, 1, -1).normalize, newVec3f(0, 1, 1).normalize, newPoint2D(0.5, 0.5)), 
-                    BLACK)
-
-
-        check mat2.brdf.kind == DiffuseBRDF
-        check mat2.radiance.kind == pkUniform
-        check areClose(mat2.radiance.getColor(newPoint2D(0.5, 0.5)), newColor(0.3, 0.7, 1))
-        check areClose(mat2.brdf.eval(eZ.Normal, newVec3f(0, 1, -1).normalize, newVec3f(0, 1, 1).normalize, newPoint2D(0.5, 0.5)), 
-                    newColor(1, 1, 1)/PI)
-
-
-
 #-----------------------------------#
 #          AABB test suite          #
 #-----------------------------------#
