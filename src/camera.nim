@@ -40,8 +40,8 @@ type
         ckOrthogonal, ckPerspective
 
     Camera* = object
-        rs*: ReferenceSystem
         viewport*: tuple[width, height: int]
+        transformation*: Transformation
 
         case kind*: CameraKind
         of ckOrthogonal: discard
@@ -51,18 +51,21 @@ type
 proc aspectRatio*(camera: Camera): float32 {.inline.} = camera.viewport.width.float32 / camera.viewport.height.float32
 
 
-proc newOrthogonalCamera*(viewport: tuple[width, height: int], origin: Point3D = ORIGIN3D, rotation = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckOrthogonal, viewport: viewport, rs: newReferenceSystem(origin, rotation))
+proc newOrthogonalCamera*(viewport: tuple[width, height: int], transformation = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckOrthogonal, viewport: viewport, transformation: transformation)
 
-proc newPerspectiveCamera*(viewport: tuple[width, height: int], distance: float32, origin: Point3D = ORIGIN3D, rotation = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckPerspective, viewport: viewport, distance: distance, rs: newReferenceSystem(origin, rotation))
+proc newPerspectiveCamera*(viewport: tuple[width, height: int], distance: float32, transformation = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckPerspective, viewport: viewport, transformation: transformation, distance: distance)
 
 
 proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} = 
-    case camera.kind
-    of ckOrthogonal: newRay(newPoint3D(-1, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
-    of ckPerspective: newRay(newPoint3D(-camera.distance, 0, 0), newVec3f(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
+    let (origin, dir) = 
+        case camera.kind
+        of ckOrthogonal: (newPoint3D(-1, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
+        of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3f(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
     
+    Ray(origin: origin, dir: dir, tSpan: (float32 1.0, float32 Inf), depth: 0).transform(camera.transformation)
+
 
 type
     PigmentKind* = enum
@@ -118,18 +121,19 @@ proc newSpecularBRDF*(pigment = newUniformPigment(WHITE), angle = 180.0): BRDF {
     BRDF(kind: SpecularBRDF, pigment: pigment, threshold_angle: (0.1 * degToRad(angle)).float32) 
 
 
-proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Color {.inline.} =
-    case brdf.kind: 
-    of DiffuseBRDF: 
-        return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
+# proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Color {.inline.} =
+#     case brdf.kind: 
+#     of DiffuseBRDF: 
+#         return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
 
-    of SpecularBRDF: 
-        if abs(arccos(dot(normal.Vec3f, in_dir.normalize)) - arccos(dot(normal.Vec3f, out_dir.normalize))) <= brdf.threshold_angle: 
-            return brdf.pigment.getColor(uv)
-        else: return BLACK
+#     of SpecularBRDF: 
+#         if abs(arccos(dot(normal.Vec3f, in_dir.normalize)) - arccos(dot(normal.Vec3f, out_dir.normalize))) <= brdf.threshold_angle: 
+#             return brdf.pigment.getColor(uv)
+        # else: return BLACK
 
 
 proc scatterDir*(brdf: BRDF, hitDir: Vec3f, hitNormal: Normal, rg: var PCG): Vec3f =
+    # shape local
     case brdf.kind:
     of DiffuseBRDF:
         let 

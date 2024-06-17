@@ -8,7 +8,7 @@ from std/osproc import execCmd
 
 let 
     timeStart = cpuTime()
-    camera = newPerspectiveCamera(viewport = (900, 600), distance = 1.0, origin = newPoint3D(-5, -5, 1))
+    camera = newPerspectiveCamera(viewport = (900, 600), distance = 1.0, newComposition(newRotZ(10), newTranslation(newPoint3D(-5, -5, 1))))
     
     # renderer = newOnOffRenderer(camera)
     # renderer = newFlatRenderer(camera)

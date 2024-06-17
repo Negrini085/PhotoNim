@@ -1,8 +1,7 @@
 import geometry, hdrimage, shapes, pcg
 
 from std/sequtils import concat, foldl, toSeq, filterIt, mapIt
-from std/math import sqrt, floor
-from std/strformat import fmt
+from std/math import floor
 
 type ShapeHandler* = ref object 
     shape*: Shape
@@ -67,13 +66,12 @@ proc updateCentroids(data: seq[Vec3f], clusters: seq[int], k: int): seq[Vec3f] =
         if counts[i] > 0: result[i] /= counts[i].float32
 
 
-proc kmeans(data: seq[Vec3f], k: int, rgState, rgSeq: uint64, maxIter: int = 20): tuple[clusters: seq[int], centroids: seq[Vec3f]] =
+proc kMeans(data: seq[Vec3f], k: int, rg: var PCG, maxIter: int = 20): tuple[clusters: seq[int], centroids: seq[Vec3f]] =
     if data.len == k: return (countup(0, k - 1).toSeq, data)
 
     var 
         iter = 0
         converged = false
-        rg = newPCG(rgState, rgSeq)
         tmpCentroids = newSeq[Vec3f](k)
     
     result.centroids = newSeq[Vec3f](k)
@@ -109,35 +107,29 @@ proc kmeans(data: seq[Vec3f], k: int, rgState, rgSeq: uint64, maxIter: int = 20)
         iter += 1
 
 
-proc newBVHNode*(shapeHandlers: seq[ShapeHandler], localAABBs: seq[Interval[Point3D]], depth, maxShapesPerLeaf: int, rgState, rgSeq: uint64): SceneNode =
+proc newBVHNode*(shapeHandlers: seq[ShapeHandler], depth, kClusters, maxShapesPerLeaf: int, rg: var PCG): SceneNode =
     if shapeHandlers.len == 0: return nil
 
-    if shapeHandlers.len <= maxShapesPerLeaf:
-        return SceneNode(kind: nkLeaf, aabb: localAABBs.getTotalAABB, handlers: shapeHandlers)
-    
-    let 
-        sqLen = sqrt(shapeHandlers.len.float32)
-        k = max(2, min(16, sqLen.int))
-        clusters = kmeans(localAABBs.mapIt(it.getCentroid), k, rgState, rgSeq).clusters.pairs.toSeq
-    
-    var childNodes = newSeq[SceneNode](k)
-    for i in 0..<k: 
-        let cluster = clusters.filterIt(it.val == i)
-        let handlers = cluster.mapIt(shapeHandlers[it.key])
-        let boxes = cluster.mapIt(localAABBs[it.key])
+    let shapeHandlersAABBs = shapeHandlers.mapIt(it.getAABB)
 
-        childNodes[i] = newBVHNode(handlers, boxes, depth + 1, maxShapesPerLeaf, rgState, rgSeq)
+    if shapeHandlers.len <= maxShapesPerLeaf:
+        return SceneNode(kind: nkLeaf, aabb: shapeHandlersAABBs.getTotalAABB, handlers: shapeHandlers)
     
-    SceneNode(kind: nkBranch, aabb: localAABBs.getTotalAABB, children: childNodes)
+    let clusters = kMeans(shapeHandlersAABBs.mapIt(it.getCentroid), kClusters, rg).clusters.pairs.toSeq
+    
+    var childNodes = newSeq[SceneNode](kClusters)
+    for i in 0..<kClusters: 
+        let cluster = clusters.filterIt(it.val == i)
+        childNodes[i] = newBVHNode(cluster.mapIt(shapeHandlers[it.key]), depth + 1, kClusters, maxShapesPerLeaf, rg)
+    
+    SceneNode(kind: nkBranch, aabb: shapeHandlersAABBs.getTotalAABB, children: childNodes)
 
 
 proc newScene*(shapeHandlers: seq[ShapeHandler], bgCol: Color = BLACK): Scene {.inline.} = 
     Scene(bgCol: bgCol, handlers: shapeHandlers)
-
-proc getSceneTree*(refSystem: ReferenceSystem; scene: Scene, maxShapesPerLeaf: int, rgState, rgSeq: uint64): SceneNode {.inline.} = 
-    let localAABBs = scene.handlers.mapIt(refSystem.getLocalAABB(it))
-    newBVHNode(scene.handlers, localAABBs, depth = 0, maxShapesPerLeaf, rgState, rgSeq)
-
+    
+proc getBVHTree*(scene: Scene; rg: var PCG, kClusters: int = 2, maxShapesPerLeaf: int = 4): SceneNode {.inline.} =
+    newBVHNode(scene.handlers, depth = 0, kClusters, maxShapesPerLeaf, rg)
 
 proc loadMesh*(world: Scene, source: string) = quit "to implement"
 proc loadTexture*(world: Scene, source: string, shape: Shape) = quit "to implement"

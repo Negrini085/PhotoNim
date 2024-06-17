@@ -209,7 +209,7 @@ proc demo*(renderer: Renderer, pfmOut, pngOut: string) =
 
     let 
         scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-        image = renderer.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 4, maxShapesPerLeaf = 2)
+        image = renderer.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 1, maxShapesPerLeaf = 2)
 
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
     
@@ -311,13 +311,13 @@ Options:
             
             
         let camera = 
-            if args["persp"]: newPerspectiveCamera((width, height), 1.0, newPoint3D(-1, 0, 0), newRotZ(angle)) 
-            else: newOrthogonalCamera((width, height), newPoint3D(-1, 0, 0), newRotZ(angle))
+            if args["persp"]: newPerspectiveCamera((width, height), 3.0, newComposition(newRotZ(angle), newTranslation(-eX))) 
+            else: newOrthogonalCamera((width, height))
     
         var renderer = 
             if args["OnOff"]: newOnOffRenderer(camera, hitCol = newColor(1, 215.0 / 255, 0))
             elif args["Flat"]: newFlatRenderer(camera)
-            else: newPathTracer(camera, numRays = 9, maxDepth = 6, rouletteLimit = 3)
+            else: newPathTracer(camera, numRays = 9, maxDepth = 1, rouletteLimit = 3)
 
         demo(renderer, pfmOut, pngOut)
 
@@ -346,7 +346,7 @@ Options:
             
             
         let 
-            camera = newPerspectiveCamera(viewport = (width, height), distance = 1.0, origin = newPoint3D(-1, 0, 0), newRotZ(angle)) 
+            camera = newPerspectiveCamera(viewport = (width, height), distance = 1.0, newComposition(newRotZ(angle), newTranslation(-eZ))) 
             renderer = newFlatRenderer(camera)
 
         var stream = newFileStream("assets/images/textures/earth.pfm", fmRead)

@@ -23,7 +23,7 @@ proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
     return true
 
 
-proc getHitLeafs*(refSystem: ReferenceSystem, sceneTree: SceneNode; ray: Ray): Option[seq[SceneNode]] =
+proc getHitLeafs*(sceneTree: SceneNode; ray: Ray): Option[seq[SceneNode]] =
     if sceneTree.isNil: return none seq[SceneNode]
 
     if not checkIntersection(sceneTree.aabb, ray): return none seq[SceneNode]
@@ -34,7 +34,7 @@ proc getHitLeafs*(refSystem: ReferenceSystem, sceneTree: SceneNode; ray: Ray): O
     
     of nkBranch:
         for childNode in sceneTree.children:
-            let hits = refSystem.getHitLeafs(childNode, ray)
+            let hits = childNode.getHitLeafs(ray)
             if hits.isSome: sceneNodes = concat(sceneNodes, hits.get)
 
         if sceneNodes.len == 0: return none seq[SceneNode]
@@ -140,32 +140,25 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         return some HitPayload(handler: handler, ray: worldInvRay, t: tHit)
 
 
-proc getHitPayloads(refSystem: ReferenceSystem, sceneTree: SceneNode; localRay: Ray): seq[HitPayload] =
+proc getHitPayloads(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
     var hittedHandlers: seq[ShapeHandler]
     for handler in sceneTree.handlers:
-        if checkIntersection(refSystem.getLocalAABB(handler), localRay): 
-            hittedHandlers.add handler
+        if checkIntersection(handler.getAABB, worldRay): hittedHandlers.add handler
 
     if hittedHandlers.len == 0: return @[]
-
-    let worldRay = Ray(
-        origin: apply(newTranslation(refSystem.origin), localRay.origin), 
-        dir: refSystem.getWorldObject(localRay.dir), 
-        tSpan: localRay.tSpan, depth: localRay.depth
-    )
 
     hittedHandlers
         .mapIt(it.getHitPayload(worldRay.transform(it.transformation.inverse)))
         .filterIt(it.isSome)
         .mapIt(it.get)
 
-proc getHitRecord*(refSystem: ReferenceSystem, localRay: Ray, hitLeafs: seq[SceneNode]): Option[seq[HitPayload]] =
+
+proc getHitRecord*(hitLeafs: seq[SceneNode]; worldRay: Ray): Option[seq[HitPayload]] =
     let hitPayloads = hitLeafs
-        .mapIt(refSystem.getHitPayloads(it, localRay))
+        .mapIt(it.getHitPayloads(worldRay))
         .filterIt(it.len > 0)
 
     if hitPayloads.len == 0: return none seq[HitPayload]
     
-    some hitPayloads
-        .foldl(concat(a, b))
+    some hitPayloads.foldl(concat(a, b))
         .sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
