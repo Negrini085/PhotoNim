@@ -1,7 +1,7 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, pcg, hdrimage, camera, scene, hitrecord, renderer]
-export geometry, pcg, hdrimage, camera, scene, hitrecord, renderer
+import src/[geometry, pcg, hdrimage, camera, shapes, scene, hitrecord, renderer]
+export geometry, pcg, hdrimage, camera, shapes, scene, hitrecord, renderer
 
 from std/times import cpuTime
 from std/strformat import fmt
@@ -209,7 +209,7 @@ proc demo*(renderer: Renderer, pfmOut, pngOut: string) =
 
     let 
         scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-        image = renderer.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 1, maxShapesPerLeaf = 2)
+        image = renderer.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 3, maxShapesPerLeaf = 2)
 
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
     
@@ -317,7 +317,7 @@ Options:
         var renderer = 
             if args["OnOff"]: newOnOffRenderer(camera, hitCol = newColor(1, 215.0 / 255, 0))
             elif args["Flat"]: newFlatRenderer(camera)
-            else: newPathTracer(camera, numRays = 9, maxDepth = 1, rouletteLimit = 3)
+            else: newPathTracer(camera, numRays = 25, maxDepth = 5, rouletteLimit = 3)
 
         demo(renderer, pfmOut, pngOut)
 

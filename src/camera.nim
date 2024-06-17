@@ -68,7 +68,8 @@ proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} =
 
 
 type
-    PigmentKind* = enum pkUniform, pkTexture, pkCheckered
+    PigmentKind* = enum
+        pkUniform, pkTexture, pkCheckered
 
     Pigment* = object
         case kind*: PigmentKind
@@ -78,20 +79,6 @@ type
             texture*: ptr HDRImage
         of pkCheckered:
             grid*: tuple[c1, c2: Color, nRows, nCols: int]
-
-    BRDFKind* = enum DiffuseBRDF, SpecularBRDF
-
-    BRDF* = object
-        pigment*: Pigment
-
-        case kind*: BRDFKind
-        of DiffuseBRDF:
-            reflectance*: float32
-        of SpecularBRDF:
-            thresholdAngle*: float32
-
-    Material* = tuple[brdf: BRDF, radiance: Pigment]
-
 
 proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
 proc newTexturePigment*(texture: HDRImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: addr texture)
@@ -113,11 +100,25 @@ proc getColor*(pigment: Pigment; uv: Point2D): Color =
         return (if (col mod 2) == (row mod 2): pigment.grid.c1 else: pigment.grid.c2)
 
 
+type 
+    BRDFKind* = enum 
+        DiffuseBRDF, SpecularBRDF
+
+    BRDF* = object
+        pigment*: Pigment
+
+        case kind*: BRDFKind
+        of DiffuseBRDF:
+            reflectance*: float32
+        of SpecularBRDF:
+            threshold_angle*: float32
+
+
 proc newDiffuseBRDF*(pigment = newUniformPigment(WHITE), reflectance = 1.0): BRDF {.inline.} =
     BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
 
 proc newSpecularBRDF*(pigment = newUniformPigment(WHITE), angle = 180.0): BRDF {.inline.} =
-    BRDF(kind: SpecularBRDF, pigment: pigment, thresholdAngle: (0.1 * degToRad(angle)).float32) 
+    BRDF(kind: SpecularBRDF, pigment: pigment, threshold_angle: (0.1 * degToRad(angle)).float32) 
 
 
 # proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Color {.inline.} =
@@ -142,6 +143,3 @@ proc scatterDir*(brdf: BRDF, hitDir: Vec3f, hitNormal: Normal, rg: var PCG): Vec
         return [float32 c * cos(phi), c * sin(phi), sqrt(1 - cos2)]
 
     of SpecularBRDF: hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
-
-
-proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = (brdf: brdf, radiance: pigment)
