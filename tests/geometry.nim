@@ -1,7 +1,7 @@
 import std/unittest
 from math import sqrt, cos, sin, PI
 from std/sequtils import toSeq
-import ../src/[geometry, hdrimage, pcg]
+import PhotoNim
 
 
   
