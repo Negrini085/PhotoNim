@@ -121,7 +121,7 @@ proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.ra
 
     var r, g, b: float32
     for y in countdown(height - 1, 0):
-        for x in 0..<width:
+        for x in countup(0, width - 1):
             r = readFloat(stream, result.endian)
             g = readFloat(stream, result.endian)
             b = readFloat(stream, result.endian)
@@ -129,9 +129,10 @@ proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.ra
 
 
 proc savePFM*(img: HDRImage; pfmOut: string, endian: Endianness = littleEndian) = 
-    
     var stream = newFileStream(pfmOut, fmWrite) 
-    if stream.isNil: quit ""
+    defer: stream.close
+
+    if stream.isNil: quit fmt"Error! An error occured while opening an HDRImage from {pfmOut}"
 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
@@ -139,16 +140,14 @@ proc savePFM*(img: HDRImage; pfmOut: string, endian: Endianness = littleEndian) 
 
     var c: Color
     for y in countdown(img.height - 1, 0):
-        for x in 0..<img.width:
+        for x in countup(0, img.width - 1):
             c = img.getPixel(x, y)
             stream.writeFloat(c.r, endian)
             stream.writeFloat(c.g, endian)
             stream.writeFloat(c.b, endian)
 
-    stream.close
 
-
-proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float32 = 0.0) = 
+proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float32 = 0.0) {.raises: [CatchableError].} =
     let 
         toneMappedImg = img.toneMap(alpha, gamma, avLum)
         gFactor = 1 / gamma
@@ -164,4 +163,5 @@ proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float
             pixelsString[i] = (255 * pow(pix.g, gFactor)).char; i += 1
             pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
 
-    discard savePNG24(pngOut, pixelsString, img.width, img.height)
+    let successStatus = savePNG24(pngOut, pixelsString, img.width, img.height)
+    if not successStatus: raise newException(CatchableError, fmt"Error! An error occured while saving an HDRImage to {pngOut}")

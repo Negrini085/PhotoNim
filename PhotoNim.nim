@@ -3,14 +3,11 @@ let PhotoNimVersion* = "PhotoNim 0.1"
 import src/[geometry, pcg, hdrimage, scene, material, hitrecord, camera]
 export geometry, pcg, hdrimage, scene, material, hitrecord, camera
 
-from std/times import cpuTime
-from std/strformat import fmt
-
+from std/math import pow, exp
 from std/strutils import parseFloat, parseInt, split
 from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
-from nimPNG import savePNG24
-
-from std/math import pow, exp
+from std/times import cpuTime
+from std/strformat import fmt
 
 
 let pfm2pngDoc* = """
@@ -27,36 +24,18 @@ Options:
     --lum=<avlum>       Average image luminosity. 
 """
 
-proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
-    var 
-        img: HDRImage
-        inFS = newFileStream(fileIn, fmRead)
-    try: 
-        img = readPFM(inFS).img
-    except CatchableError: 
-        quit getCurrentExceptionMsg()
-    finally:
-        inFS.close
-       
-    img.applyToneMap(alpha, gamma, avlum)
-
-    var 
-        i: int
-        pix: Color
-        pixelsString = newString(3 * img.pixels.len)
-
-    # Gamma compression
-    let gFactor = 1 / gamma
+proc pfm2png*(pfmIN, pngOut: string, alpha, gamma: float32, avLum = 0.0) =
+    var fileStream = newFileStream(pfmIN, fmRead)
     
-    for y in 0..<img.height:
-        for x in 0..<img.width:
-            pix = img.getPixel(x, y)
-            pixelsString[i] = (255 * pow(pix.r, gFactor)).char; i += 1
-            pixelsString[i] = (255 * pow(pix.g, gFactor)).char; i += 1
-            pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
-
-    discard savePNG24(fileOut, pixelsString, img.width, img.height)
-    echo fmt"Successfully converted {fileIn} to {fileOut}"
+    let image = 
+        try: fileStream.readPFM.img
+        except CatchableError: quit getCurrentExceptionMsg()
+        finally: fileStream.close
+       
+    try: image.savePNG(pngOut, alpha, gamma, avLum)
+    except CatchableError: quit getCurrentExceptionMsg()     
+    
+    echo fmt"Successfully converted {pfmIN} to {pngOut}"
 
 
 let demoDoc* = """

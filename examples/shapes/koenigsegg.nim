@@ -27,6 +27,6 @@ let
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
 image.savePFM(outFile & ".pfm")
-image.savePNG(outFile & ".png", 0.18, 1.0, 0.1)
+image.savePNG(outFile & ".png", 0.18, 1.0)
 
 discard execCmd fmt"open {outFile}.png"
