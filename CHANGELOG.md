@@ -4,8 +4,71 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🐛 Bug Fixes
+
+- *(CI)* Use Nim 2.0.0 for testing.
+
+### 🚜 Refactor
+
+- Removed renderer.nim
+- *(GeometryDocs)* Change reference system docs
+
+### 🧪 Testing
+
+- *(Geometry)* Small refactor
+
+## [0.2.0] - 2024-06-08
+
 ### 🚀 Features
 
+- *(Main)* Add material to shapes to render
+- *(Renderer)* Add fire_all_rays proc
+- *(Renderer)* Add fire_all_ray with render type
+- *(Sphere)* Add allTimesIntersection proc test
+- *(PathTracer)* Add call proc
+- *(Color)* Add Color multiplication proc
+- *(PathTracer)* Add PathTracer constructor type
+- *(FlatRenderer)* Add call proc
+- *(FlatRenderer)* Add newFlatRenderer proc
+- *(World)* Add rayIntersection proc
+- *(OnOffTracer)* Add call proc, that gives as output shape color
+- *(World)* Add fastIntersection with world
+- *(Renderer)* Add newOnOffRenderer proc
+- *(Renderer)* Add Renderer type
+- *(SpecularBRDF)* Add scatter_ray proc
+- *(DiffuseBRDF)* Add scatter_ray proc
+- *(ONB)* Add Duff et al. algorithm
+- *(ONB)* Add newONB proc
+- *(Geometry)* Add ONB type, in order to store orthonormal base
+- *(Mesh)* Better newMesh proc. ToDO: regular polygons meshes.
+- *(Scene)* Use kmeans++ for centroids initialization (#41)
+- *(MESHES)* Ganesh pt 10, the ultimate commit.
+- Kmeans implementation
+- *(BVH)* Fix wrong implementation using subscenes.
+- *(Geometry)* Use mapIt.
+- *(HDRImage)* Use mapIt and applyIt instead of map and apply.
+- *(Shape)* Use mapIt.
+- *(ReferenceSystem)* New type as ref object.
+- *(HitRecord)* Use mapIt and filterIt to better code in getHitPayloads and newHitRecord procs.
+- *(Scene)* Filter AABB when creating a new node, maybe it could be better implemented (follow comments).
+- *(Ray)* Type Ray is now a ref object.
+- *(HitRecord)* New checkIntersection for AABB and ray.
+- *(Renderer)* New sampleRay proc to use BVH trees from different scenes inside of rkPathTracer.
+- *(Translation)* NewTranslation accepts also a Point3D.
+- *(RefSystem)* Add RefSystem type and constructor proc
+- *(ONB)* Add newVector proc
+- *(ONB)* Add getComponents proc
+- *(Normal)* Add toVec3 proc
+- DisplayProgress bool flag added to Renderer.sample proc
+- *(Shape)* New uv proc for skAABox.
+- *(BVH)* New fastIntersection proc for a SceneNode.
+- *(BVH)* New SceneNode and SceneTree types. newBVHNode proc to create a BVH node from a list of shapes.
+- *(Shape)* New procedure to get the AABox and the World AABox of a generic shape.
+- *(HitRecord + Interval)* Using Interval in fastIntersection and rayIntersection procs.
+- *(Ray)* Removed tmin and tmax in favor of tspan as an Interval[float32].
+- *(HitRecord)* FastIntersection for skCylinder.
+- *(Point3D)* `<` and `<=` procs.
+- *(Vec)* `==` proc.
 - *(HitRecord)* NewHitRecord proc to ease the code.
 - BRDF type, BRDFKinds (DiffuseBRDF, SpecularBRDF) and eval proc implementation.
 - *(Pigment)* Pigment type with PigmentKinds (pkUniform, pkTexture, pkCheckered), constructors and getColor proc.
@@ -113,6 +176,13 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(checkIntersection)* Fix checkIntersection proc
+- *(HitPayload)* Removed ptr to Shape that was causing a segmentation fault due to wrong access to a Shape tmp variable.
+- *(Translation)* Fix apply error
+- *(Example)* Correct bvh example implementation
+- Antialiasing pixel offset calculation.
+- *(Interval)* Contains proc now check for `<=` and `>=` instead of strict `>`, `<`.
+- *(Shape)* SkSphere.transform is now only a translation and the skSphere.radius is correctly used in the getAABox and in ray intersection procs.
 - Test newNormal(0, 0, 0) has norm 0 so it is not Normal.
 - Shape child were losing their type info when passed in World's seq[Shape], thus provoking no fastIntersection calculations.
 - Ignore docs update in git-cliff and github ci actions.
@@ -128,6 +198,44 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(TracerTest)* Correct Furnace Test
+- *(Renderer)* Change constructor proc
+- *(PathTracer)* Fix newPathTracer proc
+- *(World)* Change newWorld proc
+- *(GeometryTest)* Delete useless variable
+- *(Geometry)* Correct project proc and test, delete getTransfomation
+- Removed SubScene type.
+- *(Camera)* Added scatter proc.
+- Use getWorldObject proc for ReferenceSystem.
+- *(ReferenceSystem)* Change project & compose procs, now accounting for frame of reference translation
+- *(PhotoNim)* Changes how rays are handled
+- *(PhotoNim)* Now compiling correctly
+- *(BRDF & PIGMENT Unittest)* Now passing
+- *(RayUnittest)* Change ray test suite, now passing
+- *(Scene)* Change newBVHNode proc
+- *(Scene)* Change getAABB proc
+- Removed unused imports.
+- *(Transformation)* Change tkComposition application proc
+- *(RefSystem)* Change reference system
+- *(ONB)* Change ONB, now a matrix 3x3
+- *(Transformation)* Makes Vec4f translation safer
+- *(CameraTest)* Change camera testing procedure, now working
+- *(PCG)* Update pcg tests, now working
+- *(PhotoNim)* Ready for version 0.2.0, only OnOff and Flat renderer
+- *(Scene)* Change scene in order to store ptr to transformations and shapes
+- *(Renderer)* Delete path tracer implementation
+- *(HitRecord)* Delete allHitTimes proc
+- Discard rkPathTracer
+- DisplayProgress
+- File structure.
+- Reset stdout attributes after progress bar.
+- Update nomenclature in docs.
+- Include BVH and modify fire_all_rays -> fireAllRays.
+- Identity const transformation is now called IDENTITY.
+- Using Ray.tspan as interval to return HitRecord.
+- Importing modules.
+- *(HitRecord)* Changing hitrecord.nim procs according to refactoring in shapes.nim.
+- *(Camera)* Camera.kind is now visible as well as ckPerspective.distance.
 - New assets folder
 - Removed unused fire_all_rays proc with no arguments.
 - Comments removed
@@ -214,6 +322,19 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- *(PhotoNim)* Changes index & index contents
+- *(Camera)* Add BRDF & Pigments doc, delete ImageTracer doc
+- *(PCG)* Add pcg example, broadens doc part
+- *(PCG)* Add PCG documentation
+- *(Camera)* Change layout style
+- *(Geometry)* Change layout style
+- *(Geometry)* Change layout style
+- *(Geometry)* Add ONB documentation
+- *(Geometry)* Add Transformation types and procs procedure
+- *(Geometry)* Add matrices types and procs doc
+- *(Geometry)* Add Distinct vector types example
+- *(Geometry)* Add distinct types and procs docs
+- *(Geometry)* Add Vec type and procs documentations
 - PhotoNim CLI in README.md
 - Installation page
 - Installation page
@@ -244,6 +365,100 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(PathTracer)* Add Furnace test
+- *(PathTracer)* Add call proc test
+- *(Color)* Add * proc test
+- *(PathTracer)* Add newPathTracer proc test
+- *(FlatRenderer)* Add call proc test
+- *(FlatRenderer)* Add newFlatRenderer proc test
+- *(World)* Add rayInterection proc test
+- *(OnOffRenderer)* Add call proc test
+- *(World)* Add fastIntersection proc test
+- *(OnOffRender)* Add newOnOffRender proc test
+- *(BRDF)* Add scatter_ray proc test
+- *(BRDF)* Add eval proc test
+- *(BRDF)* Add newBRDF proc test
+- *(ONB)* Add create_onb random testing
+- *(ONB)* Add ONB proc test
+- *(PhotoNim)* Small refactor
+- *(Camera)* Now passing
+- *(HdrImage)* Now passing
+- *(HitRecord)* Now passing
+- *(Camera)* Now passing
+- *(Camera)* Now passing
+- *(HitRecord)* Add getHitRecord proc test in specific reference system
+- *(HitRecord)* Add getHitRecord proc test in stdRS
+- *(HitPayload)* Add getHiPayloads proc test in general frame of reference
+- *(HitPayload)* Add getHitPayloads proc test (stdRS)
+- *(HitPayload)* Add getHitPayload proc test for triangle and cylinder, found a bug in cylinder
+- *(HitPayload)* Add getHitPayload proc for Plane & AABox
+- *(HitPayload)* Add Sphere HitPayload test
+- *(HitRecord)* Correct HitRecord test, now passing
+- *(Camera)* Now passing
+- *(Shape)* Now passing
+- *(Scene)* Now passing
+- *(HitRecord)* Make tests exaustive, maybe found a bug
+- *(HitRecord)* Add getHitLeafs proc test
+- *(ReferenceSystem)* Makes project and getWorldObj exaustive
+- *(HitRecord)* Add checkIntersection proc test
+- *(Geometry)* Now passing
+- *(Camera)* Now passing
+- *(PCG)* Now passing
+- *(HdrImage)* Now passing
+- *(AABox)* Add getAABB and getVertices procs test
+- *(AABox)* Add getUV proc test
+- *(AABox)* Add getNormal proc test
+- *(Cylinder)* Add getUV, getABB & getVertices procs test
+- *(Cylinder)* Add newCylinder & getNormal proc test
+- *(Triangle)* Add getAABB and getVertices proc test
+- *(Triangle)* Add newTriangle, newNormal and getUV procs tests
+- *(Sphere)* Add getAABB & getVertices tests
+- *(Sphere)* Add getNormal and getUV proc test
+- *(Sphere)* Add constructor procedure test
+- *(AABB)* Add getVertices proc test
+- *(AABB)* Add getTotalAABB test
+- *(AABB)* Add getAABB (from points) proc test
+- *(AABox)* Add newAABox proc test
+- *(Material)* Add newMaterial proc test
+- *(Scene)* Now passing
+- *(Geometry)* Now passing
+- *(Scene)* Add fromObserver procedure test
+- *(Scene)* Makes newScene proc test more exhaustive
+- *(Scene)* Makes test exaustive
+- *(Scene)* Add another ref system, now passing
+- *(Scene)* Test adjusted.
+- *(Scene)* Add old tests
+- *(Scene)* Add ABBB proc (with reference system)
+- *(ShapeHandler)* Add getAABB (in World) proc test
+- *(Scene)* Add ShapeHandler constructor procs test
+- *(HDRImage)* Add newPixelMap proc test
+- *(Color)* Add luminosity proc test
+- *(Color)* Add color operation procs test
+- *(Color)* Add r, g, b procs test
+- *(Color)* Add newColor proc test
+- *(ReferenceSystem)* Add getTransformation proc test
+- *(ReferenceSystem)* Add fromCoeff proc test
+- *(ReferenceSystem)* Add coeff proc test
+- *(ReferenceSystem)* Add newReferenceSystem proc test
+- *(ONB)* Add newRightHandedBase proc test
+- *(Geometry)* Now passing
+- *(Composition)* Add apply tkComposition tests
+- *(tkComposition)* Add newComposition proc test
+- *(Transformations)* Add @ proc test
+- *(Scene)* Add features to Scene testing
+- *(Scene)* Fix RefSystem test suite
+- *(Mat)* Add T proc test
+- *(ONB)* Change ONB tests
+- *(RefSystem)* Add newRefSystem proc test
+- *(Translation)* Add normal translation test, refactor normal translation proc
+- *(Transformation)* Add Point3D rotation test, broaden Vec4f rotation test
+- *(Translation)* Add Vec3f translation test
+- *(Translation)* Fix Vec4f test
+- *(ONB)* Add newVector proc test
+- *(ONB)* Add getComponents proc test
+- *(Normal)* Now random testing works, no problem with geometry tests
+- Update test with current changes.
+- Update examples of shapes usage.
 - *(Pigment)* Tested newUniformPigment, newTexturePigment, newCheckeredPigment.
 - *(Point3D)* Add max procedure test
 - *(Point3D)* Add min proc test
@@ -296,8 +511,13 @@ All notable changes to this project will be documented in this file.
 - *(Common)* Add Mat type constructor test
 - Nimble Test Task.
 
+### ToDO
+
+- *(ReferenceSystem)* NewReferenceSystem from transformation.
+
 ### Todo
 
+- Fix how scatterRay generates a new ray from 3 availables (invRay, localRay, worldRay).
 - Add AABB to mesh by taking the min and max from the seq of Point3D. This needs boolean operators for Vec.
 
 ## [0.1.0] - 2024-03-28
