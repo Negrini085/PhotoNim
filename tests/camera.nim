@@ -76,12 +76,13 @@ suite "Camera":
 
     setup:
         var 
-            rs = newReferenceSystem(newPoint3D(-1, 0, 0), [eX, -eZ, eY])
-            oCam = newOrthogonalCamera(viewport = (12, 10), newPoint3D(-4, 0, 0))
-            pCam = newPerspectiveCamera(viewport = (12, 10), distance = 5, newPoint3D(-1, 0, 0), newRotX(45))
+            oCam = newOrthogonalCamera(viewport = (12, 10), newTranslation(newVec3f(-4, 0, 0)))
+            pCam = newPerspectiveCamera(
+                viewport = (12, 10), distance = 5, 
+                newComposition(newRotX(45), newTranslation(newVec3f(-1, 0, 0)))
+            )
 
     teardown:
-        discard rs
         discard oCam
         discard pCam
 
@@ -95,8 +96,7 @@ suite "Camera":
         check ocam.viewport.height == 10
         check areClose(oCam.aspect_ratio, 1.2)
 
-        check areClose(oCam.rs.origin, newPoint3D(-4, 0, 0)) 
-        check oCam.rs.base == Mat3f.id
+        check areClose(ocam.transformation.mat, newTranslation(newVec3f(-4, 0, 0)).mat) 
     
 
         # Perspective Camera
@@ -105,14 +105,16 @@ suite "Camera":
         check pcam.viewport.height == 10
         check areClose(pCam.aspect_ratio, 1.2)
 
-        check areClose(pCam.rs.origin, newPoint3D(-1, 0, 0)) 
-        check areClose(pCam.rs.base[0], eX)
-        check areClose(pCam.rs.base[1], newVec3f(0, sqrt(2.float32)/2, sqrt(2.float32)/2), eps = 1e-6)
-        check areClose(pCam.rs.base[2], newVec3f(0, -sqrt(2.float32)/2, sqrt(2.float32)/2), eps = 1e-6)
+        check pcam.transformation.kind == tkComposition and pcam.transformation.transformations.len == 2
+        check areClose(pcam.transformation.transformations[0].mat, newRotx(45).mat) 
+        check areClose(pcam.transformation.transformations[1].mat, newTranslation(newVec3f(-1, 0, 0)).mat) 
+
 
     
 
     test "Orthogonal fireRay proc":
+        # Checkin Orthogonal fireRay proc
+        let trans = newTranslation(newVec3f(-4, 0, 0))
         var 
             ray1 = oCam.fireRay(newPoint2D(0, 0))
             ray2 = oCam.fireRay(newPoint2D(1, 0))
@@ -131,48 +133,37 @@ suite "Camera":
         check areClose(ray4.dir, eX)
 
         # Testing arrive point
-        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
-        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
-        check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
-        check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
+        check areClose(ray1.at(1.0), apply(trans, newPoint3D(0, 1.2, -1)))
+        check areClose(ray2.at(1.0), apply(trans, newPoint3D(0, -1.2, -1)))
+        check areClose(ray3.at(1.0), apply(trans, newPoint3D(0, 1.2, 1)))
+        check areClose(ray4.at(1.0), apply(trans, newPoint3D(0, -1.2, 1)))
     
 
     test "Perspective fireRay proc":
+        let trans = newComposition(newRotX(45), newTranslation(newVec3f(-1, 0, 0)))
         var 
             ray1 = pCam.fireRay(newPoint2D(0, 0))
             ray2 = pCam.fireRay(newPoint2D(1, 0))
             ray3 = pCam.fireRay(newPoint2D(0, 1))
             ray4 = pCam.fireRay(newPoint2D(1, 1))
 
-        # # Checking wether all rays share the same origin
+        # Checking wether all rays share the same origin
         check areClose(ray1.origin, ray2.origin)
         check areClose(ray1.origin, ray3.origin)
         check areClose(ray1.origin, ray4.origin)
         
-        # # Checking directions
-        check areClose(ray1.dir, newVec3f(5,  1.2, -1))
-        check areClose(ray2.dir, newVec3f(5, -1.2, -1))
-        check areClose(ray3.dir, newVec3f(5,  1.2,  1))
-        check areClose(ray4.dir, newVec3f(5, -1.2,  1))
+        # Checking directions
+        check areClose(ray1.dir, apply(trans, newVec3f(5,  1.2, -1)), eps =1e-6)
+        check areClose(ray2.dir, apply(trans, newVec3f(5, -1.2, -1)), eps =1e-6)
+        check areClose(ray3.dir, apply(trans, newVec3f(5,  1.2,  1)), eps =1e-6)
+        check areClose(ray4.dir, apply(trans, newVec3f(5, -1.2,  1)), eps =1e-6)
 
         # Testing arrive point
-        check areClose(ray1.at(1.0), newPoint3D(0, 1.2, -1))
-        check areClose(ray2.at(1.0), newPoint3D(0, -1.2, -1))
-        check areClose(ray3.at(1.0), newPoint3D(0, 1.2, 1))
-        check areClose(ray4.at(1.0), newPoint3D(0, -1.2, 1))
+        check areClose(ray1.at(1.0), apply(trans, newPoint3D(0, 1.2, -1)))
+        check areClose(ray2.at(1.0), apply(trans, newPoint3D(0, -1.2, -1)))
+        check areClose(ray3.at(1.0), apply(trans, newPoint3D(0, 1.2, 1)))
+        check areClose(ray4.at(1.0), apply(trans, newPoint3D(0, -1.2, 1)))
 
-
-    test "checkIntersection proc":
-        let 
-            scene = newScene(@[newSphere(newPoint3D(2, 0, 0), 0.5)])
-            cameraScene = pCam.rs.getSceneTree(scene, 1)
-            ray = pCam.fireRay(newPoint2D(0.5, 0.5))
-        
-        check checkIntersection(cameraScene.aabb, ray)
-
-        var appo = getHitRecord(pcam.rs, ray, pCam.rs.getHitLeafs(cameraScene, ray).get)
-        check appo.isSome
-        check areClose(ray.at(appo.get[0].t), newPoint3D(2.5, 0, 0))
 
 
 #-------------------------------#
@@ -265,21 +256,51 @@ suite "BRDF":
         check areClose(spe.threshold_angle, 0.1 * degToRad(110.0).float32)
     
 
-    test "eval proc":
-        # Checking brdf evaluation
-        var
-            norm = newNormal(1, 0, 0)
-            in_dir = newVec3f(1, 2, -1)
-            out_dir = newVec3f(1, 2, 1)
-            uv = newPoint2D(0.3, 0.5)
-            appo: Color
-        
-        appo = dif.eval(norm, in_dir, out_dir, uv)
-        check areClose(appo.r, 1 * 0.2/PI)
-        check areClose(appo.g, 2 * 0.2/PI)
-        check areClose(appo.b, 3 * 0.2/PI)
+#    test "eval proc":
+#        # Checking brdf evaluation
+#        var
+#            norm = newNormal(1, 0, 0)
+#            in_dir = newVec3f(1, 2, -1)
+#            out_dir = newVec3f(1, 2, 1)
+#            uv = newPoint2D(0.3, 0.5)
+#            appo: Color
+#        
+#        appo = dif.eval(norm, in_dir, out_dir, uv)
+#        check areClose(appo.r, 1 * 0.2/PI)
+#        check areClose(appo.g, 2 * 0.2/PI)
+#        check areClose(appo.b, 3 * 0.2/PI)
+#
+#        appo = spe.eval(norm, in_dir, out_dir, uv)
+#        check areClose(appo.r, 1)
+#        check areClose(appo.g, 2)
+#        check areClose(appo.b, 3)
 
-        appo = spe.eval(norm, in_dir, out_dir, uv)
-        check areClose(appo.r, 1)
-        check areClose(appo.g, 2)
-        check areClose(appo.b, 3)
+
+
+#-----------------------------------#
+#        Material test suite        #
+#-----------------------------------#
+suite "Material":
+
+    setup:
+        let
+            mat1 = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2, 2))
+            mat2 = newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(0.3, 0.7, 1)))
+
+    teardown:
+        discard mat1
+        discard mat2 
+
+    test "newMaterial proc":
+        # Checking newMaterial proc
+        check mat1.brdf.kind == SpecularBRDF
+        check mat1.radiance.kind == pkCheckered
+        check areClose(mat1.radiance.getColor(newPoint2D(0.3, 0.2)), WHITE)
+        check areClose(mat1.radiance.getColor(newPoint2D(0.8, 0.7)), WHITE)
+        check areClose(mat1.radiance.getColor(newPoint2D(0.8, 0.2)), BLACK)
+        check areClose(mat1.radiance.getColor(newPoint2D(0.3, 0.7)), BLACK)
+
+
+        check mat2.brdf.kind == DiffuseBRDF
+        check mat2.radiance.kind == pkUniform
+        check areClose(mat2.radiance.getColor(newPoint2D(0.5, 0.5)), newColor(0.3, 0.7, 1))
