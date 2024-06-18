@@ -53,13 +53,13 @@ suite "Vec unittest":
         a[2] = -3.0
         check a[0] == 1.0 and a[1] == 2.0 and a[2] == -3.0
 
-#    test "`==` proc": 
-#        check BLACK.Vec3f == [float32 0, 0, 0]
-#        check WHITE.Vec3f == [float32 1, 1, 1]
-#        check RED.Vec3f == [float32 1, 0, 0]
-#        check GREEN.Vec3f == [float32 0, 1, 0]
-#        check BLUE.Vec3f == [float32 0, 0, 1]
-#
+    test "`==` proc": 
+        check BLACK.Vec3f == [float32 0, 0, 0]
+        check WHITE.Vec3f == [float32 1, 1, 1]
+        check RED.Vec3f == [float32 1, 0, 0]
+        check GREEN.Vec3f == [float32 0, 1, 0]
+        check BLUE.Vec3f == [float32 0, 0, 1]
+
 
     test "`+` proc":
         let result = x + y
