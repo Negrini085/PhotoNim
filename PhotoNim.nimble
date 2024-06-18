@@ -17,12 +17,13 @@ task build, "Build the PhotoNim executable":
 
 task test, "Run the PhotoNim tests":
   withDir "tests":   
+    exec "nim c -d:release --hints:off -r geometry.nim"    
     exec "nim c -d:release --hints:off -r hdrimage.nim"    
     exec "nim c -d:release --hints:off -r camera.nim"
     exec "nim c -d:release --hints:off -r scene.nim"
     exec "nim c -d:release --hints:off -r pcg.nim"
     exec "nim c -d:release --hints:off -r hitrecord.nim"
-    exec "rm hdrimage camera scene pcg hitrecord"
+    exec "rm geometry hdrimage camera scene pcg hitrecord"
 
 task demo, "Run the PhotoNim demo animation":
   exec "nim c -d:release PhotoNim.nim"
