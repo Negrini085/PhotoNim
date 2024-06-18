@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(PhotoNim)* Removed unused imports and updated PhotoNim version to 0.2 (very soon 0.3 release)
 - *(pfm2png)* Pfm2png now uses readPFM and savePNG procs.
 - Ordering the imports in the src directory
 - Removed ReferenceSystem from previous implementation.
