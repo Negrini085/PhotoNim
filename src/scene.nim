@@ -333,17 +333,18 @@ proc newTriangle*(vertices: array[3, Point3D]; material = newMaterial(), transfo
 proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material = newMaterial(), transformation = Transformation.id): ShapeHandler {.inline.} =
     newShapeHandler(Shape(kind: skCylinder, material: material, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), transformation)
 
-proc newMesh*(obj: tuple[nodes: seq[Point3D], edges: seq[int]]; material = newMaterial(), transformation = Transformation.id, treeKind: SceneTreeKind, maxShapesPerLeaf: int, rgState, rgSeq: uint64): ShapeHandler = 
-    assert obj.edges.len mod 3 == 0, fmt"Error in creating a skTriangularMesh! The length of the edges sequence must be a multiple of 3."
-    var triangles = newSeq[ShapeHandler](obj.edges.len div 3)
-    for i in 0..<obj.edges.len div 3: 
-        triangles[i] = newTriangle(obj.nodes[obj.edges[i * 3]], obj.nodes[obj.edges[i * 3 + 1]], obj.nodes[obj.edges[i * 3 + 2]], material, Transformation.id)    
+proc newMesh*(source: string; transformation = Transformation.id, treeKind: SceneTreeKind, maxShapesPerLeaf: int, rgState, rgSeq: uint64): ShapeHandler = 
+    let (nodes, edges) = loadMesh(source)
+    assert edges.len mod 3 == 0, fmt"Error in creating a skTriangularMesh! The length of the edges sequence must be a multiple of 3."
+    var triangles = newSeq[ShapeHandler](edges.len div 3)
+    for i in 0..<edges.len div 3: 
+        triangles[i] = newTriangle(nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]])    
 
     var rg = newPCG(rgState, rgSeq)
     newShapeHandler(
         Shape(
             kind: skTriangularMesh, 
-            nodes: obj.nodes, edges: obj.edges, 
+            nodes: nodes, edges: edges, 
             tree: newBVHNode(triangles, depth = 0, treeKind.int, maxShapesPerLeaf, rg), 
         ), transformation
     )
