@@ -1,7 +1,9 @@
 from std/strformat import fmt
 from std/fenv import epsilon
-from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI
-from std/sequtils import concat
+from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI, copySign
+from std/sequtils import toSeq, concat, mapIt, foldl, foldr
+from std/algorithm import reversed
+
 
 type 
     Vec*[N: static[int], V] = array[N, V]
@@ -23,6 +25,12 @@ proc newVec4*[V](x, y, z, w: V): Vec4[V] {.inline.} = newVec([x, y, z, w])
 proc newVec2f*(x, y: float32): Vec2f {.inline.} = newVec([x, y])
 proc newVec3f*(x, y, z: float32): Vec3f {.inline.} = newVec([x, y, z])
 proc newVec4f*(x, y, z, w: float32): Vec4f {.inline.} = newVec([x, y, z, w])
+
+
+proc `==`*[N: static[int], V](a, b: Vec[N, V]): bool =
+    for i in 0..<N:
+        if a[i] != b[i]: return false
+    return true
 
 proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
 proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 
@@ -119,6 +127,9 @@ proc `==`*(a, b: Point2D): bool {.borrow.}
 proc `==`*(a, b: Point3D): bool {.borrow.}
 proc `==`*(a, b: Normal): bool {.borrow.}
 
+proc `<`*(a, b: Point3D): bool {.inline.} = a.x < b.x and a.y < b.y and a.z < b.z
+proc `<=`*(a, b: Point3D): bool {.inline.} = a.x <= b.x and a.y <= b.y and a.z <= b.z
+
 proc areClose*(a, b: Point2D; eps: float32 = epsilon(float32)): bool {.borrow.}
 proc areClose*(a, b: Point3D; eps: float32 = epsilon(float32)): bool {.borrow.}
 proc areClose*(a, b: Normal; eps: float32 = epsilon(float32)): bool {.borrow.}
@@ -148,23 +159,6 @@ proc dist2*(a, b: Point3D): float32 {.borrow.}
 proc dist*(a, b: Point2D): float32 {.borrow.}    
 proc dist*(a, b: Point3D): float32 {.borrow.}
 
-proc min*(cont: seq[Point3D]): Point3D = 
-    # Procedure that returns a vector with components equal to the minimum of the components of the elements of the sequence
-    if cont.len == 1: return cont[0]
-
-    var x, y, z = newSeq[float32](cont.len)
-    for i in 0..<cont.len: x[i] = cont[i].x; y[i] = cont[i].y; z[i] = cont[i].z
-    newPoint3D(x.min, y.min, z.min)
-
-proc max*(cont: seq[Point3D]): Point3D = 
-    # Procedure that returns a vector with components equal to the maximum of the components of the elements of the sequence
-    if cont.len == 1: return cont[0]
-
-    var x, y, z = newSeq[float32](cont.len)
-    for i in 0..<cont.len: x[i] = cont[i].x; y[i] = cont[i].y; z[i] = cont[i].z
-    newPoint3D(x.max, y.max, z.max)
-
-
 proc `$`*(p: Point2D): string {.inline.} = fmt"({p.u}, {p.v})"
 proc `$`*(p: Point3D): string {.inline.} = fmt"({p.x}, {p.y}, {p.z})"
 proc `$`*(n: Normal): string {.inline.} = fmt"<{n.x}, {n.y}, {n.z}>"
@@ -176,6 +170,43 @@ proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 proc toPoint3D*(a: Vec3f | Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
 proc toNormal*(a: Vec3f | Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
 proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3(a[0], a[1], a[2])
+proc toVec3*(a: Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
+
+
+type
+    Interval*[T] = tuple[min, max: T]
+
+proc newInterval*[T](a, b: T): Interval[T] =
+    when T is SomeNumber: 
+        result = if a > b: (b, a) else: (a, b)
+
+    elif T is Point2D: 
+        result.min = newPoint2D(min(a.u, b.u), min(a.v, b.v))
+        result.max = newPoint2D(max(a.u, b.u), max(a.v, b.v))
+
+    elif T is Point3D:
+        result.min = newPoint3D(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z))
+        result.max = newPoint3D(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z))
+
+    elif T is Vec3f:
+        result.min = newVec3f(min(a[0], b[0]), min(a[1], b[1]), min(a[2], b[2]))
+        result.min = newVec3f(max(a[0], b[0]), max(a[1], b[1]), max(a[2], b[2]))
+
+
+proc contains*[T](interval: Interval, value: T): bool {.inline.} =
+    when T is SomeNumber: 
+        return value >= interval.min and value <= interval.max
+    elif T is Point2D: 
+        return value.u >= interval.min.u and value.u <= interval.max.u and 
+            value.v >= interval.min.v and value.v <= interval.max.v
+    elif T is Point3D:
+        return value.x >= interval.min.x and value.x <= interval.max.x and 
+            value.y >= interval.min.y and value.y <= interval.max.y and 
+            value.z >= interval.min.z and value.z <= interval.max.z
+    elif T is Vec3f:
+        return x[0] >= interval.min[0] and x[0] <= interval.max[0] and 
+            x[1] >= interval.min[1] and x[1] <= interval.max[1] and 
+            x[2] >= interval.min[2] and x[2] <= interval.max[2]
 
 
 type
@@ -193,6 +224,17 @@ proc newMat*[M, N: static[int], V](data: array[M, array[N, V]]): Mat[M, N, V] {.
 proc newMat2*[V](x, y: array[2, V]): Mat2[V] {.inline.} = newMat([x, y])
 proc newMat3*[V](x, y, z: array[3, V]): Mat3[V] {.inline.} = newMat([x, y, z])
 proc newMat4*[V](x, y, z, w: array[4, V]): Mat4[V] {.inline.} = newMat([x, y, z, w])
+
+proc toMat3*(mat: Mat4f): Mat3f {.inline.} = 
+    for i in 0..<3:
+        for j in 0..<3: result[i][j] = mat[i][j]
+
+proc toMat4*(mat: Mat3f): Mat4f =
+    for i in 0..<3:
+        for j in 0..<3: result[i][j] = mat[i][j]
+
+    result[3][3] = 1.0
+
 
 proc areClose*[M, N: static[int], V](a, b: Mat[M, N, V]; eps: V = epsilon(V)): bool = 
     for i in 0..<M: 
@@ -255,8 +297,14 @@ MatScalIncrOp(`/=`)
 proc id*[N: static[int], V](_: typedesc[SQMat[N, V]]): SQMat[N, V] {.inline.} = 
     for i in 0..<N: result[i][i] = V(1)
 
-proc T*[N: static[int], V](mat: Mat[1, N, V]): Vec[N, V] {.inline.} = mat[0]
+proc Tv*[N: static[int], V](mat: Mat[1, N, V]): Vec[N, V] {.inline.} = mat[0]
 proc T*[N: static[int], V](vec: Vec[N, V]): Mat[1, N, V] {.inline.} = result[0] = vec
+proc T*[M, N: static[int], V](mat: Mat[M, N, V]): Mat[N, M, V] =
+
+    for i in 0..<N:
+        for j in 0..<M:
+            result[i][j] = mat[j][i]
+
 
 proc dot*[M, N, P: static[int], V](a: Mat[M, N, V], b: Mat[N, P, V]): Mat[M, P, V] =
     for i in 0..<M:
@@ -322,34 +370,50 @@ type
     TransformationKind* = enum
         tkIdentity, tkGeneric, tkTranslation, tkScaling, tkRotation, tkComposition
 
-    Transformation* = object
+    Transformation* = ref object
         case kind*: TransformationKind
         of tkIdentity: discard
         of tkGeneric, tkTranslation, tkScaling, tkRotation:
-            mat*, inv_mat*: Mat4f
+            mat*, matInv*: Mat4f
         of tkComposition: 
             transformations*: seq[Transformation]
 
-
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
 
-proc newTransformation*(mat, inv_mat: Mat4f): Transformation = 
-    assert areClose(dot(mat, inv_mat), Mat4f.id), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
-    Transformation(kind: tkGeneric, mat: mat, inv_mat: inv_mat)
+proc newTransformation*(mat, matInv: Mat4f): Transformation = 
+    assert areClose(dot(mat, matInv), Mat4f.id, eps = 1e-6), "Invalid Transfomation! Please provide the transformation matrix and its inverse."
+    Transformation(kind: tkGeneric, mat: mat, matInv: matInv)
 
-proc newTranslation*(v: Vec3f): Transformation {.inline.} =
+proc newTranslation*(vec: Vec3f): Transformation {.inline.} =
     Transformation(
         kind: tkTranslation,
         mat: [
-            [1.0, 0.0, 0.0, v[0]], 
-            [0.0, 1.0, 0.0, v[1]], 
-            [0.0, 0.0, 1.0, v[2]], 
+            [1.0, 0.0, 0.0, vec[0]], 
+            [0.0, 1.0, 0.0, vec[1]], 
+            [0.0, 0.0, 1.0, vec[2]], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
-            [1.0, 0.0, 0.0, -v[0]], 
-            [0.0, 1.0, 0.0, -v[1]], 
-            [0.0, 0.0, 1.0, -v[2]], 
+        matInv: [
+            [1.0, 0.0, 0.0, -vec[0]], 
+            [0.0, 1.0, 0.0, -vec[1]], 
+            [0.0, 0.0, 1.0, -vec[2]], 
+            [0.0, 0.0, 0.0,  1.0]   
+        ]
+    )
+
+proc newTranslation*(pt: Point3D): Transformation {.inline.} =
+    Transformation(
+        kind: tkTranslation,
+        mat: [
+            [1.0, 0.0, 0.0, pt.x], 
+            [0.0, 1.0, 0.0, pt.y], 
+            [0.0, 0.0, 1.0, pt.z], 
+            [0.0, 0.0, 0.0, 1.0]
+        ],
+        matInv: [
+            [1.0, 0.0, 0.0, -pt.x], 
+            [0.0, 1.0, 0.0, -pt.y], 
+            [0.0, 0.0, 1.0, -pt.z], 
             [0.0, 0.0, 0.0,  1.0]   
         ]
     )
@@ -360,12 +424,12 @@ proc newScaling*[T](x: T): Transformation =
         assert x != 0, "Cannot create a new scaling Transformation with zero as factor."
         var 
             mat = Mat4f.id * x
-            inv_mat = Mat4f.id / x
-        mat[3][3] = 1.0; inv_mat[3][3] = 1.0
-        return Transformation(kind: tkScaling, mat: mat, inv_mat: inv_mat)
+            matInv = Mat4f.id / x
+        mat[3][3] = 1.0; matInv[3][3] = 1.0
+        return Transformation(kind: tkScaling, mat: mat, matInv: matInv)
 
     elif T is Vec3f: 
-        return Transformation(
+        Transformation(
             kind: tkScaling,
             mat: [
                 [x[0], 0.0, 0.0, 0.0], 
@@ -373,7 +437,7 @@ proc newScaling*[T](x: T): Transformation =
                 [0.0, 0.0, x[2], 0.0], 
                 [0.0, 0.0,  0.0, 1.0]
             ],
-            inv_mat: [
+            matInv: [
                 [1/x[0], 0.0, 0.0, 0.0], 
                 [0.0, 1/x[1], 0.0, 0.0], 
                 [0.0, 0.0, 1/x[2], 0.0], 
@@ -395,7 +459,7 @@ proc newRotX*(angle: SomeNumber): Transformation =
             [0.0,   s,   c, 0.0], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
+        matInv: [
             [1.0, 0.0, 0.0, 0.0], 
             [0.0,   c,   s, 0.0], 
             [0.0,  -s,   c, 0.0], 
@@ -417,7 +481,7 @@ proc newRotY*(angle: SomeNumber): Transformation =
             [ -s, 0.0,   c, 0.0], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
+        matInv: [
             [  c, 0.0,  -s, 0.0], 
             [0.0, 1.0, 0.0, 0.0], 
             [  s, 0.0,   c, 0.0], 
@@ -439,7 +503,7 @@ proc newRotZ*(angle: SomeNumber): Transformation =
             [0.0, 0.0, 1.0, 0.0], 
             [0.0, 0.0, 0.0, 1.0]
         ],
-        inv_mat: [
+        matInv: [
             [  c,   s, 0.0, 0.0], 
             [ -s,   c, 0.0, 0.0], 
             [0.0, 0.0, 1.0, 0.0], 
@@ -458,14 +522,25 @@ proc `@`*(a, b: Transformation): Transformation =
             transforms = concat(a.transformations, b.transformations)
         else: 
             transforms = a.transformations
-            transforms.add b
+            transforms.add b        
 
     elif b.kind == tkComposition: 
         transforms = b.transformations
-        transforms.insert(a, 0)        
+        transforms.insert(a, 0)
 
-    else: 
-        transforms.add a; transforms.add b
+    else: transforms.add a; transforms.add b
+
+    Transformation(kind: tkComposition, transformations: transforms)
+
+proc newComposition*(transformations: varargs[Transformation]): Transformation =
+    if transformations.len == 1: return transformations[0]
+    elif transformations.len == 2: return transformations[0] @ transformations[1]
+    var transforms = newSeq[Transformation]()
+    for t in transformations:
+        case t.kind
+        of tkIdentity: continue
+        of tkComposition: transforms = concat(transforms, t.transformations)
+        else: transforms.add t
 
     Transformation(kind: tkComposition, transformations: transforms)
 
@@ -474,22 +549,17 @@ proc inverse*(transf: Transformation): Transformation =
     let kind = transf.kind
     case kind
     of tkIdentity: return Transformation.id
-    of tkComposition: 
-        var transfs = newSeq[Transformation](transf.transformations.len)
-        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i].inverse
-        return Transformation(kind: kind, transformations: transfs)
-
-    of tkGeneric, tkTranslation, tkScaling, tkRotation: 
-        return Transformation(kind: kind, mat: transf.inv_mat, inv_mat: transf.mat)
+    of tkComposition: return Transformation(kind: kind, transformations: transf.transformations.reversed.mapIt(it.inverse))
+    else: return Transformation(kind: kind, mat: transf.matInv, matInv: transf.mat)
 
 
 proc `*`*(transf: Transformation, scal: float32): Transformation = 
     let kind = transf.kind
     case kind:
     of tkIdentity: 
-        return Transformation(kind: tkGeneric, mat: Mat4f.id * scal, inv_mat: Mat4f.id / scal)
+        return Transformation(kind: tkGeneric, mat: Mat4f.id * scal, matInv: Mat4f.id / scal)
     of tkGeneric, tkTranslation, tkScaling, tkRotation:
-        return Transformation(kind: kind, mat: transf.mat * scal, inv_mat: transf.inv_mat / scal)
+        return Transformation(kind: kind, mat: transf.mat * scal, matInv: transf.matInv / scal)
     of tkComposition:
         var transfs = newSeq[Transformation](transf.transformations.len)
         for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] * scal
@@ -501,9 +571,9 @@ proc `/`*(transf: Transformation, scal: float32): Transformation =
     let kind = transf.kind
     case kind:
     of tkIdentity: 
-        return Transformation(kind: tkGeneric, mat: Mat4f.id / scal, inv_mat: Mat4f.id * scal)
+        return Transformation(kind: tkGeneric, mat: Mat4f.id / scal, matInv: Mat4f.id * scal)
     of tkGeneric, tkTranslation, tkScaling, tkRotation:
-        return Transformation(kind: kind, mat: transf.mat / scal, inv_mat: transf.inv_mat * scal)
+        return Transformation(kind: kind, mat: transf.mat / scal, matInv: transf.matInv * scal)
     of tkComposition:
         var transfs = newSeq[Transformation](transf.transformations.len)
         for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] / scal
@@ -518,19 +588,19 @@ proc apply*[T](transf: Transformation, x: T): T =
         when T is Point3D: 
             return dot(transf.mat, x.toVec4).toPoint3D
         elif T is Normal:
-            return dot(x, transf.inv_mat).toNormal
+            return dot(x, transf.matInv).toNormal
         else: 
             return dot(transf.mat, x) 
 
     of tkTranslation: 
         when T is Vec4f:
-            return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
+             return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
         elif T is Vec3f:
-            return newVec3(x[0] + transf.mat[0][3], x[1] + transf.mat[1][3], x[2] + transf.mat[2][3])
+            return newVec3(x[0], x[1], x[2])
         elif T is Point3D: 
             return newPoint3D(x.x + transf.mat[0][3], x.y + transf.mat[1][3], x.z + transf.mat[2][3])
         elif T is Normal:
-            return newNormal(x.x + transf.inv_mat[3][0], x.y + transf.inv_mat[3][1], x.z + transf.inv_mat[3][2])
+            return newNormal(x.x, x.y, x.z)
 
     of tkScaling:
         when T is Vec4f:
@@ -543,23 +613,107 @@ proc apply*[T](transf: Transformation, x: T): T =
             return x
 
     of tkComposition:
+        if transf.transformations.len == 1: return apply(transf.transformations[0], x)
+
         when T is Normal:
-            var inv_mat = transf.transformations[0].inv_mat
-            for i in 1..<transf.transformations.len:
-                if transf.transformations[i].kind != tkIdentity:
-                    inv_mat = dot(inv_mat, transf.transformations[i].inv_mat)
-            return dot(x, inv_mat).toNormal
+            return dot(x, transf.transformations.mapIt(it.matInv).foldl(dot(a, b))).toNormal
         else:
-            var mat = transf.transformations[transf.transformations.len - 1].mat
-            for i in countdown(transf.transformations.len - 2, 0):
-                if transf.transformations[i].kind != tkIdentity:
-                    mat = dot(mat, transf.transformations[i].mat)
+            result = x
+            for i in countdown(transf.transformations.len - 1, 0):
+                result = apply(transf.transformations[i], result)
 
-            when T is Point3D: 
-                return dot(mat, x.toVec4).toPoint3D
 
-            elif T is Vec3f: 
-                return dot(mat, x) 
+type Ray* = ref object
+    origin*: Point3D
+    dir*: Vec3f
+    tSpan*: Interval[float32]
+    depth*: int
+
+proc newRay*(origin: Point3D, direction: Vec3f, depth: int = 0): Ray {.inline.} = 
+    Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: depth)  
+
+proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
+    areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
+
+proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
+    case transformation.kind: 
+    of tkIdentity: ray
+    of tkTranslation: 
+        Ray(
+            origin: apply(transformation, ray.origin), 
+            dir: ray.dir, 
+            tSpan: ray.tSpan, depth: ray.depth
+        )
+    else: 
+        Ray(
+            origin: apply(transformation, ray.origin), 
+            dir: apply(transformation, ray.dir), 
+            tSpan: ray.tSpan, depth: ray.depth
+        )
+
+proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
+
+
+type ReferenceSystem* = ref object 
+    origin*: Point3D
+    base*: Mat3f
+
+proc newONB*(normal: Normal): Mat3f = 
+    let
+        sign = copySign(1.0, normal.z)
+        a = -1.0 / (sign + normal.z)
+        b = a * normal.x * normal.y
+        
+    [
+        normal.Vec3f,
+        newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
+        newVec3f(b, sign + a * normal.y * normal.y, -normal.y)
+    ]
+
+proc newRightHandedBase*(mat: Mat3f): Mat3f = 
+    if mat.det > 0: return mat
+    else: result[0] = mat[0]; result[1] = mat[2]; result[2] = mat[1]
+
+proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = 
+    ReferenceSystem(origin: origin, base: newRightHandedBase(base))
+
+proc newReferenceSystem*(origin: Point3D, rotation: Transformation): ReferenceSystem = 
+    result = newReferenceSystem(origin, [eX, eY, eZ])
+
+    case rotation.kind
+    of tkIdentity: discard
+
+    of tkRotation: 
+        result.base = newRightHandedBase([
+            apply(rotation, eX),
+            apply(rotation, eY),
+            apply(rotation, eZ)
+        ])
+        
+    of tkComposition: 
+        for rot in rotation.transformations: 
+            assert rot.kind == tkRotation: "No other transformation are accepted for the camera translation rather than tkRotation and tkComposition of tkRotation."
+            result.base = newRightHandedBase([
+                apply(rot, result.base[0]),
+                apply(rot, result.base[1]),
+                apply(rot, result.base[2])
+            ])
+
+    else: quit "No other transformation are accepted for the camera translation rather than tkRotation and tkComposition of tkRotation."
+
+proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = 
+    newReferenceSystem(origin, newRightHandedBase(newONB(normal))) 
+
+
+proc project*[V](refSystem: ReferenceSystem, worldObj: V): V {.inline.} = 
+    when V is Point3D: dot(refSystem.base, (worldObj - refSystem.origin).Vec3f).Point3D
+    elif V is Vec3f: dot(refSystem.base, worldObj)
+
+proc getWorldObject*[V](refSystem: ReferenceSystem, localObj: V): V {.inline.} = 
+    when V is Point3D: refSystem.origin + dot(refSystem.base.T, localObj.Vec3f)
+    elif V is Vec3f: dot(refSystem.base.T, localObj)
+    else:  dot(refSystem.base.T, localObj.Vec3f).V
+
 
 
 type 

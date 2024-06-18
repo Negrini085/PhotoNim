@@ -38,14 +38,14 @@ The operations of addition and subtraction between colors, as well as multiplica
 
 <div style="height: 40px;"></div>
 <div style="text-align: center;">
-    <span style="color: blue; font-size: 28px;"> HdrImage </span>
+    <span style="color: blue; font-size: 28px;"> HDRImage </span>
 </div>
 <div style="height: 40px;"></div>
 
 The images we are interested in are matrices of pixels. The most logical way to define high dynamic range (HDR) images in our code is as a sequence of colors. 
 
 ```nim
-type HdrImage* = object
+type HDRImage* = object
     width*, height*: int
     pixels*: seq[Color]
 ```
@@ -54,7 +54,7 @@ Each color is uniquely associated with a particular pixel, which can be determin
 Given that the image is two-dimensional, while sequences are one-dimensional, it is necessary to have a procedure that allows accessing the sequence of colors correctly and efficiently: pixelOffset does just that, returning the index of the memory cell dedicated to a particular pixel.
 
 ``` nim
-proc pixelOffset(img: HdrImage; x, y: int): int {.inline.} = x + img.width * y
+proc pixelOffset(img: HDRImage; x, y: int): int {.inline.} = x + img.width * y
 ```
 
 Appropriate functionalities are available for setting or retrieving the color of a pixel: equally fundamental are the procedures that allow for tone mapping, ensuring the rendering of images with correct management of brightness and colors. You can read or write a .pfm file by using appropriate procedure implemented in PhotoNim.nim file.
@@ -66,8 +66,8 @@ Appropriate functionalities are available for setting or retrieving the color of
 <div style="height: 25px;"></div>
 
 ```nim
-# Defining a HdrImage variable
-var im = newHdrImage(2, 2)
+# Defining a HDRImage variable
+var im = newHDRImage(2, 2)
 
 # Setting pixel value
 im.setPixel(1, 1, newColor(0.1, 0.3, 0.1))
@@ -76,10 +76,10 @@ im.setPixel(1, 1, newColor(0.1, 0.3, 0.1))
 echo im.getPixel(0, 0)
 
 # Computing avarage luminosity
-echo im.averageLuminosity()
+echo im.avLuminosity()
 
 # Tone Mapping, crucial for production of images with proper color management.
-im.toneMapping(1, 0.23)
+im.applyToneMap(1, 0.23)
 ```
 
 <div style="height: 40px;"></div>
@@ -88,7 +88,7 @@ im.toneMapping(1, 0.23)
 </div>
 <div style="height: 40px;"></div>
 
-What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenary. PhotoNim is a backward ray tracer, meaning that we are tracing rays from the camera to the light sources. The first tool we need to develop is indeed a type that allows us to uniquely characterize a ray:
+What we have presented so far is sufficient to perform the conversion from a PFM image to a PNG image. However, if we want to render complex user-defined scenarios, it is necessary to implement constructs that allow us to model an observer external to the scenery. PhotoNim is a backward ray tracer, meaning that we are tracing rays from the camera to the light sources. The first tool we need to develop is indeed a type that allows us to uniquely characterize a ray:
 
 ```nim
 type Ray* = object
@@ -123,11 +123,11 @@ If you want to evaluate ray position at a certain time t, you just have to use `
 
 ```nim
 let
-    trans = newTranslation(newVec3(float32 2, 0, 0))
+    trans = newTranslation(newVec3f(2, 0, 0))
 
 var 
     origin = ORIGIN3D        # Ray starting point
-    dir = newVec3(float32 1, 0, 0)     # Ray direction (along x-axis)
+    dir = newVec3f(1, 0, 0)     # Ray direction (along x-axis)
     ray = newRay(origin, dir)           # tmin, tmax and depth have default values
 
 # Printing ray variable content
@@ -187,7 +187,7 @@ proc newPerspectiveCamera*(a, d: float32; transf = Transformation.id): Camera {.
 is the one that enables the user to fire rays at a specific screen location: clearly this differs between different kinds of camera.
 
 ```nim
-proc fire_ray*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
+proc fireRay*(cam: Camera; pixel: Point2D): Ray {.inline.} = 
     case cam.kind
     of ckOrthogonal:
         apply(cam.transform, newRay(newPoint3D(-1, (1 - 2 * pixel.u) * cam.aspect_ratio, 2 * pixel.v - 1), eX))
@@ -206,7 +206,7 @@ Both cameras are initialized such that the observer is positioned along the nega
 ```nim
 let 
     # transformation to be associated with the chosen camera
-    trans = newTranslation(newVec3(float32 -1, 0, 0))
+    trans = newTranslation(newVec3f(-1, 0, 0))
 
 var
     ray: Ray                                # Ray variable to store rays fired
@@ -214,7 +214,7 @@ var
     pCam = newPerspectiveCamera(1.2, 1, trans)
 
 # Firing ray, we need to give (u, v) coordinates as input
-ray = pCam.fire_ray(uv)
+ray = pCam.fireRay(uv)
 # Printing ray: it should have
 #          ---> ray.origin = (-2, 0, 0)
 #          ---> ray.dir    = (1, 0, 0)
@@ -240,6 +240,7 @@ We now need to define types that allow us to color the scenes we want to render 
 
 Pigments typically illustrate the variation of a BRDF across a surface: according to this view, it's not the entire BRDF that changes from point to point, but only the pigment.
 In PhotoNim code three different pigment choices are available: 
+
 
 1. Uniform, which corresponds to an uniform color
 2. Texture, which enables the user to renderer the earth

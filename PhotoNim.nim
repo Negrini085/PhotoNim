@@ -1,78 +1,16 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, camera, shapes, hitrecord, pcg, tracer]
-export geometry, camera, shapes, hitrecord, pcg, tracer
+import src/[geometry, pcg, hdrimage, scene, material, hitrecord, camera]
+export geometry, pcg, hdrimage, scene, material, hitrecord, camera
 
 from std/times import cpuTime
 from std/strformat import fmt
 
-from std/strutils import split, parseFloat, parseInt
+from std/strutils import parseFloat, parseInt, split
 from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
-from std/endians import littleEndian32, bigEndian32
 from nimPNG import savePNG24
 
 from std/math import pow, exp
-
-
-proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
-    ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
-    var tmp: float32 = stream.readFloat32
-    if endianness == littleEndian: littleEndian32(addr result, addr tmp)
-    else: bigEndian32(addr result, addr tmp)
-
-proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
-    ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
-    var tmp: float32
-    if endianness == littleEndian: littleEndian32(addr tmp, addr value)
-    else: bigEndian32(addr tmp, addr value)
-    stream.write(tmp)
-
-
-proc readPFM*(stream: FileStream): tuple[img: HdrImage, endian: Endianness] {.raises: [CatchableError].} =
-    assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
-    let sizes = stream.readLine.split(" ")
-    assert sizes.len == 2, "Invalid image size specification: required 'width height'."
-
-    var width, height: int
-    try:
-        width = parseInt(sizes[0])
-        height = parseInt(sizes[1])
-    except:
-        raise newException(CatchableError, "Invalid image size specification: required 'width height' as unsigned integers")
-    
-    try:
-        let endianFloat = parseFloat(stream.readLine)
-        if endianFloat == 1.0:
-            result.endian = bigEndian
-        elif endianFloat == -1.0:
-            result.endian = littleEndian
-        else:
-            raise newException(CatchableError, "")
-    except:
-        raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
-
-    result.img = newHdrImage(width, height)
-
-    var r, g, b: float32
-    for y in countdown(height - 1, 0):
-        for x in 0..<width:
-            r = readFloat(stream, result.endian)
-            g = readFloat(stream, result.endian)
-            b = readFloat(stream, result.endian)
-            result.img.setPixel(x, y, newColor(r, g, b))
-
-proc writePFM*(stream: FileStream, img: HdrImage, endian: Endianness = littleEndian) = 
-    stream.writeLine("PF")
-    stream.writeLine(img.width, " ", img.height)
-    stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
-
-    var c: Color
-    for y in countdown(img.height - 1, 0):
-        for x in 0..<img.width:
-            c = img.getPixel(x, y)
-            stream.writeFloat(c.r, endian)
-            stream.writeFloat(c.g, endian)
-            stream.writeFloat(c.b, endian)
 
 
 let pfm2pngDoc* = """
@@ -91,7 +29,7 @@ Options:
 
 proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     var 
-        img: HdrImage
+        img: HDRImage
         inFS = newFileStream(fileIn, fmRead)
     try: 
         img = readPFM(inFS).img
@@ -100,7 +38,7 @@ proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     finally:
         inFS.close
        
-    img.toneMapping(alpha, gamma, avlum)
+    img.applyToneMap(alpha, gamma, avlum)
 
     var 
         i: int
@@ -121,45 +59,99 @@ proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     echo fmt"Successfully converted {fileIn} to {fileOut}"
 
 
-
 let demoDoc* = """
 PhotoNim CLI `demo` command:
 
 Usage:
-    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim demo (persp | ortho) (OnOff | Flat) [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
-    persp | ortho       Perspective or Orthogonal Camera kinds.
-    <output>            Path to the output HDRImage. [default: "assets/images/demo.pfm"]
-    --w=<width>         Image width. [default: 1600]
-    --h=<height>        Image height. [default: 900]
-    --angle=<angle>     Rotation angle around z axis. [default: 10]
+    persp | ortho           Perspective or Orthogonal Camera kinds.
+    OnOff | Flat            Choosing renderer: OnOff (only shows hit), Flat (flat renderer)
+    <output>                Path to the output HDRImage. [default: "assets/images/demo.pfm"]
+    --w=<width>             Image width. [default: 1600]
+    --h=<height>            Image height. [default: 900]
+    --angle=<angle>         Rotation angle around z axis. [default: 10]
 """
 
-proc demo*(width, height: int, camera: Camera): HdrImage =
+proc demo*(camera: Camera, pfmOut, pngOut: string) =
     let timeStart = cpuTime()
 
     let
-        s0 = newSphere(center = newPoint3D( 0.5,  0.5,  0.5), radius = 0.1)
-        s1 = newSphere(center = newPoint3D( 0.5,  0.5, -0.5), radius = 0.1)
-        s2 = newSphere(center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1)
-        s3 = newSphere(center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1)
-        s4 = newSphere(center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1)
-        s5 = newSphere(center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1)
-        s6 = newSphere(center = newPoint3D(-0.5, -0.5,  0.5), radius = 0.1)
-        s7 = newSphere(center = newPoint3D(-0.5, -0.5, -0.5), radius = 0.1)
-        s8 = newSphere(center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1)
-        s9 = newSphere(center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1)   
+        s0 = newSphere(
+            center = newPoint3D( 0.5,  0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(1, 215/255, 0)))
+            )
 
-    var 
-        scenary = World(shapes: @[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-        tracer = newImageTracer(width, height, camera, sideSamples = 4)
+        s1 = newSphere(
+            center = newPoint3D( 0.5,  0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(1, 0, 0)))
+            )
 
-    tracer.fire_all_rays(scenary, proc(ray: Ray): Color = newColor(0.3, 1.0, 0.2))
+        s2 = newSphere(
+            center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newUniformPigment(newColor(0, 1, 127/255))
+                )
+            )
+
+        s3 = newSphere(
+            center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newUniformPigment(newColor(0, 1, 127/255))
+                )
+            )
+
+        s4 = newSphere(
+            center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0), 
+                    newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 2, 4)
+                )
+            )
+        
+        s5 = newSphere(
+            center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0.5), 
+                    newUniformPigment(newColor(139/255, 0, 139/255))
+                )
+        )
+
+        s6 = newSphere(
+            center = newPoint3D(-0.5, -0.5,  0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 0.5), 
+                    newUniformPigment(newColor(244/255, 164/255, 96/255))
+                )            
+            )
+
+        s7 = newSphere(
+            center = newPoint3D(-0.5, -0.5, -0.5), radius = 0.1,
+            newMaterial(newDiffuseBRDF(), 
+                    newUniformPigment(newColor(244/255, 164/255, 96/255))
+                )   
+            )
+
+        s8 = newSphere(
+            center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1,
+            newMaterial(newSpecularBRDF(), 
+                    newUniformPigment(newColor(0, 0, 128/255))
+                )   
+            )            
+
+        s9 = newSphere(
+            center = newPoint3D( 0.0,  0.5,  0.0), radius = 0.1,
+            newMaterial(newDiffuseBRDF(reflectance = 1), 
+                    newUniformPigment(newColor(124/255, 252/255, 0))
+                )   
+            )                
+
+    let 
+        scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
+        image = camera.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 1, maxShapesPerLeaf = 2)
 
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
-
-    tracer.image
+    
+    image.savePFM(pfmOut)
+    image.savePNG(pngOut, 0.18, 1.0, 0.1)
 
 
 when isMainModule: 
@@ -172,7 +164,8 @@ when isMainModule:
 Usage:
     ./PhotoNim help [<command>]
     ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
-    ./PhotoNim demo (persp | ortho) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim demo (persp | ortho) (OnOff | Flat | Path) [<output>] [--w=<width> --h=<height> --angle=<angle>]
+    ./PhotoNim earth [<output>] [--w=<width> --h=<height> --angle=<angle>]
 
 Options:
     -h | --help         Display the PhotoNim CLI helper screen.
@@ -182,10 +175,11 @@ Options:
     --g=<gamma>         Gamma correction factor. [default: 1.0]
     --lum=<avlum>       Average image luminosity. 
 
-    persp | ortho       Perspective or Orthogonal Camera kinds.
-    --w=<width>         Image width. [default: 1600]
-    --h=<height>        Image height. [default: 900]
-    --angle=<angle>     Rotation angle around z axis. [default: 10]
+    persp | ortho           Perspective or Orthogonal Camera kinds.
+    OnOff | Flat            Choosing renderer: OnOff (only shows hit), Flat (flat renderer)
+    --w=<width>             Image width. [default: 1600]
+    --h=<height>            Image height. [default: 900]
+    --angle=<angle>         Rotation angle around z axis. [default: 10]
 """
 
     let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
@@ -249,15 +243,55 @@ Options:
             try: angle = parseFloat($args["--angle"]) 
             except: echo "Warning: angle must be an integer. Default value is used."
             
+            
+        let  
+            renderer = 
+                if args["OnOff"]: newOnOffRenderer(hitCol = newColor(1, 215.0 / 255, 0))
+                elif args["Flat"]: newFlatRenderer()
+                else: newPathTracer(numRays = 9, maxDepth = 1, rouletteLimit = 3)
+
+            camera = 
+                if args["persp"]: newPerspectiveCamera(renderer, (width, height), 3.0, newComposition(newRotZ(angle), newTranslation(-eX))) 
+                else: newOrthogonalCamera(renderer, (width, height))
+    
+
+        demo(camera, pfmOut, pngOut)
+
+
+    elif args["earth"]:
+        let 
+            pfmOut = if args["<output>"]: $args["<output>"] else: "assets/images/earth.pfm"
+            (dir, name, _) = splitFile(pfmOut)
+            pngOut = dir & '/' & name & ".png"
+
+        var 
+            (width, height) = (600, 600)
+            angle = 10.0
+
+        if args["--w"]: 
+            try: width = parseInt($args["--w"]) 
+            except: echo "Warning: width must be an integer. Default value is used."
+        
+        if args["--h"]: 
+            try: height = parseInt($args["--h"]) 
+            except: echo "Warning: height must be an integer. Default value is used."
+
+        if args["--angle"]:
+            try: angle = parseFloat($args["--angle"]) 
+            except: echo "Warning: angle must be an integer. Default value is used."
+            
+            
+        let camera = newPerspectiveCamera(newFlatRenderer(), viewport = (width, height), distance = 1.0, newComposition(newRotZ(angle), newTranslation(-eZ))) 
+
+        var stream = newFileStream("assets/images/textures/earth.pfm", fmRead)
+            
         let
-            a_ratio = width / height
-            transform = newTranslation(newVec3(float32 -1, 0, 0)) @ newRotZ(angle)
-            camera = if args["persp"]: newPerspectiveCamera(a_ratio, 1.0, transform) else: newOrthogonalCamera(a_ratio, transform)
+            texture = try: stream.readPFM.img except: quit fmt"Could not read texture!" finally: stream.close
+            scene = newScene(@[newUnitarySphere(ORIGIN3D, newMaterial(newDiffuseBRDF(newTexturePigment(texture)), newTexturePigment(texture)))])
+            image = camera.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 2, maxShapesPerLeaf = 4)
+        
+        image.savePFM(pfmOut)
+        image.savePNG(pngOut, 0.18, 1.0, 0.1)
 
-        var stream = newFileStream(pfmOut, fmWrite) 
-        stream.writePFM(demo(width, height, camera))
-        stream.close
-
-        pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
 
     else: quit PhotoNimDoc
