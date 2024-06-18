@@ -623,6 +623,36 @@ proc apply*[T](transf: Transformation, x: T): T =
                 result = apply(transf.transformations[i], result)
 
 
+type Ray* = ref object
+    origin*: Point3D
+    dir*: Vec3f
+    tSpan*: Interval[float32]
+    depth*: int
+
+proc newRay*(origin: Point3D, direction: Vec3f, depth: int = 0): Ray {.inline.} = 
+    Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: depth)  
+
+proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
+    areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
+
+proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
+    case transformation.kind: 
+    of tkIdentity: ray
+    of tkTranslation: 
+        Ray(
+            origin: apply(transformation, ray.origin), 
+            dir: ray.dir, 
+            tSpan: ray.tSpan, depth: ray.depth
+        )
+    else: 
+        Ray(
+            origin: apply(transformation, ray.origin), 
+            dir: apply(transformation, ray.dir), 
+            tSpan: ray.tSpan, depth: ray.depth
+        )
+
+proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
+
 
 type ReferenceSystem* = ref object 
     origin*: Point3D

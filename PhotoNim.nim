@@ -1,78 +1,16 @@
 let PhotoNimVersion* = "PhotoNim 0.1"
 
-import src/[geometry, pcg, hdrimage, camera, scene, hitrecord, renderer]
-export geometry, pcg, hdrimage, camera, scene, hitrecord, renderer
+import src/[geometry, pcg, hdrimage, scene, material, hitrecord, camera]
+export geometry, pcg, hdrimage, scene, material, hitrecord, camera
 
 from std/times import cpuTime
 from std/strformat import fmt
 
-from std/strutils import split, parseFloat, parseInt
+from std/strutils import parseFloat, parseInt, split
 from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
-from std/endians import littleEndian32, bigEndian32
 from nimPNG import savePNG24
 
 from std/math import pow, exp
-
-
-proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
-    ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
-    var tmp: float32 = stream.readFloat32
-    if endianness == littleEndian: littleEndian32(addr result, addr tmp)
-    else: bigEndian32(addr result, addr tmp)
-
-proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
-    ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
-    var tmp: float32
-    if endianness == littleEndian: littleEndian32(addr tmp, addr value)
-    else: bigEndian32(addr tmp, addr value)
-    stream.write(tmp)
-
-
-proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.raises: [CatchableError].} =
-    assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
-    let sizes = stream.readLine.split(" ")
-    assert sizes.len == 2, "Invalid image size specification: required 'width height'."
-
-    var width, height: int
-    try:
-        width = parseInt(sizes[0])
-        height = parseInt(sizes[1])
-    except:
-        raise newException(CatchableError, "Invalid image size specification: required 'width height' as unsigned integers")
-    
-    try:
-        let endianFloat = parseFloat(stream.readLine)
-        if endianFloat == 1.0:
-            result.endian = bigEndian
-        elif endianFloat == -1.0:
-            result.endian = littleEndian
-        else:
-            raise newException(CatchableError, "")
-    except:
-        raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
-
-    result.img = newHDRImage(width, height)
-
-    var r, g, b: float32
-    for y in countdown(height - 1, 0):
-        for x in 0..<width:
-            r = readFloat(stream, result.endian)
-            g = readFloat(stream, result.endian)
-            b = readFloat(stream, result.endian)
-            result.img.setPixel(x, y, newColor(r, g, b))
-
-proc writePFM*(stream: FileStream, img: HDRImage, endian: Endianness = littleEndian) = 
-    stream.writeLine("PF")
-    stream.writeLine(img.width, " ", img.height)
-    stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
-
-    var c: Color
-    for y in countdown(img.height - 1, 0):
-        for x in 0..<img.width:
-            c = img.getPixel(x, y)
-            stream.writeFloat(c.r, endian)
-            stream.writeFloat(c.g, endian)
-            stream.writeFloat(c.b, endian)
 
 
 let pfm2pngDoc* = """
@@ -121,7 +59,6 @@ proc pfm2png*(fileIn, fileOut: string, alpha, gamma: float32, avlum = 0.0) =
     echo fmt"Successfully converted {fileIn} to {fileOut}"
 
 
-
 let demoDoc* = """
 PhotoNim CLI `demo` command:
 
@@ -137,7 +74,7 @@ Options:
     --angle=<angle>         Rotation angle around z axis. [default: 10]
 """
 
-proc demo*(renderer: Renderer, pfmOut, pngOut: string) =
+proc demo*(camera: Camera, pfmOut, pngOut: string) =
     let timeStart = cpuTime()
 
     let
@@ -209,15 +146,12 @@ proc demo*(renderer: Renderer, pfmOut, pngOut: string) =
 
     let 
         scene = newScene(@[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9])
-        image = renderer.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 1, maxShapesPerLeaf = 2)
+        image = camera.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 1, maxShapesPerLeaf = 2)
 
     echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
     
-    var stream = newFileStream(pfmOut, fmWrite) 
-    stream.writePFM(image)
-    stream.close
-
-    pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
+    image.savePFM(pfmOut)
+    image.savePNG(pngOut, 0.18, 1.0, 0.1)
 
 
 when isMainModule: 
@@ -310,16 +244,18 @@ Options:
             except: echo "Warning: angle must be an integer. Default value is used."
             
             
-        let camera = 
-            if args["persp"]: newPerspectiveCamera((width, height), 3.0, newComposition(newRotZ(angle), newTranslation(-eX))) 
-            else: newOrthogonalCamera((width, height))
-    
-        var renderer = 
-            if args["OnOff"]: newOnOffRenderer(camera, hitCol = newColor(1, 215.0 / 255, 0))
-            elif args["Flat"]: newFlatRenderer(camera)
-            else: newPathTracer(camera, numRays = 9, maxDepth = 1, rouletteLimit = 3)
+        let  
+            renderer = 
+                if args["OnOff"]: newOnOffRenderer(hitCol = newColor(1, 215.0 / 255, 0))
+                elif args["Flat"]: newFlatRenderer()
+                else: newPathTracer(numRays = 9, maxDepth = 1, rouletteLimit = 3)
 
-        demo(renderer, pfmOut, pngOut)
+            camera = 
+                if args["persp"]: newPerspectiveCamera(renderer, (width, height), 3.0, newComposition(newRotZ(angle), newTranslation(-eX))) 
+                else: newOrthogonalCamera(renderer, (width, height))
+    
+
+        demo(camera, pfmOut, pngOut)
 
 
     elif args["earth"]:
@@ -345,22 +281,17 @@ Options:
             except: echo "Warning: angle must be an integer. Default value is used."
             
             
-        let 
-            camera = newPerspectiveCamera(viewport = (width, height), distance = 1.0, newComposition(newRotZ(angle), newTranslation(-eZ))) 
-            renderer = newFlatRenderer(camera)
+        let camera = newPerspectiveCamera(newFlatRenderer(), viewport = (width, height), distance = 1.0, newComposition(newRotZ(angle), newTranslation(-eZ))) 
 
         var stream = newFileStream("assets/images/textures/earth.pfm", fmRead)
             
         let
             texture = try: stream.readPFM.img except: quit fmt"Could not read texture!" finally: stream.close
             scene = newScene(@[newUnitarySphere(ORIGIN3D, newMaterial(newDiffuseBRDF(newTexturePigment(texture)), newTexturePigment(texture)))])
-            image = renderer.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 2, maxShapesPerLeaf = 4)
+            image = camera.sample(scene, rgState = 42, rgSeq = 4, samplesPerSide = 2, maxShapesPerLeaf = 4)
         
-        stream = newFileStream(pfmOut, fmWrite) 
-        stream.writePFM(image)
-        stream.close
-
-        pfm2png(pfmOut, pngOut, 0.18, 1.0, 0.1)
+        image.savePFM(pfmOut)
+        image.savePNG(pngOut, 0.18, 1.0, 0.1)
 
 
     else: quit PhotoNimDoc

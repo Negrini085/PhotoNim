@@ -1,4 +1,4 @@
-import geometry, scene, camera
+import geometry, scene
 
 import std/options
 from std/fenv import epsilon
@@ -172,12 +172,11 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
             if hitPayloads.len == 0: return none seq[HitPayload]
             
             some hitPayloads.foldl(concat(a, b))
-                .sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
                 
         let hitRecord = localHitLeafNodes.get.localHitRecord(worldInvRay)
         if hitRecord.isNone: return none HitPayload
         
-        some hitRecord.get[0]
+        some hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
 
 
 proc getHitPayloads(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
@@ -201,4 +200,3 @@ proc getHitRecord*(hitLeafs: seq[SceneNode]; worldRay: Ray): Option[seq[HitPaylo
     if hitPayloads.len == 0: return none seq[HitPayload]
     
     some hitPayloads.foldl(concat(a, b))
-        .sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
