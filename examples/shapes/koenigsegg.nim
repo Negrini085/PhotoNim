@@ -9,9 +9,9 @@ from std/osproc import execCmd
 
 let 
     timeStart = cpuTime()
-    comp1 = newComposition(newRotX(-90), newTranslation(newPoint3D(-5, 0, 0)))
+    comp1 = newComposition(newRotX(-90), newTranslation(newPoint3D(-3, 0, 0)))
     camera = newPerspectiveCamera(viewport = (1600, 900), distance = 3.0, comp1)
-    renderer = newPathTracer(camera, numRays = 1, maxDepth = 1)
+    renderer = newPathTracer(camera, numRays = 25, maxDepth = 5)
 
     koenigseggOBJ = "assets/meshes/koenigsegg.obj"
     comp2 = newScaling(0.1)
