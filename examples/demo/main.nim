@@ -13,15 +13,18 @@ from std/strutils import parseInt, parseFloat
 let demoDoc* = """
 Welcome to `PhotoNim`, run this demo example and start rendering!
 
-Usage: nimble demo (persp | ortho) (OnOff | Flat | Path) [--w=<width> --h=<height> --angle=<angle>] [<output>]
+Usage: 
+        nimble demo (persp | ortho) (OnOff | Flat | Path) [--w=<width> --h=<height> --angle=<angle>] [<output>]
 
 Options:
-    persp | ortho           Perspective or Orthogonal Camera kinds.
-    OnOff | Flat | Path     Choosing renderer: OnOff (only shows hit), Flat (flat renderer)
-    --w=<width>             Image width. [default: 1600]
-    --h=<height>            Image height. [default: 900]
-    --angle=<angle>         Rotation angle around z axis. [default: 10]
-    <output>                Path to the output HDRImage. [default: "examples/demo/demo.pfm"]
+        persp | ortho          Camera kind: Perspective or Orthogonal
+        OnOff | Flat | Path    Renderer kind: OnOff (only shows hit), Flat (flat renderer), Path (path tracer)
+
+        --w=<width>            Image width. [default: 1600]
+        --h=<height>           Image height. [default: 900]
+        --angle=<angle>        Rotation angle around z axis. [default: 10]
+
+        <output>               Path to the output HDRImage. [default: "examples/demo/demo.pfm"]
 """
 
 proc demoScene*(): Scene =

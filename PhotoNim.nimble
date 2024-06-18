@@ -12,31 +12,25 @@ requires "nimPNG >= 0.3"
 
 
 # Tasks
-task build, "Build the `PhotoNim` executable":
+task build, "Build the `PhotoNim` executable\n":
   exec "nim c -d:release PhotoNim.nim"
-
-task test, "Run the `PhotoNim` tests":
-  withDir "tests":   
-    exec "nim c -d:release --hints:off -r geometry.nim"    
-    exec "nim c -d:release --hints:off -r hdrimage.nim"    
-    exec "nim c -d:release --hints:off -r camera.nim"
-    exec "nim c -d:release --hints:off -r scene.nim"
-    exec "nim c -d:release --hints:off -r pcg.nim"
-    exec "nim c -d:release --hints:off -r hitrecord.nim"
-    exec "rm geometry hdrimage camera scene pcg hitrecord"
 
 
 task demo, """Run the `PhotoNim` demo!
 
-          Usage: nimble demo (persp | ortho) (OnOff | Flat | Path) [--w=<width> --h=<height> --angle=<angle>] [<output>]
+          Usage: 
+                  nimble demo (persp | ortho) (OnOff | Flat | Path) [--w=<width> --h=<height> --angle=<angle>] [<output>]
 
           Options:
-              persp | ortho           Perspective or Orthogonal Camera kinds.
-              OnOff | Flat            Choosing renderer: OnOff (only shows hit), Flat (flat renderer)
-              --w=<width>             Image width. [default: 1600]
-              --h=<height>            Image height. [default: 900]
-              --angle=<angle>         Rotation angle around z axis. [default: 10]
-              <output>                Path to the output HDRImage. [default: "examples/demo/demo.pfm"]""":
+                  persp | ortho          Camera kind: Perspective or Orthogonal
+                  OnOff | Flat | Path    Renderer kind: OnOff (only shows hit), Flat (flat renderer), Path (path tracer)
+
+                  --w=<width>            Image width. [default: 1600]
+                  --h=<height>           Image height. [default: 900]
+                  --angle=<angle>        Rotation angle around z axis. [default: 10]
+
+                  <output>               Path to the output HDRImage. [default: "examples/demo/demo.pfm"]
+""":
 
     var 
         demoCommand = "nim c -d:release -r examples/demo/main.nim"
@@ -59,3 +53,14 @@ task examples, "Run the PhotoNim examples":
   exec "nim c -d:release --hints:off -r examples/shapes/cylinder.nim"
   exec "nim c -d:release --hints:off -r examples/shapes/bvh.nim"
   exec "rm examples/shapes/triangle examples/shapes/box examples/shapes/cylinder examples/shapes/bvh"
+
+
+task test, "Run the `PhotoNim` tests":
+  withDir "tests":   
+    exec "nim c -d:release --hints:off -r geometry.nim"    
+    exec "nim c -d:release --hints:off -r hdrimage.nim"    
+    exec "nim c -d:release --hints:off -r camera.nim"
+    exec "nim c -d:release --hints:off -r scene.nim"
+    exec "nim c -d:release --hints:off -r pcg.nim"
+    exec "nim c -d:release --hints:off -r hitrecord.nim"
+    exec "rm geometry hdrimage camera scene pcg hitrecord"
