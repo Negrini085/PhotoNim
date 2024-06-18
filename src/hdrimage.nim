@@ -1,15 +1,13 @@
 import geometry
 
-from std/fenv import epsilon 
 from std/math import sum, pow, log10
-
-from std/strformat import fmt
+from std/fenv import epsilon 
 from std/sequtils import applyIt, mapIt
-
 from std/strutils import split, parseFloat, parseInt
 from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
 from nimPNG import savePNG24
+from std/strformat import fmt
 
 
 type 

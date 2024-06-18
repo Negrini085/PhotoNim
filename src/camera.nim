@@ -1,10 +1,11 @@
-import geometry, hdrimage, pcg, scene, hitrecord, material
+import geometry, pcg, hdrimage, material, scene, hitrecord
 
-from std/strutils import repeat
-from std/strformat import fmt
 from std/algorithm import sorted 
+from std/strutils import repeat
+from std/options import isSome, isNone, get
+from std/terminal import fgWhite, fgRed, fgYellow, fgGreen, eraseLine, styledWrite, resetAttributes
+from std/strformat import fmt
 
-import std/[terminal, options] 
 
 type
     RendererKind* = enum

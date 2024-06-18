@@ -1,8 +1,8 @@
-from std/strformat import fmt
-from std/fenv import epsilon
 from std/math import sqrt, sin, cos, arcsin, arccos, arctan2, degToRad, PI, copySign
-from std/sequtils import toSeq, concat, mapIt, foldl, foldr
+from std/fenv import epsilon
 from std/algorithm import reversed
+from std/sequtils import toSeq, concat, mapIt, foldl, foldr
+from std/strformat import fmt
 
 
 type 

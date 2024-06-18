@@ -1,14 +1,13 @@
 import geometry, scene
 
-import std/options
-from std/fenv import epsilon
+from std/options import Option, none, some, isNone, isSome, get
 from std/math import sqrt, arctan2, PI
-from std/sequtils import concat, foldl, mapIt, filterIt
+from std/fenv import epsilon
 from std/algorithm import sorted
+from std/sequtils import concat, foldl, mapIt, filterIt
 
 
 proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
-    # this is done in the same reference system
     let
         (min, max) = (aabb.min - ray.origin, aabb.max - ray.origin)
         txSpan = newInterval(min.x / ray.dir[0], max.x / ray.dir[0])

@@ -1,4 +1,4 @@
-import geometry, hdrimage, pcg
+import geometry, pcg, hdrimage
 
 from std/math import floor, sqrt, sin, cos, PI, degToRad
 

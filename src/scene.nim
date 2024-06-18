@@ -1,10 +1,10 @@
-import geometry, hdrimage, pcg, material
+import geometry, pcg, hdrimage, material
 
-from std/sequtils import concat, foldl, toSeq, filterIt, mapIt
-from std/strformat import fmt
 from std/math import sgn, floor, arccos, arctan2, PI
 from std/streams import newFileStream, close, atEnd, readLine 
+from std/sequtils import concat, foldl, toSeq, filterIt, mapIt
 from std/strutils import isEmptyOrWhiteSpace, rsplit, splitWhitespace, parseFloat, parseInt
+from std/strformat import fmt
 
 
 type
