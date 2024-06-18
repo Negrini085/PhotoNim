@@ -82,7 +82,6 @@ proc applyToneMap*(img: var HDRImage; alpha, gamma, avLum: float32) =
     img.pixels.applyIt(clamp(it * (alpha / lum)))
 
 
-
 proc readFloat(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32 = stream.readFloat32

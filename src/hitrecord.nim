@@ -179,7 +179,7 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         some hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
 
 
-proc getHitPayloads(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
+proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
     var hittedHandlers: seq[ShapeHandler]
     for handler in sceneTree.handlers:
         if checkIntersection(handler.getAABB, worldRay): hittedHandlers.add handler
