@@ -1,11 +1,10 @@
-let PhotoNimVersion* = "PhotoNim 0.1"
+let PhotoNimVersion* = "PhotoNim 0.2"
 
 import src/[geometry, pcg, hdrimage, scene, material, hitrecord, camera]
 export geometry, pcg, hdrimage, scene, material, hitrecord, camera
 
-from std/math import pow, exp
-from std/strutils import parseFloat, parseInt, split
-from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
+from std/strutils import parseFloat, parseInt
+from std/streams import newFileStream, close
 from std/strformat import fmt
 
 
