@@ -143,6 +143,7 @@ proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSid
     var rg = newPCG(rgState, rgSeq)
 
     let sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
+    echo sceneTree.aabb
 
     for y in 0..<camera.viewport.height:
         for x in 0..<camera.viewport.width:
