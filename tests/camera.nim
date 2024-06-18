@@ -76,8 +76,12 @@ suite "Camera":
 
     setup:
         var 
-            oCam = newOrthogonalCamera(viewport = (12, 10), newTranslation(newVec3f(-4, 0, 0)))
+            oCam = newOrthogonalCamera(
+                newFlatRenderer(),
+                viewport = (12, 10), newTranslation(newVec3f(-4, 0, 0))
+            )
             pCam = newPerspectiveCamera(
+                newFlatRenderer(),
                 viewport = (12, 10), distance = 5, 
                 newComposition(newRotX(45), newTranslation(newVec3f(-1, 0, 0)))
             )
@@ -92,6 +96,7 @@ suite "Camera":
 
         # OrthogonalCamera
         check ocam.kind == ckOrthogonal
+        check ocam.renderer.kind == rkFlat
         check ocam.viewport.width == 12
         check ocam.viewport.height == 10
         check areClose(oCam.aspect_ratio, 1.2)
@@ -101,6 +106,7 @@ suite "Camera":
 
         # Perspective Camera
         check pcam.kind == ckPerspective
+        check pcam.renderer.kind == rkFlat
         check pcam.viewport.width == 12
         check pcam.viewport.height == 10
         check areClose(pCam.aspect_ratio, 1.2)
