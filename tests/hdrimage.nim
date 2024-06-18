@@ -1,70 +1,5 @@
 import std/[unittest, streams, math, sequtils, endians, strutils]
-import ../src/[hdrimage, geometry]
-
-
-proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
-    ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
-    var tmp: float32 = stream.readFloat32
-    if endianness == littleEndian: littleEndian32(addr result, addr tmp)
-    else: bigEndian32(addr result, addr tmp)
-
-
-proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
-    ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
-    var tmp: float32
-    if endianness == littleEndian: littleEndian32(addr tmp, addr value)
-    else: bigEndian32(addr tmp, addr value)
-    stream.write(tmp)
-
-
-proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.raises: [CatchableError].} =
-    ## Procedure to read a PFM file
-    assert stream.readLine == "PF", "Invalid PFM magic specification: required 'PF'"
-    let sizes = stream.readLine.split(" ")
-    assert sizes.len == 2, "Invalid image size specification: required 'width height'."
-
-    var width, height: int
-    try:
-        width = parseInt(sizes[0])
-        height = parseInt(sizes[1])
-    except:
-        raise newException(CatchableError, "Invalid image size specification: required 'width height' as unsigned integers")
-    
-    try:
-        let endianFloat = parseFloat(stream.readLine)
-        if endianFloat == 1.0:
-            result.endian = bigEndian
-        elif endianFloat == -1.0:
-            result.endian = littleEndian
-        else:
-            raise newException(CatchableError, "")
-    except:
-        raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
-
-    result.img = newHDRImage(width, height)
-
-    var r, g, b: float32
-    for y in countdown(height - 1, 0):
-        for x in 0..<width:
-            r = readFloat(stream, result.endian)
-            g = readFloat(stream, result.endian)
-            b = readFloat(stream, result.endian)
-            result.img.setPixel(x, y, newColor(r, g, b))
-
-
-proc writePFM*(stream: FileStream, img: HDRImage, endian: Endianness = littleEndian) = 
-    ## Procedure to write a PFM file
-    stream.writeLine("PF")
-    stream.writeLine(img.width, " ", img.height)
-    stream.writeLine(if endian == littleEndian: -1.0 else: 1.0)
-
-    var c: Color
-    for y in countdown(img.height - 1, 0):
-        for x in 0..<img.width:
-            c = img.getPixel(x, y)
-            stream.writeFloat(c.r, endian)
-            stream.writeFloat(c.g, endian)
-            stream.writeFloat(c.b, endian)
+import PhotoNim
 
 
 #------------------------------------#
@@ -148,21 +83,15 @@ suite "HDRImage":
     setup:
         var 
             img = newHDRImage(4, 2)
-            pixMap = newPixelMap(2, 3)
         
     teardown:
         discard img
-        discard pixMap 
 
-
-    test "newPixelMap proc":
-        # Checking newPixelMap proc
-        check pixMap.len == 6
-        for i in 0..<pixMap.len: check areClose(pixMap[i], BLACK)
 
     test "newHDRImage proc":
         # Checking newHDRImage proc
         check img.width == 4 and img.height == 2
+        check img.pixels.len == 8
         for i in 0..<img.height*img.width: check img.pixels[i] == BLACK
     
 
@@ -245,28 +174,24 @@ suite "HDRImage streaming test":
     teardown:
         discard stream
 
-    test "write/readFloat proc":
-        stream = newFileStream("files/wpFloat.txt", fmWrite)
-
-        stream.writeFloat(float32(1.0), bigEndian)
-        stream.close
-
-        stream = openFileStream("files/wpFloat.txt", fmRead)
-        check stream.readFloat(bigEndian) == 1.0
-        stream.close
+#    test "write/readFloat proc":
+#        stream = newFileStream("files/wpFloat.txt", fmWrite)
+#        stream.writeFloat(float32(1.0), bigEndian)
+#
+#        stream = newFileStream("files/wpFloat.txt", fmRead)
+#        check stream.readFloat(bigEndian) == 1.0
+#        stream.close
     
 
-    test "write/parsePFM proc":       
+    test "savePFM/readPFM procs":       
         var img1 = newHDRImage(10, 15)
-        stream = newFileStream("files/wpPFM.txt", fmWrite)
         
         # Changing some pixel in order to test writePFM & readPFM procedures
         img1.setPixel(3, 4, newColor(1.0, 2.0, 3.0))
         img1.setPixel(6, 3, newColor(3.4, 17.8, 128.1))
         img1.setPixel(8, 9, newColor(35.1, 18.2, 255.0))
 
-        stream.writePFM(img1, bigEndian)
-        stream.close
+        img1.savePFM("files/wpPFM.txt", bigEndian)
         
         stream = openFileStream("files/wpPFM.txt", fmRead)
         let img2 = stream.readPFM.img
