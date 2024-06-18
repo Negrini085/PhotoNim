@@ -68,19 +68,16 @@ proc newSpecularBRDF*(pigment = newUniformPigment(WHITE), angle = 180.0): BRDF {
 
 
 proc scatterDir*(brdf: BRDF, hitDir: Vec3f, hitNormal: Normal, rg: var PCG): Vec3f =
-    # shape local
     case brdf.kind:
     of DiffuseBRDF:
         let 
-            (cos2, phi) = (rg.rand, 2 * PI * rg.rand)
+            (cos2, phi) = (rg.rand, 2 * PI.float32 * rg.rand)
             c = sqrt(cos2)
+            base = newONB(hitNormal)
         
-        return [float32 c * cos(phi), c * sin(phi), sqrt(1 - cos2)]
+        return c * cos(phi) * base[0] + c * sin(phi) * base[1] + sqrt(1 - cos2) * base[2]
 
     of SpecularBRDF: hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
 
 
 proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = (brdf: brdf, radiance: pigment)
-
-
-
