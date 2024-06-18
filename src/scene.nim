@@ -185,7 +185,7 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
     of skTriangularMesh: quit "This should not be used"
 
 
-proc nearestClusterCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =
+proc nearestCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =
     result = (index: 0, sqDist: Inf.float32)
 
     for i, center in clusterCentroids.pairs:
@@ -193,9 +193,9 @@ proc nearestClusterCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[i
         if result.sqDist > d: result = (i, d)
 
 proc updateCentroids(data: seq[Vec3f], clusters: seq[int], k: int): seq[Vec3f] =
-    var counts = newSeq[int](k)
-        
     result = newSeq[Vec3f](k)
+
+    var counts = newSeq[int](k)
     for i, point in data.pairs:
         result[clusters[i]] += point
         counts[clusters[i]] += 1
@@ -203,40 +203,50 @@ proc updateCentroids(data: seq[Vec3f], clusters: seq[int], k: int): seq[Vec3f] =
     for i in 0..<k:
         if counts[i] > 0: result[i] /= counts[i].float32
 
+proc kMeansPlusPlusInit(data: seq[Vec3f], k: int, rg: var PCG): seq[Vec3f] =
+    result = newSeq[Vec3f](k)
+
+    # Choose the first centroid randomly
+    result[0] = data[rg.rand(0.float32, data.len.float32 - 1).int]
+
+    var distances = newSeq[float32](data.len)
+    for i in 1..<k:
+        var totalDist: float32
+
+        # Calculate the distance to the nearest existing centroid
+        for j, point in data.pairs:
+            let nearest = nearestCentroid(point, result[0..<i])
+            distances[j] = nearest.sqDist
+            totalDist += distances[j]
+
+        # Choose a new centroid with weighted probability
+        let target = rg.rand(0.0, totalDist.float32)
+        var cumulativeDist: float32
+        for j, dist in distances.pairs:
+            cumulativeDist += dist
+            if cumulativeDist >= target:
+                result[i] = data[j]
+                break
+
 proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): tuple[clusters: seq[int], centroids: seq[Vec3f]] =
-    if data.len == k: return (countup(0, k - 1).toSeq, data)
+    if data.len == k:
+        return (countup(0, k - 1).toSeq, data)
 
-    var 
-        converged = false
-        tmpCentroids = newSeq[Vec3f](k)
-    
-    result.centroids = newSeq[Vec3f](k)
-    var a1, a2: int
+    result.centroids = kMeansPlusPlusInit(data, k, rg)
+    result.clusters = newSeq[int](data.len)
 
-    for i in 0..<k: 
-        if i == 0: 
-            a1 = rg.rand(0.float32, data.len.float32).int
-            while a1 >= data.len:
-                a1 = rg.rand(0.float32, data.len.float32).int
-
-            result.centroids[0] = data[a1]
-        else:
-            a2 = (rg.rand(0.float32, data.len.float32) - 1e-2).int
-            while (a1 == a2) or a2 >= data.len:
-                a2 = rg.rand(0.float32, data.len.float32 - 1e-2).int
-            result.centroids[1] = data[a2]
-
+    var converged = false
     while not converged:
-        result.clusters = data.mapIt(it.nearestClusterCentroid(result.centroids).index)
-        tmpCentroids = updateCentroids(data, result.clusters, k)
+        result.clusters = data.mapIt(it.nearestCentroid(result.centroids).index)
+        let newCentroids = updateCentroids(data, result.clusters, k)
 
         converged = true
         for i in 0..<k:
-            if not areClose(result.centroids[i], tmpCentroids[i], 1.0e-3):
+            if not areClose(result.centroids[i], newCentroids[i], 1.0e-3):
                 converged = false
                 break
 
-        result.centroids = tmpCentroids
+        result.centroids = newCentroids
 
 
 proc newBVHNode*(shapeHandlers: seq[ShapeHandler], depth, kClusters, maxShapesPerLeaf: int, rg: var PCG): SceneNode =
