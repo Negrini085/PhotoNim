@@ -94,7 +94,7 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
         let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
         if hitRecord.isSome:
             let
-                hit = hitRecord.get[0]
+                hit = hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
                 material = hit.handler.shape.material
                 hitPt = hit.ray.at(hit.t)
                 surfPt = hit.handler.shape.getUV(hitPt)
