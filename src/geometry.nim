@@ -30,7 +30,7 @@ proc newVec4f*(x, y, z, w: float32): Vec4f {.inline.} = newVec([x, y, z, w])
 proc `==`*[N: static[int], V](a, b: Vec[N, V]): bool =
     for i in 0..<N:
         if a[i] != b[i]: return false
-    true
+    return true
 
 proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
 proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 

@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/pcg
+import PhotoNim
 
 suite "PCG":
 
