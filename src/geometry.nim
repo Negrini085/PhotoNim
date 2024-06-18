@@ -654,10 +654,6 @@ proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
 proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
 
 
-type ReferenceSystem* = ref object 
-    origin*: Point3D
-    base*: Mat3f
-
 proc newONB*(normal: Normal): Mat3f = 
     let
         sign = copySign(1.0, normal.z)
@@ -665,55 +661,10 @@ proc newONB*(normal: Normal): Mat3f =
         b = a * normal.x * normal.y
         
     [
-        normal.Vec3f,
         newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
-        newVec3f(b, sign + a * normal.y * normal.y, -normal.y)
+        newVec3f(b, sign + a * normal.y * normal.y, -normal.y),
+        normal.Vec3f
     ]
-
-proc newRightHandedBase*(mat: Mat3f): Mat3f = 
-    if mat.det > 0: return mat
-    else: result[0] = mat[0]; result[1] = mat[2]; result[2] = mat[1]
-
-proc newReferenceSystem*(origin: Point3D, base = Mat3f.id): ReferenceSystem {.inline.} = 
-    ReferenceSystem(origin: origin, base: newRightHandedBase(base))
-
-proc newReferenceSystem*(origin: Point3D, rotation: Transformation): ReferenceSystem = 
-    result = newReferenceSystem(origin, [eX, eY, eZ])
-
-    case rotation.kind
-    of tkIdentity: discard
-
-    of tkRotation: 
-        result.base = newRightHandedBase([
-            apply(rotation, eX),
-            apply(rotation, eY),
-            apply(rotation, eZ)
-        ])
-        
-    of tkComposition: 
-        for rot in rotation.transformations: 
-            assert rot.kind == tkRotation: "No other transformation are accepted for the camera translation rather than tkRotation and tkComposition of tkRotation."
-            result.base = newRightHandedBase([
-                apply(rot, result.base[0]),
-                apply(rot, result.base[1]),
-                apply(rot, result.base[2])
-            ])
-
-    else: quit "No other transformation are accepted for the camera translation rather than tkRotation and tkComposition of tkRotation."
-
-proc newReferenceSystem*(origin: Point3D, normal: Normal): ReferenceSystem {.inline.} = 
-    newReferenceSystem(origin, newRightHandedBase(newONB(normal))) 
-
-
-proc project*[V](refSystem: ReferenceSystem, worldObj: V): V {.inline.} = 
-    when V is Point3D: dot(refSystem.base, (worldObj - refSystem.origin).Vec3f).Point3D
-    elif V is Vec3f: dot(refSystem.base, worldObj)
-
-proc getWorldObject*[V](refSystem: ReferenceSystem, localObj: V): V {.inline.} = 
-    when V is Point3D: refSystem.origin + dot(refSystem.base.T, localObj.Vec3f)
-    elif V is Vec3f: dot(refSystem.base.T, localObj)
-    else:  dot(refSystem.base.T, localObj.Vec3f).V
-
 
 
 type 
