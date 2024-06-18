@@ -1,9 +1,9 @@
 import geometry, pcg, hdrimage, camera, scene, hitrecord
 
 from std/strformat import fmt
-from std/times import cpuTime
 from std/strutils import repeat
 import std/[options, terminal]
+from std/algorithm import sorted
 
 
 type
@@ -45,18 +45,18 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleRay(renderer: Renderer; sceneTree: SceneNode, worldRay: Ray, bgColor: Color, rg: var PCG): Color =
+proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Color, rg: var PCG): Color =
     result = bgColor
     
     let hitLeafNodes = sceneTree.getHitLeafs(worldRay)
     if hitLeafNodes.isSome:
 
-        case renderer.kind
+        case camera.renderer.kind
         of rkOnOff:
             for node in hitLeafNodes.get:
                 for handler in node.handlers:
                     if handler.getHitPayload(worldRay.transform(handler.transformation.inverse)).isSome: 
-                        result = renderer.hitCol
+                        result = camera.renderer.hitCol
                         break
 
         of rkFlat:
@@ -71,83 +71,73 @@ proc sampleRay(renderer: Renderer; sceneTree: SceneNode, worldRay: Ray, bgColor:
                 result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
         of rkPathTracer: 
-            if (worldRay.depth > renderer.maxDepth): return BLACK
+            if (worldRay.depth > camera.renderer.maxDepth): return BLACK
 
             let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
             if hitRecord.isNone: return result
 
             let                
-                closestHit = hitRecord.get[0]
-
-                hitShape = closestHit.handler.shape
-                hitWorldTransformation = closestHit.handler.transformation
-                hitMaterial = hitShape.material
+                closestHit = hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
 
                 shapeLocalHitPt = closestHit.ray.at(closestHit.t)
-                shapeLocalHitNormal = hitShape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
+                shapeLocalHitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
                 
-                surfacePt = hitShape.getUV(shapeLocalHitPt)
+                surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
                 
-            result = hitMaterial.radiance.getColor(surfacePt)
+            result = closestHit.handler.shape.material.radiance.getColor(surfacePt)
 
-            var hitCol = hitMaterial.brdf.pigment.getColor(surfacePt)
-            if worldRay.depth >= renderer.rouletteLimit:
+            var hitCol = closestHit.handler.shape.material.brdf.pigment.getColor(surfacePt)
+            if worldRay.depth >= camera.renderer.rouletteLimit:
                 let q = max(0.05, 1 - hitCol.luminosity)
                 if rg.rand > q: hitCol /= (1.0 - q)
                 else: return result
 
             if hitCol.luminosity > 0.0:
-
                 var accumulatedRadiance = BLACK
-                for _ in 0..<renderer.numRays: 
+                for _ in 0..<camera.renderer.numRays: 
                     let scatteredRay = Ray(
-                        origin: apply(hitWorldTransformation, shapeLocalHitPt), 
-                        dir: apply(hitWorldTransformation, hitMaterial.brdf.scatterDir(closestHit.ray.dir, shapeLocalHitNormal, rg)),
+                        origin: apply(closestHit.handler.transformation, shapeLocalHitPt), 
+                        dir: apply(closestHit.handler.transformation, closestHit.handler.shape.material.brdf.scatterDir(closestHit.ray.dir, shapeLocalHitNormal, rg)),
                         tSpan: (1e-3.float32, Inf.float32),
                         depth: closestHit.ray.depth + 1
                     )
 
-                    accumulatedRadiance += hitCol * renderer.sampleRay(sceneTree, scatteredRay, bgColor, rg)
+                    accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg)
 
-                result += accumulatedRadiance / renderer.numRays.float32
+                result += accumulatedRadiance / camera.renderer.numRays.float32
     
     
 proc sample*(
-    renderer: Renderer; 
+    camera: Camera; 
     scene: Scene, 
     rgState, rgSeq: uint64, samplesPerSide: int = 1, 
     treeKind: SceneTreeKind = tkBinary, maxShapesPerLeaf: int = 4,
     displayProgress = true): HDRImage =
 
-    result = newHDRImage(renderer.camera.viewport.width, renderer.camera.viewport.height)
+    result = newHDRImage(camera.viewport.width, camera.viewport.height)
     var rg = newPCG(rgState, rgSeq)
 
-    let 
-        startTime = cpuTime()
-        sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
-    echo fmt"BVHTree builded in {cpuTime() - startTime}"
-    echo "AABB ", sceneTree.aabb
+    let sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
 
-    for y in 0..<renderer.camera.viewport.height:
-        for x in 0..<renderer.camera.viewport.width:
+    for y in 0..<camera.viewport.height:
+        for x in 0..<camera.viewport.width:
 
             var accumulatedColor = BLACK
             for u in 0..<samplesPerSide:
                 for v in 0..<samplesPerSide:
 
-                    let ray = renderer.camera.fireRay(
+                    let ray = camera.fireRay(
                         newPoint2D(
-                            (x.float32 + (u.float32 + rg.rand) / samplesPerSide.float32) / renderer.camera.viewport.width.float32,
-                            1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / renderer.camera.viewport.height.float32
+                            (x.float32 + (u.float32 + rg.rand) / samplesPerSide.float32) / camera.viewport.width.float32,
+                            1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / camera.viewport.height.float32
                         )
                     )
-                    # echo "fired new ray from the camera"
                     
-                    accumulatedColor += renderer.sampleRay(sceneTree, ray, scene.bgCol, rg)
+                    accumulatedColor += camera.sampleRay(sceneTree, ray, scene.bgCol, rg)
 
             result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
                             
-        if displayProgress: displayProgress(y + 1, renderer.camera.viewport.height)
+        if displayProgress: displayProgress(y + 1, camera.viewport.height)
         
     if displayProgress: stdout.eraseLine; stdout.resetAttributes
 

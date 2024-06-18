@@ -1,10 +1,11 @@
-import geometry, hdrimage, pcg, camera
+import geometry, hdrimage, pcg, material
 
 from std/sequtils import concat, foldl, toSeq, filterIt, mapIt
 from std/strformat import fmt
 from std/math import sgn, floor, arccos, arctan2, PI
 from std/streams import newFileStream, close, atEnd, readLine 
 from std/strutils import isEmptyOrWhiteSpace, rsplit, splitWhitespace, parseFloat, parseInt
+
 
 type
     SceneNodeKind* = enum nkBranch, nkLeaf
@@ -298,7 +299,7 @@ proc loadMesh*(source: string): tuple[nodes: seq[Point3D], edges: seq[int]] =
 proc loadTexture*(world: Scene, source: string, shape: Shape) = quit "to implement"
 
 
-proc newShapeHandler*(shape: Shape, transformation = Transformation.id): ShapeHandler {.inline.} =
+proc newShapeHandler(shape: Shape, transformation = Transformation.id): ShapeHandler {.inline.} =
     ShapeHandler(shape: shape, transformation: transformation)
 
 proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): ShapeHandler {.inline.} =   

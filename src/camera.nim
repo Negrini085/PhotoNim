@@ -1,45 +1,32 @@
-import geometry, hdrimage, pcg
+import geometry, hdrimage, pcg, scene, hitrecord, material
 
-from std/fenv import epsilon 
-from std/math import floor, sqrt, cos, sin, arccos, degToRad, PI
+from std/strutils import repeat
+from std/strformat import fmt
+from std/algorithm import sorted 
 
-
-type Ray* = ref object
-    origin*: Point3D
-    dir*: Vec3f
-    tSpan*: Interval[float32]
-    depth*: int
-
-proc newRay*(origin: Point3D, direction: Vec3f, depth: int = 0): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: depth)  
-
-proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
-    areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
-
-proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
-    case transformation.kind: 
-    of tkIdentity: ray
-    of tkTranslation: 
-        Ray(
-            origin: apply(transformation, ray.origin), 
-            dir: ray.dir, 
-            tSpan: ray.tSpan, depth: ray.depth
-        )
-    else: 
-        Ray(
-            origin: apply(transformation, ray.origin), 
-            dir: apply(transformation, ray.dir), 
-            tSpan: ray.tSpan, depth: ray.depth
-        )
-
-proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
-
+import std/[terminal, options] 
 
 type
+    RendererKind* = enum
+        rkOnOff, rkFlat, rkPathTracer
+
+    Renderer* = object
+        case kind*: RendererKind
+        of rkFlat: discard
+
+        of rkOnOff:
+            hitCol*: Color
+
+        of rkPathTracer:
+            numRays*, maxDepth*, rouletteLimit*: int
+
+
     CameraKind* = enum
         ckOrthogonal, ckPerspective
 
     Camera* = object
+        renderer*: Renderer
+
         viewport*: tuple[width, height: int]
         transformation*: Transformation
 
@@ -48,14 +35,22 @@ type
         of ckPerspective: 
             distance*: float32 
 
+
+
+proc newFlatRenderer*(): Renderer {.inline.} = Renderer(kind: rkFlat)
+proc newOnOffRenderer*(hitCol = WHITE): Renderer {.inline.} = Renderer(kind: rkOnOff, hitCol: hitCol)
+
+proc newPathTracer*(numRays = 25, maxDepth = 10, rouletteLimit = 3): Renderer {.inline.} =
+    Renderer(kind: rkPathTracer, numRays: numRays, maxDepth: maxDepth, rouletteLimit: rouletteLimit)
+
+
+proc newOrthogonalCamera*(renderer: Renderer, viewport: tuple[width, height: int], transformation = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckOrthogonal, renderer: renderer, viewport: viewport, transformation: transformation)
+
+proc newPerspectiveCamera*(renderer: Renderer, viewport: tuple[width, height: int], distance: float32, transformation = Transformation.id): Camera {.inline.} = 
+    Camera(kind: ckPerspective, renderer: renderer, viewport: viewport, transformation: transformation, distance: distance)
+
 proc aspectRatio*(camera: Camera): float32 {.inline.} = camera.viewport.width.float32 / camera.viewport.height.float32
-
-
-proc newOrthogonalCamera*(viewport: tuple[width, height: int], transformation = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckOrthogonal, viewport: viewport, transformation: transformation)
-
-proc newPerspectiveCamera*(viewport: tuple[width, height: int], distance: float32, transformation = Transformation.id): Camera {.inline.} = 
-    Camera(kind: ckPerspective, viewport: viewport, transformation: transformation, distance: distance)
 
 
 proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} = 
@@ -67,81 +62,106 @@ proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} =
     Ray(origin: origin, dir: dir, tSpan: (float32 1.0, float32 Inf), depth: 0).transform(camera.transformation)
 
 
-type
-    PigmentKind* = enum pkUniform, pkTexture, pkCheckered
 
-    Pigment* = object
-        case kind*: PigmentKind
-        of pkUniform: 
-            color*: Color
-        of pkTexture: 
-            texture*: ptr HDRImage
-        of pkCheckered:
-            grid*: tuple[c1, c2: Color, nRows, nCols: int]
+proc displayProgress(current, total: int) =
+    let
+        percentage = int(100 * current / total)
+        progress = 50 * current div total
+        bar = "[" & repeat("#", progress) & repeat("-", 50 - progress) & "]"
+        color = if percentage <= 50: fgYellow else: fgGreen
 
-    BRDFKind* = enum DiffuseBRDF, SpecularBRDF
-
-    BRDF* = object
-        pigment*: Pigment
-
-        case kind*: BRDFKind
-        of DiffuseBRDF:
-            reflectance*: float32
-        of SpecularBRDF:
-            thresholdAngle*: float32
-
-    Material* = tuple[brdf: BRDF, radiance: Pigment]
+    stdout.eraseLine
+    stdout.styledWrite(fgWhite, "Rendering progress: ", fgRed, "0% ", fgWhite, bar, color, fmt" {percentage}%")
+    stdout.flushFile
 
 
-proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
-proc newTexturePigment*(texture: HDRImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: addr texture)
-proc newCheckeredPigment*(color1, color2: Color, nRows, nCols: int): Pigment {.inline.} = Pigment(kind: pkCheckered, grid: (color1, color2, nRows, nCols))
+proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Color, rg: var PCG): Color =
+    result = bgColor
+    
+    let hitLeafNodes = sceneTree.getHitLeafs(worldRay)
+    if hitLeafNodes.isSome:
 
-proc getColor*(pigment: Pigment; uv: Point2D): Color =
-    case pigment.kind: 
-    of pkUniform: pigment.color
+        case camera.renderer.kind
+        of rkOnOff:
+            for node in hitLeafNodes.get:
+                for handler in node.handlers:
+                    if handler.getHitPayload(worldRay.transform(handler.transformation.inverse)).isSome: 
+                        result = camera.renderer.hitCol
+                        break
 
-    of pkTexture: 
-        var (col, row) = (floor(uv.u * pigment.texture.width.float32).int, floor(uv.v * pigment.texture.height.float32).int)
-        if col >= pigment.texture.width: col = pigment.texture.width - 1
-        if row >= pigment.texture.height: row = pigment.texture.height - 1
+        of rkFlat:
+            let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
+            if hitRecord.isSome:
+                let
+                    hit = hitRecord.get[0]
+                    material = hit.handler.shape.material
+                    hitPt = hit.ray.at(hit.t)
+                    surfPt = hit.handler.shape.getUV(hitPt)
 
-        return pigment.texture[].getPixel(col, row)
+                result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
-    of pkCheckered:
-        let (col, row) = (floor(uv.u * pigment.grid.nCols.float32).int, floor(uv.v * pigment.grid.nRows.float32).int)
-        return (if (col mod 2) == (row mod 2): pigment.grid.c1 else: pigment.grid.c2)
+        of rkPathTracer: 
+            if (worldRay.depth > camera.renderer.maxDepth): return BLACK
 
+            let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
+            if hitRecord.isNone: return result
 
-proc newDiffuseBRDF*(pigment = newUniformPigment(WHITE), reflectance = 1.0): BRDF {.inline.} =
-    BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
+            let                
+                closestHit = hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
 
-proc newSpecularBRDF*(pigment = newUniformPigment(WHITE), angle = 180.0): BRDF {.inline.} =
-    BRDF(kind: SpecularBRDF, pigment: pigment, thresholdAngle: (0.1 * degToRad(angle)).float32) 
+                shapeLocalHitPt = closestHit.ray.at(closestHit.t)
+                shapeLocalHitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
+                
+                surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
+                
+            result = closestHit.handler.shape.material.radiance.getColor(surfacePt)
 
+            var hitCol = closestHit.handler.shape.material.brdf.pigment.getColor(surfacePt)
+            if worldRay.depth >= camera.renderer.rouletteLimit:
+                let q = max(0.05, 1 - hitCol.luminosity)
+                if rg.rand > q: hitCol /= (1.0 - q)
+                else: return result
 
-# proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Color {.inline.} =
-#     case brdf.kind: 
-#     of DiffuseBRDF: 
-#         return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
+            if hitCol.luminosity > 0.0:
+                var accumulatedRadiance = BLACK
+                for _ in 0..<camera.renderer.numRays: 
+                    let scatteredRay = Ray(
+                        origin: apply(closestHit.handler.transformation, shapeLocalHitPt), 
+                        dir: apply(closestHit.handler.transformation, closestHit.handler.shape.material.brdf.scatterDir(closestHit.ray.dir, shapeLocalHitNormal, rg)),
+                        tSpan: (1e-3.float32, Inf.float32),
+                        depth: closestHit.ray.depth + 1
+                    )
 
-#     of SpecularBRDF: 
-#         if abs(arccos(dot(normal.Vec3f, in_dir.normalize)) - arccos(dot(normal.Vec3f, out_dir.normalize))) <= brdf.threshold_angle: 
-#             return brdf.pigment.getColor(uv)
-        # else: return BLACK
+                    accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg)
 
+                result += accumulatedRadiance / camera.renderer.numRays.float32
+    
+    
+proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSide: int = 1, treeKind: SceneTreeKind = tkBinary, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
 
-proc scatterDir*(brdf: BRDF, hitDir: Vec3f, hitNormal: Normal, rg: var PCG): Vec3f =
-    # shape local
-    case brdf.kind:
-    of DiffuseBRDF:
-        let 
-            (cos2, phi) = (rg.rand, 2 * PI * rg.rand)
-            c = sqrt(cos2)
+    result = newHDRImage(camera.viewport.width, camera.viewport.height)
+    var rg = newPCG(rgState, rgSeq)
+
+    let sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
+
+    for y in 0..<camera.viewport.height:
+        for x in 0..<camera.viewport.width:
+
+            var accumulatedColor = BLACK
+            for u in 0..<samplesPerSide:
+                for v in 0..<samplesPerSide:
+
+                    let ray = camera.fireRay(
+                        newPoint2D(
+                            (x.float32 + (u.float32 + rg.rand) / samplesPerSide.float32) / camera.viewport.width.float32,
+                            1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / camera.viewport.height.float32
+                        )
+                    )
+                    
+                    accumulatedColor += camera.sampleRay(sceneTree, ray, scene.bgCol, rg)
+
+            result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
+                            
+        if displayProgress: displayProgress(y + 1, camera.viewport.height)
         
-        return [float32 c * cos(phi), c * sin(phi), sqrt(1 - cos2)]
-
-    of SpecularBRDF: hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
-
-
-proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = (brdf: brdf, radiance: pigment)
+    if displayProgress: stdout.eraseLine; stdout.resetAttributes
