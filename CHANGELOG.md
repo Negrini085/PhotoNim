@@ -6,12 +6,22 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(sampleRay)* RkFlat was not sorting the HitRecord.
+- *(sampleRay)* Early return statement using isNone instead of isSome produce better indentation for the camera.rendere.kind case.
+- ScatterDir for a DiffuseBRDF now project the dir to the ONB created from the hitNormal in the shape reference system.
 - *(CI)* Use Nim 2.0.0 for testing.
 
 ### 🚜 Refactor
 
+- *(pfm2png)* Pfm2png now uses readPFM and savePNG procs.
+- Ordering the imports in the src directory
+- Removed ReferenceSystem from previous implementation.
 - Removed renderer.nim
 - *(GeometryDocs)* Change reference system docs
+
+### 📚 Documentation
+
+- *(demo)* Nimble demo task updated documentation is visible running `nimble tasks`.
 
 ### 🧪 Testing
 
