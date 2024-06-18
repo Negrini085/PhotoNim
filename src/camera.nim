@@ -80,64 +80,64 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
     result = bgColor
     
     let hitLeafNodes = sceneTree.getHitLeafs(worldRay)
-    if hitLeafNodes.isSome:
+    if hitLeafNodes.isNone: return result
 
-        case camera.renderer.kind
-        of rkOnOff:
-            for node in hitLeafNodes.get:
-                for handler in node.handlers:
-                    if handler.getHitPayload(worldRay.transform(handler.transformation.inverse)).isSome: 
-                        result = camera.renderer.hitCol
-                        break
+    case camera.renderer.kind
+    of rkOnOff:
+        for node in hitLeafNodes.get:
+            for handler in node.handlers:
+                if handler.getHitPayload(worldRay.transform(handler.transformation.inverse)).isSome: 
+                    result = camera.renderer.hitCol
+                    break
 
-        of rkFlat:
-            let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
-            if hitRecord.isSome:
-                let
-                    hit = hitRecord.get[0]
-                    material = hit.handler.shape.material
-                    hitPt = hit.ray.at(hit.t)
-                    surfPt = hit.handler.shape.getUV(hitPt)
+    of rkFlat:
+        let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
+        if hitRecord.isSome:
+            let
+                hit = hitRecord.get[0]
+                material = hit.handler.shape.material
+                hitPt = hit.ray.at(hit.t)
+                surfPt = hit.handler.shape.getUV(hitPt)
 
-                result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
+            result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
 
-        of rkPathTracer: 
-            if (worldRay.depth > camera.renderer.maxDepth): return BLACK
+    of rkPathTracer: 
+        if (worldRay.depth > camera.renderer.maxDepth): return BLACK
 
-            let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
-            if hitRecord.isNone: return result
+        let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
+        if hitRecord.isNone: return result
 
-            let                
-                closestHit = hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
+        let                
+            closestHit = hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
 
-                shapeLocalHitPt = closestHit.ray.at(closestHit.t)
-                shapeLocalHitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
-                
-                surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
-                
-            result = closestHit.handler.shape.material.radiance.getColor(surfacePt)
+            shapeLocalHitPt = closestHit.ray.at(closestHit.t)
+            shapeLocalHitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
+            
+            surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
+            
+        result = closestHit.handler.shape.material.radiance.getColor(surfacePt)
 
-            var hitCol = closestHit.handler.shape.material.brdf.pigment.getColor(surfacePt)
-            if worldRay.depth >= camera.renderer.rouletteLimit:
-                let q = max(0.05, 1 - hitCol.luminosity)
-                if rg.rand > q: hitCol /= (1.0 - q)
-                else: return result
+        var hitCol = closestHit.handler.shape.material.brdf.pigment.getColor(surfacePt)
+        if worldRay.depth >= camera.renderer.rouletteLimit:
+            let q = max(0.05, 1 - hitCol.luminosity)
+            if rg.rand > q: hitCol /= (1.0 - q)
+            else: return result
 
-            if hitCol.luminosity > 0.0:
-                var accumulatedRadiance = BLACK
-                for _ in 0..<camera.renderer.numRays: 
-                    let scatteredRay = Ray(
-                        origin: apply(closestHit.handler.transformation, shapeLocalHitPt), 
-                        dir: apply(closestHit.handler.transformation, closestHit.handler.shape.material.brdf.scatterDir(closestHit.ray.dir, shapeLocalHitNormal, rg)),
-                        tSpan: (1e-3.float32, Inf.float32),
-                        depth: closestHit.ray.depth + 1
-                    )
+        if hitCol.luminosity > 0.0:
+            var accumulatedRadiance = BLACK
+            for _ in 0..<camera.renderer.numRays: 
+                let scatteredRay = Ray(
+                    origin: apply(closestHit.handler.transformation, shapeLocalHitPt), 
+                    dir: apply(closestHit.handler.transformation, closestHit.handler.shape.material.brdf.scatterDir(closestHit.ray.dir, shapeLocalHitNormal, rg)),
+                    tSpan: (1e-3.float32, Inf.float32),
+                    depth: closestHit.ray.depth + 1
+                )
 
-                    accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg)
+                accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg)
 
-                result += accumulatedRadiance / camera.renderer.numRays.float32
-    
-    
+            result += accumulatedRadiance / camera.renderer.numRays.float32
+
+
 proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSide: int = 1, treeKind: SceneTreeKind = tkBinary, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
 
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
