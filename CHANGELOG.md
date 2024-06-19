@@ -28,6 +28,10 @@ All notable changes to this project will be documented in this file.
 
 - *(Geometry)* Small refactor
 
+### Example
+
+- *(Mesh)* Add some fun mesh examples
+
 ## [0.2.0] - 2024-06-08
 
 ### 🚀 Features
