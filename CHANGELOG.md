@@ -26,6 +26,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(PhotoNim)* Now passing
 - *(Geometry)* Small refactor
 
 ### Example
