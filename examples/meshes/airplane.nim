@@ -16,10 +16,9 @@ let
     )
 
     comp2 = newScaling(3e-3)
-
     airplane = newMesh("assets/meshes/airplane.obj", transformation = comp2, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
+   
     scene = newScene(@[airplane])
-
     image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
 
 
