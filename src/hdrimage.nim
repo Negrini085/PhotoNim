@@ -147,7 +147,7 @@ proc savePFM*(img: HDRImage; pfmOut: string, endian: Endianness = littleEndian) 
             stream.writeFloat(c.b, endian)
 
 
-proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float32 = 0.0) {.raises: [CatchableError].} =
+proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float32 = 0.0) =
     let 
         toneMappedImg = img.toneMap(alpha, gamma, avLum)
         gFactor = 1 / gamma
@@ -164,4 +164,4 @@ proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float
             pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
 
     let successStatus = savePNG24(pngOut, pixelsString, img.width, img.height)
-    if not successStatus: raise newException(CatchableError, fmt"Error! An error occured while saving an HDRImage to {pngOut}")
+    if not successStatus: quit fmt"Error! An error occured while saving an HDRImage to {pngOut}"
