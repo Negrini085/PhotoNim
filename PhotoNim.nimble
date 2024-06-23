@@ -16,7 +16,7 @@ task build, "Build the `PhotoNim` executable\n":
   exec "nim c -d:release PhotoNim.nim"
 
 
-task demo, """Run the `PhotoNim` demo!
+task demo, """Run the `PhotoNim` demo
 
           Usage: 
                   nimble demo (persp | ortho) (OnOff | Flat | Path) <angle> [<output>] [<width> <height>]
@@ -45,14 +45,7 @@ task demoAnim, "Run the `PhotoNim` demo animation":
   exec "open examples/demo/demo.mp4"
 
 
-task earth, "Run the Earth animation!":
-  exec "nim c -d:release --hints:off examples/earth/main.nim"
-  exec "seq 0 359 | parallel -j 8 --eta './examples/earth/main {1}'"
-  exec "ffmpeg -framerate 30 -i examples/earth/frames/img%03d.png -c:v libx264 -pix_fmt yuv420p examples/earth/earth.mp4 -y"
-  exec "open examples/earth/earth.mp4"
-
-
-task examples, "Run the PhotoNim examples":
+task examples, "Run the `PhotoNim` examples":
   exec "nim c -d:release --hints:off -r examples/shapes/triangle.nim"
   exec "nim c -d:release --hints:off -r examples/shapes/box.nim"
   exec "nim c -d:release --hints:off -r examples/shapes/cylinder.nim"
@@ -69,3 +62,10 @@ task test, "Run the `PhotoNim` tests":
     exec "nim c -d:release --hints:off -r pcg.nim"
     exec "nim c -d:release --hints:off -r hitrecord.nim"
     exec "rm geometry hdrimage camera scene pcg hitrecord"
+
+
+task earth, "Run the Earth animation":
+  exec "nim c -d:release --hints:off examples/earth/main.nim"
+  exec "seq 0 359 | parallel -j 8 --eta './examples/earth/main {1}'"
+  exec "ffmpeg -framerate 30 -i examples/earth/frames/img%03d.png -c:v libx264 -pix_fmt yuv420p examples/earth/earth.mp4 -y"
+  exec "open examples/earth/earth.mp4"

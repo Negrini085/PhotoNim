@@ -55,14 +55,6 @@ Other dependencies are used to generate animations:
 - [FFmpeg](https://ffmpeg.org/download.html)
 
 
-## Verifying the Installation
-After installing PhotoNim and its dependencies, you can verify the installation by running PhotoNim demo example using Nimble:
-```sh
-nimble demo
-```
-
-Other tasks are available and a complete list 
-
 # Usage
 
 ## PhotoNim CLI
@@ -146,19 +138,61 @@ You can also use `help` without passing any command to see displayed the full Ph
 (this works in the same ways as passing `(-h | --help)` flags).
 
 
-## Run PhotoNim interactive demo
-By using demo mode, you can produce a complex figure of different spheres located in different spatial positions. You can specify image resolution and at which angle you want to see the scenery: in order to produce the following gif you just have to type
-```bash
-for angle in $(seq 0 359); do
-    # Angle with three digits, e.g. angle="1" → angleNNN="001"
-    angleNNN=$(printf "%03d" $angle)
-    ./PhotoNim demo perspective img$angleNNN.png --angle $angle
-done
-
-ffmpeg -r 25 -f image2 -s 1600x1000 -i img%03d.png \
-    -vcodec libx264 -pix_fmt yuv420p \
-    spheres-perspective.mp4
+## PhotoNim X Nimble tasks
+You can try PhotoNim using Nimble by executing a specific nimble task from this list:
+```sh
+nimble tasks
 ```
+```sh
+build     Build the `PhotoNim` executable
+
+demo      Run the `PhotoNim` demo
+
+          Usage: 
+                  nimble demo (persp | ortho) (OnOff | Flat | Path) <angle> [<output>] [<width> <height>]
+          Options:
+                  persp | ortho          Camera kind: Perspective or Orthogonal
+                  OnOff | Flat | Path    Renderer kind: OnOff (only shows hit), Flat (flat renderer), Path (path tracer)
+
+                  <angle>                Rotation angle around z axis. [default: 10]
+                  <output>               Path to the LDRImage output. [default: "examples/demo/demo.png"]
+                  <width>                Image width. [default: 900]
+                  <height>               Image height. [default: 900]
+
+demoAnim  Run the `PhotoNim` demo animation
+examples  Run the `PhotoNim` examples
+test      Run the `PhotoNim` tests
+earth     Run the Earth animation
+```
+
+### demo task
+<table style="width:100%; border-collapse: collapse; text-align:center;">
+  <thead>
+    <tr>
+      <th style="text-align:center;">OnOff</th>
+      <th style="text-align:center;">Flat</th>
+      <th style="text-align:center;">Path</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="assets/images/renderer/onoff.png" alt="OnOff"></td>
+      <td><img src="assets/images/renderer/flat.png" alt="Flat"></td>
+      <td><img src="assets/images/renderer/path.png" alt="Path"></td>
+    </tr>
+  </tbody>
+</table>
+
+### demoAnim task
+<div style="text-align: center;">
+  <img src="assets/animations/demo.gif" alt="Demo animation">
+</div>
+
+### earth task
+<div style="text-align: center;">
+  <img src="assets/animations/earth.gif" alt="Flying over the Globe">
+</div>
+
 
 [](https://github.com/Negrini085/PhotoNim/assets/139368862/6eb06aeb-eba3-4343-ac1f-96366d666894)
 
