@@ -16,11 +16,9 @@ let
     )
 
     comp2 = newScaling(0.1)
-    sphere = newSphere(Point3D(- 10.0.float32 * eX + eY + eZ), 0.5, newMaterial(newDiffuseBRDF(), newUniformPigment(RED)))
-
     koenigsegg = newMesh("assets/meshes/koenigsegg.obj", transformation = comp2, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
-    scene = newScene(@[koenigsegg, sphere])
-
+    
+    scene = newScene(@[koenigsegg])
     image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
 
 

@@ -15,11 +15,10 @@ let
         newComposition(newRotX(-90), newTranslation(newPoint3D(-5, 1.5, 0.5)))
     )
 
-    comp2 = newScaling(0.05)
-
-    dragon = newMesh("assets/meshes/dragon.obj", transformation = comp2, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
+    comp = newScaling(0.05)
+    dragon = newMesh("assets/meshes/dragon.obj", transformation = comp, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
+    
     scene = newScene(@[dragon])
-
     image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
 
 
