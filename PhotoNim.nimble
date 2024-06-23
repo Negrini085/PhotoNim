@@ -51,11 +51,11 @@ task demoAnim, "Run the `PhotoNim` demo animation":
   exec "open examples/demo/demo.mp4"
 
 
-# task earth, "Run the Earth animation!":
-#   exec "nim c -d:release --hints:off examples/earth/main.nim"
-#   exec "seq 0 359 | parallel -j 8 --eta './examples/earth/main {1}'"
-#   exec "ffmpeg -framerate 30 -i examples/earth/frames/img%03d.png -c:v libx264 -pix_fmt yuv420p examples/earth/earth.mp4 -y"
-#   exec "open examples/earth/earth.mp4"
+task earth, "Run the Earth animation!":
+  exec "nim c -d:release --hints:off examples/earth/main.nim"
+  exec "seq 0 359 | parallel -j 8 --eta './examples/earth/main {1}'"
+  exec "ffmpeg -framerate 30 -i examples/earth/frames/img%03d.png -c:v libx264 -pix_fmt yuv420p examples/earth/earth.mp4 -y"
+  exec "open examples/earth/earth.mp4"
 
 
 task examples, "Run the PhotoNim examples":
