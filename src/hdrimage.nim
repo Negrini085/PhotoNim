@@ -151,16 +151,15 @@ proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float
         gFactor = 1 / gamma
 
     var 
-        pixelsString = newString(3 * img.pixels.len)
+        pixelsString = newStringOfCap(3 * img.pixels.len)
         c: Color
-        i: int
 
     for y in 0..<img.height:
         for x in 0..<img.width:
             c = toneMappedImg.getPixel(x, y)
-            pixelsString[i] = (255 * pow(c.r, gFactor)).char; i += 1
-            pixelsString[i] = (255 * pow(c.g, gFactor)).char; i += 1
-            pixelsString[i] = (255 * pow(c.b, gFactor)).char; i += 1
+            pixelsString.add (255 * pow(c.r, gFactor)).char
+            pixelsString.add (255 * pow(c.g, gFactor)).char
+            pixelsString.add (255 * pow(c.b, gFactor)).char
 
     let successStatus = savePNG24(pngOut, pixelsString, img.width, img.height)
     if not successStatus: quit fmt"Error! An error occured while saving an HDRImage to {pngOut}"
