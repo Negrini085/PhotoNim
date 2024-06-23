@@ -4,8 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(Earth)* Earth task with nimble.
+
 ### 🐛 Bug Fixes
 
+- *(Mesh)* Fix mesh examples, now correctly working
+- *(HDRImage)* ToneMap and applyToneMap proc fixed #57
 - *(sampleRay)* RkFlat was not sorting the HitRecord.
 - *(sampleRay)* Early return statement using isNone instead of isSome produce better indentation for the camera.rendere.kind case.
 - ScatterDir for a DiffuseBRDF now project the dir to the ONB created from the hitNormal in the shape reference system.
@@ -13,6 +19,11 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(HDRImage)* SavePNG now uses newStringOfCap (#52)
+- Demo and demoAnim nimble tasks
+- *(assets)* Now assets contains images, meshes and textures
+- *(savePNG)* Avoid raising exceptions only to quit with them.
+- Assets folder
 - *(PhotoNim)* Removed unused imports and updated PhotoNim version to 0.2 (very soon 0.3 release)
 - *(pfm2png)* Pfm2png now uses readPFM and savePNG procs.
 - Ordering the imports in the src directory
@@ -22,10 +33,13 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- *(README)* Add link to documentation site.
+- *(README)* Updated README.md with nimble tasks.
 - *(demo)* Nimble demo task updated documentation is visible running `nimble tasks`.
 
 ### 🧪 Testing
 
+- *(PhotoNim)* Now passing
 - *(PhotoNim)* Now passing
 - *(Geometry)* Small refactor
 
