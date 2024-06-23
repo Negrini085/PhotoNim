@@ -41,7 +41,7 @@ type
 proc newFlatRenderer*(): Renderer {.inline.} = Renderer(kind: rkFlat)
 proc newOnOffRenderer*(hitCol = WHITE): Renderer {.inline.} = Renderer(kind: rkOnOff, hitCol: hitCol)
 
-proc newPathTracer*(numRays = 25, maxDepth = 10, rouletteLimit = 3): Renderer {.inline.} =
+proc newPathTracer*(numRays: SomeInteger = 25, maxDepth: SomeInteger = 10, rouletteLimit: SomeInteger = 3): Renderer {.inline.} =
     Renderer(kind: rkPathTracer, numRays: numRays, maxDepth: maxDepth, rouletteLimit: rouletteLimit)
 
 
