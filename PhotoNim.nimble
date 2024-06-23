@@ -20,20 +20,14 @@ task demo, """Run the `PhotoNim` demo!
 
           Usage: 
                   nimble demo (persp | ortho) (OnOff | Flat | Path) <angle> [<output>] [<width> <height>]
-
           Options:
-
                   persp | ortho          Camera kind: Perspective or Orthogonal
-
                   OnOff | Flat | Path    Renderer kind: OnOff (only shows hit), Flat (flat renderer), Path (path tracer)
 
                   <angle>                Rotation angle around z axis. [default: 10]
-
                   <output>               Path to the LDRImage output. [default: "examples/demo/demo.png"]
-                  
                   <width>                Image width. [default: 900]
                   <height>               Image height. [default: 900]
-
 """:
 
     var 
