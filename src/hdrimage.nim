@@ -70,12 +70,12 @@ proc avLuminosity*(img: HDRImage; eps = epsilon(float32)): float32 {.inline.} =
 proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
 proc clamp(x: Color): Color {.inline.} = newColor(clamp(x.r), clamp(x.g), clamp(x.b))
 
-proc toneMap*(img: HDRImage; alpha, gamma, avLum: float32): HDRImage =
+proc toneMap*(img: HDRImage; alpha, avLum: float32): HDRImage =
     result = newHDRImage(img.width, img.height) 
     let lum = if avLum == 0.0: img.avLuminosity else: avLum
     result.pixels = img.pixels.mapIt(clamp(it * (alpha / lum)))
 
-proc applyToneMap*(img: var HDRImage; alpha, gamma, avLum: float32) =
+proc applyToneMap*(img: var HDRImage; alpha, avLum: float32) =
     let lum = if avLum == 0.0: img.avLuminosity else: avLum
     img.pixels.applyIt(clamp(it * (alpha / lum)))
 
@@ -149,7 +149,7 @@ proc savePFM*(img: HDRImage; pfmOut: string, endian: Endianness = littleEndian) 
 
 proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float32 = 0.0) =
     let 
-        toneMappedImg = img.toneMap(alpha, gamma, avLum)
+        toneMappedImg = img.toneMap(alpha, avLum)
         gFactor = 1 / gamma
 
     var 
