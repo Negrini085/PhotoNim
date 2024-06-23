@@ -1,7 +1,8 @@
 import geometry, pcg, hdrimage
 
 from std/math import floor, sqrt, sin, cos, PI, degToRad
-
+from std/streams import newFileStream, close
+from std/strformat import fmt
 
 type
     PigmentKind* = enum pkUniform, pkTexture, pkCheckered
@@ -11,7 +12,7 @@ type
         of pkUniform: 
             color*: Color
         of pkTexture: 
-            texture*: ptr HDRImage
+            texture*: HDRImage
         of pkCheckered:
             grid*: tuple[c1, c2: Color, nRows, nCols: int]
 
@@ -30,7 +31,19 @@ type
 
 
 proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
-proc newTexturePigment*(texture: HDRImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: addr texture)
+
+proc newTexturePigment*(texture: HDRImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: texture)
+
+proc newTexturePigment*(textureSrc: string): Pigment {.inline.} = 
+    var stream = newFileStream(textureSrc)
+    let textureImage =
+        try: stream.readPFM.img 
+        except: quit fmt"Error! An error happend while trying to read texture {textureSrc}!" 
+        finally: stream.close
+
+    Pigment(kind: pkTexture, texture: textureImage)
+
+
 proc newCheckeredPigment*(color1, color2: Color, nRows, nCols: int): Pigment {.inline.} = Pigment(kind: pkCheckered, grid: (color1, color2, nRows, nCols))
 
 proc getColor*(pigment: Pigment; uv: Point2D): Color =
@@ -42,7 +55,7 @@ proc getColor*(pigment: Pigment; uv: Point2D): Color =
         if col >= pigment.texture.width: col = pigment.texture.width - 1
         if row >= pigment.texture.height: row = pigment.texture.height - 1
 
-        return pigment.texture[].getPixel(col, row)
+        return pigment.texture.getPixel(col, row)
 
     of pkCheckered:
         let (col, row) = (floor(uv.u * pigment.grid.nCols.float32).int, floor(uv.v * pigment.grid.nRows.float32).int)

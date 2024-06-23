@@ -578,5 +578,3 @@ suite "OrthoNormal Basis":
             check areClose(onb[0].norm, 1, eps = 1e-6)
             check areClose(onb[1].norm, 1, eps = 1e-6)
             check areClose(onb[2].norm, 1, eps = 1e-6)
-
-
