@@ -138,7 +138,7 @@ You can also use `help` without passing any command to see displayed the full Ph
 (this works in the same ways as passing `(-h | --help)` flags).
 
 
-## PhotoNim X Nimble tasks
+## PhotoNim x Nimble tasks
 You can try PhotoNim using Nimble by executing a specific nimble task from this list:
 ```sh
 nimble tasks
@@ -165,13 +165,12 @@ test      Run the `PhotoNim` tests
 earth     Run the Earth animation
 ```
 
-### demo task
 <table style="width:100%; border-collapse: collapse; text-align:center;">
   <thead>
     <tr>
-      <th style="text-align:center;">OnOff</th>
-      <th style="text-align:center;">Flat</th>
-      <th style="text-align:center;">Path</th>
+      <th style="text-align:center;">demo persp OnOff 10</th>
+      <th style="text-align:center;">demo persp Flat 10</th>
+      <th style="text-align:center;">demo persp Path 10</th>
     </tr>
   </thead>
   <tbody>
@@ -183,18 +182,20 @@ earth     Run the Earth animation
   </tbody>
 </table>
 
-### demoAnim task
-<div style="text-align: center;">
-  <img src="assets/animations/demo.gif" alt="Demo animation">
-</div>
-
-### earth task
-<div style="text-align: center;">
-  <img src="assets/animations/earth.gif" alt="Flying over the Globe">
-</div>
-
-
-[](https://github.com/Negrini085/PhotoNim/assets/139368862/6eb06aeb-eba3-4343-ac1f-96366d666894)
+<table style="width:100%; border-collapse: collapse; text-align:center;">
+  <thead>
+    <tr>
+      <th style="text-align:center;">demoAnim</th>
+      <th style="text-align:center;">earth</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="assets/animations/demo.gif" alt="Demo animation"></td>
+      <td><img src="assets/animations/earth.gif" alt="Flying over the Globe"></td>
+    </tr>
+  </tbody>
+</table>
 
 # Contributing
 If you want to contribute to the project, you can open a [pull requests](https://github.com/Negrini085/PhotoNim/pulls) or use the [issue tracker](https://github.com/Negrini085/PhotoNim/issues/) to suggest any code implementations or report bugs.
