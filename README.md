@@ -56,6 +56,7 @@ Other dependencies are used to generate animations:
 
 
 # Usage
+Here, you'll find a brief overview and basic examples to get you started. For a deeper dive into implementation details and more advanced usage scenarios, we recommend visiting the [documentation site](https://negrini085.github.io/PhotoNim/).
 
 ## PhotoNim CLI
 To use PhotoNim CLI you will first need to build the project executable and you can do it from the root directory in different ways:
@@ -79,7 +80,7 @@ Usage:
     ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
 ```
 
-### The `render` command
+<!-- ### The `render` command -->
 
 ### The `pfm2png` command
 Using the `pfm2png` command it is possible to convert an High Dynamic Range (HDR) image stored in a [PFM](https://www.pauldebevec.com/Research/HDR/PFM/) (Portable Float Map) format to an Low Dynamic Range (LDR) in the widely-used [PNG](https://en.wikipedia.org/wiki/PNG) (Portable Network Graphics) format. This conversion process involves the application of a tone mapping algorithm, a technique used to compresses the dynamic range while preserving important visual details. This process makes the HDR image viewable on standard displays without losing the essence of its high dynamic range.
@@ -168,9 +169,9 @@ earth     Run the Earth animation
 <table style="width:100%; border-collapse: collapse; text-align:center;">
   <thead>
     <tr>
-      <th style="text-align:center;">demo persp OnOff 10</th>
-      <th style="text-align:center;">demo persp Flat 10</th>
-      <th style="text-align:center;">demo persp Path 10</th>
+      <th style="text-align:center;">demo persp OnOff</th>
+      <th style="text-align:center;">demo persp Flat</th>
+      <th style="text-align:center;">demo persp Path</th>
     </tr>
   </thead>
   <tbody>
