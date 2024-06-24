@@ -89,17 +89,15 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
                 if handler.getHitPayload(worldRay.transform(handler.transformation.inverse)).isSome: 
                     result = camera.renderer.hitCol
                     break
-
     of rkFlat:
         let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
         if hitRecord.isSome:
             let
                 hit = hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
-                material = hit.handler.shape.material
                 hitPt = hit.ray.at(hit.t)
                 surfPt = hit.handler.shape.getUV(hitPt)
 
-            result = material.brdf.pigment.getColor(surfPt) + material.radiance.getColor(surfPt)
+            return hit.handler.shape.material.brdf.pigment.getColor(surfPt) + hit.handler.shape.material.radiance.getColor(surfPt)
 
     of rkPathTracer: 
         if (worldRay.depth > camera.renderer.maxDepth): return BLACK
@@ -144,9 +142,11 @@ proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSid
     var rg = newPCG(rgState, rgSeq)
 
     let sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
-    echo sceneTree.aabb
+    # echo sceneTree.aabb
 
     for y in 0..<camera.viewport.height:
+        if displayProgress: displayProgress(y, camera.viewport.height - 1)
+
         for x in 0..<camera.viewport.width:
 
             var accumulatedColor = BLACK
@@ -163,7 +163,5 @@ proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSid
                     accumulatedColor += camera.sampleRay(sceneTree, ray, scene.bgCol, rg)
 
             result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
-                            
-        if displayProgress: displayProgress(y + 1, camera.viewport.height)
-        
+                                    
     if displayProgress: stdout.eraseLine; stdout.resetAttributes
