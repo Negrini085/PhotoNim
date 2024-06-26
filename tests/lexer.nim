@@ -1,4 +1,4 @@
-import std/[unittest, tables]
+import std/[unittest, tables, options, streams]
 import PhotoNim
 
 
@@ -108,3 +108,39 @@ suite "Token":
         check stop.location.line_num == 2
         check stop.location.col_num == 4
         check not stop.flag == true
+
+
+
+#-----------------------------------------------------#
+#                InputStream test suite               #
+#-----------------------------------------------------#
+suite "Token":
+
+    setup:
+        var
+            fname = "prova.txt"
+            fstr = newFileStream(fname, fmRead)
+
+            is1 = newInputStream(fstr, fname, 4)
+    
+    teardown:
+        discard is1
+        discard fname
+        discard fstr
+
+    
+    test "newInputStream proc":
+        # Checking InputStream variable constructor procedure
+
+        check is1.location.filename == fname
+        check is1.location.line_num == 1
+        check is1.location.col_num == 1
+
+        check areClose(is1.tabs.float32, 4.0)
+        
+        check is1.saved_char == ""
+        check not is1.saved_token.isSome 
+        check is1.saved_location.filename == is1.location.filename
+        check is1.saved_location.line_num == is1.location.line_num
+        check is1.saved_location.col_num == is1.location.col_num
+
