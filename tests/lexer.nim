@@ -138,9 +138,37 @@ suite "Token":
 
         check areClose(is1.tabs.float32, 4.0)
         
-        check is1.saved_char == ""
+        check is1.saved_char == '\0'
         check not is1.saved_token.isSome 
         check is1.saved_location.filename == is1.location.filename
         check is1.saved_location.line_num == is1.location.line_num
         check is1.saved_location.col_num == is1.location.col_num
 
+
+    test "updateLocation proc":
+        # Ckecking location update procedure
+        var 
+            ch1 = '\0'
+            ch2 = '\n'
+            ch3 = '\t'
+            ch4 = 'a'
+
+        # Null character, nothing should happen
+        updateLocation(is1, ch1)
+        check is1.location.col_num == 1
+        check is1.location.line_num == 1
+
+        # Tab character, line should upgrade by one and col should be 1
+        updateLocation(is1, ch2)
+        check is1.location.col_num == 1
+        check is1.location.line_num == 2
+
+        # Tab character, col should upgrade by 4
+        updateLocation(is1, ch3)
+        check is1.location.col_num == 5
+        check is1.location.line_num == 2
+
+        # Typical usage
+        updateLocation(is1, ch4)
+        check is1.location.col_num == 6
+        check is1.location.line_num == 2
