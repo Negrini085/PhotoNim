@@ -1,4 +1,4 @@
-import std/[streams, tables]
+import std/[streams, tables, options]
 
 const 
     WHITESPACE* = ['\t', '\n', '\r'] 
@@ -134,3 +134,33 @@ proc newSymbolToken*(location: SourceLocation, symbol: string): Token {.inline.}
 
 proc newStopToken*(location: SourceLocation, flag = false): Token {.inline.} =
     Token(kind: StopToken, location: location, flag: flag)
+
+
+#---------------------------------------------------#
+#                InputStream type                   #
+#---------------------------------------------------#
+type 
+
+    GrammarError* = object of CatchableError
+
+    InputStream* = object
+        # Necessary to parse scene files
+
+        # Input stream variables
+        tabs*: int
+        stream*: FileStream
+        location*: SourceLocation
+
+        # Variables to be able to unread a character
+        saved_char*: string
+        saved_token*: Option[Token]
+        saved_location*: SourceLocation
+
+
+proc newInputStream*(stream: FileStream, filename: string, tabs = 4): InputStream = 
+    # InputStream variable constructor
+    InputStream(
+        tabs: tabs, stream: stream, 
+        location: newSourceLocation(filename, 1, 1), saved_char: "", 
+        saved_token: none Token, saved_location: newSourceLocation(filename, 1, 1)
+        )
