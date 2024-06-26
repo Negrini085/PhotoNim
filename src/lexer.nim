@@ -1,5 +1,9 @@
 import std/[streams, tables]
 
+const 
+    WHITESPACE* = ['\t', '\n', '\r'] 
+    SYMBOLS* = ["(", ")", "[", "]", "<", ">", ",", "*"]
+
 #----------------------------------------------------#
 #                SourceLocation type                 #
 #----------------------------------------------------#
@@ -108,3 +112,25 @@ type
             symbol*: string
         of StopToken: 
             flag*: bool
+
+
+
+                #       Token variables constructors      #
+
+proc newKeywordToken*(location: SourceLocation, keyword: KeywordKind): Token {.inline.} =
+    Token(kind: KeywordToken, location: location, keyword: keyword)
+
+proc newIdentifierToken*(location: SourceLocation, identifier: string): Token {.inline.} =
+    Token(kind: IdentifierToken, location: location, identifier: identifier)
+
+proc newLiteralStringToken*(location: SourceLocation, str: string): Token {.inline.} =
+    Token(kind: LiteralStringToken, location: location, str: str)
+
+proc newLiteralNumberToken*(location: SourceLocation, value: float32): Token {.inline.} =
+    Token(kind: LiteralNumberToken, location: location, value: value)
+
+proc newSymbolToken*(location: SourceLocation, symbol: string): Token {.inline.} =
+    Token(kind: SymbolToken, location: location, symbol: symbol)
+
+proc newStopToken*(location: SourceLocation, flag = false): Token {.inline.} =
+    Token(kind: StopToken, location: location, flag: flag)
