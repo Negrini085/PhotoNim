@@ -152,7 +152,7 @@ type
         location*: SourceLocation
 
         # Variables to be able to unread a character
-        saved_char*: string
+        saved_char*: char
         saved_token*: Option[Token]
         saved_location*: SourceLocation
 
@@ -161,6 +161,22 @@ proc newInputStream*(stream: FileStream, filename: string, tabs = 4): InputStrea
     # InputStream variable constructor
     InputStream(
         tabs: tabs, stream: stream, 
-        location: newSourceLocation(filename, 1, 1), saved_char: "", 
+        location: newSourceLocation(filename, 1, 1), saved_char: '\0', 
         saved_token: none Token, saved_location: newSourceLocation(filename, 1, 1)
         )
+
+
+proc updateLocation*(inStr: var InputStream, ch: char) = 
+    # Procedure to update stream location whenever a character is ridden
+
+    if ch == '\0': return
+    elif ch == '\n':
+        # Starting to read a new line
+        inStr.location.col_num = 1
+        inStr.location.line_num += 1
+    elif ch == '\t':
+        inStr.location.col_num += inStr.tabs
+    else:
+        inStr.location.col_num += 1
+
+
