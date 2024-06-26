@@ -1,6 +1,10 @@
-import std/unittest
-import ../src/lexer
+import std/[unittest, tables]
+import PhotoNim
 
+
+#-----------------------------------------------------#
+#             SourceLocation test suite               #
+#-----------------------------------------------------#
 suite "SourceLocation":
 
     setup:
@@ -38,3 +42,69 @@ suite "SourceLocation":
         
         check $sl1 == "File: " & fn1 & ", Line: 0, Column: 0"
         check $sl2 == "File: " & fn2 & ", Line: 3, Column: 5"
+
+
+#-----------------------------------------------------#
+#                   Token test suite                  #
+#-----------------------------------------------------#
+suite "Token":
+
+    setup:
+        let
+            loc = newSourceLocation("prova.txt", 2, 4)
+
+            key = newKeywordToken(loc, PERSPECTIVE)
+            ide = newIdentifierToken(loc, "prova")
+            lstr = newLiteralStringToken(loc, "abc")
+            lnum = newLiteralNumberToken(loc, 2.3)
+            sym = newSymbolToken(loc, SYMBOLS[3])
+            stop = newStopToken(loc)
+
+    teardown:
+        discard loc
+        discard key
+        discard ide
+        discard lstr
+        discard lnum
+        discard sym
+        discard stop
+
+    
+    test "newToken procs":
+        # Checking newToken procs
+
+        # Keyword token
+        check key.location.filename == "prova.txt"
+        check key.location.line_num == 2
+        check key.location.col_num == 4
+        check key.keyword == PERSPECTIVE
+
+        # Identifier token
+        check ide.location.filename == "prova.txt"
+        check ide.location.line_num == 2
+        check ide.location.col_num == 4
+        check ide.identifier == "prova"
+
+        # Literal string token
+        check lstr.location.filename == "prova.txt"
+        check lstr.location.line_num == 2
+        check lstr.location.col_num == 4
+        check lstr.str == "abc"
+
+        # Literal number token
+        check lnum.location.filename == "prova.txt"
+        check lnum.location.line_num == 2
+        check lnum.location.col_num == 4
+        check areClose(lnum.value, 2.3)
+
+        # Symbol token
+        check sym.location.filename == "prova.txt"
+        check sym.location.line_num == 2
+        check sym.location.col_num == 4
+        check sym.symbol == "]"
+
+        # Stop token
+        check stop.location.filename == "prova.txt"
+        check stop.location.line_num == 2
+        check stop.location.col_num == 4
+        check not stop.flag == true

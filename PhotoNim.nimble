@@ -63,4 +63,5 @@ task test, "Run the `PhotoNim` tests":
     exec "nim c -d:release --hints:off -r scene.nim"
     exec "nim c -d:release --hints:off -r pcg.nim"
     exec "nim c -d:release --hints:off -r hitrecord.nim"
-    exec "rm geometry hdrimage camera scene pcg hitrecord"
+    exec "nim c -d:release --hints:off -r lexer.nim"
+    exec "rm geometry hdrimage camera scene pcg hitrecord lexes"
