@@ -9,17 +9,17 @@ const
 #----------------------------------------------------#
 type SourceLocation* = object
     filename*: string = ""
-    line_num*: int = 0
-    col_num*: int = 0
+    lineNum*: int = 0
+    colNum*: int = 0
 
 proc newSourceLocation*(name = "", line: int = 0, col: int = 0): SourceLocation {.inline.} = 
     # SourceLocation variable constructor
-    SourceLocation(filename: name, line_num: line, col_num: col)
+    SourceLocation(filename: name, lineNum: line, colNum: col)
 
 
 proc `$`*(location: SourceLocation): string {.inline.} =
     # Procedure that prints SourceLocation contents, useful for error signaling
-    result = "File: " & location.filename & ", Line: " & $location.line_num & ", Column: " & $location.col_num
+    result = "File: " & location.filename & ", Line: " & $location.lineNum & ", Column: " & $location.colNum
 
 
 
@@ -152,17 +152,17 @@ type
         location*: SourceLocation
 
         # Variables to be able to unread a character
-        saved_char*: char
-        saved_token*: Option[Token]
-        saved_location*: SourceLocation
+        savedChar*: char
+        savedToken*: Option[Token]
+        savedLocation*: SourceLocation
 
 
 proc newInputStream*(stream: FileStream, filename: string, tabs = 4): InputStream = 
     # InputStream variable constructor
     InputStream(
         tabs: tabs, stream: stream, 
-        location: newSourceLocation(filename, 1, 1), saved_char: '\0', 
-        saved_token: none Token, saved_location: newSourceLocation(filename, 1, 1)
+        location: newSourceLocation(filename, 1, 1), savedChar: '\0', 
+        savedToken: none Token, savedLocation: newSourceLocation(filename, 1, 1)
         )
 
 
@@ -172,11 +172,12 @@ proc updateLocation*(inStr: var InputStream, ch: char) =
     if ch == '\0': return
     elif ch == '\n':
         # Starting to read a new line
-        inStr.location.col_num = 1
-        inStr.location.line_num += 1
+        inStr.location.colNum = 1
+        inStr.location.lineNum += 1
     elif ch == '\t':
-        inStr.location.col_num += inStr.tabs
+        inStr.location.colNum += inStr.tabs
     else:
-        inStr.location.col_num += 1
+        inStr.location.colNum += 1
+
 
 
