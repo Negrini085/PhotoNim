@@ -180,4 +180,17 @@ proc updateLocation*(inStr: var InputStream, ch: char) =
         inStr.location.colNum += 1
 
 
+proc readChar*(inStr: var InputStream): char =
+    # Procedure to read a new char from the stream
 
+    # What if we have an unread character?
+    if inStr.savedChar != '\0':
+        result = inStr.savedChar
+        inStr.savedChar = '\0'
+    
+    # Otherwise we read a new character from the stream
+    else:
+        result = readChar(inStr.stream)
+
+    inStr.savedLocation = inStr.location
+    inStr.updateLocation(result)
