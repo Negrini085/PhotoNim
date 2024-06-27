@@ -1,0 +1,6 @@
+# First line is a comment
+# Second line is a comment
+new material sky_material(
+    diffuse(image("my file.pfm")),
+    <5.0, 500.0, 300.0>
+)   # Another comment, now in the middle of the line

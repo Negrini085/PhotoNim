@@ -77,7 +77,7 @@ suite "Token":
         check key.location.filename == "prova.txt"
         check key.location.lineNum == 2
         check key.location.colNum == 4
-        check key.keyword == PERSPECTIVE
+        check key.keyword == KeywordKind.PERSPECTIVE
 
         # Identifier token
         check ide.location.filename == "prova.txt"
@@ -419,7 +419,7 @@ suite "InputStream":
 
         tok = inStr.parseKeywordOrIdentifierToken(ch, inStr.location)
         check tok.kind == KeywordToken
-        check tok.keyword == SPHERE
+        check tok.keyword == KeywordKind.SPHERE
         
         check tok.location.colNum == 7
         check tok.location.lineNum == 2
@@ -448,3 +448,91 @@ suite "InputStream":
         check inStr.savedLocation.lineNum == 3
         check inStr.savedLocation.filename == fname
 
+
+    test "readToken proc":
+        # Checking readToken proc, that makes token parsing possible
+        var tok: Token
+
+        fname = "files/Token/readToken.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        tok = inStr.readToken()
+        check tok.kind == KeywordToken
+        check tok.keyword == KeywordKind.NEW
+
+        tok = inStr.readToken()
+        check tok.kind == KeywordToken
+        check tok.keyword == KeywordKind.MATERIAL
+
+        tok = inStr.readToken()
+        check tok.kind == IdentifierToken
+        check tok.identifier == "sky_material"
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == "("
+
+        tok = inStr.readToken()
+        check tok.kind == KeywordToken
+        check tok.keyword == KeywordKind.DIFFUSE
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == "("
+
+        tok = inStr.readToken()
+        check tok.kind == KeywordToken
+        check tok.keyword == KeywordKind.IMAGE
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == "("
+
+        tok = inStr.readToken()
+        check tok.kind == LiteralStringToken
+        check tok.str == "my file.pfm"
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == ")"
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == ")"
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == ","
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == "<"
+
+        tok = inStr.readToken()
+        check tok.kind == LiteralNumberToken
+        check areClose(tok.value, 5.0)
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == ","
+
+        tok = inStr.readToken()
+        check tok.kind == LiteralNumberToken
+        check areClose(tok.value, 500.0)
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == ","
+
+        tok = inStr.readToken()
+        check tok.kind == LiteralNumberToken
+        check areClose(tok.value, 300.0)
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == ">"
+
+        tok = inStr.readToken()
+        check tok.kind == SymbolToken
+        check tok.symbol == ")"
