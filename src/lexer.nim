@@ -54,7 +54,8 @@ type KeywordKind* = enum
     UNIFORM = 21,
     CHECKERED = 22,
     TEXTURE = 23,
-    FLOAT = 24
+    FLOAT = 24,
+    IMAGE = 25
 
 
 const KEYWORDS* = {
@@ -82,6 +83,7 @@ const KEYWORDS* = {
     "checkered": KeywordKind.CHECKERED,
     "texture": KeywordKind.TEXTURE,
     "float": KeywordKind.FLOAT,
+    "image": KeywordKind.IMAGE
 }.toTable
 
 
@@ -294,3 +296,53 @@ proc parseKeywordOrIdentifierToken*(inStr: var InputStream, firstCh: char, token
     except KeyError:
         return newIdentifierToken(tokenLocation, tokStr)
 
+
+proc readToken*(inStr: var InputStream): Token =
+    # Procedure to read a token from input stream
+    var
+        ch: char
+        tokenLocation: SourceLocation
+
+    # Checking wether we already have a saved token or not
+    if inStr.savedToken.isSome:
+        result = inStr.savedToken.get
+        inStr.savedToken = none Token
+        return result
+
+    inStr.skipWhitespaceComments()
+    
+    # Reading a char that we know is not a whitespace or part of a comment line
+    # We first need to check wether we are in eof condition
+    ch = inStr.readChar()
+    if ch == '\0':
+        return newStopToken(inStr.location, true)
+    
+    # We now have to chose between five possible different token
+    tokenLocation = inStr.location
+
+    if ch in SYMBOLS:
+        # Symbol token
+        return newSymbolToken(tokenLocation, $ch)
+
+    elif ch == '"':
+        # Literal string token
+        return inStr.parseStringToken(tokenLocation)
+
+    elif ch.isDigit or (ch in ['+', '-', '.']):
+        # Literal number token
+        return inStr.parseNumberToken(ch, tokenLocation)
+
+    elif ch.isAlphaNumeric() or (ch == '_'):
+        # Keyword or identifier token
+        return inStr.parseKeywordOrIdentifierToken(ch, tokenLocation)
+    
+    else:
+        # Error condition, something wrong is happening
+        let msg = fmt"Invalid character: {ch}"
+        raise newException(GrammarError, msg)
+
+
+proc unreadToken*(inStr: var InputStream, token: Token) =
+    # Procedure to unread a whole token from stream file
+    assert inStr.savedToken.isNone
+    inStr.savedToken = some token
