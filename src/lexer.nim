@@ -1,7 +1,7 @@
 import std/[streams, tables, options]
 
 const 
-    WHITESPACE* = ['\t', '\n', '\r'] 
+    WHITESPACE* = ['\t', '\n', '\r', ' '] 
     SYMBOLS* = ["(", ")", "[", "]", "<", ">", ",", "*"]
 
 #----------------------------------------------------#
@@ -202,3 +202,23 @@ proc unreadChar*(inStr: var InputStream, ch: char) =
     assert inStr.savedChar == '\0'
     inStr.savedChar = ch
     inStr.location = inStr.savedLocation
+
+
+proc skipWhitespaceComments*(inStr: var InputStream) = 
+    # We just want to avoid whitespace and comments 
+    var ch: char
+
+    ch = inStr.readChar()
+    while (ch in WHITESPACE) or (ch == '#'):
+
+        # Dealing with comments
+        if ch == '#':
+            while not (inStr.readChar() in ['\r','\n','\0']):
+                discard
+            
+        ch = inStr.readChar()
+        if ch == '\0':
+            return
+
+    # Unreading non whitespace or comment char read
+    inStr.unreadChar(ch)
