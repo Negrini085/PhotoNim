@@ -536,3 +536,28 @@ suite "InputStream":
         tok = inStr.readToken()
         check tok.kind == SymbolToken
         check tok.symbol == ")"
+
+
+    test "unreadToken proc":
+        # Checking unread procedure test
+        var tok: Token
+
+        fname = "files/Token/readToken.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        tok = inStr.readToken()
+        check tok.kind == KeywordToken
+        check tok.keyword == KeywordKind.NEW
+
+        tok = inStr.readToken()
+        check tok.kind == KeywordToken
+        check tok.keyword == KeywordKind.MATERIAL
+
+        check not inStr.savedToken.isSome
+        inStr.unreadToken(tok)
+        check inStr.savedToken.isSome
+        
+        tok = inStr.saved_token.get
+        check tok.kind == KeywordToken
+        check tok.keyword == KeywordKind.MATERIAL
