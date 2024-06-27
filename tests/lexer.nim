@@ -373,3 +373,28 @@ suite "InputStream":
         check strToken.location.colNum == 36
         check strToken.location.lineNum == 2
         check strToken.location.filename == fname
+    
+
+    test "parseNumberToken proc":
+        # Checking parseNumberToken proc, we want to read a number
+        var
+            ch: char
+            numToken: Token
+
+        fname = "files/Token/parseF.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == '\n'
+
+        ch = inStr.readChar()
+        check ch == '4'
+
+        numToken = inStr.parseNumberToken(ch, inStr.location)
+        check numToken.kind == LiteralNumberToken
+        check areClose(numToken.value, 4.567)
+        
+        check numToken.location.colNum == 6
+        check numToken.location.lineNum == 2
+        check numToken.location.filename == fname

@@ -1,5 +1,6 @@
 import std/[streams, tables, options]
 from std/strformat import fmt
+from std/strutils import isDigit, parseFloat
 
 const 
     WHITESPACE* = ['\t', '\n', '\r', ' '] 
@@ -226,7 +227,7 @@ proc skipWhitespaceComments*(inStr: var InputStream) =
 
 
 proc parseStringToken*(inStr: var InputStream, tokenLocation: SourceLocation): Token = 
-    # procedure to parse a string token
+    # Procedure to parse a string token
     var 
         ch: char
         str = ""
@@ -243,4 +244,30 @@ proc parseStringToken*(inStr: var InputStream, tokenLocation: SourceLocation): T
         str = str & ch
 
     return newLiteralStringToken(tokenLocation, str)
+
+
+proc parseNumberToken*(inStr: var InputStream, firstCh: char, tokenLocation: SourceLocation): Token = 
+    # Procedure to parse a number, the output will be a LiteralNumberToken with value field float32
+    var 
+        ch: char
+        numStr = ""
+        val: float32
+    numStr = numStr & firstCh
+    
+    # Number reading proc ends if we get a non-digit as char
+    while true:
+        ch = inStr.readChar()
+
+        if not (ch.isDigit() or (ch == '.') or (ch in ['e', 'E'])):
+            inStr.unreadChar(ch)
+            break
         
+        numStr = numStr & ch
+    
+    try:
+        val = parseFloat(numStr)
+    except ValueError:
+        let e = fmt"{numStr} is an invalid floating-point number"
+        raise newException(GrammarError, e)
+
+    return newLiteralNumberToken(tokenLocation, val)
