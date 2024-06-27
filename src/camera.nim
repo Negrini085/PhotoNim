@@ -1,5 +1,6 @@
 import geometry, pcg, hdrimage, material, scene, hitrecord
 
+from std/fenv import epsilon
 from std/algorithm import sorted 
 from std/strutils import repeat
 from std/options import isSome, isNone, get
@@ -60,7 +61,7 @@ proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} =
         of ckOrthogonal: (newPoint3D(-1, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
         of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3f(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
     
-    Ray(origin: origin, dir: dir, tSpan: (float32 1.0, float32 Inf), depth: 0).transform(camera.transformation)
+    Ray(origin: origin, dir: dir, tSpan: (epsilon(float32), float32 Inf), depth: 0).transform(camera.transformation)
 
 
 
@@ -125,14 +126,17 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
 
         if hitCol.luminosity > 0.0:
             var accumulatedRadiance = BLACK
-            for _ in 0..<camera.renderer.numRays: 
-                let scatteredRay = Ray(
-                    origin: apply(closestHit.handler.transformation, shapeLocalHitPt), 
-                    dir: apply(closestHit.handler.transformation, closestHit.handler.shape.material.brdf.scatterDir(closestHit.ray.dir, shapeLocalHitNormal, rg)),
-                    tSpan: (1e-3.float32, Inf.float32),
-                    depth: closestHit.ray.depth + 1
-                )
+            for _ in 0..<camera.renderer.numRays:
+                let 
+                    localOutDir = closestHit.handler.shape.material.brdf.scatterDir(shapeLocalHitNormal, closestHit.ray.dir, rg).normalize
+                    scatteredRay = Ray(
+                        origin: apply(closestHit.handler.transformation, shapeLocalHitPt), 
+                        dir: apply(closestHit.handler.transformation, localOutDir),
+                        tSpan: (1e-5.float32, Inf.float32),
+                        depth: closestHit.ray.depth + 1
+                    )
 
+                hitCol *= closestHit.handler.shape.material.brdf.eval(surfacePt, shapeLocalHitNormal.Vec3f, closestHit.ray.dir, localOutDir)
                 accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg)
 
             result += accumulatedRadiance / camera.renderer.numRays.float32
@@ -144,7 +148,6 @@ proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSid
     var rg = newPCG(rgState, rgSeq)
 
     let sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
-    echo sceneTree.aabb
 
     for y in 0..<camera.viewport.height:
         for x in 0..<camera.viewport.width:

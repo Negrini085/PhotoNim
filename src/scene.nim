@@ -235,8 +235,13 @@ proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): tuple[clusters: seq[int], ce
     result.centroids = kMeansPlusPlusInit(data, k, rg)
     result.clusters = newSeq[int](data.len)
 
-    var converged = false
-    while not converged:
+    let maxIters = 5
+
+    var 
+        converged = false
+        iter: int
+
+    while iter < maxIters and (not converged):
         result.clusters = data.mapIt(it.nearestCentroid(result.centroids).index)
         let newCentroids = updateCentroids(data, result.clusters, k)
 
@@ -247,12 +252,15 @@ proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): tuple[clusters: seq[int], ce
                 break
 
         result.centroids = newCentroids
+        iter += 1
 
 
 proc newBVHNode*(shapeHandlers: seq[ShapeHandler], depth, kClusters, maxShapesPerLeaf: int, rg: var PCG): SceneNode =
     if shapeHandlers.len == 0: return nil
 
+
     let shapeHandlersAABBs = shapeHandlers.mapIt(it.getAABB)
+    echo shapeHandlersAABBs.getTotalAABB
 
     if shapeHandlers.len <= maxShapesPerLeaf:
         return SceneNode(kind: nkLeaf, aabb: shapeHandlersAABBs.getTotalAABB, handlers: shapeHandlers)
@@ -333,18 +341,18 @@ proc newTriangle*(vertices: array[3, Point3D]; material = newMaterial(), transfo
 proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material = newMaterial(), transformation = Transformation.id): ShapeHandler {.inline.} =
     newShapeHandler(Shape(kind: skCylinder, material: material, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), transformation)
 
-proc newMesh*(source: string; transformation = Transformation.id, treeKind: SceneTreeKind, maxShapesPerLeaf: int, rgState, rgSeq: uint64): ShapeHandler = 
+proc newMesh*(source: string; material = newMaterial(), transformation = Transformation.id, treeKind: SceneTreeKind, maxShapesPerLeaf: int, rgState, rgSeq: uint64): ShapeHandler = 
     let (nodes, edges) = loadMesh(source)
     assert edges.len mod 3 == 0, fmt"Error in creating a skTriangularMesh! The length of the edges sequence must be a multiple of 3."
     var triangles = newSeq[ShapeHandler](edges.len div 3)
     for i in 0..<edges.len div 3: 
-        triangles[i] = newTriangle(nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]])    
+        triangles[i] = newTriangle(nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]], material)
 
     var rg = newPCG(rgState, rgSeq)
     newShapeHandler(
         Shape(
             kind: skTriangularMesh, 
             nodes: nodes, edges: edges, 
-            tree: newBVHNode(triangles, depth = 0, treeKind.int, maxShapesPerLeaf, rg), 
+            tree: newBVHNode(triangles, depth = 0, kClusters = treeKind.int, maxShapesPerLeaf, rg), 
         ), transformation
     )

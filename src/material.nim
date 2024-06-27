@@ -1,6 +1,6 @@
 import geometry, pcg, hdrimage
 
-from std/math import floor, sqrt, sin, cos, PI, degToRad
+from std/math import floor, pow, sqrt, exp, ln, sin, cos, arccos, PI, degToRad
 from std/streams import newFileStream, close
 from std/strformat import fmt
 
@@ -16,7 +16,9 @@ type
         of pkCheckered:
             grid*: tuple[c1, c2: Color, nRows, nCols: int]
 
-    BRDFKind* = enum DiffuseBRDF, SpecularBRDF
+    CookTorranceNDF* = enum ndfGGX, ndfBeckmann, ndfBlinn
+
+    BRDFKind* = enum DiffuseBRDF, SpecularBRDF, CookTorranceBRDF
 
     BRDF* = object
         pigment*: Pigment
@@ -26,7 +28,15 @@ type
             reflectance*: float32
         of SpecularBRDF:
             thresholdAngle*: float32
-
+    
+        of CookTorranceBRDF:
+            ndf*: CookTorranceNDF
+            diffuseCoeff*: float32
+            specularCoeff*: float32
+            roughness*: float32
+            albedo*: float32
+            metallic*: float32
+        
     Material* = tuple[brdf: BRDF, radiance: Pigment]
 
 
@@ -66,22 +76,65 @@ proc newDiffuseBRDF*(pigment = newUniformPigment(WHITE), reflectance = 1.0): BRD
     BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
 
 proc newSpecularBRDF*(pigment = newUniformPigment(WHITE), angle = 180.0): BRDF {.inline.} =
-    BRDF(kind: SpecularBRDF, pigment: pigment, thresholdAngle: (0.1 * degToRad(angle)).float32) 
+    BRDF(kind: SpecularBRDF, pigment: pigment, thresholdAngle: degToRad(angle)) 
 
 
-# proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Color {.inline.} =
-#     case brdf.kind: 
-#     of DiffuseBRDF: 
-#         return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
+proc newCookTorranceBRDF*(pigment = newUniformPigment(WHITE), diffuseCoeff: float32 = 0.3, specularCoeff: float32 = 0.7, roughness: float32 = 0.5, albedo: float32 = 0.5, metallic: float32 = 0.1, ndf: CookTorranceNDF = CookTorranceNDF.ndfGGX): BRDF =
+    assert (diffuseCoeff + specularCoeff <= 1.0)
+    BRDF(
+        kind: CookTorranceBRDF, ndf: ndf, pigment: pigment, 
+        diffuseCoeff: diffuseCoeff, 
+        specularCoeff: specularCoeff, 
+        roughness: roughness, albedo: albedo, metallic: metallic
+    )
 
-#     of SpecularBRDF: 
-#         if abs(arccos(dot(normal.Vec3f, in_dir.normalize)) - arccos(dot(normal.Vec3f, out_dir.normalize))) <= brdf.threshold_angle: 
-#             return brdf.pigment.getColor(uv)
-        # else: return BLACK
+
+proc distBeckmann(normal, inDir, outDir: Vec3f, roughness: float32): float32 =
+    let 
+        cos2 = pow(dot(normal, inDir + outDir), 2)
+        roughness2 = pow(roughness, 2)
+    
+    exp((cos2 - 1) / (roughness2 * cos2)) / (PI * roughness2 * pow(cos2, 2))
+
+proc FresnelSchlick(normal, inDir, outDir: Vec3f, refractionIndex: float32): float32 = 
+    let F0 = pow(refractionIndex - 1, 2.0) / pow(refractionIndex + 1, 2.0)
+    return F0 + (1 - F0) * pow(1.0 - dot(normal, inDir + outDir), 5.0)
+
+proc geometricAttenuation(normal, inDir, outDir: Vec3f): float32 =
+    let 
+        halfVector = inDir + outDir
+        dot1 = dot(normal, halfVector)
+        dot2 = min(dot(normal, inDir), dot(normal, outDir))
+    
+    min(1, 2 * dot1 * dot2 / dot(inDir, halfVector))
 
 
-proc scatterDir*(brdf: BRDF, hitDir: Vec3f, hitNormal: Normal, rg: var PCG): Vec3f =
-    case brdf.kind:
+proc eval*(brdf: BRDF; surfacePoint: Point2D, normal, inDir, outDir: Vec3f): float32 {.inline.} =
+    case brdf.kind: 
+    of DiffuseBRDF: return brdf.reflectance / PI
+
+    of SpecularBRDF: 
+        # assert areClose(normal.norm, 1.0, 1e-2), fmt"{normal.norm}"
+        # assert areClose(inDir.norm, 1.0, 1e-2), fmt"{inDir.norm}"
+        # assert areClose(outDir.norm, 1.0, 1e-2), fmt"{outDir.norm}"
+        let (angleIn, angleOut) = (PI - arccos(dot(normal, inDir)), arccos(dot(normal, outDir)))
+        # echo (angleIn, angleOut, angleIn - angleOut, angleIn + angleOut)
+        # assert areClose(angleIn + angleOut, PI, 0.1)
+        return if angleIn + angleOut <= brdf.thresholdAngle: 1.0 else: 0.0
+        # return if abs(arccos(dot(inDir, outDir))) <= brdf.thresholdAngle: 1.0 else: 0.0
+
+    of CookTorranceBRDF: 
+        let
+            D = distBeckmann(normal, inDir, outDir, brdf.roughness)
+            F = FresnelSchlick(normal, inDir, outDir, 1.5)
+            G = geometricAttenuation(normal, inDir, outDir)
+            kSpec = 0.25 * D * F * G / (dot(normal, inDir) * dot(normal, outDir))
+
+        return brdf.diffuseCoeff / PI + brdf.specularCoeff * kSpec
+
+
+proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec3f =
+    case brdf.kind
     of DiffuseBRDF:
         let 
             (cos2, phi) = (rg.rand, 2 * PI.float32 * rg.rand)
@@ -90,7 +143,23 @@ proc scatterDir*(brdf: BRDF, hitDir: Vec3f, hitNormal: Normal, rg: var PCG): Vec
         
         return c * cos(phi) * base[0] + c * sin(phi) * base[1] + sqrt(1 - cos2) * base[2]
 
-    of SpecularBRDF: hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
+    of SpecularBRDF: 
+        return hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
+
+    of CookTorranceBRDF:
+        let
+            base = newONB(hitNormal)
+            rough2 = pow(brdf.roughness, 2.0)
+
+            theta = 
+                case brdf.ndf
+                of ndfGGX: arccos(sqrt(rough2 / (rg.rand * (rough2 - 1) + 1)))
+                of ndfBeckmann: arccos(sqrt(1 / (1 - rough2 * ln(1 - rg.rand))))
+                of ndfBlinn: arccos(1.0 / pow(rg.rand, brdf.roughness + 1))
+
+            phi = rg.rand
+
+        return base[0] * sin(theta) * cos(phi) + base[1] * sin(theta) * sin(phi) + base[2] * cos(theta)
 
 
 proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = (brdf: brdf, radiance: pigment)

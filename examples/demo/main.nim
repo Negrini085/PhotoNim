@@ -38,15 +38,15 @@ proc demoScene*(): Scene =
         )
 
         s2 = newSphere(center = newPoint3D( 0.5, -0.5,  0.5), radius = 0.1,
-            newMaterial(newDiffuseBRDF(reflectance = 0), newUniformPigment(newColor(0, 1, 127/255)))
+            newMaterial(newDiffuseBRDF(reflectance = 1.0), newUniformPigment(newColor(0, 1, 127/255)))
         )
 
         s3 = newSphere(center = newPoint3D( 0.5, -0.5, -0.5), radius = 0.1,
-            newMaterial(newDiffuseBRDF(reflectance = 0), newUniformPigment(newColor(0, 1, 127/255)))
+            newMaterial(newDiffuseBRDF(reflectance = 1.0), newUniformPigment(newColor(0, 1, 127/255)))
         )
 
         s4 = newSphere(center = newPoint3D(-0.5,  0.5,  0.5), radius = 0.1,
-            newMaterial(newDiffuseBRDF(reflectance = 0), newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 2, 4))
+            newMaterial(newDiffuseBRDF(reflectance = 1.0), newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 2, 4))
         )
         
         s5 = newSphere(center = newPoint3D(-0.5,  0.5, -0.5), radius = 0.1,
@@ -61,7 +61,7 @@ proc demoScene*(): Scene =
             newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(244/255, 164/255, 96/255)))   
         )
 
-        s8 = newSphere(center = newPoint3D(-0.5,  0.0,  0.0), radius = 0.1,
+        s8 = newSphere(center = newPoint3D(0.0,  0.0,  0.0), radius = 0.1,
             newMaterial(newSpecularBRDF(), newUniformPigment(newColor(0, 0, 128/255)))   
         )            
 
