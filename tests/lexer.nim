@@ -321,36 +321,55 @@ suite "InputStream":
 
         fname = "files/WCtest.txt"
         fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
 
-        var inStr1 = newInputStream(fstr, fname, 4)
-
-        check inStr1.readChar() == 'a'
-        check inStr1.readChar() == '\n'
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == '\n'
 
         # Using skipWhitespaceComments for the first time
         # Here we shouldskip a comment line and should unread 'b'
-        inStr1.skipWhitespaceComments()
+        inStr.skipWhitespaceComments()
         
-        check inStr1.savedChar == 'b'
-        check inStr1.location.colNum == 1
-        check inStr1.location.lineNum == 3
-        check inStr1.location.filename == "files/WCtest.txt"
+        check inStr.savedChar == 'b'
+        check inStr.location.colNum == 1
+        check inStr.location.lineNum == 3
+        check inStr.location.filename == "files/WCtest.txt"
 
         # Remember, if we have an unread char readChar gives it 
         # as output
-        check inStr1.readChar() == 'b'
-        inStr1.savedChar = '\0'
+        check inStr.readChar() == 'b'
+        inStr.savedChar = '\0'
 
         # Using skipWhitespaceComments for the second time, 
         # we now should have c as savedChar because we skipped tab 
-        inStr1.skipWhitespaceComments()
+        inStr.skipWhitespaceComments()
 
-        check inStr1.savedChar == 'c'
-        check inStr1.location.colNum == 5
-        check inStr1.location.lineNum == 3
-        check inStr1.location.filename == "files/WCtest.txt"
+        check inStr.savedChar == 'c'
+        check inStr.location.colNum == 5
+        check inStr.location.lineNum == 3
+        check inStr.location.filename == "files/WCtest.txt"
 
-        check inStr1.readChar() == 'c'
-        inStr1.savedChar = '\0'
-        check inStr1.readChar() == '\n'
+        check inStr.readChar() == 'c'
+        inStr.savedChar = '\0'
+        check inStr.readChar() == '\n'
+
+
+    test "parseStringToken proc":
+        # Checking parseStringToken proc, we want to read string
+        var strToken: Token
+
+        fname = "files/Token/parseST.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == '\n'
+        check inStr.readChar() == '"'
+
+        strToken = inStr.parseStringToken(inStr.location)
+        check strToken.kind == LiteralStringToken
+        check strToken.str == "Literal string token parsing test"
         
+        check strToken.location.colNum == 36
+        check strToken.location.lineNum == 2
+        check strToken.location.filename == fname

@@ -1,4 +1,5 @@
 import std/[streams, tables, options]
+from std/strformat import fmt
 
 const 
     WHITESPACE* = ['\t', '\n', '\r', ' '] 
@@ -222,3 +223,24 @@ proc skipWhitespaceComments*(inStr: var InputStream) =
 
     # Unreading non whitespace or comment char read
     inStr.unreadChar(ch)
+
+
+proc parseStringToken*(inStr: var InputStream, tokenLocation: SourceLocation): Token = 
+    # procedure to parse a string token
+    var 
+        ch: char
+        str = ""
+    
+    # Here we just want to read a string (break condition will be an inverted comma ")
+    while true:
+        ch = inStr.readChar()
+        if ch == '"': break
+
+        if ch == '\0':
+            let e = fmt"Unterminated string starting at (Line: {tokenLocation.lineNum}, Column: {tokenLocation.colNum}), missing closing inverted commas."
+            raise newException(GrammarError, e)
+        
+        str = str & ch
+
+    return newLiteralStringToken(tokenLocation, str)
+        
