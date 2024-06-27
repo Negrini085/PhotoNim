@@ -118,7 +118,7 @@ suite "InputStream":
 
     setup:
         var
-            fname = "tests/files/inStr.txt"
+            fname = "files/inStr.txt"
             fstr = newFileStream(fname, fmRead)
 
             inStr = newInputStream(fstr, fname, 4)
@@ -319,7 +319,7 @@ suite "InputStream":
         # Checking procedure to skip whitespace and tabs, useful 
         # because we don't care about them 
 
-        fname = "tests/files/WCtest.txt"
+        fname = "files/WCtest.txt"
         fstr = newFileStream(fname, fmRead)
 
         var inStr1 = newInputStream(fstr, fname, 4)
@@ -334,7 +334,7 @@ suite "InputStream":
         check inStr1.savedChar == 'b'
         check inStr1.location.colNum == 1
         check inStr1.location.lineNum == 3
-        check inStr1.location.filename == "tests/files/WCtest.txt"
+        check inStr1.location.filename == "files/WCtest.txt"
 
         # Remember, if we have an unread char readChar gives it 
         # as output
@@ -348,7 +348,7 @@ suite "InputStream":
         check inStr1.savedChar == 'c'
         check inStr1.location.colNum == 5
         check inStr1.location.lineNum == 3
-        check inStr1.location.filename == "tests/files/WCtest.txt"
+        check inStr1.location.filename == "files/WCtest.txt"
 
         check inStr1.readChar() == 'c'
         inStr1.savedChar = '\0'

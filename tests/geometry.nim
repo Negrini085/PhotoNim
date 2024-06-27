@@ -552,9 +552,9 @@ suite "OrthoNormal Basis":
     
     test "newONB proc":
         # Checking newONB proc
-        check areClose(onb[0], eZ)
-        check areClose(onb[1], eX)
-        check areClose(onb[2], eY)
+        check areClose(onb[0], eX)
+        check areClose(onb[1], eY)
+        check areClose(onb[2], eZ)
     
 
     test "ONB random testing":
@@ -569,7 +569,7 @@ suite "OrthoNormal Basis":
             normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
             onb = newONB(normal)
 
-            check areClose(onb[0], normal.Vec3f)
+            check areClose(onb[2], normal.Vec3f)
 
             check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
             check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)
@@ -578,149 +578,3 @@ suite "OrthoNormal Basis":
             check areClose(onb[0].norm, 1, eps = 1e-6)
             check areClose(onb[1].norm, 1, eps = 1e-6)
             check areClose(onb[2].norm, 1, eps = 1e-6)
-
-
-    test "newRightHandedBase proc":
-        # Checking newRightHanded proc
-        var
-            m1 = [eX, eY, eZ]
-            m2 = [eX, eZ, eY]
-
-        m1 = newRightHandedBase(m1)
-        # Here i don't expect nothing to change
-        check areClose(m1[0], eX)
-        check areClose(m1[1], eY)
-        check areClose(m1[2], eZ)
-
-        m2 = newRightHandedBase(m2)
-        # Here i would like to switch eY and eZ
-        check areClose(m2[0], eX)
-        check areClose(m2[1], eY)
-        check areClose(m2[2], eZ)
-
-
-
-#-----------------------------------------#
-#       Reference system test suite       #
-#-----------------------------------------#
-suite "ReferenceSystem":
-
-    setup:
-        var 
-            refSyst1 = newReferenceSystem(newPoint3D(2, 3, 1), [eX, eZ, eY])
-            refSyst2 = newReferenceSystem(newPoint3D(1, 2, 3), newRotX(90))
-            refSyst3 = newReferenceSystem(newPoint3D(1, 0, 0), newNormal(1, 0, 0))
-    
-    teardown:
-        discard refSyst1
-        discard refSyst2
-        discard refSyst3
-
-
-    test "newReferenceSystem proc":
-        # Checking three different reference system building proc
-
-        # First kind: input are origin point and ONB matrix
-        check areClose(refSyst1.origin, newPoint3D(2, 3, 1))
-        check areClose(refSyst1.base[0], eX)
-        check areClose(refSyst1.base[1], eY)
-        check areClose(refSyst1.base[2], eZ)
-
-        # Second kind: input are origin and rotation around the X-axis
-        check areClose(refSyst2.origin, newPoint3D(1, 2, 3))
-        check areClose(refSyst2.base[0], eX, eps = 1e-6)
-        check areClose(refSyst2.base[1], eZ, eps = 1e-6)
-        check areClose(refSyst2.base[2], -eY, eps = 1e-6)
-
-        # Third kind: input are origin and a normal (this time is the X-axis)
-        check areClose(refSyst3.origin, newPoint3D(1, 0, 0))
-        check areClose(refSyst3.base[0], eX)
-        check areClose(refSyst3.base[1], -eZ)
-        check areClose(refSyst3.base[2], eY)
-
-    
-    test "project proc":
-        # Checking project proc, useful to get projections along reference system axis
-        let
-            v1 =  ORIGIN3D.Vec3f
-            v2 = newVec3f(1, 2, 3)
-
-            p1 = ORIGIN3D
-            p2 = newPoint3D(1, 2, 3)
-
-        #---------------------------#
-        #      Vec3f projection     #
-        #---------------------------#
-
-        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
-        check areClose(refSyst1.project(v1), newVec3f(0, 0, 0))
-        check areClose(refSyst1.project(v2), newVec3f(1, 2, 3))
-
-        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
-        check areClose(refSyst2.project(v1), newVec3f(0, 0, 0), eps = 1e-6)
-        check areClose(refSyst2.project(v2), newVec3f(1, 3, -2), eps = 1e-6)
-
-        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
-        check areClose(refSyst3.project(v1), newVec3f(0, 0, 0))
-        check areClose(refSyst3.project(v2), newVec3f(1, -3, 2))
-    
-
-        #-----------------------------#
-        #      Point3D projection     #
-        #-----------------------------#
-
-        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
-        check areClose(refSyst1.project(p1), newPoint3D(-2, -3, -1))
-        check areClose(refSyst1.project(p2), newPoint3D(-1, -1, 2))
-
-        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
-        check areClose(refSyst2.project(p1), newPoint3D(-1, -3, 2), eps = 1e-6)
-        check areClose(refSyst2.project(p2), newPoint3D(0, 0, 0), eps = 1e-6)
-
-        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
-        check areClose(refSyst3.project(p1), newPoint3D(-1, 0, 0))
-        check areClose(refSyst3.project(p2), newPoint3D(0, -3, 2))
-    
-
-    test "getWorldObject proc":
-        # Checking getWorldObject proc, useful to get vectors in World given coefficients and reference system
-        let
-            v1 = newVec3f(0, 0, 0)
-            v2 = newVec3f(1, 2, 3)
-
-            p1 = ORIGIN3D
-            p2 = newPoint3D(1, 2, 3)
-
-        #-----------------------------#
-        #     Vec3f getWorldObject    #
-        #-----------------------------#
-
-        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
-        check areClose(refSyst1.getWorldObject(v1), newVec3f(0, 0, 0))
-        check areClose(refSyst1.getWorldObject(v2), newVec3f(1, 2, 3))
-
-        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
-        check areClose(refSyst2.getWorldObject(v1), newVec3f(0, 0, 0), eps = 1e-6)
-        check areClose(refSyst2.getWorldObject(v2), newVec3f(1, -3, 2), eps = 1e-6)
-
-        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
-        check areClose(refSyst3.getWorldObject(v1), newVec3f(0, 0, 0))
-        check areClose(refSyst3.getWorldObject(v2), newVec3f(1, 3, -2))
-
-
-        #------------------------------#
-        #    Point3D getWorldObject    #
-        #------------------------------#
-
-        # First reference system --> origin: (2, 3, 1), base: [eX, eY, eZ]
-        check areClose(refSyst1.getWorldObject(p1), newPoint3D(2, 3, 1))
-        check areClose(refSyst1.getWorldObject(p2), newPoint3D(3, 5, 4))
-
-        # Second reference system --> origin: (1, 2, 3), base: [eX, eZ, -eY]
-        check areClose(refSyst2.getWorldObject(p1), newPoint3D(1, 2, 3), eps = 1e-6)
-        check areClose(refSyst2.getWorldObject(p2), newPoint3D(2, -1, 5), eps = 1e-6)
-
-        # Third reference system --> origin: (1, 0, 0), base: [eX, -eZ, eY]
-        check areClose(refSyst3.getWorldObject(p1), newPoint3D(1, 0, 0))
-        check areClose(refSyst3.getWorldObject(p2), newPoint3D(2, 3, -2))
-
