@@ -313,3 +313,44 @@ suite "InputStream":
         check inStr.location.colNum == 3
         check inStr.location.lineNum == 1
         check inStr.location.filename == fname
+
+
+    test "skipWhitespaceComments proc":
+        # Checking procedure to skip whitespace and tabs, useful 
+        # because we don't care about them 
+
+        fname = "tests/files/WCtest.txt"
+        fstr = newFileStream(fname, fmRead)
+
+        var inStr1 = newInputStream(fstr, fname, 4)
+
+        check inStr1.readChar() == 'a'
+        check inStr1.readChar() == '\n'
+
+        # Using skipWhitespaceComments for the first time
+        # Here we shouldskip a comment line and should unread 'b'
+        inStr1.skipWhitespaceComments()
+        
+        check inStr1.savedChar == 'b'
+        check inStr1.location.colNum == 1
+        check inStr1.location.lineNum == 3
+        check inStr1.location.filename == "tests/files/WCtest.txt"
+
+        # Remember, if we have an unread char readChar gives it 
+        # as output
+        check inStr1.readChar() == 'b'
+        inStr1.savedChar = '\0'
+
+        # Using skipWhitespaceComments for the second time, 
+        # we now should have c as savedChar because we skipped tab 
+        inStr1.skipWhitespaceComments()
+
+        check inStr1.savedChar == 'c'
+        check inStr1.location.colNum == 5
+        check inStr1.location.lineNum == 3
+        check inStr1.location.filename == "tests/files/WCtest.txt"
+
+        check inStr1.readChar() == 'c'
+        inStr1.savedChar = '\0'
+        check inStr1.readChar() == '\n'
+        
