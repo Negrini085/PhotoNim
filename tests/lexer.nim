@@ -118,13 +118,13 @@ suite "Token":
 
     setup:
         var
-            fname = "prova.txt"
+            fname = "files/inStr.txt"
             fstr = newFileStream(fname, fmRead)
 
-            is1 = newInputStream(fstr, fname, 4)
+            inStr = newInputStream(fstr, fname, 4)
     
     teardown:
-        discard is1
+        discard inStr
         discard fname
         discard fstr
 
@@ -132,17 +132,17 @@ suite "Token":
     test "newInputStream proc":
         # Checking InputStream variable constructor procedure
 
-        check is1.location.filename == fname
-        check is1.location.lineNum == 1
-        check is1.location.colNum == 1
+        check inStr.location.filename == fname
+        check inStr.location.lineNum == 1
+        check inStr.location.colNum == 1
 
-        check areClose(is1.tabs.float32, 4.0)
+        check areClose(inStr.tabs.float32, 4.0)
         
-        check is1.saved_char == '\0'
-        check not is1.saved_token.isSome 
-        check is1.savedLocation.filename == is1.location.filename
-        check is1.savedLocation.lineNum == is1.location.lineNum
-        check is1.savedLocation.colNum == is1.location.colNum
+        check inStr.saved_char == '\0'
+        check not inStr.saved_token.isSome 
+        check inStr.savedLocation.filename == inStr.location.filename
+        check inStr.savedLocation.lineNum == inStr.location.lineNum
+        check inStr.savedLocation.colNum == inStr.location.colNum
 
 
     test "updateLocation proc":
@@ -154,21 +154,134 @@ suite "Token":
             ch4 = 'a'
 
         # Null character, nothing should happen
-        updateLocation(is1, ch1)
-        check is1.location.colNum == 1
-        check is1.location.lineNum == 1
+        updateLocation(inStr, ch1)
+        check inStr.location.colNum == 1
+        check inStr.location.lineNum == 1
 
         # Tab character, line should upgrade by one and col should be 1
-        updateLocation(is1, ch2)
-        check is1.location.colNum == 1
-        check is1.location.lineNum == 2
+        updateLocation(inStr, ch2)
+        check inStr.location.colNum == 1
+        check inStr.location.lineNum == 2
 
         # Tab character, col should upgrade by 4
-        updateLocation(is1, ch3)
-        check is1.location.colNum == 5
-        check is1.location.lineNum == 2
+        updateLocation(inStr, ch3)
+        check inStr.location.colNum == 5
+        check inStr.location.lineNum == 2
 
         # Typical usage
-        updateLocation(is1, ch4)
-        check is1.location.colNum == 6
-        check is1.location.lineNum == 2
+        updateLocation(inStr, ch4)
+        check inStr.location.colNum == 6
+        check inStr.location.lineNum == 2
+
+
+    test "readChar proc":
+        # Checking readChar procedure, useful to read a new character from input stream
+
+        # Checking location and savedChar at the beginning of the reading procedure
+        check inStr.location.colNum == 1
+        check inStr.location.lineNum == 1
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 1
+        check inStr.savedLocation.lineNum == 1
+        check inStr.savedLocation.filename == fname
+
+        # First call of readChar, it should be a normal character so not a big deal 
+        check readChar(inStr) == 'a'
+        check inStr.location.colNum == 2
+        check inStr.location.lineNum == 1
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 1
+        check inStr.savedLocation.lineNum == 1
+        check inStr.savedLocation.filename == fname
+
+        # Second call of readChar, it should be a whitespace
+        check readChar(inStr) == ' '
+        check inStr.location.colNum == 3
+        check inStr.location.lineNum == 1
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 2
+        check inStr.savedLocation.lineNum == 1
+        check inStr.savedLocation.filename == fname
+
+        # Third call of readChar, it should be a normal character
+        check readChar(inStr) == 'b'
+        check inStr.location.colNum == 4
+        check inStr.location.lineNum == 1
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 3
+        check inStr.savedLocation.lineNum == 1
+        check inStr.savedLocation.filename == fname
+
+        # Fourth call of readChar, it should be a whitespace 
+        check readChar(inStr) == ' '
+        check inStr.location.colNum == 5
+        check inStr.location.lineNum == 1
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 4
+        check inStr.savedLocation.lineNum == 1
+        check inStr.savedLocation.filename == fname
+
+        # Fifth call of readChar, it should be a '\n'
+        check readChar(inStr) == '\n'
+        check inStr.location.colNum == 1
+        check inStr.location.lineNum == 2
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 5
+        check inStr.savedLocation.lineNum == 1
+        check inStr.savedLocation.filename == fname
+
+        # Sixth call of readChar, it should be a normal character
+        check readChar(inStr) == '4'
+        check inStr.location.colNum == 2
+        check inStr.location.lineNum == 2
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 1
+        check inStr.savedLocation.lineNum == 2
+        check inStr.savedLocation.filename == fname
+
+        # Seventh call of readChar, it should be a whitespace
+        check readChar(inStr) == ' '
+        check inStr.location.colNum == 3
+        check inStr.location.lineNum == 2
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 2
+        check inStr.savedLocation.lineNum == 2
+        check inStr.savedLocation.filename == fname
+
+        # Eight call of readChar, it should be a normal character
+        check readChar(inStr) == 'e'
+        check inStr.location.colNum == 4
+        check inStr.location.lineNum == 2
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 3
+        check inStr.savedLocation.lineNum == 2
+        check inStr.savedLocation.filename == fname
+
+        # Ninth call of readChar, it should be a normal character
+        check readChar(inStr) == '\n'
+        check inStr.location.colNum == 1
+        check inStr.location.lineNum == 3
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 4
+        check inStr.savedLocation.lineNum == 2
+        check inStr.savedLocation.filename == fname
