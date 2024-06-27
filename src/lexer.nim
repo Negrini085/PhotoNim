@@ -1,10 +1,10 @@
 import std/[streams, tables, options]
 from std/strformat import fmt
-from std/strutils import isDigit, parseFloat
+from std/strutils import isDigit, parseFloat, isAlphaNumeric
 
 const 
     WHITESPACE* = ['\t', '\n', '\r', ' '] 
-    SYMBOLS* = ["(", ")", "[", "]", "<", ">", ",", "*"]
+    SYMBOLS* = ['(', ')', '[', ']', '<', '>', ',', '*']
 
 #----------------------------------------------------#
 #                SourceLocation type                 #
@@ -57,31 +57,31 @@ type KeywordKind* = enum
     FLOAT = 24
 
 
-const KEYWORD* = {
-    KeywordKind.NEW: "new",
-    KeywordKind.TRANSLATION: "translation",
-    KeywordKind.ROTATION_X: "rotationX",    
-    KeywordKind.ROTATION_Y: "rotationY",
-    KeywordKind.ROTATION_Z: "rotationZ",
-    KeywordKind.SCALING: "scaling",
-    KeywordKind.COMPOSITION: "composition",
-    KeywordKind.IDENTITY: "identity",
-    KeywordKind.CAMERA: "camera",
-    KeywordKind.ORTHOGONAL: "orthogonal",
-    KeywordKind.PERSPECTIVE: "perspective",
-    KeywordKind.PLANE: "plane",
-    KeywordKind.SPHERE: "sphere",
-    KeywordKind.AABOX: "aabox",
-    KeywordKind.TRIANGLE: "triangle",
-    KeywordKind.CYLINDER: "cylinder",
-    KeywordKind.TRIANGULARMESH: "triangularMesh",
-    KeywordKind.MATERIAL: "material",
-    KeywordKind.DIFFUSE: "diffuse",
-    KeywordKind.SPECULAR: "specular",
-    KeywordKind.UNIFORM: "uniform",
-    KeywordKind.CHECKERED: "checkered",
-    KeywordKind.TEXTURE: "texture",
-    KeywordKind.FLOAT: "float",
+const KEYWORDS* = {
+    "new": KeywordKind.NEW,
+    "translation": KeywordKind.TRANSLATION,
+    "rotationX": KeywordKind.ROTATION_X,    
+    "rotationY": KeywordKind.ROTATION_Y,
+    "rotationZ": KeywordKind.ROTATION_Z,
+    "scaling": KeywordKind.SCALING,
+    "composition": KeywordKind.COMPOSITION,
+    "identity": KeywordKind.IDENTITY,
+    "camera": KeywordKind.CAMERA,
+    "orthogonal": KeywordKind.ORTHOGONAL,
+    "perspective": KeywordKind.PERSPECTIVE,
+    "plane": KeywordKind.PLANE,
+    "sphere": KeywordKind.SPHERE,
+    "aabox": KeywordKind.AABOX,
+    "triangle": KeywordKind.TRIANGLE,
+    "cylinder": KeywordKind.CYLINDER,
+    "triangularMesh": KeywordKind.TRIANGULARMESH,
+    "material": KeywordKind.MATERIAL,
+    "diffuse": KeywordKind.DIFFUSE,
+    "specular": KeywordKind.SPECULAR,
+    "uniform": KeywordKind.UNIFORM,
+    "checkered": KeywordKind.CHECKERED,
+    "texture": KeywordKind.TEXTURE,
+    "float": KeywordKind.FLOAT,
 }.toTable
 
 
@@ -271,3 +271,26 @@ proc parseNumberToken*(inStr: var InputStream, firstCh: char, tokenLocation: Sou
         raise newException(GrammarError, e)
 
     return newLiteralNumberToken(tokenLocation, val)
+
+
+proc parseKeywordOrIdentifierToken*(inStr: var InputStream, firstCh: char, tokenLocation: SourceLocation): Token = 
+    # Procedure to read wether a keyword token or an identifier token
+    var
+        ch: char
+        tokStr = ""
+    tokStr = tokStr & firstCh
+
+    while true:
+        ch = inStr.readChar()
+
+        if not (ch.isAlphaNumeric or ch == '_'):
+            inStr.unreadChar(ch)
+            break
+        
+        tokStr = tokStr & ch
+    
+    try:
+        return newKeywordToken(tokenLocation, KEYWORDS[tokStr])
+    except KeyError:
+        return newIdentifierToken(tokenLocation, tokStr)
+

@@ -57,7 +57,7 @@ suite "Token":
             ide = newIdentifierToken(loc, "prova")
             lstr = newLiteralStringToken(loc, "abc")
             lnum = newLiteralNumberToken(loc, 2.3)
-            sym = newSymbolToken(loc, SYMBOLS[3])
+            sym = newSymbolToken(loc, $SYMBOLS[3])
             stop = newStopToken(loc)
 
     teardown:
@@ -398,3 +398,53 @@ suite "InputStream":
         check numToken.location.colNum == 6
         check numToken.location.lineNum == 2
         check numToken.location.filename == fname
+
+
+    test "parseKeywordOrIdentifierToken proc":
+        # Checking parseKeywordOrIdentifierToken proc, we want to read a number
+        var
+            ch: char
+            tok: Token
+
+        fname = "files/Token/parseKI.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == '\n'
+
+        # Checking keyword token evaluation
+        ch = inStr.readChar()
+        check ch == 's'
+
+        tok = inStr.parseKeywordOrIdentifierToken(ch, inStr.location)
+        check tok.kind == KeywordToken
+        check tok.keyword == SPHERE
+        
+        check tok.location.colNum == 7
+        check tok.location.lineNum == 2
+        check tok.location.filename == fname
+
+        check inStr.readChar() == '\n'
+        check inStr.savedLocation.colNum == 7
+        check inStr.savedLocation.lineNum == 2
+        check inStr.savedLocation.filename == fname
+        inStr.savedChar = '\0'
+
+
+        # Checking identifier token evaluation
+        ch = inStr.readChar()
+        check ch == 'p'
+        check inStr.location.colNum == 2
+        check inStr.location.lineNum == 3
+        check inStr.location.filename == fname
+
+        tok = inStr.parseKeywordOrIdentifierToken(ch, inStr.location)
+        check tok.kind == IdentifierToken
+        check tok.identifier == "pippo"
+
+        check inStr.readChar == '\n'
+        check inStr.savedLocation.colNum == 6
+        check inStr.savedLocation.lineNum == 3
+        check inStr.savedLocation.filename == fname
+
