@@ -194,3 +194,11 @@ proc readChar*(inStr: var InputStream): char =
 
     inStr.savedLocation = inStr.location
     inStr.updateLocation(result)
+
+
+proc unreadChar*(inStr: var InputStream, ch: char) = 
+    # Procedure to push a character back to the stream
+   
+    assert inStr.savedChar == '\0'
+    inStr.savedChar = ch
+    inStr.location = inStr.savedLocation

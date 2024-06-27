@@ -112,13 +112,13 @@ suite "Token":
 
 
 #-----------------------------------------------------#
-#                InputStream test suite               #
+#               InputStream test suite                #
 #-----------------------------------------------------#
-suite "Token":
+suite "InputStream":
 
     setup:
         var
-            fname = "files/inStr.txt"
+            fname = "tests/files/inStr.txt"
             fstr = newFileStream(fname, fmRead)
 
             inStr = newInputStream(fstr, fname, 4)
@@ -285,3 +285,31 @@ suite "Token":
         check inStr.savedLocation.colNum == 4
         check inStr.savedLocation.lineNum == 2
         check inStr.savedLocation.filename == fname
+
+    
+    test "unreadChar proc":
+        # Checking procedure to unread a character
+        var ch: char
+
+        # First reading by means of readChar
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == ' '
+        ch = inStr.readChar()
+        
+        # Checking everything is ok, character should be a 'b'
+        check ch == 'b'
+        check inStr.location.colNum == 4
+        check inStr.location.lineNum == 1
+        check inStr.location.filename == fname
+
+        check inStr.savedChar == '\0'
+        check inStr.savedLocation.colNum == 3
+        check inStr.savedLocation.lineNum == 1
+        check inStr.savedLocation.filename == fname
+
+        # Now unreading it in order to restore stream status
+        inStr.unreadChar(ch)
+        check inStr.savedChar == 'b'
+        check inStr.location.colNum == 3
+        check inStr.location.lineNum == 1
+        check inStr.location.filename == fname
