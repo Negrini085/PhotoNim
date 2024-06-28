@@ -903,7 +903,6 @@ suite "Parse":
 
     test "parseTransformation proc":
         # Checking parseTransformation proc
-
         var trans: Transformation
             
         fname = "files/Parse/trans.txt"
@@ -948,3 +947,27 @@ suite "Parse":
         check areClose(trans.transformations[0].mat, newTranslation(newVec3f(7, 8, 9)).mat)
         check areClose(trans.transformations[1].mat, newScaling(newVec3f(1, 2, 3)).mat)
         check areClose(trans.transformations[2].mat, newRotY(90).mat, eps = 1e-6)
+    
+
+    test "parseSphereSH proc":
+        # Checking parseSphereSH procedure, returns a ShapeHandler of a sphere
+        var 
+            sphereSH: ShapeHandler
+            keys  = @[KeywordKind.SPHERE, KeywordKind.PLANE]
+
+        fname = "files/Parse/Handlers/sphereSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.SPHERE
+
+        sphereSH = inStr.parseSphereSH(dSc)
+        check sphereSH.shape.kind == skSphere
+        check areClose(sphereSH.shape.radius, 2)
+        check sphereSH.transformation.kind == tkTranslation
+        check sphereSH.shape.material.brdf.kind == SpecularBRDF
+        check sphereSH.shape.material.radiance.kind == pkUniform
+        check areClose(sphereSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
+        check areClose(sphereSH.transformation.mat, newTranslation(newPoint3D(1, 2, 3)).mat)

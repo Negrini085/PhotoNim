@@ -648,3 +648,30 @@ proc parseTransformation*(inStr: var InputStream, dSc: var DefScene): Transforma
             break
         
     return result
+
+
+proc parseSphereSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+    # Procedure to parse sphere shape handler 
+    var 
+        matName: string
+        center: Point3D
+        radius: float32
+
+    # Parsing sphere center and radius
+    inStr.expectSymbol('(')
+    center = inStr.parseVec(dSc).Point3D
+    inStr.expectSymbol(',')
+    radius = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+
+    # Parsing material (we need to check if we already defined it)
+    matName = inStr.expectIdentifier()
+    if not (matName in dSc.materials):
+        # If you get inside of this if condition, it's because 
+        # you are pointing at the end of the wrong identifier
+        let msg = fmt "Unknown material: {matName}"
+        raise newException(GrammarError, msg)
+
+    inStr.expectSymbol(')')
+
+    return newSphere(center, radius, material = dSc.materials[matName])
