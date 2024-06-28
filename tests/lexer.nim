@@ -633,3 +633,38 @@ suite "DefScene":
     
         check dSc.overriddenVariables.contains("pippo")
         check dSc.overriddenVariables.contains("pluto")
+
+
+
+#---------------------------------------------------------------#
+#                    Expect procs test suite                    #
+#---------------------------------------------------------------#
+suite "Expect":
+
+    setup:
+        var
+            fname = "files/Expect/symbol.txt"
+            fstr = newFileStream(fname, fmRead)
+
+            inStr = newInputStream(fstr, fname, 4)
+    
+    teardown:
+        discard fstr
+        discard fname
+        discard inStr
+    
+
+    test "expectSymbol proc":
+        # Checking expect procedure
+        var tok: Token
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == '\n'
+
+        inStr.expectSymbol('(')
+        
+        check inStr.readChar() == '\n'
+        check inStr.location.colNum == 1
+        check inStr.location.lineNum == 3
+        check inStr.location.filename == fname

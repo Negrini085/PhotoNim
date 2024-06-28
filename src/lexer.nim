@@ -339,7 +339,7 @@ proc readToken*(inStr: var InputStream): Token =
     
     else:
         # Error condition, something wrong is happening
-        let msg = fmt"Invalid character: {ch}"
+        let msg = fmt"Invalid character: {ch} in: " & $inStr.location
         raise newException(GrammarError, msg)
 
 
@@ -364,3 +364,15 @@ type DefScene* = object
 proc newDefScene*(sc: Scene, mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
     # Procedure to initialize a new DefScene variable, needed at the end of the parsing proc
     DefScene(scene: sc, materials: mat, camera: cam, numVariables: numV, overriddenVariables: ovV)
+
+
+
+#---------------------------------------------------------------#
+#                        Expect procedures                      #
+#---------------------------------------------------------------#
+proc expectSymbol*(inStr: var InputStream, sym: char) =
+    # Read a token and checks wheter is a Symbol or not
+    let tok = inStr.readToken()
+    if (tok.kind != SymbolToken) or (tok.symbol != $sym):
+        let e_msg = fmt"Error: got {tok.symbol} instead of " & sym & "in " & $inStr.location
+        raise newException(GrammarError, e_msg)
