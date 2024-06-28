@@ -32,7 +32,7 @@ proc `$`*(location: SourceLocation): string {.inline.} =
 #                    Token type                     #
 #---------------------------------------------------#
 type KeywordKind* = enum
-    # Different kinds of keyword
+    # Different kinds of key
     
     NEW = 1,
     TRANSLATION = 2,
@@ -476,3 +476,51 @@ proc parseColor*(inStr: var InputStream, dSc: var DefScene): Color =
     inStr.expectSymbol('>')
 
     return newColor(r, g, b)
+
+
+proc parsePigment*(inStr: var InputStream, dSc: var DefScene): Pigment = 
+    # Procedure to parse a specific Pigment
+    var 
+        col1, col2: Color
+        nRows, nCols: int
+        key = inStr.expectKeywords(@[KeywordKind.UNIFORM, KeywordKind.CHECKERED, KeywordKind.TEXTURE])
+    
+    inStr.expectSymbol('(')
+    if key == KeywordKind.UNIFORM:
+        # Uniform pigment kind
+        col1 = inStr.parseColor(dSc)
+        result = newUniformPigment(col1)
+
+    elif key == KeywordKind.CHECKERED:
+        # Checkered pigment kind
+        col1 = inStr.parseColor(dSc)
+        inStr.expectSymbol(',')
+        col2 = inStr.parseColor(dSc)
+        inStr.expectSymbol(',')
+        nRows = inStr.expectNumber(dSc).int
+        inStr.expectSymbol(',')
+        nCols = inStr.expectNumber(dSc).int
+
+        result = newCheckeredPigment(col1, col2, nRows, nCols)
+    
+    elif key == KeywordKind.TEXTURE:
+        # Texture pigment kind
+        var
+            img: HDRImage
+            fname: string
+            str: FileStream
+        fname = inStr.expectString()
+        
+        try:
+            str = newFileStream(fname)
+        except:
+            let msg = "Error in stream opening procedure. Error in: " & $inStr.location
+            raise newException(CatchableError, msg)
+        
+        img = str.readPFM().img        
+        result = newTexturePigment(img)
+
+    else:
+        assert false, "Error in parsePigment implementation, this line should be unreachable."
+
+    inStr.expectSymbol(')')

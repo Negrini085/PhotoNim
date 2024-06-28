@@ -1,0 +1,4 @@
+a
+uniform (<1.0, 0.3, 0.1>)
+checkered (<1.0, 0.3, 0.1>, <0.3, 0.9, 0.1>, 2, 2)
+texture ("../assets/images/textures/earth.pfm")

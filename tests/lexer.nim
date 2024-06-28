@@ -817,4 +817,29 @@ suite "Parse":
         check inStr.readChar() == 'a'
         check areClose(inStr.parseVec(dSc), newVec3f(4.3, 3, 1))
         check areClose(inStr.parseColor(dSc), newColor(0.2, 0.9, 0))
-        
+
+
+    test "parsePigment proc":
+        # Checking parsePigment proc
+        var pg: Pigment
+    
+        fname = "files/Parse/pigment.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+
+        pg = inStr.parsePigment(dSc)
+        check pg.kind == pkUniform
+        check areClose(pg.color, newColor(1.0, 0.3, 0.1)) 
+
+        pg = inStr.parsePigment(dSc)
+        check pg.kind == pkCheckered
+        check areClose(pg.grid.c1, newColor(1.0, 0.3, 0.1)) 
+        check areClose(pg.grid.c2, newColor(0.3, 0.9, 0.1)) 
+        check pg.grid.nCols == 2 
+        check pg.grid.nRows == 2
+
+        pg = inStr.parsePigment(dSc)
+        check pg.kind == pkTexture
