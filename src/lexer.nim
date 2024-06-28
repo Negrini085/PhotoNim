@@ -3,7 +3,7 @@ from std/strformat import fmt
 from std/sequtils import mapIt
 from std/strutils import isDigit, parseFloat, isAlphaNumeric, join
 
-import scene, material, camera
+import scene, material, camera, geometry, hdrimage
 
 const 
     WHITESPACE* = ['\t', '\n', '\r', ' '] 
@@ -376,7 +376,7 @@ proc expectSymbol*(inStr: var InputStream, sym: char) =
     # Read a token and checks wheter is a Symbol or not
     let tok = inStr.readToken()
     if (tok.kind != SymbolToken) or (tok.symbol != $sym):
-        let e_msg = fmt"Error: got {tok.symbol} instead of " & sym & "in " & $inStr.location
+        let e_msg = fmt"Error: got {tok.symbol} instead of " & sym & ". Error in: " & $inStr.location
         raise newException(GrammarError, e_msg)
 
 
@@ -442,3 +442,37 @@ proc expectIdentifier*(inStr: var InputStream): string =
         raise newException(GrammarError, msg)
     
     return tok.identifier
+
+
+
+#------------------------------------------------------------------#
+#                           Parse procs                            #
+#------------------------------------------------------------------#
+proc parseVec*(inStr: var InputStream, dSc: var DefScene): Vec3f = 
+    # Procedure to parse a Vec3f, remeber that it's between square brakets
+    var x, y, z: float32
+
+    inStr.expectSymbol('[')
+    x = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+    y = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+    z = inStr.expectNumber(dSc)
+    inStr.expectSymbol(']')
+
+    return newVec3f(x, y, z)
+
+
+proc parseColor*(inStr: var InputStream, dSc: var DefScene): Color = 
+    # Procedure to parse a Color, remeber that it's between <>
+    var r, g, b: float32
+
+    inStr.expectSymbol('<')
+    r = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+    g = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+    b = inStr.expectNumber(dSc)
+    inStr.expectSymbol('>')
+
+    return newColor(r, g, b)
