@@ -58,7 +58,8 @@ type KeywordKind* = enum
     CHECKERED = 22,
     TEXTURE = 23,
     FLOAT = 24,
-    IMAGE = 25
+    IMAGE = 25,
+    BOX = 26
 
 
 const KEYWORDS* = {
@@ -86,7 +87,8 @@ const KEYWORDS* = {
     "checkered": KeywordKind.CHECKERED,
     "texture": KeywordKind.TEXTURE,
     "float": KeywordKind.FLOAT,
-    "image": KeywordKind.IMAGE
+    "image": KeywordKind.IMAGE,
+    "box": KeywordKind.BOX
 }.toTable
 
 
@@ -699,3 +701,38 @@ proc parsePlaneSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     inStr.expectSymbol(')')
 
     return newPlane(dSc.materials[matName], trans)
+
+
+proc parseBoxSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+    # Procedure to parse box shape handler
+    var 
+        minP, maxP: Point3D
+        matName: string
+        trans: Transformation
+
+    # Parsing box limits
+    inStr.expectSymbol('(')
+    minP = inStr.parseVec(dSc).Point3D
+    inStr.expectSymbol(',')
+    maxP = inStr.parseVec(dSc).Point3D
+    # Checking wheter minP it's actually lower limit of the box
+    if (minP.x > maxP.x) or (minP.y > maxP.y) or (minP.z > maxP.z):
+        let msg = "Be careful, first variable is lower limit of the box. Error in: " & $ inStr.location
+        raise newException(GrammarError, msg)
+
+    inStr.expectSymbol(',')
+
+    # Parsing material (we need to check if we already defined it)
+    matName = inStr.expectIdentifier()
+    if not (matName in dSc.materials):
+        # If you get inside of this if condition, it's because 
+        # you are pointing at the end of the wrong identifier
+        let msg = fmt "Unknown material: {matName}"
+        raise newException(GrammarError, msg)
+
+    # Parsing transformation
+    inStr.expectSymbol(',')
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    return newBox((min: minP, max: maxP), dSc.materials[matName], trans)

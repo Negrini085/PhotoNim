@@ -1001,3 +1001,30 @@ suite "Parse":
         check areClose(planeSH.shape.material.radiance.grid.c2, col2)
         check planeSH.shape.material.radiance.grid.nRows == 2
         check planeSH.shape.material.radiance.grid.nCols == 2
+
+
+    test "parseBoxSH proc":
+        # Checking parseBoxSH procedure, returns a ShapeHandler of a sphere
+        var 
+            boxSH: ShapeHandler
+            keys  = @[KeywordKind.SPHERE, KeywordKind.PLANE, KeywordKind.BOX]
+
+        fname = "files/Parse/Handlers/boxSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.BOX
+
+        boxSH = inStr.parseBoxSH(dSc)
+        check boxSH.shape.kind == skAABox
+        check boxSH.transformation.kind == tkComposition
+
+        check boxSH.transformation.transformations.len == 2
+        check areClose(boxSH.transformation.transformations[0].mat, newRotX(45).mat, eps = 1e-6)
+        check areClose(boxSH.transformation.transformations[1].mat, newScaling(newVec3f(0.1, 0.2, 0.3)).mat)
+
+        check boxSH.shape.material.brdf.kind == SpecularBRDF
+        check boxSH.shape.material.radiance.kind == pkUniform
+        check areClose(boxSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
