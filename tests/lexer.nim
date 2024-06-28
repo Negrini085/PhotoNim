@@ -1,4 +1,4 @@
-import std/[unittest, tables, options, streams]
+import std/[unittest, tables, options, streams, sets]
 import PhotoNim
 
 
@@ -561,3 +561,75 @@ suite "InputStream":
         tok = inStr.saved_token.get
         check tok.kind == KeywordToken
         check tok.keyword == KeywordKind.MATERIAL
+
+
+
+#--------------------------------------#
+#         DefScene test suite          #
+#--------------------------------------#
+suite "DefScene":
+
+    setup:
+        let
+            col1 = newColor(0.3, 0.8, 1)
+            col2 = newColor(0.3, 1, 0.3)
+
+            sc = newScene(@[newSphere(newPoint3D(1, 2, 3), 2)])
+            mat = {
+                "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
+                "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
+            }.toTable
+            rend = newPathTracer()
+            cam = some newPerspectiveCamera(rend, (width:10, height: 12), 2.0)
+            numV = {
+                "pippo": 4.3.float32,
+                "pluto": 1.2.float32
+            }.toTable
+        
+        var ovV = initHashSet[string](2)
+        ovV.incl("pippo")
+        ovV.incl("pluto")
+
+        let dSc = newDefScene(sc, mat, cam, numV, ovV)
+
+    
+    teardown:
+        discard sc    
+        discard mat 
+        discard cam
+        discard ovV
+        discard dSc
+        discard col1
+        discard col2
+        discard rend
+        discard numV
+    
+
+    test "newDefScene proc":
+        # Checking newDefScene proc test
+
+        check dSc.scene.handlers[0].shape.kind == skSphere
+        check dSc.scene.handlers[0].shape.radius == 2
+        check areClose(dSc.scene.handlers[0].transformation.mat, newTranslation(newPoint3D(1, 2, 3)).mat)
+
+        check dSc.camera.isSome
+        check dSc.camera.get.kind == ckPerspective
+        check dSc.camera.get.renderer.kind == rkPathTracer
+        check dSc.camera.get.transformation.kind == tkIdentity
+
+        check dSc.materials["try"].brdf.kind == SpecularBRDF
+        check dSc.materials["try"].radiance.kind == pkUniform
+        check areClose(dSc.materials["try"].radiance.color, col1)
+
+        check dSc.materials["me"].brdf.kind == DiffuseBRDF
+        check dSc.materials["me"].radiance.kind == pkCheckered
+        check dSc.materials["me"].radiance.grid.nRows == 2.int
+        check dSc.materials["me"].radiance.grid.nCols == 2.int
+        check areClose(dSc.materials["me"].radiance.grid.c1, col1)
+        check areClose(dSc.materials["me"].radiance.grid.c2, col2)
+
+        check areClose(dSc.numVariables["pippo"], 4.3.float32)
+        check areClose(dSc.numVariables["pluto"], 1.2.float32)
+    
+        check dSc.overriddenVariables.contains("pippo")
+        check dSc.overriddenVariables.contains("pluto")
