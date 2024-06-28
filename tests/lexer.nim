@@ -1028,3 +1028,28 @@ suite "Parse":
         check boxSH.shape.material.brdf.kind == SpecularBRDF
         check boxSH.shape.material.radiance.kind == pkUniform
         check areClose(boxSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
+
+
+    test "parseTriangleSH proc":
+        # Checking parseTriangleSH procedure, returns a ShapeHandler of a sphere
+        var 
+            triangleSH: ShapeHandler
+            keys  = @[KeywordKind.TRIANGLE, KeywordKind.PLANE, KeywordKind.BOX]
+
+        fname = "files/Parse/Handlers/triangleSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.TRIANGLE
+
+        triangleSH = inStr.parseTriangleSH(dSc)
+        check triangleSH.shape.kind == skTriangle
+        check areClose(triangleSH.shape.vertices[0], newPoint3D(1, 2, 3))
+        check areClose(triangleSH.shape.vertices[1], newPoint3D(4, 5, 6))
+        check areClose(triangleSH.shape.vertices[2], newPoint3D(7, 8, 9))
+
+        check triangleSH.transformation.kind == tkTranslation
+        check areClose(triangleSH.transformation.mat, newTranslation(newVec3f(9, 8, 7)).mat)
+
