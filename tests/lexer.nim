@@ -1088,3 +1088,25 @@ suite "Parse":
 
         check cylinderSH.transformation.kind == tkScaling
         check areClose(cylinderSH.transformation.mat, newScaling(newVec3f(1, 2, 3)).mat)
+
+
+    test "parseMeshSH proc":
+        # Checking parseMeshSH procedure, returns a ShapeHandler of a sphere
+        var 
+            meshSH: ShapeHandler
+            keys  = @[KeywordKind.TRIANGLE, KeywordKind.TRIANGULARMESH, KeywordKind.BOX]
+
+        fname = "files/Parse/Handlers/meshSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.TRIANGULARMESH
+
+        meshSH = inStr.parseMeshSH(dSc)
+        check meshSH.shape.kind == skTriangularMesh
+
+        check meshSH.transformation.kind == tkTranslation
+        check areClose(meshSH.transformation.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        

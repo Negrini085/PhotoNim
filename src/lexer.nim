@@ -808,3 +808,23 @@ proc parseCylinderSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     inStr.expectSymbol(')')
 
     return newCylinder(r, zMin, zMax, phiMax, dSc.materials[matName], trans)
+
+
+proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+    # Procedure to parse mesh shape handler
+    var 
+        fName: string
+        matName: string
+        trans: Transformation
+
+    # Parsing cylinder variables
+    inStr.expectSymbol('(')
+    fname = inStr.expectString()
+    inStr.expectSymbol(',')
+
+    # Parsing transformation
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    return newMesh(fName, trans, tkBinary, 3, 42, 1)
+    
