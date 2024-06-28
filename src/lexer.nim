@@ -394,3 +394,25 @@ proc expectKeywords*(inStr: var InputStream, keys: seq[KeywordKind]): KeywordKin
         raise newException(GrammarError, msg)
 
     return tok.keyword
+
+
+proc expectNumber*(inStr: var InputStream, dSc: var DefScene): float32 =
+    # Procedure to read a LiteralNumberToken and check if is a literal number or a variable
+    var 
+        tok: Token
+        varName: string
+    
+    tok = inStr.readToken()
+    # If it's a literal number token i want to return its value
+    if tok.kind == LiteralNumberToken:
+        return tok.value
+    # If it's an IdentifierToken, we just have to check if it's a variable name
+    elif tok.kind == IdentifierToken:
+        varName = tok.identifier
+        if not (varName in dSc.numVariables):
+            let msg = fmt"Unknown variable {varName}. Error in " & $inStr.location
+            raise newException(GrammarError, msg) 
+        return dSc.numVariables[varName]
+
+    let msg = fmt"Got {tok.kind} instead of LiteralNumberToken or IdentifierToken"
+    raise newException(GrammarError, msg)

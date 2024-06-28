@@ -655,7 +655,7 @@ suite "Expect":
     
 
     test "expectSymbol proc":
-        # Checking expect procedure
+        # Checking expectSymbol procedure
         var tok: Token
 
         check not fstr.isNil
@@ -669,8 +669,9 @@ suite "Expect":
         check inStr.location.lineNum == 3
         check inStr.location.filename == fname
 
-    test "expectSymbol proc":
-        # Checking expect procedure
+
+    test "expectKeywords proc":
+        # Checking expectKeywords procedure
         var tok: Token
         let keys = @[NEW, PLANE]
         
@@ -688,3 +689,40 @@ suite "Expect":
         check inStr.location.colNum == 1
         check inStr.location.lineNum == 3
         check inStr.location.filename == fname
+
+
+    test "expectNumber proc":
+        # Checking expectNumber procedure
+        var ovV = initHashSet[string](2)
+        ovV.incl("pippo")
+        ovV.incl("pluto")
+
+        let
+            col1 = newColor(0.3, 0.8, 1)
+            col2 = newColor(0.3, 1, 0.3)
+
+            sc = newScene(@[newSphere(newPoint3D(1, 2, 3), 2)])
+            mat = {
+                "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
+                "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
+            }.toTable
+            rend = newPathTracer()
+            cam = some newPerspectiveCamera(rend, (width:10, height: 12), 2.0)
+            numV = {
+                "prova": 4.3.float32,
+                "pluto": 1.2.float32
+            }.toTable
+        
+        var dSc = newDefScene(sc, mat, cam, numV, ovV)
+        
+        fname = "files/Expect/num.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == '\n'
+
+        check areClose(inStr.expectNumber(dSc), 4.23)
+        check areClose(inStr.expectNumber(dSc), 4.30)
+    
