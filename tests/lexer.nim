@@ -872,8 +872,7 @@ suite "Parse":
 
     test "parseMaterial proc":
         # Checking parseMaterial proc
-        var 
-            appo: tuple[name: string, mat: Material]
+        var appo: tuple[name: string, mat: Material]
     
         fname = "files/Parse/material.txt"
         fstr = newFileStream(fname, fmRead)
@@ -900,3 +899,52 @@ suite "Parse":
         check areClose(appo.mat.brdf.pigment.grid.c2, newColor(4.3, 0.1, 0.2)) 
         check appo.mat.brdf.pigment.grid.nRows == 2 
         check appo.mat.brdf.pigment.grid.nCols == 2 
+
+
+    test "parseTransformation proc":
+        # Checking parseTransformation proc
+
+        var trans: Transformation
+            
+        fname = "files/Parse/trans.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+
+        trans = inStr.parseTransformation(dSc)
+        check trans.kind == tkTranslation
+        check areClose(trans.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+
+        trans = inStr.parseTransformation(dSc)
+        check trans.kind == tkRotation
+        check areClose(trans.mat, newRotX(45).mat, eps = 1e-6)
+
+        trans = inStr.parseTransformation(dSc)
+        check trans.kind == tkRotation
+        check areClose(trans.mat, newRotY(21.2).mat, eps = 1e-6)
+
+        trans = inStr.parseTransformation(dSc)
+        check trans.kind == tkRotation
+        check areClose(trans.mat, newRotZ(12).mat, eps = 1e-6)
+
+        trans = inStr.parseTransformation(dSc)
+        check trans.kind == tkScaling
+        check areClose(trans.mat, newScaling(newVec3f(4.3, 0.3, 1.2)).mat)
+
+        trans = inStr.parseTransformation(dSc)
+        check trans.kind == tkIdentity
+
+        trans = inStr.parseTransformation(dSc)
+        check trans.kind == tkComposition
+        check trans.transformations.len == 2
+        check areClose(trans.transformations[0].mat, newTranslation(newVec3f(4, 5, 6)).mat)
+        check areClose(trans.transformations[1].mat, newRotX(33).mat, eps = 1e-6)
+
+        trans = inStr.parseTransformation(dSc)
+        check trans.kind == tkComposition
+        check trans.transformations.len == 3
+        check areClose(trans.transformations[0].mat, newTranslation(newVec3f(7, 8, 9)).mat)
+        check areClose(trans.transformations[1].mat, newScaling(newVec3f(1, 2, 3)).mat)
+        check areClose(trans.transformations[2].mat, newRotY(90).mat, eps = 1e-6)

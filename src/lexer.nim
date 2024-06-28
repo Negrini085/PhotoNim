@@ -562,3 +562,89 @@ proc parseMaterial*(inStr: var InputStream, dSc: var DefScene): tuple[name: stri
     inStr.expectSymbol(')')
 
     return (varName, newMaterial(brdf, emRad))
+
+
+proc parseTransformation*(inStr: var InputStream, dSc: var DefScene): Transformation = 
+    # Procedure to parse a transformation
+    let
+        allowedK = @[
+            KeywordKind.IDENTITY, 
+            KeywordKind.TRANSLATION, 
+            KeywordKind.ROTATION_X, 
+            KeywordKind.ROTATION_Y, 
+            KeywordKind.ROTATION_Z, 
+            KeywordKind.SCALING, 
+            ]
+    
+    var
+        tok: Token
+        key: KeywordKind
+        count: int = 0
+
+    result = Transformation.id
+
+    # We keep reading until we are sure there is not a following transformation
+    while true:
+        key = inStr.expectKeywords(allowedK)
+
+        if key == KeywordKind.IDENTITY:
+            # Identity transformation, we just have nothing to do
+            discard
+        
+        elif key == KeywordKind.TRANSLATION:
+            # Translation, we just want to check count value 
+            # in order to understand if we have to return a tkComposition or a tkTranslation
+            inStr.expectSymbol('(')
+            
+            if count == 0: 
+                result = newTranslation(inStr.parseVec(dSc))
+            else: 
+                result = result @ newTranslation(inStr.parseVec(dSc))
+            
+            count += 1
+            inStr.expectSymbol(')') 
+
+        elif key in [KeywordKind.ROTATION_X, KeywordKind.ROTATION_Y, KeywordKind.ROTATION_Z]:
+            # Rotation, we just don't have different kinds
+            # Also here we have to check for count value
+            inStr.expectSymbol('(')
+
+            if count == 0:
+                if key == KeywordKind.ROTATION_X:
+                    result = newRotX(inStr.expectNumber(dSc))
+                elif key == KeywordKind.ROTATION_Y:
+                    result = newRotY(inStr.expectNumber(dSc))
+                elif key == KeywordKind.ROTATION_Z:
+                    result = newRotZ(inStr.expectNumber(dSc))
+
+            else:
+                if key == KeywordKind.ROTATION_X:
+                    result = result @ newRotX(inStr.expectNumber(dSc))
+                elif key == KeywordKind.ROTATION_Y:
+                    result = result @ newRotY(inStr.expectNumber(dSc))
+                elif key == KeywordKind.ROTATION_Z:
+                    result = result @ newRotZ(inStr.expectNumber(dSc))
+
+            count += 1  
+            inStr.expectSymbol(')')
+        
+        elif key == KeywordKind.SCALING:
+            # Scaling, also here we have to check for count value
+            inStr.expectSymbol('(')
+            
+            if count == 0: 
+                result = newScaling(inStr.parseVec(dSc))
+            else: 
+                result = result @ newScaling(inStr.parseVec(dSc))
+            
+            count += 1
+            inStr.expectSymbol(')') 
+        
+        # We must see the next token in order to know if we ought to stop or not
+        tok = inStr.readToken()
+        if (tok.kind != SymbolToken) or (tok.symbol != $'*'):
+            # Here we want to break the transformation parsing proc
+            inStr.unreadToken(tok)
+            break
+        
+    return result
