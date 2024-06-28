@@ -414,5 +414,18 @@ proc expectNumber*(inStr: var InputStream, dSc: var DefScene): float32 =
             raise newException(GrammarError, msg) 
         return dSc.numVariables[varName]
 
-    let msg = fmt"Got {tok.kind} instead of LiteralNumberToken or IdentifierToken"
+    let msg = fmt"Got {tok.kind} instead of LiteralNumberToken or IdentifierToken. Error in: " & $inStr.location
     raise newException(GrammarError, msg)
+
+
+proc expectString*(inStr: var InputStream): string = 
+    # Procedure to read a LiteralStringToken
+    var tok: Token
+
+    tok = inStr.readToken()
+    # Error condition is just token kind, here we just accept a LiteralStringToken
+    if tok.kind != LiteralStringToken:
+        let msg = fmt"Got {tok.kind} instead of LiteralStringToken. Error in: " & $inStr.location
+        raise newException(GrammarError, msg)
+    
+    return tok.str
