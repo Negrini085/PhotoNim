@@ -375,7 +375,7 @@ proc newDefScene*(sc: Scene, mat: Table[string, material.Material], cam: Option[
 #                        Expect procedures                      #
 #---------------------------------------------------------------#
 proc expectSymbol*(inStr: var InputStream, sym: char) =
-    # Read a token and checks wheter is a Symbol or not
+    # Read a token and checks wether is a Symbol or not
     let tok = inStr.readToken()
     if (tok.kind != SymbolToken) or (tok.symbol != $sym):
         let e_msg = fmt"Error: got {tok.symbol} instead of " & sym & ". Error in: " & $inStr.location
@@ -715,7 +715,7 @@ proc parseBoxSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     minP = inStr.parseVec(dSc).Point3D
     inStr.expectSymbol(',')
     maxP = inStr.parseVec(dSc).Point3D
-    # Checking wheter minP it's actually lower limit of the box
+    # Checking wether minP it's actually lower limit of the box
     if (minP.x > maxP.x) or (minP.y > maxP.y) or (minP.z > maxP.z):
         let msg = "Be careful, first variable is lower limit of the box. Error in: " & $ inStr.location
         raise newException(GrammarError, msg)
@@ -769,3 +769,42 @@ proc parseTriangleSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     inStr.expectSymbol(')')
 
     return newTriangle([p1, p2, p3], dSc.materials[matName], trans)
+
+
+proc parseCylinderSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+    # Procedure to parse cylinder shape handler
+    var 
+        r, zMin, zMax, phiMax: float32
+        matName: string
+        trans: Transformation
+
+    # Parsing cylinder variables
+    inStr.expectSymbol('(')
+    r = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+    zMin = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+    zMax = inStr.expectNumber(dSc)
+    # Checking wether z-coordinates are well inserted or not
+    if zMax <  zMin:
+        let msg = "Be careful, first z-coordinate must be the smaller one. Error in: " & $inStr.location
+        raise newException(GrammarError, msg)
+    inStr.expectSymbol(',')
+    phiMax = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+
+
+    # Parsing material (we need to check if we already defined it)
+    matName = inStr.expectIdentifier()
+    if not (matName in dSc.materials):
+        # If you get inside of this if condition, it's because 
+        # you are pointing at the end of the wrong identifier
+        let msg = fmt "Unknown material: {matName}"
+        raise newException(GrammarError, msg)
+
+    # Parsing transformation
+    inStr.expectSymbol(',')
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    return newCylinder(r, zMin, zMax, phiMax, dSc.materials[matName], trans)

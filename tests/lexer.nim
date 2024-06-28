@@ -1050,6 +1050,41 @@ suite "Parse":
         check areClose(triangleSH.shape.vertices[1], newPoint3D(4, 5, 6))
         check areClose(triangleSH.shape.vertices[2], newPoint3D(7, 8, 9))
 
+        check triangleSH.shape.material.brdf.kind == DiffuseBRDF
+        check triangleSH.shape.material.radiance.kind == pkCheckered
+        check areClose(triangleSH.shape.material.radiance.grid.c1, col1)
+        check areClose(triangleSH.shape.material.radiance.grid.c2, col2)
+        check triangleSH.shape.material.radiance.grid.nRows == 2
+        check triangleSH.shape.material.radiance.grid.nCols == 2
+
         check triangleSH.transformation.kind == tkTranslation
         check areClose(triangleSH.transformation.mat, newTranslation(newVec3f(9, 8, 7)).mat)
 
+
+    test "parseCylinderSH proc":
+        # Checking parseCylinderSH procedure, returns a ShapeHandler of a sphere
+        var 
+            cylinderSH: ShapeHandler
+            keys  = @[KeywordKind.TRIANGLE, KeywordKind.CYLINDER, KeywordKind.BOX]
+
+        fname = "files/Parse/Handlers/cylinderSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.CYLINDER
+
+        cylinderSH = inStr.parseCylinderSH(dSc)
+        check cylinderSH.shape.kind == skCylinder
+        check areClose(cylinderSH.shape.R, 2.0)
+        check areClose(cylinderSH.shape.zSpan.min, -1.0)
+        check areClose(cylinderSH.shape.zSpan.max, 1.0)
+        check areClose(cylinderSH.shape.phiMax, 4.0)
+
+        check cylinderSH.shape.material.brdf.kind == SpecularBRDF
+        check cylinderSH.shape.material.radiance.kind == pkUniform
+        check areClose(cylinderSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
+
+        check cylinderSH.transformation.kind == tkScaling
+        check areClose(cylinderSH.transformation.mat, newScaling(newVec3f(1, 2, 3)).mat)
