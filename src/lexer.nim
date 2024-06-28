@@ -675,3 +675,27 @@ proc parseSphereSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     inStr.expectSymbol(')')
 
     return newSphere(center, radius, material = dSc.materials[matName])
+
+
+proc parsePlaneSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+    # Procedure to parse plane shape handler
+    var 
+        matName: string
+        trans: Transformation
+
+    inStr.expectSymbol('(')
+
+    # Parsing material (we need to check if we already defined it)
+    matName = inStr.expectIdentifier()
+    if not (matName in dSc.materials):
+        # If you get inside of this if condition, it's because 
+        # you are pointing at the end of the wrong identifier
+        let msg = fmt "Unknown material: {matName}"
+        raise newException(GrammarError, msg)
+
+    # Parsing transformation
+    inStr.expectSymbol(',')
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    return newPlane(dSc.materials[matName], trans)

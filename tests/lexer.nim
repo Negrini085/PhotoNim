@@ -971,3 +971,33 @@ suite "Parse":
         check sphereSH.shape.material.radiance.kind == pkUniform
         check areClose(sphereSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
         check areClose(sphereSH.transformation.mat, newTranslation(newPoint3D(1, 2, 3)).mat)
+
+
+    test "parsePlaneSH proc":
+        # Checking parsePlaneSH procedure, returns a ShapeHandler of a sphere
+        var 
+            planeSH: ShapeHandler
+            keys  = @[KeywordKind.SPHERE, KeywordKind.PLANE]
+
+        fname = "files/Parse/Handlers/planeSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.PLANE
+
+        planeSH = inStr.parsePlaneSH(dSc)
+        check planeSH.shape.kind == skPlane
+        check planeSH.transformation.kind == tkComposition
+
+        check planeSH.transformation.transformations.len == 2
+        check areClose(planeSH.transformation.transformations[0].mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check areClose(planeSH.transformation.transformations[1].mat, newScaling(newVec3f(0.1, 0.2, 0.3)).mat)
+
+        check planeSH.shape.material.brdf.kind == DiffuseBRDF
+        check planeSH.shape.material.radiance.kind == pkCheckered
+        check areClose(planeSH.shape.material.radiance.grid.c1, col1)
+        check areClose(planeSH.shape.material.radiance.grid.c2, col2)
+        check planeSH.shape.material.radiance.grid.nRows == 2
+        check planeSH.shape.material.radiance.grid.nCols == 2
