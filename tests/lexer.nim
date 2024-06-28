@@ -656,7 +656,6 @@ suite "Expect":
 
     test "expectSymbol proc":
         # Checking expectSymbol procedure
-        var tok: Token
 
         check not fstr.isNil
         check inStr.readChar() == 'a'
@@ -672,7 +671,6 @@ suite "Expect":
 
     test "expectKeywords proc":
         # Checking expectKeywords procedure
-        var tok: Token
         let keys = @[NEW, PLANE]
         
         fname = "files/Expect/keys.txt"
@@ -729,7 +727,6 @@ suite "Expect":
 
     test "expectString proc":
         # Checking expectString procedure
-        var tok: Token
         
         fname = "files/Expect/str.txt"
         fstr = newFileStream(fname, fmRead)
@@ -744,7 +741,6 @@ suite "Expect":
 
     test "expectIdentifier proc":
         # Checking expectIdentifier procedure
-        var tok: Token
         
         fname = "files/Expect/name.txt"
         fstr = newFileStream(fname, fmRead)
@@ -755,4 +751,70 @@ suite "Expect":
         check inStr.readChar() == '\n'
 
         check inStr.expectIdentifier() == "prova"
+
+
+
+#--------------------------------------------------------------#
+#                    Parse procs test suite                    #
+#--------------------------------------------------------------#
+suite "Parse":
+
+    setup:
+        var ovV = initHashSet[string](2)
+        ovV.incl("pippo")
+        ovV.incl("pluto")
+
+        let
+            col1 = newColor(0.3, 0.8, 1)
+            col2 = newColor(0.3, 1, 0.3)
+
+            sc = newScene(@[newSphere(newPoint3D(1, 2, 3), 2)])
+            mat = {
+                "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
+                "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
+            }.toTable
+            rend = newPathTracer()
+            cam = some newPerspectiveCamera(rend, (width:10, height: 12), 2.0)
+            numV = {
+                "prova": 4.3.float32,
+                "pluto": 1.2.float32
+            }.toTable
+
+        var
+            fname = "files/Parse/vec_col.txt"
+            fstr = newFileStream(fname, fmRead)
+
+            inStr = newInputStream(fstr, fname, 4)
+            dSc = newDefScene(sc, mat, cam, numV, ovV)
+    
+    teardown:
+        discard sc
+        discard dSc
+        discard mat
+        discard cam
+        discard ovV
+        discard col1
+        discard col2
+        discard fstr
+        discard rend
+        discard numV
+        discard fname
+        discard inStr
+    
+
+    test "parseVec proc":
+        # Checking parseVec proc
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check areClose(inStr.parseVec(dSc), newVec3f(4.3, 3, 1))
+
+
+    test "parseColor proc":
+        # Checking parseColor proc
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check areClose(inStr.parseVec(dSc), newVec3f(4.3, 3, 1))
+        check areClose(inStr.parseColor(dSc), newColor(0.2, 0.9, 0))
         
