@@ -429,3 +429,16 @@ proc expectString*(inStr: var InputStream): string =
         raise newException(GrammarError, msg)
     
     return tok.str
+
+
+proc expectIdentifier*(inStr: var InputStream): string = 
+    # Procedure to read an IdentifierToken
+    var tok: Token
+
+    tok = inStr.readToken()
+    # Error condition is just token kind, here we just accept an IdentifierToken
+    if tok.kind != IdentifierToken:
+        let msg = fmt"Got {tok.kind} instead of IdentifierToken. Error in: " & $inStr.location
+        raise newException(GrammarError, msg)
+    
+    return tok.identifier

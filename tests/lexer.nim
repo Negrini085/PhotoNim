@@ -725,7 +725,8 @@ suite "Expect":
 
         check areClose(inStr.expectNumber(dSc), 4.23)
         check areClose(inStr.expectNumber(dSc), 4.30)
-    
+
+
     test "expectString proc":
         # Checking expectString procedure
         var tok: Token
@@ -740,3 +741,18 @@ suite "Expect":
 
         check inStr.expectString() == "Daje"
 
+
+    test "expectIdentifier proc":
+        # Checking expectIdentifier procedure
+        var tok: Token
+        
+        fname = "files/Expect/name.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == '\n'
+
+        check inStr.expectIdentifier() == "prova"
+        
