@@ -843,3 +843,60 @@ suite "Parse":
 
         pg = inStr.parsePigment(dSc)
         check pg.kind == pkTexture
+
+
+    test "parseBRDF proc":
+        # Checking parseBRDF proc
+        var brdf: BRDF
+    
+        fname = "files/Parse/brdf.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+
+        brdf = inStr.parseBRDF(dSc)
+        check brdf.kind == DiffuseBRDF
+        check brdf.pigment.kind == pkUniform
+        check areClose(brdf.pigment.color, newColor(1.0, 0.3, 0.1)) 
+
+        brdf = inStr.parseBRDF(dSc)
+        check brdf.kind == SpecularBRDF
+        check brdf.pigment.kind == pkCheckered
+        check areClose(brdf.pigment.grid.c1, newColor(1.0, 0.3, 0.1)) 
+        check areClose(brdf.pigment.grid.c2, newColor(0.1, 4.3, 0.2)) 
+        check brdf.pigment.grid.nRows == 2 
+        check brdf.pigment.grid.nCols == 2 
+
+
+    test "parseMaterial proc":
+        # Checking parseMaterial proc
+        var 
+            appo: tuple[name: string, mat: Material]
+    
+        fname = "files/Parse/material.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+
+        appo = inStr.parseMaterial(dSc)
+        check appo.name == "daje"
+        check appo.mat.brdf.kind == DiffuseBRDF
+        check appo.mat.radiance.kind == pkUniform
+        check appo.mat.brdf.pigment.kind == pkUniform
+        check areClose(appo.mat.radiance.color, newColor(0.1, 0.2, 0.3)) 
+        check areClose(appo.mat.brdf.pigment.color, newColor(0.1, 0.2, 0.3)) 
+
+        appo = inStr.parseMaterial(dSc)
+        check appo.name == "sium"
+        check appo.mat.brdf.kind == SpecularBRDF
+        check appo.mat.radiance.kind == pkUniform
+        check appo.mat.brdf.pigment.kind == pkCheckered
+        check areClose(appo.mat.radiance.color, newColor(0.1, 0.2, 0.3)) 
+        check areClose(appo.mat.brdf.pigment.grid.c1, newColor(0.1, 0.2, 0.3)) 
+        check areClose(appo.mat.brdf.pigment.grid.c2, newColor(4.3, 0.1, 0.2)) 
+        check appo.mat.brdf.pigment.grid.nRows == 2 
+        check appo.mat.brdf.pigment.grid.nCols == 2 

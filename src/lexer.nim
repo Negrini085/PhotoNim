@@ -521,6 +521,44 @@ proc parsePigment*(inStr: var InputStream, dSc: var DefScene): Pigment =
         result = newTexturePigment(img)
 
     else:
-        assert false, "Error in parsePigment implementation, this line should be unreachable."
+        assert false, "Something went wrong in parsePigment, this line should be unreachable."
 
     inStr.expectSymbol(')')
+
+
+proc parseBRDF*(inStr: var InputStream, dSc: var DefScene): BRDF = 
+    # Procedure to parse a BRDF variable
+    var
+        key = inStr.expectKeywords(@[KeywordKind.DIFFUSE, KeywordKind.SPECULAR])
+        pig: Pigment
+
+    # Parsing pigment first
+    inStr.expectSymbol('(')
+    pig = inStr.parsePigment(dSc)
+    inStr.expectSymbol(')')
+
+    # Selecting desired BRDF kind
+    if key == KeywordKind.DIFFUSE:
+        # Diffusive BRDF kind
+        return newDiffuseBRDF(pig)
+    elif key == KeywordKind.SPECULAR:
+        # Specular BRDF kind
+        return newSpecularBRDF(pig)
+    
+    assert false, "Something went wrong in parseBRDF, this line should be unreachable"
+
+
+proc parseMaterial*(inStr: var InputStream, dSc: var DefScene): tuple[name: string, mat: Material] = 
+    # Procedure to parse a material
+    var
+        brdf: BRDF
+        emRad: Pigment 
+        varName = inStr.expectIdentifier()
+
+    inStr.expectSymbol('(')
+    brdf = inStr.parseBRDF(dSc)
+    inStr.expectSymbol(',')
+    emRad = inStr.parsePigment(dSc)
+    inStr.expectSymbol(')')
+
+    return (varName, newMaterial(brdf, emRad))
