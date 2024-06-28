@@ -1,6 +1,7 @@
-import std/[streams, tables, options]
+import std/[streams, tables, options, sets]
 from std/strformat import fmt
 from std/strutils import isDigit, parseFloat, isAlphaNumeric
+import scene, material, camera
 
 const 
     WHITESPACE* = ['\t', '\n', '\r', ' '] 
@@ -346,3 +347,20 @@ proc unreadToken*(inStr: var InputStream, token: Token) =
     # Procedure to unread a whole token from stream file
     assert inStr.savedToken.isNone
     inStr.savedToken = some token
+
+
+
+#----------------------------------------------------------------#
+#       DefScene type: everything needed to define a scene       #
+#----------------------------------------------------------------#
+type DefScene* = object
+    scene*: Scene
+    materials*: Table[string, material.Material]
+    camera*: Option[camera.Camera]
+    numVariables*: Table[string, float32]
+    overriddenVariables*: HashSet[string]
+
+
+proc newDefScene*(sc: Scene, mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
+    # Procedure to initialize a new DefScene variable, needed at the end of the parsing proc
+    DefScene(scene: sc, materials: mat, camera: cam, numVariables: numV, overriddenVariables: ovV)
