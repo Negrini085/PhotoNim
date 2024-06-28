@@ -1,6 +1,8 @@
 import std/[streams, tables, options, sets]
 from std/strformat import fmt
-from std/strutils import isDigit, parseFloat, isAlphaNumeric
+from std/sequtils import mapIt
+from std/strutils import isDigit, parseFloat, isAlphaNumeric, join
+
 import scene, material, camera
 
 const 
@@ -376,3 +378,19 @@ proc expectSymbol*(inStr: var InputStream, sym: char) =
     if (tok.kind != SymbolToken) or (tok.symbol != $sym):
         let e_msg = fmt"Error: got {tok.symbol} instead of " & sym & "in " & $inStr.location
         raise newException(GrammarError, e_msg)
+
+
+proc expectKeywords*(inStr: var InputStream, keys: seq[KeywordKind]): KeywordKind =
+    # Read a token and checks wether there is in the key kind list 
+    var tok: Token
+
+    tok = inStr.readToken()
+    if tok.kind != KeywordToken:
+        let msg = fmt"Expected a KeywordToken instead of {tok.kind}. Error in: " & $inStr.location
+        raise newException(GrammarError, msg)
+    
+    if not (tok.keyword in keys):
+        let msg = fmt"Keywords expected where: [" & join(keys.mapIt(it), ", ") &  "] instead of {tok.keyword}"
+        raise newException(GrammarError, msg)
+
+    return tok.keyword

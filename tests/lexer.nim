@@ -668,3 +668,23 @@ suite "Expect":
         check inStr.location.colNum == 1
         check inStr.location.lineNum == 3
         check inStr.location.filename == fname
+
+    test "expectSymbol proc":
+        # Checking expect procedure
+        var tok: Token
+        let keys = @[NEW, PLANE]
+        
+        fname = "files/Expect/keys.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.readChar() == '\n'
+
+        check inStr.expectKeywords(keys) == NEW
+        
+        check inStr.readChar() == '\n'
+        check inStr.location.colNum == 1
+        check inStr.location.lineNum == 3
+        check inStr.location.filename == fname
