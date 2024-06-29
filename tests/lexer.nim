@@ -974,7 +974,7 @@ suite "Parse":
 
 
     test "parsePlaneSH proc":
-        # Checking parsePlaneSH procedure, returns a ShapeHandler of a sphere
+        # Checking parsePlaneSH procedure, returns a ShapeHandler of a plane 
         var 
             planeSH: ShapeHandler
             keys  = @[KeywordKind.SPHERE, KeywordKind.PLANE]
@@ -1004,7 +1004,7 @@ suite "Parse":
 
 
     test "parseBoxSH proc":
-        # Checking parseBoxSH procedure, returns a ShapeHandler of a sphere
+        # Checking parseBoxSH procedure, returns a ShapeHandler of a box 
         var 
             boxSH: ShapeHandler
             keys  = @[KeywordKind.SPHERE, KeywordKind.PLANE, KeywordKind.BOX]
@@ -1031,7 +1031,7 @@ suite "Parse":
 
 
     test "parseTriangleSH proc":
-        # Checking parseTriangleSH procedure, returns a ShapeHandler of a sphere
+        # Checking parseTriangleSH procedure, returns a ShapeHandler of a triangle 
         var 
             triangleSH: ShapeHandler
             keys  = @[KeywordKind.TRIANGLE, KeywordKind.PLANE, KeywordKind.BOX]
@@ -1062,7 +1062,7 @@ suite "Parse":
 
 
     test "parseCylinderSH proc":
-        # Checking parseCylinderSH procedure, returns a ShapeHandler of a sphere
+        # Checking parseCylinderSH procedure, returns a ShapeHandler of a cylinder 
         var 
             cylinderSH: ShapeHandler
             keys  = @[KeywordKind.TRIANGLE, KeywordKind.CYLINDER, KeywordKind.BOX]
@@ -1091,7 +1091,7 @@ suite "Parse":
 
 
     test "parseMeshSH proc":
-        # Checking parseMeshSH procedure, returns a ShapeHandler of a sphere
+        # Checking parseMeshSH procedure, returns a ShapeHandler of a mesh
         var 
             meshSH: ShapeHandler
             keys  = @[KeywordKind.TRIANGLE, KeywordKind.TRIANGULARMESH, KeywordKind.BOX]
@@ -1109,4 +1109,35 @@ suite "Parse":
 
         check meshSH.transformation.kind == tkTranslation
         check areClose(meshSH.transformation.mat, newTranslation(newVec3f(1, 2, 3)).mat)
-        
+
+
+    test "parseCamera proc":
+        # Checking parseCamera procedure
+        var 
+            camP: Camera
+            keys  = @[KeywordKind.CAMERA, KeywordKind.NEW]
+
+        fname = "files/Parse/camera.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.CAMERA
+
+        camP = inStr.parseCamera(dSc)
+        check camP.kind == ckPerspective
+        check camP.viewport.width == 5
+        check camP.viewport.height == 6
+        check areClose(camP.distance, 1.2)
+        check camP.transformation.kind == tkRotation
+        check areClose(camP.transformation.mat, newRotX(45).mat, eps = 1e-6)
+
+        check inStr.expectKeywords(keys) == KeywordKind.CAMERA
+
+        camP = inStr.parseCamera(dSc)
+        check camP.kind == ckOrthogonal
+        check camP.viewport.width == 1
+        check camP.viewport.height == 4
+        check camP.transformation.kind == tkTranslation
+        check areClose(camP.transformation.mat, newTranslation(newVec3f(1, 2, 4.3)).mat)

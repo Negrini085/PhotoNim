@@ -817,7 +817,7 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
         matName: string
         trans: Transformation
 
-    # Parsing cylinder variables
+    # Parsing .obj filename
     inStr.expectSymbol('(')
     fname = inStr.expectString()
     inStr.expectSymbol(',')
@@ -827,4 +827,50 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     inStr.expectSymbol(')')
 
     return newMesh(fName, trans, tkBinary, 3, 42, 1)
+
+
+proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera = 
+    # Procedure to parse a camera
+    let
+        allowedK = @[
+            KeywordKind.PERSPECTIVE,
+            KeywordKind.ORTHOGONAL 
+            ]
+        rend = newOnOffRenderer()   # As right now, giving an OnOff renderer as defalt renderer
     
+    var 
+        dist: float32
+        key: KeywordKind
+        width, height: int
+        trans: Transformation
+
+    # Parsing kind and image dimensions
+    inStr.expectSymbol('(')
+    key = inStr.expectKeywords(allowedK)
+    inStr.expectSymbol(',')
+    width = inStr.expectNumber(dSc).int
+    inStr.expectSymbol(',')
+    height = inStr.expectNumber(dSc).int
+    inStr.expectSymbol(',')
+
+    # Parsing distance (only for persepctive camera)
+    if key == KeywordKind.PERSPECTIVE:
+        dist = inStr.expectNumber(dSc)
+
+        # Checking wether it's a positive value or not
+        if dist <= 0:
+            let msg = "Be careful, camera distance must be a positive floating-point number. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+        
+        inStr.expectSymbol(',')
+
+    # Parsing transformation
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    if key == KeywordKind.PERSPECTIVE:
+        result = newPerspectiveCamera(rend, (width, height), dist, trans)
+    elif key == KeywordKind.ORTHOGONAL:
+        result = newOrthogonalCamera(rend, (width, height), trans)
+    
+    return result
