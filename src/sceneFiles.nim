@@ -199,7 +199,7 @@ proc readChar*(inStr: var InputStream): char =
     
     # Otherwise we read a new character from the stream
     else:
-        result = readChar(inStr.stream)
+        result = inStr.stream.readChar()
 
     inStr.savedLocation = inStr.location
     inStr.updateLocation(result)
