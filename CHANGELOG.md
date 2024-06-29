@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- *(HDRImage)* Add HDRImage definitive docs
 - *(Geometry)* Final geometry documentation
 
 ## [0.3.0] - 2024-06-23
