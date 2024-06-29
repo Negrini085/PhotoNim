@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 📚 Documentation
+
+- *(Geometry)* Final geometry documentation
+
+## [0.3.0] - 2024-06-23
+
 ### 🚀 Features
 
 - *(Earth)* Earth task with nimble.
