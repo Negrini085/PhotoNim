@@ -574,7 +574,7 @@ suite "DefScene":
             col1 = newColor(0.3, 0.8, 1)
             col2 = newColor(0.3, 1, 0.3)
 
-            sc = newScene(@[newSphere(newPoint3D(1, 2, 3), 2)])
+            sc = @[newSphere(newPoint3D(1, 2, 3), 2)]
             mat = {
                 "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
                 "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
@@ -608,9 +608,9 @@ suite "DefScene":
     test "newDefScene proc":
         # Checking newDefScene proc test
 
-        check dSc.scene.handlers[0].shape.kind == skSphere
-        check dSc.scene.handlers[0].shape.radius == 2
-        check areClose(dSc.scene.handlers[0].transformation.mat, newTranslation(newPoint3D(1, 2, 3)).mat)
+        check dSc.scene[0].shape.kind == skSphere
+        check dSc.scene[0].shape.radius == 2
+        check areClose(dSc.scene[0].transformation.mat, newTranslation(newPoint3D(1, 2, 3)).mat)
 
         check dSc.camera.isSome
         check dSc.camera.get.kind == ckPerspective
@@ -699,7 +699,7 @@ suite "Expect":
             col1 = newColor(0.3, 0.8, 1)
             col2 = newColor(0.3, 1, 0.3)
 
-            sc = newScene(@[newSphere(newPoint3D(1, 2, 3), 2)])
+            sc = @[newSphere(newPoint3D(1, 2, 3), 2)]
             mat = {
                 "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
                 "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
@@ -768,7 +768,7 @@ suite "Parse":
             col1 = newColor(0.3, 0.8, 1)
             col2 = newColor(0.3, 1, 0.3)
 
-            sc = newScene(@[newSphere(newPoint3D(1, 2, 3), 2)])
+            sc = @[newSphere(newPoint3D(1, 2, 3), 2)]
             mat = {
                 "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
                 "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
@@ -1141,3 +1141,83 @@ suite "Parse":
         check camP.viewport.height == 4
         check camP.transformation.kind == tkTranslation
         check areClose(camP.transformation.mat, newTranslation(newVec3f(1, 2, 4.3)).mat)
+
+
+    test "parseDefScene proc":
+        # Check parseDefScene proc
+        var 
+            matP: Material
+            camP: Camera
+
+        fname = "files/Parse/scene.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)    
+        dSc = inStr.parseDefScene()
+
+        # Checking numVariables
+        check dSc.numVariables.len() == 1
+        check "clock" in dSc.numVariables
+        check areClose(dSc.numVariables["clock"], 150.0)
+
+        # Checking materials
+        check dSc.materials.len == 3
+        check "sphereMaterial" in dSc.materials
+        check "skyMaterial" in dSc.materials
+        check "groundMaterial" in dSc.materials
+
+        matP = dSc.materials["sphereMaterial"]
+        check matP.brdf.kind == SpecularBRDF
+        check matP.brdf.pigment.kind == pkUniform
+        check areClose(matP.brdf.pigment.color, newColor(0.5, 0.5, 0.5))
+        check matP.radiance.kind == pkUniform
+        check areClose(matP.radiance.color, BLACK)
+
+        matP = dSc.materials["skyMaterial"]
+        check matP.brdf.kind == DiffuseBRDF
+        check matP.brdf.pigment.kind == pkUniform
+        check areClose(matP.brdf.pigment.color, BLACK)
+        check matP.radiance.kind == pkUniform
+        check areClose(matP.radiance.color, newColor(0.7, 0.5, 1.0))
+
+        matP = dSc.materials["groundMaterial"]
+        check matP.brdf.kind == DiffuseBRDF
+        check matP.brdf.pigment.kind == pkCheckered
+        check areClose(matP.brdf.pigment.grid.c1, newColor(0.3, 0.5, 0.1))
+        check areClose(matP.brdf.pigment.grid.c2, newColor(0.1, 0.2, 0.5))
+        check matP.brdf.pigment.grid.nRows == 2
+        check matP.brdf.pigment.grid.nCols == 2
+        check matP.radiance.kind == pkUniform
+        check areClose(matP.radiance.color, BLACK)
+
+        # Checking shapes 
+        check dSc.scene.len == 3
+
+        check dSc.scene[0].shape.kind == skPlane
+        check dSc.scene[0].transformation.kind == tkComposition
+        check dSc.scene[0].transformation.transformations.len == 2
+        check dSc.scene[0].transformation.transformations[0].kind == tkTranslation
+        check dSc.scene[0].transformation.transformations[1].kind == tkRotation
+        check areClose(dSc.scene[0].transformation.transformations[0].mat, newTranslation(newVec3f(0, 0, 100)).mat)
+        check areClose(dSc.scene[0].transformation.transformations[1].mat, newRotY(150).mat, eps = 1e-6)
+
+        check dSc.scene[1].shape.kind == skPlane
+        check dSc.scene[1].transformation.kind == tkIdentity
+
+        check dSc.scene[2].shape.kind == skSphere
+        check dSc.scene[2].transformation.kind == tkTranslation
+        check areClose(dSc.scene[2].transformation.mat, newTranslation(eZ).mat)
+
+        # Checking camera
+        check dSc.camera.isSome
+        camP = dSc.camera.get
+
+        check camP.kind == ckPerspective
+        check camP.transformation.kind == tkComposition
+        check camP.transformation.transformations.len == 2
+        check camP.transformation.transformations[0].kind == tkRotation
+        check camP.transformation.transformations[1].kind == tkTranslation
+        check areClose(camP.transformation.transformations[0].mat, newRotZ(30).mat, eps = 1e-6) 
+        check areClose(camP.transformation.transformations[1].mat, newTranslation(newVec3f(-4, 0, 1)).mat)
+        check areClose(camP.distance, 2)
+        check camP.viewport.width == 100
+        check camP.viewport.height == 100

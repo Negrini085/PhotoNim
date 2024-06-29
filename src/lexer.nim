@@ -358,14 +358,14 @@ proc unreadToken*(inStr: var InputStream, token: Token) =
 #       DefScene type: everything needed to define a scene       #
 #----------------------------------------------------------------#
 type DefScene* = object
-    scene*: Scene
+    scene*: seq[ShapeHandler]
     materials*: Table[string, material.Material]
     camera*: Option[camera.Camera]
     numVariables*: Table[string, float32]
     overriddenVariables*: HashSet[string]
 
 
-proc newDefScene*(sc: Scene, mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
+proc newDefScene*(sc: seq[ShapeHandler], mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
     # Procedure to initialize a new DefScene variable, needed at the end of the parsing proc
     DefScene(scene: sc, materials: mat, camera: cam, numVariables: numV, overriddenVariables: ovV)
 
@@ -408,6 +408,7 @@ proc expectNumber*(inStr: var InputStream, dSc: var DefScene): float32 =
     # If it's a literal number token i want to return its value
     if tok.kind == LiteralNumberToken:
         return tok.value
+
     # If it's an IdentifierToken, we just have to check if it's a variable name
     elif tok.kind == IdentifierToken:
         varName = tok.identifier
@@ -814,7 +815,6 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     # Procedure to parse mesh shape handler
     var 
         fName: string
-        matName: string
         trans: Transformation
 
     # Parsing .obj filename
@@ -874,3 +874,78 @@ proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera =
         result = newOrthogonalCamera(rend, (width, height), trans)
     
     return result
+
+
+proc parseDefScene*(inStr: var InputStream): DefScene = 
+    # Procedure to parse the whole file and to create the DefScene variable 
+    # that will be the starting point of the rendering process
+    var 
+        dSc: DefScene
+        tryTok: Token
+        mat: Material
+        varName: string
+        varVal: float32
+
+    while true:
+        tryTok = inStr.readToken()
+        
+        # What if we are in Eof condition?
+        if tryTok.kind == StopToken:
+            break
+        
+        # The only thing that is left is reading Keywords
+        if tryTok.kind != KeywordToken:
+            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+        
+        # Just in case we are defining a float variable
+        if tryTok.keyword == KeywordKind.FLOAT:
+
+            varName = inStr.expectIdentifier()
+            inStr.expectSymbol('(')
+            varVal = inStr.expectNumber(dSc)
+            inStr.expectSymbol(')')
+
+            dSc.numVariables[varName] = varVal
+        
+        # What if we have a sphere
+        elif tryTok.keyword == KeywordKind.SPHERE:
+            dSc.scene.add(inStr.parseSphereSH(dSc))
+
+        # What if we have a plane
+        elif tryTok.keyword == KeywordKind.PLANE:
+            dSc.scene.add(inStr.parsePlaneSH(dSc))
+
+        # What if we have a Box
+        elif tryTok.keyword == KeywordKind.BOX:
+            dSc.scene.add(inStr.parseBoxSH(dSc))
+
+        # What if we have a triangle
+        elif tryTok.keyword == KeywordKind.TRIANGLE:
+            dSc.scene.add(inStr.parseTriangleSH(dSc))
+
+        # What if we have a cylinder
+        elif tryTok.keyword == KeywordKind.CYLINDER:
+            dSc.scene.add(inStr.parseCylinderSH(dSc))
+
+        # What if we have a triangular mesh
+        elif tryTok.keyword == KeywordKind.TRIANGULARMESH:
+            dSc.scene.add(inStr.parseMeshSH(dSc))
+        
+        # What if we have a camera
+        elif tryTok.keyword == KeywordKind.CAMERA:
+
+            # I want to have a limit in camera number
+            if dSc.camera.isSome:
+                let msg = "You can't define more than one camera. Error in: " & $inStr.location
+                raise newException(GrammarError, msg)
+            
+            dSc.camera = some inStr.parseCamera(dSc)
+        
+        # What if we have a material
+        elif tryTok.keyword == KeywordKind.MATERIAL:
+            (varName, mat) = inStr.parseMaterial(dSc)
+            dSc.materials[varName] = mat
+
+    # We get here only when file ends
+    return dSc
