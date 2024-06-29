@@ -651,6 +651,9 @@ proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
             tSpan: ray.tSpan, depth: ray.depth
         )
 
+proc `$`*(ray: Ray): string {.inline.} =
+    return fmt"Origin: {ray.origin}, Direction: {ray.dir}, Tmin: {ray.tSpan.min}, Tmax: {ray.tSpan.max}, Depth: {ray.depth}"
+
 proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
 
 

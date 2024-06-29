@@ -18,7 +18,7 @@ PhotoNim is a ray tracing code that enables the rendering of complex scenery. To
 </div>
 <div style="height: 40px;"></div>
 
-Vectors are one of the fundamental units of our code as they allow us to define directions and will also serve as the basis for implementing points and normals. To ensure maximum generality, the most general vectors are template arrays with a specified length. The type ```Vec*[N: static[int], V]``` specializes in fixed-length, fixed-type vectors, as we are particularly interested in float32 vectors that are 2, 3, or 4 memory cells long (due to the dimensionality of our problem).
+Vectors are one of the fundamental units of our code as they allow us to define directions and will also serve as the basis for implementing points and normals. To ensure maximum generality, the most general vectors are template arrays with a specified length. The type ```Vec*[N: static[int], V]``` specializes in fixed-length, fixed-type vectors, as we are particularly interested in float32 vectors that are 2, 3, or 4 memory cells long (due to the dimensionality of the problem we want to solve).
 
 ```nim
 type 
@@ -69,9 +69,11 @@ proc cross*[V](a, b: Vec3[V]): Vec3[V]                          # Performs cross
 proc dot*[N: static[int], V](a, b: Vec[N, V]): V                # Performs scalar product
 
 proc norm2*[N: static[int], V](a: Vec[N, V]): V                 # Compute vector squared norm
+
 proc norm*[N: static[int], V](a: Vec[N, V]): float32            # Compute vector norm
 
 proc normalize*[N: static[int], V](a: Vec[N, V]): Vec[N, V]     # Normalizes a vector
+
 proc dir*[N: static[int], V](at, to: Vec[N, V]): Vec[N, V]      # Gives direction
 ```
 
@@ -79,6 +81,7 @@ A fundamental procedure during testing is ```areClose```, which evaluates whethe
 
 ```nim
 proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
+
 proc areClose*[N: static[int]](a, b: Vec[N, float32]; eps: float32 = epsilon(float32)): bool = 
     for i in 0..<N: 
         if not areClose(a[i], b[i], eps): return false
@@ -98,16 +101,20 @@ var
     v2 = newVec3[float32](1, 2, 3)      # Initializes a Vec3[float32]
     v3 = newVec3f(4, 5, 6)              # Initializes a Vec3f
 
-echo v2 + v3    # You should see (5, 7, 9)
-echo v2 - v3    # You should see (-3, -3, -3)
+echo ' '
+echo "Vector sum: ", v2 + v3    # You should see (5, 7, 9)
+echo "Vector difference: ", v2 - v3    # You should see (-3, -3, -3)
 
-echo dot(v2, v3)    # You should see 32
-echo cross(v2, v3)  # You should see (-3, 6, -3)
+echo ' '
+echo "Dot product: ", dot(v2, v3)    # You should see 32
+echo "Cross product", cross(v2, v3)  # You should see (-3, 6, -3)
 
-echo areClose(v2, v3)                   # You should see false
-echo areClose(v2, newVec3f(1, 2, 3))    # You should see true
+echo ' '
+echo "areClose(v2, v3): ", areClose(v2, v3)                   # You should see false
+echo "areClose(v2, v2)", areClose(v2, newVec3f(1, 2, 3))    # You should see true
 
-echo v1.norm2   # You should see 14
+echo ' '
+echo "v1 norm: ", v1.norm2   # You should see 14
 ```
 
 <div style="height: 40px;"></div>
@@ -124,8 +131,11 @@ type
     Point3D* {.borrow: `.`.} = distinct Vec3f
     Normal* {.borrow: `.`.} = distinct Vec3f
 
+# Constructor procs
 proc newPoint2D*(u, v: float32): Point2D {.inline.} = Point2D([u, v]) 
+
 proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
+
 proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z].normalize)
 ```
 
@@ -144,24 +154,29 @@ proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y
 <div style="height: 25px;"></div>
 
 ```nim
+
 var
     vec = newVec3f(4, 5, 6)         # Initializes a three-dimensional vector
     p_3d = newPoint3D(1, 2, 3)      # New three-dimensional point
     p_2d = newPoint2D(1.0, 0.5)     # New two dimensional point
     normal = newNormal(1, 0, 0)     # New normal
 
+echo ' '
 echo "Vector + Point3D: ", vec + p_3d         # You should get (5, 7, 9)
 echo "Point3D - Vector: ", p_3d - vec         # You should get (-3, -3, -3)
 
+echo ' '
 echo "First point2D component: ", p_2d.u       # You should get 1.0
 echo "Second point2D component: ", p_2d.v      # You should get 0.5
 
+echo ' '
 echo "First point3D component: ", p_3d.x             # You should get 1
 echo "First Normal component: ", normal.x            # You should get 1
 
-# Doing dot product, you should get 4
-echo "Scalar product: ", dot(newVec3f(normal.x, normal.y, normal.z), vec)
-echo "AreClose test: ", areClose(p_3d, newPoint3D(2, 3, 4))     # You should get false
+
+echo ' '
+echo "Scalar product: ", dot(normal.Vec3f, vec)               # You should get 4
+echo "AreClose test: ", areClose(p_3d, newPoint3D(2, 3, 4))   # You should get false
 ```
 
 <div style="height: 40px;"></div>
@@ -170,7 +185,7 @@ echo "AreClose test: ", areClose(p_3d, newPoint3D(2, 3, 4))     # You should get
 </div>
 <div style="height: 40px;"></div>
 
-In order to manipulate complex scenarios and in order to observe them from a generic position in space, it is necessary to apply transformations to the geometric elements we have previously defined. In PhotoNim, only invertible transformations are implemented, such as:
+In order to create and manipulate complex scenarios, it is necessary to apply transformations to the geometric elements we have previously defined. In PhotoNim, only invertible transformations are implemented, such as:
 
 - scaling
 - rotation
@@ -198,7 +213,7 @@ type
     Mat4f* = Mat4[float32]
 ```
 
-There are procedures available for initializing variables, but they are not relevant for our code as matrices only serve as a support for transformations. It could be useful using ```areClose``` procedure in order to test transformation equivalence, which is given by matrices equivalence.
+There are procedures available for initializing variables, but they are not relevant for our code as matrices only serve as a support for transformations. It could be useful using ```areClose``` procedure in order to test transformation equivalence, which is deeply linked to matrix equivalence.
 
 ```nim
 proc areClose*[M, N: static[int], V](a, b: Mat[M, N, V]; eps: V = epsilon(V)): bool = 
@@ -258,8 +273,15 @@ proc dot*[M, N: static[int], V](a: Mat[M, N, V], b: Vec[N, V]): Vec[M, V] =
 </div>
 <div style="height: 25px;"></div>
 
-The transformations of interest to us are rotation, scaling, and translation. We have opted to implement them as different ```kind``` of transformations due to challenges encountered with inheritance in Nim. 
-The total number of transformation types is six, as we have also taken into account the identity transformation and the possibility of generic and composite transformations.
+The transformations we want to have avilable in PhotoNim are:
+- rotation
+- scaling
+- translation
+- identity
+
+and possible combinations of the ones previously listed. 
+We have opted to implement them as different ```kind``` of the ```Transformation type``` due to challenges encountered with inheritance in Nim. 
+The total number of transformation types is six, as we have also taken into account the possibility of generic and composite transformations.
 
 ```nim
 type 
@@ -276,7 +298,7 @@ type
 ```
 
 As you can see, direct and inverse matrices are 4x4: that's because 3x3 translation matrices aren't linear operators. 
-In order to restore linearity, we need to add a dimensionality and use 4x4 matrices: in such a frame of work we also need to add a coordinate to points and vectors. 
+In order to restore linearity, we need to add a dimension and use 4x4 matrices: in such a frame of work we also need to add a coordinate to points and vectors. 
 A vector has zero as its fourth component, whilst a point has one at the same position.
 To establish the most comprehensive framework wherein transformations are determined by the row-by-column multiplication of vectors and matrices, procedures are implemented to upgrade three-component elements into 4-component memory containers.
 
@@ -302,13 +324,12 @@ Since we aim to describe various types of transformations, constructor procedure
 
 - ```proc newTransformation*(mat, inv_mat: Mat4f): Transformation``` is the most generic constructor procedure, gives as output a tkGeneric transformation and the user has to specify direct and inverse transformation matrices.
 
-Once you have initialized a transformation using one of the previously exposed constructor procedures, you can simply get the inverse one by calling ```proc inverse*(transf: Transformation): Transformation``` which creates a new transformation consistently exchanging transformation matrices. 
+Once you have initialized a transformation using one of the previously listed constructor procedures, you can simply get the inverse one by calling ```proc inverse*(transf: Transformation): Transformation``` which creates a new transformation consistently exchanging transformation matrices. 
 
-To apply the transformations defined previously, it is possible to use the ```apply``` procedure, which plays a crucial role in scenery creation and in the intersection analysis between light rays and different objects. 
-With the goal of having a high-performance ray tracer, we carried out some calculations explicitly in order to avoid doing a lot of useless multiplication such as in applying a scaling, which has a transformation matrix that has almost all entries equal to zero.
+To apply the transformations defined previously, it is possible to use the ```apply``` procedure, which plays a crucial role in the analysis of intersections between light rays and different objects. 
+With the goal of having a high-performance ray tracer, we carried out some calculations explicitly in order to avoid doing a lot of useless multiplication such as in applying a scaling, which has a transformation matrix that has only the principal diagonal non zero.
 
 ```nim
-
 proc apply*[T](transf: Transformation, x: T): T =
     case transf.kind
     of tkIdentity: return x
@@ -371,43 +392,120 @@ var
     p = newPoint3D(3, 2, 1)
 
 
+echo ' '
 echo "Vector scaling: ", t1.apply(v)         # You should get (6, 4, 2)
 echo "Point3D scaling: ", t1.apply(p)        # You should get (6, 4, 2)
 
-echo '\n'
+echo ' '
 echo "Vector rotation: ", t2.apply(v)        # You should get (3, -1, 2)
 echo "Point3D rotation: ", t2.apply(p)       # You should get (3, -1, 2)
 
-echo '\n'
+echo ' '
 echo "Vector translation: ", t3.apply(v)        # You should get (3, 2, 1)
 echo "Point3D translation: ", t3.apply(p)       # You should get (4, 4, 4)
 
 comp = t1 @ t2  # Compose transformations
-echo '\n'
+echo ' '
 echo "Vector compound transformation: ", comp.apply(v)        # You should get (6, -2, 4)
 echo "Point3D compound transformation: ", comp.apply(p)       # You should get (6, -2, 4)
 
 inv = t1.inverse
-echo '\n'
+echo ' '
 echo "Vector inverse transformation: ", inv.apply(v)          # You should get (1.5, 1, 0.5)
 echo "Point3D inverse transformation: ", inv.apply(p)         # You should get (1.5, 1, 0.5)
 ```
+
+<div style="height: 40px;"></div>
+<div style="text-align: center;">
+    <span style="color: blue; font-size: 28px;"> Ray </span>
+</div>
+<div style="height: 40px;"></div>
+
+PhotoNim is a backward ray tracer, meaning that we are tracing rays from the camera to the light sources.
+The first tool we need to develop is indeed a type that allows us to uniquely characterize a ray:
+
+```nim
+type Ray* = ref object
+    origin*: Point3D
+    dir*: Vec3f
+    tSpan*: Interval[float32]
+    depth*: int
+```
+
+To describe a light ray, we need to specify the point where it was emitted and the direction of propagation.
+We also provide the temporal limits of the ray's propagation and the number of reflections it has undergone within the simulated region.
+It's possible to inizialize a ```Ray``` variable by means of ```newRay``` proc.
+It's fundamental to 
+The following feature is fundamental to be able to apply generic transformations to the ray, because  it's needed in order to evaluate intersections with shapes in their local reference system.
+
+```nim
+proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
+    case transformation.kind: 
+    of tkIdentity: ray
+    of tkTranslation: 
+        Ray(
+            origin: apply(transformation, ray.origin), 
+            dir: ray.dir, 
+            tSpan: ray.tSpan, depth: ray.depth
+        )
+    else: 
+        Ray(
+            origin: apply(transformation, ray.origin), 
+            dir: apply(transformation, ray.dir), 
+            tSpan: ray.tSpan, depth: ray.depth
+        )
+```
+
+If you want to evaluate ray position at a certain time t, you just have to use ```at``` procedure.
+
+<div style="height: 25px;"></div>
+<div style="text-align: left;">
+    <span style="color: blue; font-size: 20px;"> Example </span>
+</div>
+<div style="height: 25px;"></div>
+
+```nim
+let
+    trans = newTranslation(newVec3f(2, 0, 0))
+    rotY = newRotY(90)
+
+var 
+    origin = ORIGIN3D        # Ray starting point
+    dir = newVec3f(1, 0, 0)     # Ray direction (along x-axis)
+    ray = newRay(origin, dir)           # tSpan and depth have default values
+
+# Printing ray variable content
+echo ' '
+echo "Ray variable: "
+echo $ray
+
+# Translating ray
+echo ' '
+echo "Ray origin (translated): ", ray.transform(trans).origin   # You should see [2, 0, 0]
+echo "Ray direction (translated): ", ray.transform(trans).dir   # You should see [1, 0, 0]
+
+# Rotating ray
+echo ' '
+echo "Ray origin (rotated): ", ray.transform(rotY).origin   # You should see [0, 0, 0]
+echo "Ray direction (rotated): ", ray.transform(rotY).dir   # You should see [0, 0, -1]
+
+
+# Checking ray position at unitary time
+# Ray is starting in (0, 0, 0) and propagating in (1, 0, 0)
+echo ' '
+echo "Ray position at t = 1: ", ray.at(1)      # You should see [1, 0, 0]
+```
+
 <div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> ONB </span>
 </div>
 <div style="height: 40px;"></div>
 
-So far, we have defined geometric constructs that enable us to work with shapes and describe the propagation of rays, but we have yet to address the frame of reference we are working into. 
-We implemented reference systems such as following:
-
-```nim
-type ReferenceSystem* = ref object 
-    origin*: Point3D
-    base*: Mat3f
-```
-where origin is the world point serving as origin for the new reference system, whilst base is a ONB.
-One important procedure regarding reference systems is ```newONB``` proc, which creates an ONB when a normal is given as input using the [_Duff et al. algorithm_](https://graphics.pixar.com/library/OrthonormalB/paper.pdf)
+So far, we have defined geometric constructs that enable us to work with shapes and describe the propagation of rays, but we have yet to address the problem of ray diffusion after a ray-scenery intersection. 
+In order to scatter rays we will need to have an orthonormal base in order to define a local reference system.
+An important block of code is ```newONB``` proc, which creates an ONB when a normal is given as input using the [_Duff et al. algorithm_](https://graphics.pixar.com/library/OrthonormalB/paper.pdf).
+This particoular proc return a Mat3f, whose rows are the basis vectors.
 
 ```nim
 proc newONB*(normal: Normal): Mat3f = 
@@ -417,13 +515,13 @@ proc newONB*(normal: Normal): Mat3f =
         b = a * normal.x * normal.y
         
     [
-        normal.Vec3f,
         newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
-        newVec3f(b, sign + a * normal.y * normal.y, -normal.y)
+        newVec3f(b, sign + a * normal.y * normal.y, -normal.y),
+        normal.Vec3f
     ]
 ```
 
-The first vector given of the ONB is the surface normal in the origin point, denoting the direction toward we are watching.
+The last given matrix row is the surface normal in the intersection point.
 This procedure is tested by means of a method known as random testing: what we are doing in the following code block is generating randomly 1000 ONB and actually checking if ONB properties are verified or not.
 
 ```nim
@@ -439,7 +537,7 @@ This procedure is tested by means of a method known as random testing: what we a
             normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
             onb = newONB(normal)
 
-            check areClose(onb[0], normal.Vec3f)
+            check areClose(onb[2], normal.Vec3f)
 
             check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
             check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)
@@ -448,84 +546,4 @@ This procedure is tested by means of a method known as random testing: what we a
             check areClose(onb[0].norm, 1, eps = 1e-6)
             check areClose(onb[1].norm, 1, eps = 1e-6)
             check areClose(onb[2].norm, 1, eps = 1e-6)
-```
-
-You can initialize a new ReferenceSystem variable using three different procedures:
-
-1. ```newReferenceSystem*(origin: Point3D, base = Mat3f.id)```, which requires a Point3D and a 3x3 matrix which will than be used as ONB.
-
-2. ```newReferenceSystem*(origin: Point3D, rotation: Transformation)```. Here you can only give a rotation or a composition of rotations as transormation input.
-
-3. ```newReferenceSystem*(origin: Point3D, normal: Normal)```, which than uses [_Duff et al. algorithm_](https://graphics.pixar.com/library/OrthonormalB/paper.pdf) in order to create an orthonormal base.
-
-If you want to get vector components in a particular frame of reference ```coeff*[T](refSystem: ReferenceSystem, pt: T)``` is available, as well as ```coeff*[T](refSystem: ReferenceSystem, pt: T)```, which builds a vector given from its components.
-
-
-<div style="height: 25px;"></div>
-<div style="text-align: left;">
-    <span style="color: blue; font-size: 20px;"> Example </span>
-</div>
-<div style="height: 25px;"></div>
-
-
-```nim
-import std/unittest
-import geometry
-
-let
-    refSyst1 = newReferenceSystem(newPoint3D(2, 3, 1))
-    refSyst2 = newReferenceSystem(newPoint3D(1, 2, 3), newRotX(90))
-    refSyst3 = newReferenceSystem(newPoint3D(1, 0, 0), newNormal(1, 0, 0))
-
-#-------------------------------------------------#
-#      Checking Reference System constructor      #
-#-------------------------------------------------#
-echo "First reference system origin: " , refSyst1.origin         # You should get (2, 3, 1)
-echo "Second reference system origin: ", refSyst2.origin         # You should get (1, 2, 3)
-echo "Third reference system origin: " , refSyst3.origin         # You should get (1, 0, 0)
-
-echo refSyst1.base
-# Checking base elements
-check areClose(refSyst1.base[0],  eX, eps = 1e-7)   
-check areClose(refSyst1.base[1],  eY, eps = 1e-7)   
-check areClose(refSyst2.base[2], -eY, eps = 1e-7)   
-check areClose(refSyst2.base[0],  eX, eps = 1e-7)   
-check areClose(refSyst3.base[1], -eZ, eps = 1e-7)   
-check areClose(refSyst3.base[2],  eY, eps = 1e-7)   
-
-
-
-#-----------------------------------------------#
-#          Change of reference system           #
-#-----------------------------------------------#
-let 
-    v1 = newVec3f(1, 2, 3)
-    p1 = newPoint3D(4, 5, 6)
-
-# Getting coefficients, here we are only focused on ONB change compared with
-# the default orthonormal base (eX, eY, eZ)
-echo '\n',"Getting components in first frame of reference: " , refSyst1.coeff(v1)     # You should get (1,  2,  3)
-echo "Getting components in second frame of reference: "     , refSyst2.coeff(v1)     # You should get (1,  3, -2)
-echo "Getting components in third frame of reference: "      , refSyst3.coeff(v1)     # You should get (1, -3,  2)
-
-echo '\n',"Getting components in first frame of reference: " , refSyst1.coeff(p1)     # You should get (4,  5,  6)
-echo "Getting components in second frame of reference: "     , refSyst2.coeff(p1)     # You should get (4,  6, -5)
-echo "Getting components in third frame of reference: "      , refSyst3.coeff(p1)     # You should get (4, -6,  5)
-
-
-# If you want to account also for the frame of reference translation, you have
-# to do it externally
-echo '\n',"Getting components in first frame of reference: " , refSyst1.coeff(v1-refSyst1.origin.Vec3f)     # You should get (-1, -1,  2)
-echo "Getting components in second frame of reference: "     , refSyst2.coeff(v1-refSyst2.origin.Vec3f)     # You should get ( 0,  0,  0)
-echo "Getting components in third frame of reference: "      , refSyst3.coeff(v1-refSyst3.origin.Vec3f)     # You should get ( 0, -3,  2)
-
-echo '\n',"Getting components in first frame of reference: " , refSyst1.coeff(p1-refSyst1.origin.Vec3f)     # You should get (1,  2,  5)
-echo "Getting components in second frame of reference: "     , refSyst2.coeff(p1-refSyst2.origin.Vec3f)     # You should get (3,  3, -3)
-echo "Getting components in third frame of reference: "      , refSyst3.coeff(p1-refSyst3.origin.Vec3f)     # You should get (3, -6,  5)
-
-
-# Getting vector in standard base from coefficients in a particular reference system
-echo refSyst1.fromCoeff(v1)         # You should get (1,  2,  3)
-echo refSyst2.fromCoeff(v1)         # You should get (1, -3,  2)
-echo refSyst3.fromCoeff(v1)         # You should get (1,  3, -2)
 ```
