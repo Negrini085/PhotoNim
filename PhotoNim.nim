@@ -31,14 +31,13 @@ proc pfm2png*(pfmIN, pngOut: string, alpha, gamma: float32, avLum = 0.0) =
         except CatchableError: quit getCurrentExceptionMsg()
         finally: fileStream.close
        
-    try: image.savePNG(pngOut, alpha, gamma, avLum)
-    except CatchableError: quit getCurrentExceptionMsg()     
-    
+    image.savePNG(pngOut, alpha, gamma, avLum)   
     echo fmt"Successfully converted {pfmIN} to {pngOut}"
 
 
 when isMainModule: 
     import docopt
+    from std/strutils import parseFloat
     from std/cmdline import commandLineParams
     from std/os import splitFile
 
@@ -74,9 +73,9 @@ Options:
     if args["help"]:
         if args["<command>"]:
             let command = $args["<command>"]
-            case command
-            of "pfm2png": echo pfm2pngDoc
+            if command == "pfm2png": echo pfm2pngDoc
             else: quit fmt"Command `{command}` not found!"
+
         else: echo PhotoNimDoc
 
 

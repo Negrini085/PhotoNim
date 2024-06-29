@@ -46,6 +46,7 @@ proc `/=`*(a: var Color, b: float32) {.borrow.}
 
 proc `*`*(a: Color, b: Color): Color {.inline.} = newColor(a.r*b.r, a.g*b.g, a.b*b.b)
 
+proc `$`*(a: Color): string {.borrow.}
 proc luminosity*(a: Color): float32 {.inline.} = 0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
 
 
@@ -70,12 +71,12 @@ proc avLuminosity*(img: HDRImage; eps = epsilon(float32)): float32 {.inline.} =
 proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
 proc clamp(x: Color): Color {.inline.} = newColor(clamp(x.r), clamp(x.g), clamp(x.b))
 
-proc toneMap*(img: HDRImage; alpha, gamma, avLum: float32): HDRImage =
+proc toneMap*(img: HDRImage; alpha, avLum: float32): HDRImage =
     result = newHDRImage(img.width, img.height) 
     let lum = if avLum == 0.0: img.avLuminosity else: avLum
     result.pixels = img.pixels.mapIt(clamp(it * (alpha / lum)))
 
-proc applyToneMap*(img: var HDRImage; alpha, gamma, avLum: float32) =
+proc applyToneMap*(img: var HDRImage; alpha, avLum: float32) =
     let lum = if avLum == 0.0: img.avLuminosity else: avLum
     img.pixels.applyIt(clamp(it * (alpha / lum)))
 
@@ -108,14 +109,12 @@ proc readPFM*(stream: FileStream): tuple[img: HDRImage, endian: Endianness] {.ra
     
     try:
         let endianFloat = parseFloat(stream.readLine)
-        if endianFloat == 1.0:
-            result.endian = bigEndian
-        elif endianFloat == -1.0:
-            result.endian = littleEndian
-        else:
-            raise newException(CatchableError, "")
-    except:
-        raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
+        result.endian = 
+            if endianFloat == 1.0: bigEndian
+            elif endianFloat == -1.0: littleEndian
+            else: raise newException(CatchableError, "")
+
+    except: raise newException(CatchableError, "Invalid endianness specification: required bigEndian ('1.0') or littleEndian ('-1.0')")
 
     result.img = newHDRImage(width, height)
 
@@ -132,7 +131,7 @@ proc savePFM*(img: HDRImage; pfmOut: string, endian: Endianness = littleEndian) 
     var stream = newFileStream(pfmOut, fmWrite) 
     defer: stream.close
 
-    if stream.isNil: quit fmt"Error! An error occured while opening an HDRImage from {pfmOut}"
+    if stream.isNil: quit fmt"Error! An error occured while saving an HDRImage to {pfmOut}"
 
     stream.writeLine("PF")
     stream.writeLine(img.width, " ", img.height)
@@ -147,21 +146,21 @@ proc savePFM*(img: HDRImage; pfmOut: string, endian: Endianness = littleEndian) 
             stream.writeFloat(c.b, endian)
 
 
-proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float32 = 0.0) {.raises: [CatchableError].} =
+proc savePNG*(img: HDRImage; pngOut: string, alpha, gamma: float32, avLum: float32 = 0.0) =
     let 
-        toneMappedImg = img.toneMap(alpha, gamma, avLum)
+        toneMappedImg = img.toneMap(alpha, avLum)
         gFactor = 1 / gamma
 
     var 
-        i: int
-        pixelsString = newString(3 * img.pixels.len)
-    
+        pixelsString = newStringOfCap(3 * img.pixels.len)
+        c: Color
+
     for y in 0..<img.height:
         for x in 0..<img.width:
-            let pix = toneMappedImg.getPixel(x, y)
-            pixelsString[i] = (255 * pow(pix.r, gFactor)).char; i += 1
-            pixelsString[i] = (255 * pow(pix.g, gFactor)).char; i += 1
-            pixelsString[i] = (255 * pow(pix.b, gFactor)).char; i += 1
+            c = toneMappedImg.getPixel(x, y)
+            pixelsString.add (255 * pow(c.r, gFactor)).char
+            pixelsString.add (255 * pow(c.g, gFactor)).char
+            pixelsString.add (255 * pow(c.b, gFactor)).char
 
     let successStatus = savePNG24(pngOut, pixelsString, img.width, img.height)
-    if not successStatus: raise newException(CatchableError, fmt"Error! An error occured while saving an HDRImage to {pngOut}")
+    if not successStatus: quit fmt"Error! An error occured while saving an HDRImage to {pngOut}"
