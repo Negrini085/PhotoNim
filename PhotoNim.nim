@@ -115,7 +115,6 @@ Options:
     #--------------------------------------------#
     elif args["rend"]:
         let fileIn = $args["<sceneFile>"]
-        echo fileIn
         var 
             img: HDRImage
             dSc: DefScene
@@ -170,7 +169,6 @@ Options:
 
         inStr = newInputStream(fStr, fileIn, 4)
         dSc = inStr.parseDefScene()
-        echo "ciao"
 
         if dSc.camera.isNone:
             let msg = "Camera not defined in: " & fileIn

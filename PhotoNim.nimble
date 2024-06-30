@@ -19,17 +19,11 @@ task build, "Build the `PhotoNim` executable\n":
 task demo, """Run the `PhotoNim` demo
 
     Usage: 
-            nimble demo (OnOff|Flat|Path) [<output>] [--nR=<numRays> --mD=<maxDepth> --rL=<rouletteLimit> --s=<sampleSide> --mS=<maxShapesPerLeaf>]
+            nimble demo (OnOff|Flat|Path)
 
     Options:
             persp | ortho          Camera kind: Perspective or Orthogonal
             OnOff | Flat | Path    Renderer kind: OnOff (only shows hit), Flat (flat renderer), Path (path tracer)
-            <output>                    Path for rendering result [default: "input_dir/" & "input_name" & "_a_g" & ".png"]
-            --nR=<numRays>              Ray number for path tracer [default: 10]
-            --mD=<maxDepth>             Depth for path tracer scattered rays [default: 5]
-            --rL=<rouletteLimit>        Roulette limit for path tracer scattere rays [default: 3]
-            --s=<sampleSide>            Number of samplesPerSide used in order to reduce aliasing
-            --mS=<maxShapesPerLeaf>     Number of max shapes per leaf 
 """:
 
     var 
@@ -52,6 +46,10 @@ task demo, """Run the `PhotoNim` demo
       
     if commands[(commands.len - 1)] == "demo":
       echo "Need to specify renderer kind, choose between (OnOff|Flat|Path)"
+      return
+
+    if not (commands[(commands.len - 1)] in ["Path", "OnOff", "Flat"]):
+      echo "Usage: nimble demo (OnOff|Flat|Path)"
       return
 
     exec demoCommand
