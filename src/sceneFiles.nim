@@ -179,7 +179,7 @@ proc updateLocation*(inStr: var InputStream, ch: char) =
     # Procedure to update stream location whenever a character is ridden
 
     if ch == '\0': return
-    elif ch == '\n':
+    elif (ch == '\n') or (ch == '\r'):
         # Starting to read a new line
         inStr.location.colNum = 1
         inStr.location.lineNum += 1
