@@ -1,0 +1,4 @@
+a
+camera(perspective, 5, 6, 1.2, rotationX(45))
+camera(orthogonal, 1, 4, translation([1, 2, prova]))
+

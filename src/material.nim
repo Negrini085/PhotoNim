@@ -1,3 +1,4 @@
+import std/streams
 import geometry, pcg, hdrimage
 
 from std/math import floor, sqrt, sin, cos, PI, degToRad
@@ -34,15 +35,21 @@ proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUnif
 
 proc newTexturePigment*(texture: HDRImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: texture)
 
-proc newTexturePigment*(textureSrc: string): Pigment {.inline.} = 
-    var stream = newFileStream(textureSrc)
-    let textureImage =
-        try: stream.readPFM.img 
-        except: quit fmt"Error! An error happend while trying to read texture {textureSrc}!" 
-        finally: stream.close
 
-    Pigment(kind: pkTexture, texture: textureImage)
+proc newTexturePigment*(fname: string): Pigment = 
+    # Procedure to create a texture pigment from file
+    var 
+        str: FileStream
+        img: HDRImage
 
+    try:
+        str = newFileStream(fname, fmRead)
+    except:
+        let msg = "Some problem occured in texture pigment file stream opening"
+        raise newException(CatchableError, msg)
+
+    img = str.readPFM().img
+    Pigment(kind: pkTexture, texture: img)  
 
 proc newCheckeredPigment*(color1, color2: Color, nRows, nCols: int): Pigment {.inline.} = Pigment(kind: pkCheckered, grid: (color1, color2, nRows, nCols))
 
