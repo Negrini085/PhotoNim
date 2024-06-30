@@ -232,7 +232,7 @@ suite "InputStream":
         check inStr.savedLocation.filename == fname
 
         # Fifth call of readChar, it should be a '\n'
-        check (readChar(inStr) == '\n') or (readChar(inStr) == '\r')
+        check (readChar(inStr) == '\n') 
         check inStr.location.colNum == 1
         check inStr.location.lineNum == 2
         check inStr.location.filename == fname
@@ -276,7 +276,7 @@ suite "InputStream":
         check inStr.savedLocation.filename == fname
 
         # Ninth call of readChar, it should be a normal character
-        check (readChar(inStr) == '\n') or (readChar(inStr) == '\r')
+        check (readChar(inStr) == '\n') 
         check inStr.location.colNum == 1
         check inStr.location.lineNum == 3
         check inStr.location.filename == fname
@@ -324,7 +324,7 @@ suite "InputStream":
         inStr = newInputStream(fstr, fname, 4)
 
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
         # Using skipWhitespaceComments for the first time
         # Here we shouldskip a comment line and should unread 'b'
@@ -351,7 +351,7 @@ suite "InputStream":
 
         check inStr.readChar() == 'c'
         inStr.savedChar = '\0'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
 
     test "parseStringToken proc":
@@ -363,7 +363,7 @@ suite "InputStream":
         inStr = newInputStream(fstr, fname, 4)
 
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
         check inStr.readChar() == '"'
 
         strToken = inStr.parseStringToken(inStr.location)
@@ -386,7 +386,7 @@ suite "InputStream":
         inStr = newInputStream(fstr, fname, 4)
 
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
         ch = inStr.readChar()
         check ch == '4'
@@ -411,7 +411,7 @@ suite "InputStream":
         inStr = newInputStream(fstr, fname, 4)
 
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
         # Checking keyword token evaluation
         ch = inStr.readChar()
@@ -425,7 +425,7 @@ suite "InputStream":
         check tok.location.lineNum == 2
         check tok.location.filename == fname
 
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
         check inStr.savedLocation.colNum == 7
         check inStr.savedLocation.lineNum == 2
         check inStr.savedLocation.filename == fname
@@ -659,11 +659,11 @@ suite "Expect":
 
         check not fstr.isNil
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
         inStr.expectSymbol('(')
         
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
         check inStr.location.colNum == 1
         check inStr.location.lineNum == 3
         check inStr.location.filename == fname
@@ -679,11 +679,11 @@ suite "Expect":
 
         check not fstr.isNil
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
         check inStr.expectKeywords(keys) == NEW
         
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
         check inStr.location.colNum == 1
         check inStr.location.lineNum == 3
         check inStr.location.filename == fname
@@ -719,7 +719,7 @@ suite "Expect":
 
         check not fstr.isNil
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
         check areClose(inStr.expectNumber(dSc), 4.23)
         check areClose(inStr.expectNumber(dSc), 4.30)
@@ -734,7 +734,7 @@ suite "Expect":
 
         check not fstr.isNil
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
         check inStr.expectString() == "Daje"
 
@@ -748,7 +748,7 @@ suite "Expect":
 
         check not fstr.isNil
         check inStr.readChar() == 'a'
-        check (inStr.readChar() == '\n') or (inStr.readChar() == '\r')
+        check (inStr.readChar() == '\n')
 
         check inStr.expectIdentifier() == "prova"
 

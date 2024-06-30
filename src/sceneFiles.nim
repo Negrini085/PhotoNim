@@ -179,7 +179,7 @@ proc updateLocation*(inStr: var InputStream, ch: char) =
     # Procedure to update stream location whenever a character is ridden
 
     if ch == '\0': return
-    elif (ch == '\n') or (ch == '\r'):
+    elif (ch == '\n'):
         # Starting to read a new line
         inStr.location.colNum = 1
         inStr.location.lineNum += 1
@@ -200,6 +200,24 @@ proc readChar*(inStr: var InputStream): char =
     # Otherwise we read a new character from the stream
     else:
         result = inStr.stream.readChar()
+
+        # What if we have a \r character? The problem is that 
+        # we would like to know if the following char is a \n or not
+        if result == '\r':
+            inStr.savedLocation = inStr.location
+            inStr.updateLocation(result)
+
+            # Reading the following character
+            result = inStr.readChar()
+            if result == '\n':
+                inStr.savedLocation = inStr.location
+                inStr.updateLocation(result)
+
+                return result
+            
+            else:
+                let msg = "PhotoNim doesn't run on old macOS versions."
+                raise newException(CatchableError, msg)
 
     inStr.savedLocation = inStr.location
     inStr.updateLocation(result)
