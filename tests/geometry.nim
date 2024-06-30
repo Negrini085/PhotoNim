@@ -4,8 +4,11 @@ from std/sequtils import toSeq
 import PhotoNim
 
 
-  
-suite "Vec unittest":
+
+#------------------------------------------#
+#              Vec test suite              #
+#------------------------------------------# 
+suite "Vec":
     echo "Testing the `Vec` type and its procedures."
 
     test "newVec proc":
@@ -128,7 +131,10 @@ suite "Vec unittest":
     
 
 
-suite "Points unittest":
+#---------------------------------------#
+#           Point test suite            #
+#---------------------------------------#
+suite "Point":
     echo "Testing the `Point2D` and `Point3D` type and its procedures."
 
     setup:
@@ -247,10 +253,10 @@ suite "Mat unittest":
     
 
 
-
-suite "Transformation unittest":
-
-    echo "Testing the `Transformation` types and their methods and procs."
+#-------------------------------------------#
+#        Transformation test suite          #
+#-------------------------------------------#
+suite "Transformations":
 
     setup:
         let
@@ -335,11 +341,41 @@ suite "Transformation unittest":
         check areClose(apply(t1, n2), newNormal(1, 0, 0))
         check areClose(apply(t, n3), newNormal(0, 0, 1))
 
+    
+    test "@ proc test":
+        let t2 = newScaling(0.5)
+        var 
+            origin = newPoint3D(0, 0, 0)
+            p1 = newPoint3D(1, 2, 3)
+            comp = t2 @ t1     
+            comp1 = t1 @ t2 
+            id = comp @ comp.inverse
+
+        #-----------------------------------------#
+        #         Testing on origin point         #
+        #-----------------------------------------#
+        check areClose(apply(t2, origin), newPoint3D(0, 0, 0))
+        check areClose(apply(t1, origin), newPoint3D(4, 3, -1))
+        check areClose(apply(comp, origin), newPoint3D(2, 1.5, -0.5))
+        check areClose(apply(comp1, origin), newPoint3D(4, 3, -1))
+        check areClose(apply(id, origin), newPoint3D(0, 0, 0))
 
 
-suite "Derived Transformation test":
+        #-----------------------------------------#
+        #         Testing on generic point        #
+        #-----------------------------------------#
+        check areClose(apply(t2, p1), newPoint3D(0.5, 1, 1.5))
+        check areClose(apply(t1, p1), newPoint3D(5, 5, 2))
+        check areClose(apply(comp, p1), newPoint3D(2.5, 2.5, 1.0))
+        check areClose(apply(comp1, p1), newPoint3D(4.5, 4, 0.5))
+        check areClose(apply(id, p1), newPoint3D(1, 2, 3))
 
-    echo "Testing the `Scaling`, `Translation`, `Rotation` types and their methods."
+
+
+#--------------------------------------------#
+#       Testing derived transformations      #
+#--------------------------------------------#
+suite "Derived Transformations":
 
     setup:
         var
@@ -349,7 +385,8 @@ suite "Derived Transformation test":
 
     teardown:
         discard t1; discard t2; discard t3
-    
+
+
     test "Scaling of Vec4f":
 
         let vec = newVec4f(1, 2, 3, 1)
@@ -536,6 +573,7 @@ suite "Derived Transformation test":
         comp = t3 @ rotx
         check areClose(apply(comp, vec1), newVec4f(1, -3, 2, 0), eps = 1e-6)
         check areClose(apply(comp, vec2), newVec4f(3, 1, 3, 1), eps = 1e-6)
+
 
 
 #-------------------------------------------#

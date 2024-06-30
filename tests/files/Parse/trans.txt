@@ -1,0 +1,10 @@
+a
+translation([1.0, 2.0, 3.0])
+rotationX(45)
+rotationY(21.2)
+rotationZ(12)
+scaling([prova, 0.3, pluto])
+identity
+translation([4.0, 5.0, 6.0]) * rotationX(33)
+translation([7.0, 8.0, 9.0]) * scaling([1.0, 2.0, 3.0]) * rotationY(90)
+
