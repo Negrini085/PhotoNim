@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(Mesh)* It's Tour the France time, new mesh example of a bike (assets/meshes/roadBike.obj tracked with Git lfs)
+
 ### 📚 Documentation
 
 - *(HDRImage)* Add HDRImage definitive docs
