@@ -178,7 +178,7 @@ proc newInputStream*(stream: FileStream, filename: string, tabs = 4): InputStrea
 proc updateLocation*(inStr: var InputStream, ch: char) = 
     # Procedure to update stream location whenever a character is ridden
 
-    if ch == '\0': return
+    if ch == '\0': discard
     elif (ch == '\n'):
         # Starting to read a new line
         inStr.location.colNum = 1
@@ -209,13 +209,9 @@ proc readChar*(inStr: var InputStream): char =
 
             # Reading the following character
             result = inStr.readChar()
-            if result == '\n':
-                inStr.savedLocation = inStr.location
-                inStr.updateLocation(result)
 
-                return result
-            
-            else:
+            # PhotoNim 
+            if result != '\n':
                 let msg = "PhotoNim doesn't run on old macOS versions."
                 raise newException(CatchableError, msg)
 
