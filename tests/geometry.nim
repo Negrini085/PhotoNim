@@ -1,8 +1,10 @@
 import std/unittest
+from math import sqrt, cos, sin, PI
+from std/sequtils import toSeq
 import PhotoNim
 
 
-
+  
 suite "Vec unittest":
     echo "Testing the `Vec` type and its procedures."
 
@@ -19,7 +21,7 @@ suite "Vec unittest":
         let d = newVec2(1.0, 2.0)
         check d.N == 2 and d.V is float
 
-        let e = newVec3(float32 1.0, 2.0, 3.0)
+        let e = newVec3f(1.0, 2.0, 3.0)
         check e.N == 3 and e.V is float32
 
         let f = newVec4(-1, -4, 5, 2)
@@ -50,6 +52,13 @@ suite "Vec unittest":
         var a = newVec3(1.0, 2.0, 3.0)
         a[2] = -3.0
         check a[0] == 1.0 and a[1] == 2.0 and a[2] == -3.0
+
+    test "`==` proc": 
+        check BLACK.Vec3f == [float32 0, 0, 0]
+        check WHITE.Vec3f == [float32 1, 1, 1]
+        check RED.Vec3f == [float32 1, 0, 0]
+        check GREEN.Vec3f == [float32 0, 1, 0]
+        check BLUE.Vec3f == [float32 0, 0, 1]
 
 
     test "`+` proc":
@@ -135,37 +144,15 @@ suite "Points unittest":
         
     test "toPoint3D proc":
         check p3.Vec3f is Vec3f
-        check newVec3(float32 0.01, 0.02, 0.03).toPoint3D is Point3D
+        check newVec3f(0.01, 0.02, 0.03).toPoint3D is Point3D
 
     test "`$` proc":
         check $p2 == "(1.0, 20.0)"
     
-    test "min proc":
-        var
-            a = newPoint3D(1, 2, 3)
-            b = newPoint3D(-1, 2, 5)
-            c = newPoint3D(1, -2, 4)
-            
-            s1 = @[a]
-            s2 = @[a, b, c]
 
-        check areClose(min(s1), newPoint3D(1, 2, 3))
-        check areClose(min(s2), newPoint3D(-1, -2, 3))
-    
-    test "max proc":
-        var
-            a = newPoint3D(1, 2, 3)
-            b = newPoint3D(-1, 2, 5)
-            c = newPoint3D(1, -2, 4)
-            
-            s1 = @[a]
-            s2 = @[a, b, c]
-
-        check areClose(max(s1), newPoint3D(1, 2, 3))
-        check areClose(max(s2), newPoint3D(1, 2, 5))
-
-
-
+#---------------------------------#
+#        Matrix types test        #
+#---------------------------------#
 suite "Mat unittest":
     echo "Testing the `Mat` type and its procedures."
 
@@ -248,32 +235,45 @@ suite "Mat unittest":
 
 
     test "T proc":
-        check [[float32 1.0, 2.0, 3.0]].T is Vec3f
+        var mat: Mat3f = newMat3([float32 1, 2, 3], [float32 4, 5, 6], [float32 7, 8, 9])
+
+        check [[float32 1.0, 2.0, 3.0]].Tv is Vec3f
         check [float32 1.0, 2.0, 3.0].T is Mat[1, 3, float32]
+
+        mat = mat.T
+        check areClose(mat[0], newVec3f(1, 4, 7))
+        check areClose(mat[1], newVec3f(2, 5, 8))
+        check areClose(mat[2], newVec3f(3, 6, 9))
+    
 
 
 
 suite "Transformation unittest":
+
     echo "Testing the `Transformation` types and their methods and procs."
 
     setup:
         let
             mat: Mat4f = [[1.0, 0.0, 0.0, 4.0], [0.0, 1.0, 0.0, 3.0], [0.0, 0.0, 1.0, -1.0], [0.0, 0.0, 0.0, 1.0]]
-            inv_mat: Mat4f = [[1.0, 0.0, 0.0, -4.0], [0.0, 1.0, 0.0, -3.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]]
-        var t1 = newTransformation(mat, inv_mat)
+            matInv: Mat4f = [[1.0, 0.0, 0.0, -4.0], [0.0, 1.0, 0.0, -3.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]]
+        var t1 = newTransformation(mat, matInv)
 
     teardown:
-        discard mat; discard inv_mat; discard t1
+        discard mat; discard matInv; discard t1
+
 
     test "newTransformation proc":
-        let t2 = newTransformation(inv_mat, mat)
-        check areClose(t2.mat, inv_mat)
-        check areClose(t2.inv_mat, mat)
         
+        check t1.kind == tkGeneric
+        check areClose(t1.mat, mat)
+        check areClose(t1.matInv, matInv)
+
+
     test "inverse proc":
+
         let t2 = t1.inverse()
-        check areClose(t2.mat, t1.inv_mat)
-        check areClose(t2.inv_mat, t1.mat)
+        check areClose(t2.mat, t1.matInv)
+        check areClose(t2.matInv, t1.mat)
 
 
     test "`*` proc":
@@ -283,9 +283,9 @@ suite "Transformation unittest":
             t3 = t1 * scal
 
         check areClose(t2.mat, mat * scal)
-        check areClose(t2.inv_mat, inv_mat / scal)
+        check areClose(t2.matInv, matInv / scal)
         check areClose(t3.mat, mat * scal)
-        check areClose(t3.inv_mat, inv_mat / scal)
+        check areClose(t3.matInv, matInv / scal)
 
     test "`/` proc":
         let 
@@ -293,24 +293,21 @@ suite "Transformation unittest":
             t2 = t1 / scal
 
         check areClose(t2.mat, mat / scal)
-        check areClose(t2.inv_mat, inv_mat * scal)
+        check areClose(t2.matInv, matInv * scal)
 
 
     test "apply on Vec4f":
         var
-            vec: Vec4f = newVec4[float32](1, 2, 3, 0)
-            point: Vec4f = newVec4[float32](1, 2, 3, 1)
-
-        # In order to test general methods we are using translation matrices: that means that
-        # transformation acts different depending on the last vector component
+            vec: Vec4f = newVec4f(1, 2, 3, 0)
+            point: Vec4f = newVec4f(1, 2, 3, 1)
             
         check areClose(apply(t1, vec), vec)
-        check areClose(apply(t1, point), newVec4[float32](5, 5, 2, 1))
+        check areClose(apply(t1, point), newVec4f(5, 5, 2, 1))
 
 
     test "apply on Point3D":
         var
-            p1 = newPoint3D(0, 0, 0)
+            p1 = ORIGIN3D
             p2 = newPoint3D(1, 2, 3) 
         
         check areClose(apply(t1, p1), newPoint3D(4, 3, -1))
@@ -319,15 +316,15 @@ suite "Transformation unittest":
 
     test "apply on Vec3f":
         var
-            p1 = newVec3[float32](0, 0, 0)
-            p2 = newVec3[float32](1, 2, 3) 
+            p1 = newVec3f(0, 0, 0)
+            p2 = newVec3f(1, 2, 3) 
 
-        # Testing apply procedure
-        check areClose(apply(t1, p1), newVec3[float32](0, 0, 0))
-        check areClose(apply(t1, p2), newVec3[float32](1, 2, 3))
+        check areClose(apply(t1, p1), newVec3f(0, 0, 0))
+        check areClose(apply(t1, p2), newVec3f(1, 2, 3))
     
 
     test "apply on Normal":
+
         var
             n2 = newNormal(1, 0, 0)
             n3 = newNormal(0, 3/5, 4/5)
@@ -368,29 +365,28 @@ suite "Transformation unittest":
         check areClose(apply(id, p1), newPoint3D(1, 2, 3))
 
 suite "Derived Transformation test":
-    echo "Testing `Scaling`, `Translation`, `Rotation` types and their methods."
+
+    echo "Testing the `Scaling`, `Translation`, `Rotation` types and their methods."
 
     setup:
         var
             t1 = newScaling(2.0)
-            t2 = newScaling(newVec3[float32](1, 2, 3))
-            t3 = newTranslation(newVec3[float32](2, 4, 1))
+            t2 = newScaling(newVec3f(1, 2, 3))
+            t3 = newTranslation(newVec3f(2, 4, 1))
 
     teardown:
-        discard t1
-        discard t2
-        discard t3
-
+        discard t1; discard t2; discard t3
+    
     test "Scaling of Vec4f":
-        # Checking scaling of a Vec4f object
-        let vec = newVec4(float32 1, 2, 3, 1)
 
-        check areClose(apply(t1, vec), newVec4[float32](2, 4, 6, 1))
-        check areClose(apply(t2, vec), newVec4[float32](1, 4, 9, 1))
+        let vec = newVec4f(1, 2, 3, 1)
+
+        check areClose(apply(t1, vec), newVec4f(2, 4, 6, 1))
+        check areClose(apply(t2, vec), newVec4f(1, 4, 9, 1))
     
 
     test "Scaling of Point3D":
-        # Checking scaling of a Point3D object
+
         var p = newPoint3D(0, 3, 1)
         
         # Checking omogeneous scaling
@@ -401,43 +397,211 @@ suite "Derived Transformation test":
     
 
     test "Scaling of Vec3f":
-        # Checking scaling of a Point3D object
-        var p = newVec3[float32](0, 3, 1)
+
+        var p = newVec3f(0, 3, 1)
         
         # Checking omogeneous scaling
-        check areClose(apply(t1, p), newVec3[float32](0, 6, 2))
+        check areClose(apply(t1, p), newVec3f(0, 6, 2))
 
         # Checking arbitrary scaling
-        check areClose(apply(t2, p), newVec3[float32](0, 6, 3))
+        check areClose(apply(t2, p), newVec3f(0, 6, 3))
+
+
+    test "Translation of Vec3f":
+        var 
+            v1 = newVec3f(0, 0, 0)
+            v2 = newVec3f(0, 3, 1)
+
+        # Checking apply procedure
+        check areClose(apply(t3, v1), newVec3f(0, 0, 0))
+        check areClose(apply(t3, v2), newVec3f(0, 3, 1))
 
 
     test "Translation of Vec4f":
         var
-            vec: Vec4f = newVec4[float32](1, 2, 3, 0)
-            point: Vec4f = newVec4[float32](1, 0, 3, 1)
+            vec: Vec4f = newVec4f(1, 2, 3, 0)
+            vec1: Vec4f = newVec4f(1, 2, 3, 1)
 
         # Checking apply procedure
         check areClose(apply(t3, vec), vec)
-        check areClose(apply(t3, point), newVec4[float32](3, 4, 4, 1))
+        check areClose(apply(t3, vec1), newVec4f(3, 6, 4, 1))
     
 
     test "Translation of Point3D":
         var 
-            p1 = newPoint3D(0, 0, 0)
+            p1 = ORIGIN3D
             p2 = newPoint3D(0, 3, 1)
 
         # Checking apply procedure
         check areClose(apply(t3, p1), newPoint3D(2, 4, 1))
         check areClose(apply(t3, p2), newPoint3D(2, 7, 2))
+    
+
+    test "Translation of Normal":
+        var 
+            n1 = newNormal(1, 2, 3)
+
+        # Checking apply procedure
+        check areClose(apply(t3, n1), newNormal(1, 2, 3))
 
 
-    test "Rotation":
+    test "Rotation of Vec4f":
         var
             tx = newRotX(180) 
             ty = newRotY(180) 
             tz = newRotZ(180) 
-            vec = newVec4[float32](1, 2, 3, 1)
+            vec = newVec4f(1, 2, 3, 0)
+            vec1 = newVec4f(1, 2, 3, 1)
+
+        check areClose(apply(tx, vec), newVec4f(1, -2, -3, 0), 1e-6)
+        check areClose(apply(ty, vec), newVec4f(-1, 2, -3, 0), 1e-6)
+        check areClose(apply(tz, vec), newVec4f(-1, -2, 3, 0), 1e-6)
         
-        check areClose(apply(tx, vec), newVec4[float32](1.0, -2.0, -3.0, 1.0), 1e-6)
-        check areClose(apply(ty, vec), newVec4[float32](-1.0, 2.0, -3.0, 1.0), 1e-6)
-        check areClose(apply(tz, vec), newVec4[float32](-1.0, -2.0, 3.0, 1.0), 1e-6)
+        check areClose(apply(tx, vec1), newVec4f(1, -2, -3, 1), 1e-6)
+        check areClose(apply(ty, vec1), newVec4f(-1, 2, -3, 1), 1e-6)
+        check areClose(apply(tz, vec1), newVec4f(-1, -2, 3, 1), 1e-6)
+    
+    
+    test "Rotation of Point3D":
+        var
+            tx = newRotX(180) 
+            ty = newRotY(180) 
+            tz = newRotZ(180) 
+            p = newPoint3D(1, 2, 3)
+        
+        check areClose(apply(tx, p), newPoint3D(1.0, -2.0, -3.0), 1e-6)
+        check areClose(apply(ty, p), newPoint3D(-1.0, 2.0, -3.0), 1e-6)
+        check areClose(apply(tz, p), newPoint3D(-1.0, -2.0, 3.0), 1e-6)
+
+    
+    test "@ composition operator":
+        var
+            rotx = newRotX(180) 
+            comp: Transformation 
+
+        comp = t1 @ t3 @ rotx
+
+        check comp.kind == tkComposition
+        check comp.transformations.len == 3
+
+        check comp.transformations[0].kind == tkScaling
+        check areClose(comp.transformations[0].mat, t1.mat)
+
+        check comp.transformations[1].kind == tkTranslation
+        check areClose(comp.transformations[1].mat, t3.mat)
+
+        check comp.transformations[2].kind == tkRotation
+        check areClose(comp.transformations[2].mat, rotx.mat)
+
+
+    test "newComposition proc":
+        var
+            rotx = newRotX(180) 
+            comp: Transformation 
+        
+        comp = newComposition(@[t1, t3, rotx])
+
+        check comp.kind == tkComposition
+        check comp.transformations.len == 3
+
+        check comp.transformations[0].kind == tkScaling
+        check areClose(comp.transformations[0].mat, t1.mat)
+
+        check comp.transformations[1].kind == tkTranslation
+        check areClose(comp.transformations[1].mat, t3.mat)
+
+        check comp.transformations[2].kind == tkRotation
+        check areClose(comp.transformations[2].mat, rotx.mat)
+
+    
+    test "Composition on Point3D":
+
+        var
+            rotx = newRotX(90)
+            rotz = newRotZ(90)
+
+            comp: Transformation
+            p = newPoint3D(1, 2, 3)
+
+        comp = rotx @ rotz
+        check areClose(apply(comp, p), newPoint3D(-2, -3, 1), eps = 1e-6)
+
+        comp = t3 @ rotx
+        check areClose(apply(comp, p), newPoint3D(3, 1, 3), eps = 1e-6)
+
+    
+    test "Composition on Vec3f":
+
+        var
+            rotx = newRotX(90)
+            rotz = newRotZ(90)
+            
+            comp: Transformation
+            vec = newVec3f(1, 2, 3)
+
+        comp = rotx @ rotz
+        check areClose(apply(comp, vec), newVec3f(-2, -3, 1), eps = 1e-6)
+
+        comp = t3 @ rotx
+        check areClose(apply(comp, vec), newVec3f(1, -3, 2),eps = 1e-6)
+
+    
+    test "Composition on Vec4f":
+
+        var
+            rotx = newRotX(90)
+            rotz = newRotZ(90)
+            comp: Transformation
+
+            vec1 = newVec4f(1, 2, 3, 0)
+            vec2 = newVec4f(1, 2, 3, 1)
+
+        comp = rotx @ rotz
+        check areClose(apply(comp, vec1), newVec4f(-2, -3, 1, 0), eps = 1e-6)
+        check areClose(apply(comp, vec2), newVec4f(-2, -3, 1, 1), eps = 1e-6)
+
+        comp = t3 @ rotx
+        check areClose(apply(comp, vec1), newVec4f(1, -3, 2, 0), eps = 1e-6)
+        check areClose(apply(comp, vec2), newVec4f(3, 1, 3, 1), eps = 1e-6)
+
+
+#-------------------------------------------#
+#       Orthonormal basis test suite        #
+#-------------------------------------------#
+suite "OrthoNormal Basis":
+
+    setup:
+        var onb = newONB(newNormal(0, 0, 1))
+
+    teardown:
+        discard onb
+        
+    
+    test "newONB proc":
+        # Checking newONB proc
+        check areClose(onb[0], eX)
+        check areClose(onb[1], eY)
+        check areClose(onb[2], eZ)
+    
+
+    test "ONB random testing":
+        # Checking Duff et al. algorithm
+        # We are gonna random test it, so we will check random normals as input
+        var 
+            pcg = newPCG()
+            normal: Normal  
+
+
+        for i in 0..<1000:
+            normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
+            onb = newONB(normal)
+
+            check areClose(onb[2], normal.Vec3f)
+
+            check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
+            check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)
+            check areClose(dot(onb[2], onb[0]), 0, eps = 1e-6)
+
+            check areClose(onb[0].norm, 1, eps = 1e-6)
+            check areClose(onb[1].norm, 1, eps = 1e-6)
+            check areClose(onb[2].norm, 1, eps = 1e-6)

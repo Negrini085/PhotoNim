@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: jiro4989/setup-nim-action@v1
         with:
-          nim-version: '2.0.x' 
+          nim-version: '2.0.0' 
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Echo Nim version
         run: nim -v
