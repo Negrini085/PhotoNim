@@ -206,7 +206,7 @@ proc readChar*(inStr: var InputStream): char =
         if result == '\r':
 
             # Reading the following character
-            result = inStr.readChar()
+            result = inStr.stream.readChar()
 
             # PhotoNim 
             if result != '\n':
