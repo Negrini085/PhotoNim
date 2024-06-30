@@ -180,7 +180,6 @@ proc updateLocation*(inStr: var InputStream, ch: char) =
 
     if ch == '\0': discard
     elif ch == '\n':
-        echo ch
         # Starting to read a new line
         inStr.location.colNum = 1
         inStr.location.lineNum += 1
@@ -205,8 +204,6 @@ proc readChar*(inStr: var InputStream): char =
         # What if we have a \r character? The problem is that 
         # we would like to know if the following char is a \n or not
         if result == '\r':
-            inStr.savedLocation = inStr.location
-            inStr.updateLocation(result)
 
             # Reading the following character
             result = inStr.readChar()
