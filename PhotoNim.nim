@@ -183,3 +183,5 @@ Options:
 
         img.savePFM(pfmOut)
         img.savePNG(pngOut, 0.18, 1.0, 0.1)
+
+        echo "You can find both .pfm and .png images at: " & dir & '/'
