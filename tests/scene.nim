@@ -587,7 +587,6 @@ suite "Ellipsoid":
         check areClose(ell2.transformation.transformations[0].mat, newRotX(45).mat, eps = 1e-6)
 
 
-    
     test "getNormal proc":
         # Checking ellipsoid normal computation method
         var
@@ -610,7 +609,24 @@ suite "Ellipsoid":
 
         dir = newVec3f(0, -1, 0)
         pt = newPoint3D(ell2.shape.axis.a * cos(PI/3), ell2.shape.axis.b * sin(PI/3), 0)
-        check areClose(ell2.shape.getNormal(pt, dir), newNormal(1/2, sqrt(3.0)/4, 0), eps = 1e-6)
+        check areClose(ell2.shape.getNormal(pt, dir), newNormal(1/6, sqrt(3.0)/4, 0), eps = 1e-6)
+
+
+    test "getUV proc":
+        # Checking (u, v) coordinates computation
+        var pt1, pt2: Point3D
+
+        # Unitary sphere
+        pt1 = newPoint3D(ell1.shape.axis.a, 0, 0)
+        pt2 = newPoint3D(ell1.shape.axis.a * cos(PI/3), ell1.shape.axis.b * sin(PI/3), 0)
+        check areClose(ell1.shape.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(ell1.shape.getUV(pt2), newPoint2D(1/6, 0.5))
+
+        # Sphere with arbitrary radius
+        pt1 = newPoint3D(ell2.shape.axis.a, 0, 0)
+        pt2 = newPoint3D(ell2.shape.axis.a * cos(PI/3), ell2.shape.axis.b * sin(PI/3), 0)
+        check areClose(ell2.shape.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(ell2.shape.getUV(pt2), newPoint2D(1/6, 0.5))
 
 
     test "getAABB proc":
@@ -656,6 +672,7 @@ suite "Ellipsoid":
         check areClose(vert2[5], newPoint3D( 3, -2, -1))
         check areClose(vert2[6], newPoint3D( 3, -2,  1))
         check areClose(vert2[7], newPoint3D( 3,  2, -1))
+
 
     test "getAABB proc":
         # Cheking getAABB proc, gives aabb in world
