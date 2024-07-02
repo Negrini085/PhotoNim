@@ -192,8 +192,12 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
     
     of skTriangularMesh: quit "This should not be used"
 
-    of skEllipsoid: discard
+    of skEllipsoid: 
+        let 
+            scal = newScaling(newVec3f(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c))
+            nSp = getNormal(Shape(kind: skSphere, radius: 1), apply(scal, pt), apply(scal, dir).normalize)
 
+        return apply(scal.inverse, nSp).normalize
 
 proc nearestCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =
     result = (index: 0, sqDist: Inf.float32)

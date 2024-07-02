@@ -1,6 +1,6 @@
 import std/unittest
 import PhotoNim
-from math import sin, cos, PI, sqrt
+from math import sin, cos, PI, sqrt, pow
 
 
 #-----------------------------------#
@@ -585,6 +585,32 @@ suite "Ellipsoid":
         check ell2.transformation.transformations.len == 2
         check areClose(ell2.transformation.transformations[1].mat, newTranslation(eY).mat)
         check areClose(ell2.transformation.transformations[0].mat, newRotX(45).mat, eps = 1e-6)
+
+
+    
+    test "getNormal proc":
+        # Checking ellipsoid normal computation method
+        var
+            dir: Vec3f
+            pt: Point3D
+        
+        # First ellipsoid
+        dir = newVec3f(-1, 0, 0)
+        pt = newPoint3D(ell1.shape.axis.a, 0, 0)
+        check areClose(ell1.shape.getNormal(pt, dir), newNormal(1, 0, 0))
+
+        dir = newVec3f(0, -1, 0)
+        pt = newPoint3D(ell1.shape.axis.a * cos(PI/3), ell1.shape.axis.b * sin(PI/3), 0)
+        check areClose(ell1.shape.getNormal(pt, dir), newNormal(1/2, sqrt(3.0)/4, 0), eps = 1e-6)
+    
+        # First ellipsoid
+        dir = newVec3f(-1, 0, 0)
+        pt = newPoint3D(ell2.shape.axis.a, 0, 0)
+        check areClose(ell2.shape.getNormal(pt, dir), newNormal(1, 0, 0))
+
+        dir = newVec3f(0, -1, 0)
+        pt = newPoint3D(ell2.shape.axis.a * cos(PI/3), ell2.shape.axis.b * sin(PI/3), 0)
+        check areClose(ell2.shape.getNormal(pt, dir), newNormal(1/2, sqrt(3.0)/4, 0), eps = 1e-6)
 
 
     test "getAABB proc":
