@@ -177,6 +177,8 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         
         some hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
 
+    of skEllipsoid: 
+        none HitPayload
 
 proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
     var hittedHandlers: seq[ShapeHandler]

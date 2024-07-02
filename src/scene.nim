@@ -21,7 +21,7 @@ type
 
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skCylinder, skTriangularMesh
+        skAABox, skTriangle, skSphere, skPlane, skCylinder, skTriangularMesh, skEllipsoid
         
     Shape* = ref object
         material*: Material
@@ -35,6 +35,9 @@ type
 
         of skSphere:
             radius*: float32
+        
+        of skEllipsoid:
+            axis*: tuple[a: float32, b: float32, c: float32]
 
         of skCylinder:
             R*, phiMax*: float32
@@ -46,6 +49,7 @@ type
             nodes*: seq[Point3D]
             edges*: seq[int]
             tree*: SceneNode
+        
 
     ShapeHandler* = ref object 
         shape*: Shape
@@ -107,6 +111,7 @@ proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     of skCylinder: return (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
     of skPlane: return (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
     of skTriangularMesh: return shape.tree.aabb
+    of skEllipsoid: discard
     
 proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
@@ -159,6 +164,9 @@ proc getUV*(shape: Shape; pt: Point3D): Point2D =
         return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
     of skTriangularMesh: quit "This should not be used"
+    
+    of skEllipsoid: discard
+
 
 proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
     case shape.kind
@@ -183,6 +191,8 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
         return newNormal(0, 0, sgn(-dir[2]).float32)
     
     of skTriangularMesh: quit "This should not be used"
+
+    of skEllipsoid: discard
 
 
 proc nearestCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =
@@ -347,4 +357,19 @@ proc newMesh*(source: string; transformation = Transformation.id, treeKind: Scen
             nodes: nodes, edges: edges, 
             tree: newBVHNode(triangles, depth = 0, treeKind.int, maxShapesPerLeaf, rg), 
         ), transformation
+    )
+
+
+proc newEllipsoid*(a, b, c: SomeNumber, transformation = Transformation.id): ShapeHandler = 
+    # Procedure to create a new Ellipsoid ShapeHandler
+    newShapeHandler(
+        Shape(
+            kind: skEllipsoid,
+            axis: (
+                a: when a is float32: a else: a.float32, 
+                b: when b is float32: b else: b.float32, 
+                c: when c is float32: c else: c.float32
+                )
+        ),
+        transformation
     )
