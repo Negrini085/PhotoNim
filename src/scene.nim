@@ -111,7 +111,7 @@ proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     of skCylinder: return (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
     of skPlane: return (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
     of skTriangularMesh: return shape.tree.aabb
-    of skEllipsoid: discard
+    of skEllipsoid: return (newPoint3D(-shape.axis.a, -shape.axis.b, -shape.axis.c), newPoint3D(shape.axis.a, shape.axis.b, shape.axis.c))
     
 proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
