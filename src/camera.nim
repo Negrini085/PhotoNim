@@ -134,8 +134,8 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
                         depth: closestHit.ray.depth + 1
                     )
 
-                hitCol *= closestHit.handler.shape.material.brdf.eval(surfacePt, shapeLocalHitNormal.Vec3f, closestHit.ray.dir, localOutDir)
-                accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg)
+                # hitCol *= closestHit.handler.shape.material.brdf.eval(surfacePt, shapeLocalHitNormal.Vec3f, closestHit.ray.dir, localOutDir)
+                accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg) #* closestHit.handler.shape.material.brdf.reflectance
 
             result += accumulatedRadiance / camera.renderer.numRays.float32
 
