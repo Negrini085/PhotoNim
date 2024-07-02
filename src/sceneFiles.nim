@@ -3,7 +3,7 @@ from std/strformat import fmt
 from std/sequtils import mapIt
 from std/strutils import isDigit, parseFloat, isAlphaNumeric, join
 
-import scene, material, camera, geometry, hdrimage
+import geometry, hdrimage, material, scene, camera 
 
 const 
     WHITESPACE* = ['\t', '\n', '\r', ' '] 
@@ -370,14 +370,14 @@ proc unreadToken*(inStr: var InputStream, token: Token) =
 #       DefScene type: everything needed to define a scene       #
 #----------------------------------------------------------------#
 type DefScene* = object
-    scene*: seq[ShapeHandler]
+    scene*: seq[ObjectHandler]
     materials*: Table[string, material.Material]
     camera*: Option[camera.Camera]
     numVariables*: Table[string, float32]
     overriddenVariables*: HashSet[string]
 
 
-proc newDefScene*(sc: seq[ShapeHandler], mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
+proc newDefScene*(sc: seq[ObjectHandler], mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
     # Procedure to initialize a new DefScene variable, needed at the end of the parsing proc
     DefScene(scene: sc, materials: mat, camera: cam, numVariables: numV, overriddenVariables: ovV)
 
@@ -665,7 +665,7 @@ proc parseTransformation*(inStr: var InputStream, dSc: var DefScene): Transforma
     return result
 
 
-proc parseSphereSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+proc parseSphereSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse sphere shape handler 
     var 
         matName: string
@@ -692,7 +692,7 @@ proc parseSphereSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     return newSphere(center, radius, material = dSc.materials[matName])
 
 
-proc parsePlaneSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+proc parsePlaneSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse plane shape handler
     var 
         matName: string
@@ -716,7 +716,7 @@ proc parsePlaneSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     return newPlane(dSc.materials[matName], trans)
 
 
-proc parseBoxSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+proc parseBoxSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse box shape handler
     var 
         minP, maxP: Point3D
@@ -751,7 +751,7 @@ proc parseBoxSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     return newBox((min: minP, max: maxP), dSc.materials[matName], trans)
 
 
-proc parseTriangleSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+proc parseTriangleSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse triangle shape handler
     var 
         p1, p2, p3: Point3D
@@ -784,7 +784,7 @@ proc parseTriangleSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     return newTriangle([p1, p2, p3], dSc.materials[matName], trans)
 
 
-proc parseCylinderSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+proc parseCylinderSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse cylinder shape handler
     var 
         r, zMin, zMax, phiMax: float32
@@ -823,7 +823,7 @@ proc parseCylinderSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     return newCylinder(r, zMin, zMax, phiMax, dSc.materials[matName], trans)
 
 
-proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse mesh shape handler
     var 
         fName: string
@@ -838,7 +838,7 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     trans = inStr.parseTransformation(dSc)
     inStr.expectSymbol(')')
 
-    return newMesh(fName, trans, tkBinary, 3, 42, 1)
+    # return newMesh(fName, trans, tkBinary, 3, 42, 1)
 
 
 proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera = 

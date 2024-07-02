@@ -1,4 +1,4 @@
-import geometry, pcg, hdrimage, material, scene, hitrecord
+import geometry, pcg, hdrimage, material, scene, shape, bvh, hitrecord
 
 from std/algorithm import sorted 
 from std/strutils import repeat
@@ -76,7 +76,7 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Color, rg: var PCG): Color =
+proc sampleRay(camera: Camera; sceneTree: BVHNode, worldRay: Ray, bgColor: Color, rg: var PCG): Color =
     result = bgColor
     
     let hitLeafNodes = sceneTree.getHitLeafs(worldRay)
@@ -138,7 +138,7 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
             result += accumulatedRadiance / camera.renderer.numRays.float32
 
 
-proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSide: int = 1, treeKind: SceneTreeKind = tkBinary, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
+proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSide: int = 1, treeKind: TreeKind = tkBinary, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
 
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
     var rg = newPCG(rgState, rgSeq)
@@ -160,7 +160,7 @@ proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSid
                         )
                     )
                     
-                    accumulatedColor += camera.sampleRay(sceneTree, ray, scene.bgCol, rg)
+                    accumulatedColor += camera.sampleRay(sceneTree, ray, scene.bgColor, rg)
 
             result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
                             
