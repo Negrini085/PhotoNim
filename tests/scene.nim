@@ -423,6 +423,8 @@ suite "Triangle":
         check areClose(vert2[6], newPoint3D(2, 2, 4))
         check areClose(vert2[7], newPoint3D(2, 3, 3))
 
+
+
 #----------------------------#
 #    Cylinder test suite     #
 #----------------------------# 
@@ -442,7 +444,7 @@ suite "Cylinder":
     
     
     test "newCylinder proc":
-        # Checking newTriangle proc
+        # Checking newCylinder proc
         
         # First cylinder: default constructor
         check cyl1.shape.R == 1.0
@@ -539,6 +541,50 @@ suite "Cylinder":
         check areClose(vert2[6], newPoint3D( 2, -2, 1))
         check areClose(vert2[7], newPoint3D( 2,  2, 0))
 
+
+
+#----------------------------#
+#    Ellipsoid test suite    #
+#----------------------------# 
+suite "Ellipsoid":
+
+    setup:
+        let 
+            tr = newTranslation(eZ)
+            comp = newComposition(newTranslation(eY), newRotX(45))
+
+            ell1 = newEllipsoid(1, 2, 3, tr)
+            ell2 = newEllipsoid(3.0, 2.0, 1.0, comp)
+    
+    teardown:
+        discard tr
+        discard comp
+        discard ell1
+        discard ell2
+    
+    
+    test "newEllipsoid proc":
+        # Checking newEllipsoid proc
+        
+        # First Ellipsoid
+        check ell1.shape.kind == skEllipsoid
+        check areClose(ell1.shape.axis.a, 1.0)
+        check areClose(ell1.shape.axis.b, 2.0)
+        check areClose(ell1.shape.axis.c, 3.0)
+
+        check ell1.transformation.kind == tkTranslation
+        check areClose(ell1.transformation.mat, newTranslation(eZ).mat)
+    
+        # Second Ellipsoid
+        check ell2.shape.kind == skEllipsoid
+        check areClose(ell2.shape.axis.a, 3.0)
+        check areClose(ell2.shape.axis.b, 2.0)
+        check areClose(ell2.shape.axis.c, 1.0)
+
+        check ell2.transformation.kind == tkComposition
+        check ell2.transformation.transformations.len == 2
+        check areClose(ell2.transformation.transformations[0].mat, newTranslation(eY).mat)
+        check areClose(ell2.transformation.transformations[1].mat, newRotX(45).mat, eps = 1e-6)
 
 
 
