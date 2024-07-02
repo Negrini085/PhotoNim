@@ -190,6 +190,88 @@ suite "HitPayload":
         check areClose(hitPayload.get.ray.origin, ORIGIN3D)
 
 
+    test "getHitPayload proc (Ellipsoid)":
+        # Checking getHitPayload for an Ellipsoid-Ray intersection
+        let 
+            ell1 = newEllipsoid(1, 2, 3)
+            ell2 = newEllipsoid(3, 2, 1)
+
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(float32 0, 0, -1))
+            ray2 = newRay(newPoint3D(4, 0, 0), newVec3(float32 -1, 0, 0))
+            ray3 = newRay(ORIGIN3D, newVec3(float32 1, 0, 0))
+            ray4 = newRay(newPoint3D(5, 5, 5), eX)
+
+        
+        # First ellipsoid
+        hitPayload = getHitPayload(ell1, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 5
+        check hitPayload.get.handler.shape.kind == skEllipsoid 
+        check areClose(hitPayload.get.handler.shape.axis.a, 1)
+        check areClose(hitPayload.get.handler.shape.axis.b, 2)
+        check areClose(hitPayload.get.handler.shape.axis.c, 3)
+        check areClose(hitPayload.get.ray.dir, -eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, 2))
+
+        hitPayload = getHitPayload(ell1, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 3
+        check hitPayload.get.handler.shape.kind == skEllipsoid 
+        check areClose(hitPayload.get.handler.shape.axis.a, 1)
+        check areClose(hitPayload.get.handler.shape.axis.b, 2)
+        check areClose(hitPayload.get.handler.shape.axis.c, 3)
+        check areClose(hitPayload.get.ray.dir, -eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 0, 0))
+
+        hitPayload = getHitPayload(ell1, ray3)
+        check hitPayload.isSome
+        check hitPayload.get.t == 1
+        check hitPayload.get.handler.shape.kind == skEllipsoid 
+        check areClose(hitPayload.get.handler.shape.axis.a, 1)
+        check areClose(hitPayload.get.handler.shape.axis.b, 2)
+        check areClose(hitPayload.get.handler.shape.axis.c, 3)
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, ORIGIN3D)
+        
+        hitPayload = getHitPayload(ell1, ray4)
+        check hitPayload.isNone
+
+    
+        # Second elipsoid
+        hitPayload = getHitPayload(ell2, ray1)
+        check hitPayload.isSome
+        check areClose(hitPayload.get.t, 1, eps = 1e-6)
+        check hitPayload.get.handler.shape.kind == skEllipsoid 
+        check areClose(hitPayload.get.handler.shape.axis.a, 3)
+        check areClose(hitPayload.get.handler.shape.axis.b, 2)
+        check areClose(hitPayload.get.handler.shape.axis.c, 1)
+        check areClose(hitPayload.get.ray.dir, -eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, 2))
+
+        hitPayload = getHitPayload(ell2, ray2)
+        check hitPayload.isSome
+        check areClose(hitPayload.get.t, 1, eps = 1e-6)
+        check hitPayload.get.handler.shape.kind == skEllipsoid 
+        check areClose(hitPayload.get.handler.shape.axis.a, 3)
+        check areClose(hitPayload.get.handler.shape.axis.b, 2)
+        check areClose(hitPayload.get.handler.shape.axis.c, 1)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 0, 0))
+
+        hitPayload = getHitPayload(ell2, ray3)
+        check hitPayload.isSome
+        check areClose(hitPayload.get.t, 3, eps = 1e-6)
+        check hitPayload.get.handler.shape.kind == skEllipsoid 
+        check areClose(hitPayload.get.handler.shape.axis.a, 3)
+        check areClose(hitPayload.get.handler.shape.axis.b, 2)
+        check areClose(hitPayload.get.handler.shape.axis.c, 1)
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, ORIGIN3D)
+
+        hitPayload = getHitPayload(ell2, ray4)
+        check hitPayload.isNone
+
+
     test "getHitPayload proc (Plane)":
         # Checking getHitPayloads on Planes
         var

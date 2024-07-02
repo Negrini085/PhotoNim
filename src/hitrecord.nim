@@ -178,7 +178,19 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         some hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
 
     of skEllipsoid: 
-        none HitPayload
+        var 
+            hit: Option[HitPayload]
+            scal = newScaling(newVec3f(1/handler.shape.axis.a, 1/handler.shape.axis.b, 1/handler.shape.axis.c))
+        
+        hit = getHitPayload(
+            ShapeHandler(shape: Shape(kind: skSphere, radius: 1), transformation: handler.transformation),
+            worldInvRay.transform(scal)
+            )
+        
+        if hit.isNone: return none HitPayload
+
+        some HitPayload(handler: handler, ray: worldInvRay, t: hit.get.t)
+        
 
 proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
     var hittedHandlers: seq[ShapeHandler]
