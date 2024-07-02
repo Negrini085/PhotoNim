@@ -419,31 +419,33 @@ proc newTranslation*(pt: Point3D): Transformation {.inline.} =
     )
 
 
-proc newScaling*[T](x: T): Transformation =
-    when T is SomeFloat:
-        assert x != 0, "Cannot create a new scaling Transformation with zero as factor."
-        var 
-            mat = Mat4f.id * x
-            matInv = Mat4f.id / x
-        mat[3][3] = 1.0; matInv[3][3] = 1.0
-        return Transformation(kind: tkScaling, mat: mat, matInv: matInv)
+proc newScaling*(x: SomeNumber): Transformation =
 
-    elif T is Vec3f: 
-        Transformation(
-            kind: tkScaling,
-            mat: [
-                [x[0], 0.0, 0.0, 0.0], 
-                [0.0, x[1], 0.0, 0.0], 
-                [0.0, 0.0, x[2], 0.0], 
-                [0.0, 0.0,  0.0, 1.0]
-            ],
-            matInv: [
-                [1/x[0], 0.0, 0.0, 0.0], 
-                [0.0, 1/x[1], 0.0, 0.0], 
-                [0.0, 0.0, 1/x[2], 0.0], 
-                [0.0,  0.0,  0.0,  1.0]   
-            ]
-        )
+    assert x != 0, "Cannot create a new scaling Transformation with zero as factor."
+    
+    var 
+        mat = when x is float32: Mat4f.id * x else: Mat4f.id * x.float32
+        matInv = when x is float32: Mat4f.id / x else: Mat4f.id / x.float32
+
+    mat[3][3] = 1.0; matInv[3][3] = 1.0
+    return Transformation(kind: tkScaling, mat: mat, matInv: matInv)
+
+proc newScaling*(x: Vec3f): Transformation {.inline.} =
+    Transformation(
+        kind: tkScaling,
+        mat: [
+            [x[0], 0.0, 0.0, 0.0], 
+            [0.0, x[1], 0.0, 0.0], 
+            [0.0, 0.0, x[2], 0.0], 
+            [0.0, 0.0,  0.0, 1.0]
+        ],
+        matInv: [
+            [1/x[0], 0.0, 0.0, 0.0], 
+            [0.0, 1/x[1], 0.0, 0.0], 
+            [0.0, 0.0, 1/x[2], 0.0], 
+            [0.0,  0.0,  0.0,  1.0]   
+        ]
+    )
 
 
 proc newRotX*(angle: SomeNumber): Transformation = 

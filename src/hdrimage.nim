@@ -81,13 +81,13 @@ proc applyToneMap*(img: var HDRImage; alpha, avLum: float32) =
     img.pixels.applyIt(clamp(it * (alpha / lum)))
 
 
-proc readFloat(stream: Stream, endianness: Endianness = littleEndian): float32 = 
+proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32 = stream.readFloat32
     if endianness == littleEndian: littleEndian32(addr result, addr tmp)
     else: bigEndian32(addr result, addr tmp)
 
-proc writeFloat(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
+proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
     ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32
     if endianness == littleEndian: littleEndian32(addr tmp, addr value)

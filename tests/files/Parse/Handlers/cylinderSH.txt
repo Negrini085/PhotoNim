@@ -1,0 +1,3 @@
+a
+cylinder (2, -1.0, 1.0, 4, try, scaling([1, 2, 3]))
+
