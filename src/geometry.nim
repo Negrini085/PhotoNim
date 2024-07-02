@@ -616,7 +616,9 @@ proc apply*[T](transf: Transformation, x: T): T =
         elif T is Point3D: 
             return newPoint3D(x.x * transf.mat[0][0], x.y * transf.mat[1][1], x.z * transf.mat[2][2])
         elif T is Normal: 
-            return x
+            if areClose(transf.mat[0][0], transf.mat[1][1]) and areClose(transf.mat[1][1], transf.mat[2][2]):
+                return x
+            return dot(x, transf.matInv).toNormal
 
     of tkComposition:
         if transf.transformations.len == 1: return apply(transf.transformations[0], x)
