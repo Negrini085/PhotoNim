@@ -76,8 +76,8 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleRay(camera: Camera; sceneTree: BVHNode, worldRay: Ray, bgColor: Color, rg: var PCG): Color =
-    result = bgColor
+proc sampleRay(camera: Camera; scene: Scene, sceneTree: BVHNode, worldRay: Ray, rg: var PCG): Color =
+    result = scene.bgColor
     
     let hitLeafNodes = sceneTree.getHitLeafs(worldRay)
     if hitLeafNodes.isNone: return result
@@ -133,7 +133,7 @@ proc sampleRay(camera: Camera; sceneTree: BVHNode, worldRay: Ray, bgColor: Color
                     depth: closestHit.ray.depth + 1
                 )
 
-                accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg)
+                accumulatedRadiance += hitCol * camera.sampleRay(scene, sceneTree, scatteredRay, rg)
 
             result += accumulatedRadiance / camera.renderer.numRays.float32
 
@@ -160,7 +160,7 @@ proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSid
                         )
                     )
                     
-                    accumulatedColor += camera.sampleRay(sceneTree, ray, scene.bgColor, rg)
+                    accumulatedColor += camera.sampleRay(scene, sceneTree, ray, rg)
 
             result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
                             
