@@ -34,7 +34,7 @@ type
             mesh*: Mesh
 
 
-    ShapeKind* = enum skAABox, skTriangle, skSphere, skPlane, skCylinder
+    ShapeKind* = enum skAABox, skTriangle, skSphere, skPlane, skCylinder, skPolygon
     Shape* = object
         material*: Material
 
@@ -42,8 +42,8 @@ type
         of skAABox: 
             aabb*: Interval[Point3D]
 
-        of skTriangle: 
-            vertices*: array[3, Point3D]            
+        of skTriangle, skPolygon: 
+            vertices*: seq[Point3D]          
 
         of skSphere: 
             radius*: float32

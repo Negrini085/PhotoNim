@@ -19,11 +19,33 @@ proc newPlane*(material = newMaterial(), transformation = Transformation.id): Ob
 proc newBox*(aabb: Interval[Point3D], material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} =
     newShapeHandler(Shape(kind: skAABox, aabb: aabb, material: material), transformation)
 
-proc newTriangle*(a, b, c: Point3D; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skTriangle, material: material, vertices: [a, b, c]), transformation)
-
 proc newTriangle*(vertices: array[3, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skTriangle, material: material, vertices: vertices), transformation)
+    newShapeHandler(Shape(kind: skTriangle, material: material, vertices: vertices.toSeq), transformation)
+
+proc newSquare*(vertices: array[4, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPolygon, material: material, vertices: vertices.toSeq), transformation)
+
+proc newPentagon*(vertices: array[5, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPolygon, material: material, vertices: vertices.toSeq), transformation)
+
+proc newHexagon*(vertices: array[6, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPolygon, material: material, vertices: vertices.toSeq), transformation)
+
+proc newHeptagon*(vertices: array[7, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPolygon, material: material, vertices: vertices.toSeq), transformation)
+
+proc newOctagon*(vertices: array[8, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPolygon, material: material, vertices: vertices.toSeq), transformation)
+
+proc newEnneagon*(vertices: array[9, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPolygon, material: material, vertices: vertices.toSeq), transformation)
+
+proc newDecagon*(vertices: array[10, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPolygon, material: material, vertices: vertices.toSeq), transformation)
+
+proc newDodecagon*(vertices: array[12, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPolygon, material: material, vertices: vertices.toSeq), transformation)
+
 
 proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} =
     newShapeHandler(Shape(kind: skCylinder, material: material, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), transformation)
@@ -66,6 +88,7 @@ proc getUV*(shape: Shape; pt: Point3D): Point2D =
         return newPoint2D(phi / shape.phiMax, (pt.z - shape.zSpan.min) / (shape.zSpan.max - shape.zSpan.min))
 
     of skPlane: return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
+    of skPolygon: discard
 
 
 proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal {.inline.} =
@@ -86,12 +109,13 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal {.inline.} =
     of skCylinder: return newNormal(pt.x, pt.y, 0.0)
 
     of skPlane: return newNormal(0, 0, sgn(-dir[2]).float32)
+    of skPolygon: discard
 
 
 proc getAABB(shape: Shape): Interval[Point3D] {.inline.} =
     case shape.kind
     of skAABox: shape.aabb
-    of skTriangle: newAABB(shape.vertices.toSeq)
+    of skTriangle, skPolygon: newAABB(shape.vertices)
     of skSphere: (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
     of skCylinder: (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
     of skPlane: (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
@@ -111,5 +135,5 @@ proc getVertices*(aabb: Interval[Point3D]): array[8, Point3D] {.inline.} =
 proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
     of skAABox: shape.aabb.getVertices.toSeq
-    of skTriangle: shape.vertices.toSeq
+    of skTriangle, skPolygon: shape.vertices
     else: shape.getAABB.getVertices.toSeq

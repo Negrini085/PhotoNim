@@ -93,6 +93,9 @@ proc getHitPayload*(handler: ObjectHandler, worldInvRay: Ray): Option[HitPayload
             if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return none HitPayload
 
             return some HitPayload(handler: handler, ray: worldInvRay, t: sol[2])
+        
+        of skPolygon: discard # here we need the polygon triangulation
+
 
         of skSphere:
             let (a, b, c) = (norm2(worldInvRay.dir), dot(worldInvRay.origin.Vec3f, worldInvRay.dir), norm2(worldInvRay.origin.Vec3f) - handler.shape.radius * handler.shape.radius)
