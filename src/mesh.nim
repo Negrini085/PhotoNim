@@ -1,4 +1,4 @@
-import geometry, scene, shape, bvh
+# import geometry, scene, shape, bvh
 
 
 

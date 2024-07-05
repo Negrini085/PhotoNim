@@ -4,11 +4,8 @@ import src/[geometry, pcg, hdrimage, material, scene, shape, bvh, mesh, hitrecor
 export geometry, pcg, hdrimage, material, scene, shape, bvh, mesh, hitrecord, camera, sceneFiles
 
 
-from std/strutils import parseFloat, parseInt
 from std/streams import newFileStream, close, FileStream
 from std/strformat import fmt
-from std/options import get, isNone
-
 
 let pfm2pngDoc* = """
 PhotoNim CLI `pfm2png` command:
@@ -38,9 +35,10 @@ proc pfm2png*(pfmIN, pngOut: string, alpha, gamma: float32, avLum = 0.0) =
 
 when isMainModule: 
     import docopt
-    from std/strutils import parseFloat
+    from std/strutils import parseFloat, parseInt
     from std/cmdline import commandLineParams
     from std/os import splitFile
+    from std/options import get, isNone
 
     let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
 

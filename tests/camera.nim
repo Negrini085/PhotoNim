@@ -1,4 +1,4 @@
-import std/[unittest, options]
+import std/unittest
 from math import sqrt, degToRad, PI
 import PhotoNim
 

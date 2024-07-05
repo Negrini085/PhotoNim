@@ -3,7 +3,7 @@ import geometry, pcg, hdrimage
 
 from std/math import floor, sqrt, sin, cos, PI, degToRad
 from std/streams import newFileStream, close
-from std/strformat import fmt
+
 
 type
     PigmentKind* = enum pkUniform, pkTexture, pkCheckered

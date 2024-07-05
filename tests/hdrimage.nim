@@ -1,4 +1,4 @@
-import std/[unittest, streams, math, sequtils, endians, strutils]
+import std/[unittest, streams, math, sequtils]
 import PhotoNim
 
 
