@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(CookTorranceBRDF)* Corrected sampling pdf.
+- *(HDRImage)* HDRImage type is now a ref object.
 - *(Parser)* Add parseDefScene proc & test
 - *(Parser)* AddparseCamera proc & test
 - *(Parse)* Add parseMeshSH proc & test
@@ -57,11 +59,14 @@ All notable changes to this project will be documented in this file.
 - *(PhotoNim)* Complete merge procedure
 - *(PhotoNim)* Add rend command, now fileScene parsing is possible
 - *(Mesh)* Correct trumpet example
+- *(Material)* DiffuseBRDF -> LambertianBRDF; SpecularBRDF -> FresnelMetalBRDF.
 
 ### 📚 Documentation
 
+- RoadBike example updated.
 - *(HDRImage)* Add HDRImage definitive docs
 - *(Geometry)* Final geometry documentation
+- Cornell Box example
 
 ### 🧪 Testing
 

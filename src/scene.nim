@@ -95,7 +95,7 @@ proc newAABB*(points: seq[Point3D]): Interval[Point3D] =
 #         # I want to do further check only if we actually got something
 #         if not line.isEmptyOrWhitespace:
 #             let items = line.splitWhitespace.toSeq
-            
+       
 #             if items[0] == "v": result.nodes.add newPoint3D(items[1].parseFloat, items[2].parseFloat, items[3].parseFloat)
 #             elif items[0] == "f": 
 #                 # We have only three indeces, so that we are defining only one triangular face
@@ -139,4 +139,3 @@ proc newTriangle*(vertices: array[3, Point3D]; material = newMaterial(), transfo
 
 proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} =
     newShapeHandler(Shape(kind: skCylinder, material: material, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), transformation)
-
