@@ -58,12 +58,14 @@ All notable changes to this project will be documented in this file.
 - *(PhotoNim)* Complete merge procedure
 - *(PhotoNim)* Add rend command, now fileScene parsing is possible
 - *(Mesh)* Correct trumpet example
+- *(Material)* DiffuseBRDF -> LambertianBRDF; SpecularBRDF -> FresnelMetalBRDF.
 
 ### 📚 Documentation
 
 - RoadBike example updated.
 - *(HDRImage)* Add HDRImage definitive docs
 - *(Geometry)* Final geometry documentation
+- Cornell Box example
 
 ### 🧪 Testing
 
