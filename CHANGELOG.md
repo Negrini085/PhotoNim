@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(HDRImage)* HDRImage type is now a ref object.
 - *(Parser)* Add parseDefScene proc & test
 - *(Parser)* AddparseCamera proc & test
 - *(Parse)* Add parseMeshSH proc & test
@@ -60,6 +61,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- RoadBike example updated.
 - *(HDRImage)* Add HDRImage definitive docs
 - *(Geometry)* Final geometry documentation
 
