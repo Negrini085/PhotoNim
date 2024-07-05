@@ -1,10 +1,12 @@
 let PhotoNimVersion* = "PhotoNim 0.2"
 
-import src/[geometry, pcg, hdrimage, scene, material, hitrecord, camera]
-export geometry, pcg, hdrimage, scene, material, hitrecord, camera
+import src/[geometry, pcg, hdrimage, scene, material, hitrecord, camera, sceneFiles]
+export geometry, pcg, hdrimage, scene, material, hitrecord, camera, sceneFiles
 
-from std/streams import newFileStream, close
+from std/strutils import parseFloat, parseInt
+from std/streams import newFileStream, close, FileStream
 from std/strformat import fmt
+from std/options import get, isNone
 
 
 let pfm2pngDoc* = """
@@ -44,20 +46,26 @@ when isMainModule:
 Usage:
     ./PhotoNim help [<command>]
     ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
+    ./PhotoNim rend  (OnOff|Flat|Path) <sceneFile> [<output>] [--nR=<numRays> --mD=<maxDepth> --rL=<rouletteLimit> --s=<sampleSide> --mS=<maxShapesPerLeaf>]
 
 Options:
     -h | --help         Display the PhotoNim CLI helper screen.
     --version           Display which PhotoNim version is being used.
 
+    <input>             Path to the HDRImage to be converted from PFM to PNG. 
+    <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "_a_g" & ".png"]
     --a=<alpha>         Color renormalization factor. [default: 0.18]
     --g=<gamma>         Gamma correction factor. [default: 1.0]
     --lum=<avlum>       Average image luminosity. 
 
-    persp | ortho           Perspective or Orthogonal Camera kinds.
-    OnOff | Flat            Choosing renderer: OnOff (only shows hit), Flat (flat renderer)
-    --w=<width>             Image width. [default: 1600]
-    --h=<height>            Image height. [default: 900]
-    --angle=<angle>         Rotation angle around z axis. [default: 10]
+    OnOff | Flat | Path         Choosing renderer: OnOff (only shows hit), Flat (flat renderer) or Path (path tracer)
+    <sceneFile>                 File necessary for scene definition
+    <output>                    Path for rendering result [default: "input_dir/" & "input_name" & "_a_g" & ".png"]
+    --nR=<numRays>              Ray number for path tracer [default: 10]
+    --mD=<maxDepth>             Depth for path tracer scattered rays [default: 5]
+    --rL=<rouletteLimit>        Roulette limit for path tracer scattere rays [default: 3]
+    --s=<sampleSide>            Number of samplesPerSide used in order to reduce aliasing
+    --mS=<maxShapesPerLeaf>     Number of max shapes per leaf 
 """
 
     let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
@@ -70,6 +78,10 @@ Options:
 
         else: echo PhotoNimDoc
 
+
+    #--------------------------------------------#
+    #          pfm to png file conversion        #
+    #--------------------------------------------#
     elif args["pfm2png"]:
         let fileIn = $args["<input>"]
         var 
@@ -97,4 +109,77 @@ Options:
         
         pfm2png(fileIn, fileOut, alpha, gamma, avlum)
 
-    else: quit PhotoNimDoc
+
+    #--------------------------------------------#
+    #               Scene rendering              #
+    #--------------------------------------------#
+    elif args["rend"]:
+        let fileIn = $args["<sceneFile>"]
+        var 
+            img: HDRImage
+            dSc: DefScene
+            rLim: int = 3        
+            rend: Renderer
+            nSamp: int = 2
+            pfmOut: string
+            pngOut: string
+            nRays: int = 10
+            mDepth: int = 5
+            mShapes: int = 2
+            fStr: FileStream
+            inStr: InputStream
+
+        if args["OnOff"]: rend = newOnOffRenderer()
+        elif args["Flat"]: rend = newFlatRenderer()
+        elif args["Path"]: rend = newPathTracer(nRays, mDepth, rLim)
+
+        if args["--nR"]: 
+            try: nRays = parseInt($args["--nR"]) 
+            except: echo fmt"Warning: ray number must be an integer. Default value: <{nRays}> is used."
+
+        if args["--mD"]: 
+            try: mDepth = parseInt($args["--mD"]) 
+            except: echo fmt"Warning: max ray depth must be an integer. Default value: <{mDepth}> is used."
+
+        if args["--rL"]: 
+            try: rLim = parseInt($args["--rL"]) 
+            except: echo fmt"Warning: roulette limit must be an integer. Default value: <{rLim}> is used."
+
+        if args["--s"]: 
+            try: nSamp = parseInt($args["--s"]) 
+            except: echo fmt"Warning: roulette limit must be an integer. Default value: <{nSamp}> is used."
+
+        if args["--mS"]: 
+            try: mShapes = parseInt($args["--mS"]) 
+            except: echo fmt"Warning: max shapes per leaf must be an integer. Default value: <{mShapes}> is used."
+
+        if args["<output>"]: pngOut = $args["<output>"]
+        else: 
+            let (dir, name, _) = splitFile(fileIn)
+            pngOut = dir & '/' & name & fmt"_{rend.kind}.png"
+        
+        let (dir, name, _) = splitFile(fileIn)
+        pfmOut = dir & '/' & name & fmt"_{rend.kind}.pfm"
+
+        try:
+            fStr = newFileStream(fileIn, fmRead)
+        except:
+            let msg = "Error in file scenery opening. Check name and path given as input parameter."
+            raise newException(CatchableError, msg)
+
+        inStr = newInputStream(fStr, fileIn, 4)
+        dSc = inStr.parseDefScene()
+
+        if dSc.camera.isNone:
+            let msg = "Camera not defined in: " & fileIn
+            raise newException(CatchableError, msg)
+
+        dSc.camera.get.renderer = rend
+        
+        # Actual rendering proc
+        img = dSc.camera.get.sample(scene = newScene(dSc.scene), rgState = 42, rgSeq = 1, samplesPerSide = nSamp, maxShapesPerLeaf = mShapes)
+
+        img.savePFM(pfmOut)
+        img.savePNG(pngOut, 0.18, 1.0, 0.1)
+
+        echo "You can find both .pfm and .png images at: " & dir & '/'

@@ -312,7 +312,7 @@ proc loadMesh*(source: string): tuple[nodes: seq[Point3D], edges: seq[int]] =
                         result.edges.add items[1].rsplit('/')[0].parseInt - 1 
                         result.edges.add items[2+i].rsplit('/')[0].parseInt - 1
                         result.edges.add items[3+i].rsplit('/')[0].parseInt - 1
-    
+
 
 proc loadTexture*(world: Scene, source: string, shape: Shape) = quit "to implement"
 
@@ -344,6 +344,7 @@ proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material =
 proc newMesh*(source: string; material = newMaterial(), transformation = Transformation.id, treeKind: SceneTreeKind, maxShapesPerLeaf: int, rgState, rgSeq: uint64): ShapeHandler = 
     let (nodes, edges) = loadMesh(source)
     assert edges.len mod 3 == 0, fmt"Error in creating a skTriangularMesh! The length of the edges sequence must be a multiple of 3."
+    
     var triangles = newSeq[ShapeHandler](edges.len div 3)
     for i in 0..<edges.len div 3: 
         triangles[i] = newTriangle(nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]], material)

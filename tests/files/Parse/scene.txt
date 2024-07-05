@@ -1,0 +1,19 @@
+float clock(150)
+    
+material skyMaterial(
+    diffuse(uniform(<0, 0, 0>)),
+    uniform(<0.7, 0.5, 1>)
+)
+# Here is a comment
+material groundMaterial(
+    diffuse(checkered(<0.3, 0.5, 0.1>, <0.1, 0.2, 0.5>, 2, 2)),
+    uniform(<0, 0, 0>)
+)
+material sphereMaterial(
+    specular(uniform(<0.5, 0.5, 0.5>)),
+    uniform(<0, 0, 0>)
+)
+plane (skyMaterial, translation([0, 0, 100]) * rotationY(clock))
+plane (groundMaterial, identity)
+sphere([0, 0, 1], 1, sphereMaterial)
+camera(perspective, 100, 100, 2.0, rotationZ(30) * translation([-4, 0, 1]))

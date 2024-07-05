@@ -13,7 +13,7 @@ from std/strformat import fmt
 type 
     Color* {.borrow: `.`.} = distinct Vec3f
 
-    HDRImage* = object
+    HDRImage* = ref object
         width*, height*: int
         pixels*: seq[Color]
 
@@ -46,6 +46,7 @@ proc `/=`*(a: var Color, b: float32) {.borrow.}
 
 proc `*`*(a: Color, b: Color): Color {.inline.} = newColor(a.r*b.r, a.g*b.g, a.b*b.b)
 
+proc `$`*(a: Color): string {.borrow.}
 proc luminosity*(a: Color): float32 {.inline.} = 0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
 
 
@@ -59,7 +60,7 @@ proc getPixel*(img: HDRImage; x, y: int): Color {.inline.} =
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HDRImage"
     img.pixels[img.pixelOffset(x, y)]
 
-proc setPixel*(img: var HDRImage; x, y: int, color: Color) {.inline.} = 
+proc setPixel*(img: HDRImage; x, y: int, color: Color) {.inline.} = 
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HDRImage"
     img.pixels[img.pixelOffset(x, y)] = color
 
@@ -80,13 +81,13 @@ proc applyToneMap*(img: var HDRImage; alpha, avLum: float32) =
     img.pixels.applyIt(clamp(it * (alpha / lum)))
 
 
-proc readFloat(stream: Stream, endianness: Endianness = littleEndian): float32 = 
+proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
     ## Reads a float from a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32 = stream.readFloat32
     if endianness == littleEndian: littleEndian32(addr result, addr tmp)
     else: bigEndian32(addr result, addr tmp)
 
-proc writeFloat(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
+proc writeFloat*(stream: Stream, value: float32, endianness: Endianness = littleEndian) = 
     ## Writes a float to a stream accordingly to the given endianness (default is littleEndian)
     var tmp: float32
     if endianness == littleEndian: littleEndian32(addr tmp, addr value)

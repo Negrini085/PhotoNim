@@ -18,31 +18,42 @@ task build, "Build the `PhotoNim` executable\n":
 
 task demo, """Run the `PhotoNim` demo
 
-          Usage: 
-                  nimble demo (persp | ortho) (OnOff | Flat | Path) <angle> [<output>] [<width> <height>]
-          Options:
-                  persp | ortho          Camera kind: Perspective or Orthogonal
-                  OnOff | Flat | Path    Renderer kind: OnOff (only shows hit), Flat (flat renderer), Path (path tracer)
+    Usage: 
+            nimble demo (OnOff|Flat|Path)
 
-                  <angle>                Rotation angle around z axis. [default: 10]
-                  <output>               Path to the LDRImage output. [default: "examples/demo/demo.png"]
-                  <width>                Image width. [default: 900]
-                  <height>               Image height. [default: 900]
+    Options:
+            persp | ortho          Camera kind: Perspective or Orthogonal
+            OnOff | Flat | Path    Renderer kind: OnOff (only shows hit), Flat (flat renderer), Path (path tracer)
 """:
 
     var 
-        demoCommand = "nim c -d:release --hints:off -r examples/demo/main.nim"
-        commands = newSeq[string](paramCount() + 1)
+        demoCommand = "nim c -d:release --hints:off -r PhotoNim.nim"
+        commands: seq[string]
 
-    for i in 0..paramCount(): commands[i] = paramStr(i)
-    for i in commands.find("demo")..paramCount(): demoCommand.add(" " & paramStr(i))
+    for i in 0..paramCount(): commands.add paramStr(i)
+
+    for i in commands.find("demo")..<commands.len: 
+
+      if i == commands.find("demo"):
+        demoCommand.add(" " & "rend")
+
+      elif i == (commands.find("demo") + 1):
+        demoCommand.add(" " & paramStr(i))
+        demoCommand.add(" " & "examples/sceneFiles/demo.txt")
+
+      else:
+        demoCommand.add(" " & paramStr(i))
+      
+    if commands[(commands.len - 1)] == "demo":
+      echo "Need to specify renderer kind, choose between (OnOff|Flat|Path)"
+      return
+
+    if not (commands[(commands.len - 1)] in ["Path", "OnOff", "Flat"]):
+      echo "Usage: nimble demo (OnOff|Flat|Path)"
+      return
 
     exec demoCommand
-    
-
-task demoAnim, "Run the `PhotoNim` demo animation":
-  exec "sh examples/demo/animation.sh"
-  exec "open examples/demo/demo.mp4"
+    exec "open examples/sceneFiles/demo**.png"
 
 
 task examples, "Run the `PhotoNim` examples":
@@ -61,11 +72,5 @@ task test, "Run the `PhotoNim` tests":
     exec "nim c -d:release --hints:off -r scene.nim"
     exec "nim c -d:release --hints:off -r pcg.nim"
     exec "nim c -d:release --hints:off -r hitrecord.nim"
-    exec "rm geometry hdrimage camera scene pcg hitrecord"
-
-
-task earth, "Run the Earth animation":
-  exec "nim c -d:release --hints:off examples/earth/main.nim"
-  exec "seq 0 359 | parallel -j 8 --eta './examples/earth/main {1}'"
-  exec "ffmpeg -framerate 30 -i examples/earth/frames/img%03d.png -c:v libx264 -pix_fmt yuv420p examples/earth/earth.mp4 -y"
-  exec "open examples/earth/earth.mp4"
+    exec "nim c -d:release --hints:off -r sceneFiles.nim"
+    exec "rm geometry hdrimage camera scene pcg hitrecord sceneFiles"

@@ -7,7 +7,7 @@ from std/osproc import execCmd
 
 let 
     timeStart = cpuTime()
-    outFile = "assets/images/examples/mini"
+    outFile = "assets/images/examples/meshes/mini"
     camera = newPerspectiveCamera(
         newPathTracer(numRays = 1, maxDepth = 1), 
         viewport = (1600, 900), distance = 3.0, 

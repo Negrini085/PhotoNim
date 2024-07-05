@@ -6,6 +6,87 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(HDRImage)* HDRImage type is now a ref object.
+- *(Parser)* Add parseDefScene proc & test
+- *(Parser)* AddparseCamera proc & test
+- *(Parse)* Add parseMeshSH proc & test
+- *(Parser)* Add parseCylinderSH proc & test
+- *(Parser)* Add parseTriangleSH proc & test
+- *(Parser)* Add parseBoxSH proc & test
+- *(Parser)* Add parsePlaneSH proc & test
+- *(Parser)* Add parseSphereSH proc & test
+- *(Parser)* Add parseTransformation proc & test
+- *(Parser)* Add parseBRDF & parseMaterial procs & tests
+- *(Parser)* Add parsePigment proc & test
+- *(Pigment)* Add newTexturePigment proc, in order to create a texture pigment from file, neeeds testing
+- *(Parser)* Add parseVec & parseColor procs
+- *(InputStream)* Add expectIdentifier proc & test
+- *(InputStream)* Add expectString proc & test
+- *(InputStream)* Add expectNumber proc & test
+- *(InputStream)* Add expectKeywords proc & test
+- *(Parser)* Add expectSymbol proc & test
+- *(DefScene)* Add DefScene type and newDefScene proc
+- *(InputStream)* Add readToken & unreadToken procs
+- *(InputStream)* Add parseKeywordOrIdentifierToken proc & test
+- *(InputStream)* Add parseNumberToken proc & test
+- *(InputStream)* Add parseLiteralToken proc & test
+- *(InputStream)* Add skipWhitespaceComments proc
+- *(InputStream)* Add unreadChar proc and test
+- *(InputStream)* Add readChar proc
+- *(InputStream)* Add updateLocation proc
+- *(InputStream)* Add InputStream type and constructor
+- *(Token)* Add token constructor procs
+- *(Token)* Add Token kinds and different keywords
+- *(SourceLocation)* Add $ proc
+- *(Lexer)* Add SourceLocation type & constrctor
+- *(Mesh)* It's Tour the France time, new mesh example of a bike (assets/meshes/roadBike.obj tracked with Git lfs)
+
+### 🐛 Bug Fixes
+
+- *(Scaling)* Fix issue #63
+- *(updateLocation)* Now it should work also on windows
+
+### 🚜 Refactor
+
+- *(DemoTask)* Now it's only possible to specify renderer kind
+- *(Demo)* Change demo task, automatically using demo.txt
+- *(sceneFiles)* That should be it
+- *(sceneFiles)* Now it should be ok
+- *(sceneFiles)* Ops, forgot source file
+- *(sceneFiles)* Damn I was wrong
+- *(sceneFiles)* I was kidding before, now i feel like this should be it
+- *(PhotoNim)* Complete merge procedure
+- *(PhotoNim)* Add rend command, now fileScene parsing is possible
+- *(Mesh)* Correct trumpet example
+
+### 📚 Documentation
+
+- RoadBike example updated.
+- *(HDRImage)* Add HDRImage definitive docs
+- *(Geometry)* Final geometry documentation
+
+### 🧪 Testing
+
+- *(Parser)* Add parseVec & parseColor proc tests
+- *(DefScene)* Add newDefScene proc test
+- *(InputStream)* Add unreadToken proc test
+- *(InputStream)* Add readToken proc test
+- *(HdrImage)* Now readFloat & writeFloat tests are back, PhotoNim tests now passing
+- *(InputSteam)* Add skipWhitespaceComments proc test
+- *(InputStream)* Add readChar proc test
+- *(InputStream)* Add updateLocation proc test
+- *(InputStream)* Add newInputStream proc test
+- *(Token)* Add newToken procs test
+- *(SourceLocation)* Add SourceLocation type tests
+
+### Bug
+
+- *(sceneFiles)* Maybe I found it
+
+## [0.3.0] - 2024-06-23
+
+### 🚀 Features
+
 - *(Earth)* Earth task with nimble.
 
 ### 🐛 Bug Fixes

@@ -174,13 +174,14 @@ suite "HDRImage streaming test":
     teardown:
         discard stream
 
-#    test "write/readFloat proc":
-#        stream = newFileStream("files/wpFloat.txt", fmWrite)
-#        stream.writeFloat(float32(1.0), bigEndian)
-#
-#        stream = newFileStream("files/wpFloat.txt", fmRead)
-#        check stream.readFloat(bigEndian) == 1.0
-#        stream.close
+    test "write/readFloat proc":
+        stream = newFileStream("files/wpFloat.txt", fmWrite)
+        stream.writeFloat(float32(1.0), bigEndian)
+        stream.close()
+
+        stream = newFileStream("files/wpFloat.txt", fmRead)
+        check stream.readFloat(bigEndian) == 1.0
+        stream.close()
     
 
     test "savePFM/readPFM procs":       
