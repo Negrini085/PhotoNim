@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(CookTorranceBRDF)* Corrected sampling pdf.
 - *(HDRImage)* HDRImage type is now a ref object.
 - *(Parser)* Add parseDefScene proc & test
 - *(Parser)* AddparseCamera proc & test
