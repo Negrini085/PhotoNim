@@ -5,9 +5,9 @@ from std/times import cpuTime
 from std/strformat import fmt
 from std/osproc import execCmd
 
+var timeStart = cpuTime()
 
-let 
-    timeStart = cpuTime()
+let
     outFile = "assets/images/examples/meshes/roadBike"
     camera = newPerspectiveCamera(
         newPathTracer(numRays = 1, maxDepth = 1), 
@@ -17,12 +17,12 @@ let
 
     comp2 = newComposition(newRotX(90), newScaling(4.0))
 
-echo ' '
-echo "Loading roadBike mesh, that will take a few minutes. "
-let roadBike = newMesh("assets/meshes/roadBike.obj", transformation = comp2, treeKind = tkOctonary, maxShapesPerLeaf = 20, rgState = 42, rgSeq = 2)
+    roadBike = newMesh("assets/meshes/roadBike.obj", transformation = comp2, 
+                        treeKind = tkOctonary, maxShapesPerLeaf = 40, rgState = 42, rgSeq = 2)
 
-echo ' '
-echo "RoadBike loaded, about to start image rendering."
+echo fmt"Successfully loaded mesh in {cpuTime() - timeStart} seconds."   
+timeStart = cpuTime()
+
 let
     scene = newScene(@[roadBike])
     image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)

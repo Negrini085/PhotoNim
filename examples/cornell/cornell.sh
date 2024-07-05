@@ -1,0 +1,1 @@
+parallel -j 8 --eta './examples/cornell/main {1} {2} 42 1' ::: $(seq 1 4) ::: $(seq 2 7)

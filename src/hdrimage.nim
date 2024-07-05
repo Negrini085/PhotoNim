@@ -13,7 +13,7 @@ from std/strformat import fmt
 type 
     Color* {.borrow: `.`.} = distinct Vec3f
 
-    HDRImage* = object
+    HDRImage* = ref object
         width*, height*: int
         pixels*: seq[Color]
 
@@ -60,7 +60,7 @@ proc getPixel*(img: HDRImage; x, y: int): Color {.inline.} =
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HDRImage"
     img.pixels[img.pixelOffset(x, y)]
 
-proc setPixel*(img: var HDRImage; x, y: int, color: Color) {.inline.} = 
+proc setPixel*(img: HDRImage; x, y: int, color: Color) {.inline.} = 
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HDRImage"
     img.pixels[img.pixelOffset(x, y)] = color
 
