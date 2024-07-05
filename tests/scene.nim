@@ -309,12 +309,12 @@ suite "Triangle":
     setup:
         let 
             tri1 =  newTriangle(
-                eX.Point3D, eY.Point3D, eZ.Point3D,
+                [eX.Point3D, eY.Point3D, eZ.Point3D],
                 newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 3, 3))
                 )
         
             tri2 =  newTriangle(
-                eX.Point3D, eY.Point3D, eZ.Point3D,
+                [eX.Point3D, eY.Point3D, eZ.Point3D],
                 newMaterial(newDiffuseBRDF(), newUniformPigment(WHITE)),
                 newTranslation(newVec3f(1, 2, 3))
                 )
@@ -549,10 +549,10 @@ suite "Scene":
 
     setup:
         let 
-            tri1 = newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0))
-            tri2 = newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0), transformation = newTranslation([float32 1, 1, -2]))
+            tri1 = newTriangle([newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0)])
+            tri2 = newTriangle([newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0)], transformation = newTranslation([float32 1, 1, -2]))
             sc1 = newScene(@[tri1, tri2])
-            sc2 = newScene(@[newSphere(ORIGIN3D, 3), newUnitarySphere(newPoint3D(4, 4, 4))], newColor(1, 0.3, 0.7))
+            sc2 = newScene(@[newSphere(ORIGIN3D, 3), newUnitarySphere(newPoint3D(4, 4, 4))], bgColor = newColor(1, 0.3, 0.7))
             sc3 = newScene(@[newUnitarySphere(newPoint3D(3, 3, 3)), tri1])
     
     teardown:
@@ -566,14 +566,14 @@ suite "Scene":
         # Checking newScene proc
 
         # First scene --> only triangles
-        check sc1.bgCol == BLACK
+        check sc1.bgColor == BLACK
         check sc1.handlers.len == 2
         check sc1.handlers[0].shape.kind == skTriangle and sc1.handlers[1].shape.kind == skTriangle
         check areClose(sc1.handlers[0].shape.vertices[0], newPoint3D(0, -2, 0))
         check areClose(apply(sc1.handlers[1].transformation, sc1.handlers[1].shape.vertices[0]), newPoint3D(1, -1, -2))
 
         # Second scene --> only Spheres
-        check sc2.bgCol == newColor(1, 0.3, 0.7)
+        check sc2.bgColor == newColor(1, 0.3, 0.7)
         check sc2.handlers.len == 2
         check sc2.handlers[0].shape.kind == skSphere and sc2.handlers[1].shape.kind == skSphere
         check areClose(sc2.handlers[0].shape.radius, 3)
@@ -583,7 +583,7 @@ suite "Scene":
 
         # Third scene --> one Sphere and one Triangle
         # Checking newScene proc
-        check sc3.bgCol == BLACK
+        check sc3.bgColor == BLACK
         check sc3.handlers.len == 2
         check sc3.handlers[0].shape.kind == skSphere and sc3.handlers[1].shape.kind == skTriangle
         check areClose(sc3.handlers[0].shape.radius, 1)
@@ -593,7 +593,7 @@ suite "Scene":
 
     test "getBVHTree proc":
         var 
-            sceneTree: SceneNode
+            sceneTree: BVHNode
             rg = newPCG()
 
         # First scene, only triangles
