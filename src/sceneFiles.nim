@@ -3,7 +3,7 @@ from std/strformat import fmt
 from std/sequtils import mapIt
 from std/strutils import isDigit, parseFloat, isAlphaNumeric, join
 
-import geometry, hdrimage, material, scene, camera 
+import geometry, hdrimage, material, scene, shape, camera 
 
 const 
     WHITESPACE* = ['\t', '\n', '\r', ' '] 
