@@ -555,10 +555,10 @@ proc parseBRDF*(inStr: var InputStream, dSc: var DefScene): BRDF =
     # Selecting desired BRDF kind
     if key == KeywordKind.DIFFUSE:
         # Diffusive BRDF kind
-        return newDiffuseBRDF(pig)
+        return newLambertianBRDF(pig)
     elif key == KeywordKind.SPECULAR:
         # Specular BRDF kind
-        return newSpecularBRDF(pig)
+        return newFresnelMetalBRDF(pig)
     
     assert false, "Something went wrong in parseBRDF, this line should be unreachable"
 
@@ -838,7 +838,7 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     trans = inStr.parseTransformation(dSc)
     inStr.expectSymbol(')')
 
-    return newMesh(fName, trans, tkBinary, 3, 42, 1)
+    # return newMesh(fName, trans, tkBinary, 3, 42, 1)
 
 
 proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera = 

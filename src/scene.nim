@@ -260,7 +260,7 @@ proc newBVHNode*(shapeHandlers: seq[ShapeHandler], depth, kClusters, maxShapesPe
 
 
     let shapeHandlersAABBs = shapeHandlers.mapIt(it.getAABB)
-    echo shapeHandlersAABBs.getTotalAABB
+    # echo shapeHandlersAABBs.getTotalAABB
 
     if shapeHandlers.len <= maxShapesPerLeaf:
         return SceneNode(kind: nkLeaf, aabb: shapeHandlersAABBs.getTotalAABB, handlers: shapeHandlers)
