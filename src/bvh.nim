@@ -1,4 +1,4 @@
-import geometry, pcg, scene, shape
+import geometry, pcg, scene
 
 from std/sequtils import toSeq, filterIt, map, mapIt
 

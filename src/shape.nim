@@ -1,6 +1,5 @@
 import geometry, material, scene
 
-from std/sequtils import concat, foldl, toSeq, filterIt, mapIt
 from std/math import sgn, floor, arccos, arctan2, PI
 
 
@@ -61,33 +60,6 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal {.inline.} =
     of skCylinder: return newNormal(pt.x, pt.y, 0.0)
 
     of skPlane: return newNormal(0, 0, sgn(-dir[2]).float32)
-
-
-proc getAABB(shape: Shape): Interval[Point3D] {.inline.} =
-    case shape.kind
-    of skAABox: shape.aabb
-    of skTriangle: newAABB(shape.vertices.toSeq)
-    of skSphere: (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
-    of skCylinder: (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
-    of skPlane: (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
-    
-
-proc getVertices*(aabb: Interval[Point3D]): array[8, Point3D] {.inline.} =
-    [
-        aabb.min, aabb.max,
-        newPoint3D(aabb.min.x, aabb.min.y, aabb.max.z),
-        newPoint3D(aabb.min.x, aabb.max.y, aabb.min.z),
-        newPoint3D(aabb.min.x, aabb.max.y, aabb.max.z),
-        newPoint3D(aabb.max.x, aabb.min.y, aabb.min.z),
-        newPoint3D(aabb.max.x, aabb.min.y, aabb.max.z),
-        newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z),
-    ]
-
-proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
-    case shape.kind
-    of skAABox: shape.aabb.getVertices.toSeq
-    of skTriangle: shape.vertices.toSeq
-    else: shape.getAABB.getVertices.toSeq
 
 
 proc newShapeHandler(shape: Shape, transformation = Transformation.id): ObjectHandler {.inline.} =

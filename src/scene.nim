@@ -1,6 +1,6 @@
 import geometry, hdrimage, material
 
-from std/sequtils import mapIt
+from std/sequtils import mapIt, toSeq
 
 
 type    
@@ -9,7 +9,7 @@ type
         handlers*: seq[ObjectHandler]
 
 
-    ObjectHandlerKind = enum hkShape, hkMesh
+    ObjectHandlerKind* = enum hkShape, hkMesh
     ObjectHandler* = ref object
         transformation*: Transformation
 
@@ -73,3 +73,30 @@ proc newAABB*(points: seq[Point3D]): Interval[Point3D] =
         z = points.mapIt(it.z)
 
     (newPoint3D(x.min, y.min, z.min), newPoint3D(x.max, y.max, z.max))
+
+
+proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
+    case shape.kind
+    of skAABox: shape.aabb
+    of skTriangle: newAABB(shape.vertices.toSeq)
+    of skSphere: (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
+    of skCylinder: (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
+    of skPlane: (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
+    
+
+proc getVertices*(aabb: Interval[Point3D]): array[8, Point3D] {.inline.} =
+    [
+        aabb.min, aabb.max,
+        newPoint3D(aabb.min.x, aabb.min.y, aabb.max.z),
+        newPoint3D(aabb.min.x, aabb.max.y, aabb.min.z),
+        newPoint3D(aabb.min.x, aabb.max.y, aabb.max.z),
+        newPoint3D(aabb.max.x, aabb.min.y, aabb.min.z),
+        newPoint3D(aabb.max.x, aabb.min.y, aabb.max.z),
+        newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z),
+    ]
+
+proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
+    case shape.kind
+    of skAABox: shape.aabb.getVertices.toSeq
+    of skTriangle: shape.vertices.toSeq
+    else: shape.getAABB.getVertices.toSeq
