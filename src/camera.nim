@@ -2,7 +2,6 @@ import geometry, pcg, hdrimage, material, scene, shape, bvh, hitrecord
 
 from std/fenv import epsilon
 from std/strutils import repeat
-from std/options import isSome, isNone, get
 from std/terminal import fgWhite, fgRed, fgYellow, fgGreen, eraseLine, styledWrite, resetAttributes
 from std/strformat import fmt
 
@@ -86,19 +85,18 @@ proc sampleRay(camera: Camera; scene: Scene, sceneTree: BVHNode, worldRay: Ray, 
     of rkPathTracer: 
         if (worldRay.depth > camera.renderer.maxDepth): return BLACK
 
-        let treeHit = sceneTree.getClosestHit(worldRay)
-        if treeHit.isNone: return result
+        let closestHitInfo = sceneTree.getClosestHit(worldRay)
+        if closestHitInfo.hit.isNil: return result
 
         let 
-            closestHit = treeHit.get
-            invRay = worldRay.transform(closestHit.hit.transformation.inverse)
-            hitPt = invRay.at(closestHit.t)
-            hitNormal = closestHit.hit.shape.getNormal(hitPt, invRay.dir)
-            surfacePt = closestHit.hit.shape.getUV(hitPt)
+            invRay = worldRay.transform(closestHitInfo.hit.transformation.inverse)
+            hitPt = invRay.at(closestHitInfo.t)
+            hitNormal = closestHitInfo.hit.shape.getNormal(hitPt, invRay.dir)
+            surfacePt = closestHitInfo.hit.shape.getUV(hitPt)
             
-        result = closestHit.hit.shape.material.radiance.getColor(surfacePt)
+        result = closestHitInfo.hit.shape.material.radiance.getColor(surfacePt)
 
-        var hitCol = closestHit.hit.shape.material.brdf.pigment.getColor(surfacePt)
+        var hitCol = closestHitInfo.hit.shape.material.brdf.pigment.getColor(surfacePt)
         if worldRay.depth >= camera.renderer.rouletteLimit:
             let q = max(0.05, 1 - hitCol.luminosity)
             if rg.rand > q: hitCol /= (1.0 - q)
@@ -108,10 +106,10 @@ proc sampleRay(camera: Camera; scene: Scene, sceneTree: BVHNode, worldRay: Ray, 
             var accumulatedRadiance = BLACK
             for _ in 0..<camera.renderer.numRays:
                 let 
-                    outDir = closestHit.hit.shape.material.brdf.scatterDir(hitNormal, invRay.dir, rg).normalize
+                    outDir = closestHitInfo.hit.shape.material.brdf.scatterDir(hitNormal, invRay.dir, rg).normalize
                     scatteredRay = Ray(
-                        origin: apply(closestHit.hit.transformation, hitPt), 
-                        dir: apply(closestHit.hit.transformation, outDir),
+                        origin: apply(closestHitInfo.hit.transformation, hitPt), 
+                        dir: apply(closestHitInfo.hit.transformation, outDir),
                         tSpan: (1e-5.float32, Inf.float32),
                         depth: worldRay.depth + 1
                     )
