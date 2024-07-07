@@ -3,9 +3,9 @@ import geometry, scene, bvh
 from std/options import Option, none, some, isNone, isSome, get
 from std/math import sqrt, arctan2, PI
 from std/fenv import epsilon
-from std/algorithm import sorted
-from std/sequtils import mapIt, filterIt, apply
-
+from std/algorithm import sort, SortOrder
+from std/sequtils import mapIt
+from std/sugar import collect
 
 proc getIntersection(aabb: Interval[Point3D]; ray: Ray): float32 {.inline.} =
     let
@@ -23,8 +23,8 @@ proc getIntersection(aabb: Interval[Point3D]; ray: Ray): float32 {.inline.} =
     if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
     if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
                 
-    let tHit = if aabb.contains(ray.origin): hitSpan.max else: hitSpan.min
-    if not ray.tspan.contains(tHit): return tHit
+    result = if aabb.contains(ray.origin): hitSpan.max else: hitSpan.min
+    if not ray.tspan.contains(result): return Inf
 
 
 proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
@@ -122,48 +122,55 @@ proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
 
 type HitInfo[T] = tuple[hit: T, t: float32]
 
+proc newHitInfo[T](hit: T, t: float32): HitInfo[T] {.inline.} = (hit: hit, t: t)
+
 proc getClosestHit*(root: BVHNode, worldRay: Ray): Option[HitInfo[ObjectHandler]] =
+    if root.isNil: return none HitInfo[ObjectHandler]
+
     var 
         nodeStack: seq[BVHNode] = @[root]
+        nodesHitInfos: seq[HitInfo[BVHNode]]
+        handlersHitInfos: seq[HitInfo[ObjectHandler]]
+        
+        currentBVH: BVHNode
         closestHitInfo: HitInfo[ObjectHandler] = (nil, Inf.float32)
-        currentBVH = root
 
     while nodeStack.len > 0:
-        if currentBVH.isNil: 
-            currentBVH = nodeStack.pop; continue
-        if currentBVH.aabb.getIntersection(worldRay) == Inf:
-            currentBVH = nodeStack.pop; continue
+
+        currentBVH = nodeStack.pop
+        if currentBVH.aabb.getIntersection(worldRay) > closestHitInfo.t: break
 
         case currentBVH.kind
-        of nkLeaf:
-            let handlersHitInfos = 
-                currentBVH.handlers
-                    .mapIt((hit: it, t: it.getAABB.getIntersection(worldRay)))
-                    .sorted(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t))
+        of nkBranch: 
+            nodesHitInfos = collect:
+                for node in currentBVH.children:
+                    if not node.isNil:
+                        let tBoxHit = node.aabb.getIntersection(worldRay)
+                        if tBoxHit < Inf: newHitInfo(node, tBoxHit)
             
-            for (handler, tHit) in handlersHitInfos:
-                if tHit > closestHitInfo.t: break
+            nodesHitInfos.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
+            nodeStack.add nodesHitInfos.mapIt(it.hit)
+
+        of nkLeaf:
+            handlersHitInfos = collect:
+                for handler in currentBVH.handlers:
+                    let tBoxHit = handler.getAABB.getIntersection(worldRay)
+                    if tBoxHit < Inf: newHitInfo(handler, tBoxHit)
+
+            handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
+            
+            for (handler, tBoxHit) in handlersHitInfos:
+                if tBoxHit > closestHitInfo.t: break
                 
                 case handler.kind
                 of hkShape: 
-                    let tHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
-                    if tHit < closestHitInfo.t: closestHitInfo = (handler, tHit)
+                    let tShapeHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
+                    if tShapeHit < closestHitInfo.t: closestHitInfo = newHitInfo(handler, tShapeHit)
                     
                 of hkMesh:
                     let meshHit = handler.mesh.tree.getClosestHit(worldRay)
                     if meshHit.isSome and meshHit.get.t < closestHitInfo.t: closestHitInfo = meshHit.get
-                
-        of nkBranch: 
-            currentBVH.children
-                .filterIt(not it.isNil)
-                .mapIt((hit: it, t: it.aabb.getIntersection(worldRay)))
-                .filterIt(it.t < closestHitInfo.t)
-                .sorted(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t))
-                .apply(proc(a: HitInfo[BVHNode]) = nodeStack.add a.hit)
-
-        currentBVH = nodeStack.pop
 
 
     if closestHitInfo.hit.isNil: return none HitInfo[ObjectHandler] 
-    
     some closestHitInfo
