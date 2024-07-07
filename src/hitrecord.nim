@@ -4,7 +4,6 @@ from std/options import Option, none, some, isNone, isSome, get
 from std/math import sqrt, arctan2, PI
 from std/fenv import epsilon
 from std/algorithm import sort, SortOrder
-from std/sequtils import mapIt
 from std/sugar import collect
 
 proc getIntersection(aabb: Interval[Point3D]; ray: Ray): float32 {.inline.} =
@@ -16,8 +15,8 @@ proc getIntersection(aabb: Interval[Point3D]; ray: Ray): float32 {.inline.} =
     if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return Inf
 
     let tzSpan = newInterval(min.z / ray.dir[2], max.z / ray.dir[2])
-    var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
     
+    var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
     if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return Inf
 
     if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
@@ -45,10 +44,9 @@ proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
         if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
         if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
 
-        let tHit = if shape.aabb.contains(worldInvRay.origin): hitSpan.max else: hitSpan.min
-        if not worldInvRay.tspan.contains(tHit): return Inf
+        result = if shape.aabb.contains(worldInvRay.origin): hitSpan.max else: hitSpan.min
+        if not worldInvRay.tspan.contains(result): return Inf
 
-        return tHit
 
     of skTriangle:
         let 
@@ -63,27 +61,26 @@ proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
         if not worldInvRay.tspan.contains(sol[2]): return Inf
         if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return Inf
 
-        return sol[2]
+        result = sol[2]
 
     of skSphere:
-        let (a, b, c) = (norm2(worldInvRay.dir), dot(worldInvRay.origin.Vec3f, worldInvRay.dir), norm2(worldInvRay.origin.Vec3f) - shape.radius * shape.radius)
-        let delta_4 = b * b - a * c
+        let 
+            (a, b, c) = (norm2(worldInvRay.dir), dot(worldInvRay.origin.Vec3f, worldInvRay.dir), norm2(worldInvRay.origin.Vec3f) - shape.radius * shape.radius)
+            delta_4 = b * b - a * c
+        
         if delta_4 < 0: return Inf
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        let tHit = 
+        
+        result = 
             if worldInvRay.tspan.contains(t_l): t_l 
             elif worldInvRay.tspan.contains(t_r): t_r 
-            else: return Inf
-
-        return tHit
+            else: Inf
 
     of skPlane:
         if abs(worldInvRay.dir[2]) < epsilon(float32): return Inf
-        let tHit = -worldInvRay.origin.z / worldInvRay.dir[2]
-        if not worldInvRay.tspan.contains(t_hit): return Inf
-
-        return tHit
+        result = -worldInvRay.origin.z / worldInvRay.dir[2]
+        if not worldInvRay.tspan.contains(result): return Inf
 
     of skCylinder:
         let
@@ -98,26 +95,24 @@ proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
 
         if tspan.min > worldInvRay.tspan.max or tspan.max < worldInvRay.tspan.min: return Inf
 
-        var tHit: float32 = tspan.min
-        if tHit < worldInvRay.tspan.min:
+        result = tspan.min
+        if result < worldInvRay.tspan.min:
             if tspan.max > worldInvRay.tspan.max: return Inf
-            tHit = tspan.max
+            result = tspan.max
 
-        var hitPt = worldInvRay.at(tHit)
+        var hitPt = worldInvRay.at(result)
         var phi = arctan2(hitPt.y, hitPt.x)
         if phi < 0.0: phi += 2.0 * PI
 
         if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax:
-            if tHit == tspan.max: return Inf
-            tHit = tspan.max
-            if tHit > worldInvRay.tspan.max: return Inf
+            if result == tspan.max: return Inf
+            result = tspan.max
+            if result > worldInvRay.tspan.max: return Inf
             
-            hitPt = worldInvRay.at(tHit)
+            hitPt = worldInvRay.at(result)
             phi = arctan2(hitPt.y, hitPt.x)
             if phi < 0.0: phi += 2.0 * PI
             if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax: return Inf
-
-        return tHit
 
 
 type HitInfo[T] = tuple[hit: T, t: float32]
@@ -128,37 +123,34 @@ proc getClosestHit*(root: BVHNode, worldRay: Ray): Option[HitInfo[ObjectHandler]
     if root.isNil: return none HitInfo[ObjectHandler]
 
     var 
-        nodeStack: seq[BVHNode] = @[root]
-        nodesHitInfos: seq[HitInfo[BVHNode]]
-        handlersHitInfos: seq[HitInfo[ObjectHandler]]
-        
-        currentBVH: BVHNode
+        nodeStack: seq[HitInfo[BVHNode]] = @[newHitInfo(root, root.aabb.getIntersection(worldRay))]
         closestHitInfo: HitInfo[ObjectHandler] = (nil, Inf.float32)
 
     while nodeStack.len > 0:
 
-        currentBVH = nodeStack.pop
-        if currentBVH.aabb.getIntersection(worldRay) > closestHitInfo.t: break
+        let currentBVH = nodeStack.pop
+        if currentBVH.t > closestHitInfo.t: break
 
-        case currentBVH.kind
+        case currentBVH.hit.kind
         of nkBranch: 
-            nodesHitInfos = collect:
-                for node in currentBVH.children:
+            let nodesHitInfos = collect:
+                for node in currentBVH.hit.children:
                     if not node.isNil:
                         let tBoxHit = node.aabb.getIntersection(worldRay)
                         if tBoxHit < Inf: newHitInfo(node, tBoxHit)
-            
-            nodesHitInfos.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
-            nodeStack.add nodesHitInfos.mapIt(it.hit)
+
+            if nodesHitInfos.len > 0:             
+                nodeStack.add nodesHitInfos
+                nodeStack.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
 
         of nkLeaf:
-            handlersHitInfos = collect:
-                for handler in currentBVH.handlers:
+            var handlersHitInfos = collect:
+                for handler in currentBVH.hit.handlers:
                     let tBoxHit = handler.getAABB.getIntersection(worldRay)
                     if tBoxHit < Inf: newHitInfo(handler, tBoxHit)
-
-            handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
             
+            handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
+
             for (handler, tBoxHit) in handlersHitInfos:
                 if tBoxHit > closestHitInfo.t: break
                 
