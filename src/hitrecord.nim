@@ -4,6 +4,7 @@ from std/math import sqrt, arctan2, PI
 from std/fenv import epsilon
 from std/algorithm import sort, SortOrder
 from std/sugar import collect
+from std/sequtils import mapIt
 
 
 proc getIntersection(aabb: Interval[Point3D]; ray: Ray): float32 {.inline.} =
@@ -117,13 +118,12 @@ proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
 
 type HitInfo[T] = tuple[hit: T, t: float32]
 
-proc getClosestHit*(root: BVHNode, worldRay: Ray): HitInfo[ObjectHandler] =
+proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray): HitInfo[ObjectHandler] =
     result = (nil, Inf.float32)
-    if root.isNil: return result
+    if tree.root.isNil: return result
 
-    var nodeStack: seq[HitInfo[BVHNode]] = @[(root, root.aabb.getIntersection(worldRay))]
+    var nodeStack: seq[HitInfo[BVHNode]] = @[(tree.root, tree.root.aabb.getIntersection(worldRay))]
     while nodeStack.len > 0:
-
         let currentBVH = nodeStack.pop
         if currentBVH.t - result.t >= epsilon(float32): break
 
@@ -134,14 +134,14 @@ proc getClosestHit*(root: BVHNode, worldRay: Ray): HitInfo[ObjectHandler] =
                     if not node.isNil:
                         let tBoxHit = node.aabb.getIntersection(worldRay)
                         if tBoxHit < Inf: (node, tBoxHit)
-
+            
             if nodesHitInfos.len > 0:             
                 nodeStack.add nodesHitInfos
                 nodeStack.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
 
         of nkLeaf:
             var handlersHitInfos = collect:
-                for handler in currentBVH.hit.handlers:
+                for handler in currentBVH.hit.indexes.mapIt(handlers[it]):
                     let tBoxHit = handler.getAABB.getIntersection(worldRay)
                     if tBoxHit < Inf: (handler, tBoxHit)
             
@@ -155,6 +155,7 @@ proc getClosestHit*(root: BVHNode, worldRay: Ray): HitInfo[ObjectHandler] =
                     let tShapeHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
                     if tShapeHit - result.t < epsilon(float32): result = (handler, tShapeHit)
                     
-                of hkMesh:
-                    let meshHit = handler.mesh.tree.getClosestHit(worldRay)
+                of hkMesh: 
+                    let meshHit = handler.mesh.tree.getClosestHit(handler.mesh.shapes, worldRay)
                     if not meshHit.hit.isNil and meshHit.t - result.t < epsilon(float32): result = meshHit
+

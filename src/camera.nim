@@ -85,7 +85,7 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
     of rkPathTracer: 
         if (worldRay.depth > camera.renderer.maxDepth): return BLACK
 
-        let closestHitInfo = scene.tree.getClosestHit(worldRay)
+        let closestHitInfo = scene.tree.getClosestHit(scene.handlers, worldRay)
         if closestHitInfo.hit.isNil: return result
 
         let 
@@ -114,13 +114,12 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
                         depth: worldRay.depth + 1
                     )
 
-                # hitCol *= closestHit.handler.shape.material.brdf.eval(surfacePt, shapeLocalHitNormal.Vec3f, closestHit.ray.dir, localOutDir)
-                accumulatedRadiance += hitCol * camera.sampleRay(scene, scatteredRay, rg) #* closestHit.handler.shape.material.brdf.reflectance
+                accumulatedRadiance += hitCol * camera.sampleRay(scene, scatteredRay, rg)
 
             result += accumulatedRadiance / camera.renderer.numRays.float32
 
 
-proc sample*(camera: Camera; scene: Scene, rg: var PCG, samplesPerSide: int = 1, treeKind: TreeKind = tkBinary, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
+proc sample*(camera: Camera; scene: Scene, rg: var PCG, samplesPerSide: int = 1, displayProgress = true): HDRImage =
 
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
 

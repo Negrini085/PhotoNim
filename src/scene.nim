@@ -2,11 +2,14 @@ import geometry, pcg, hdrimage, material
 
 from std/sequtils import toSeq, filterIt, map, mapIt
 
+
 type    
-    Scene* = ref object 
+    Scene* = object 
         bgColor*: Color
         handlers*: seq[ObjectHandler]
-        tree*: BVHNode
+        tree*: BVHTree
+
+    BVHTree* = tuple[kind: TreeKind, root: BVHNode]
 
     TreeKind* = enum tkBinary = 2, tkTernary = 3, tkQuaternary = 4, tkOctonary = 8
     
@@ -18,8 +21,8 @@ type
         of nkBranch:
             children*: seq[BVHNode]
         
-        of nkLeaf:
-            handlers*: seq[ObjectHandler]
+        of nkLeaf: 
+            indexes*: seq[int]
 
 
     ObjectHandlerKind* = enum hkShape, hkMesh
@@ -56,9 +59,8 @@ type
 
 
     Mesh* = ref object
-        nodes*: seq[Point3D]
-        edges*: seq[seq[int]]
-        tree*: BVHNode
+        shapes*: seq[ObjectHandler]
+        tree*: BVHTree
 
 
 proc newAABB*(points: seq[Point3D]): Interval[Point3D] =
@@ -118,7 +120,7 @@ proc getVertices*(shape: Shape): seq[Point3D] {.inline.} =
 proc getAABB*(handler: ObjectHandler): Interval[Point3D] {.inline.} =
     case handler.kind
     of hkShape: newAABB handler.shape.getVertices.mapIt(apply(handler.transformation, it))
-    of hkMesh: newAABB handler.mesh.tree.aabb.getVertices.mapIt(apply(handler.transformation, it))
+    of hkMesh: newAABB handler.mesh.tree.root.aabb.getVertices.mapIt(apply(handler.transformation, it))
 
 
 proc nearestCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =
@@ -186,23 +188,23 @@ proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): seq[int] =
 
 
 
-proc newBVHNode*(handlers: seq[ObjectHandler], kClusters, maxShapesPerLeaf, depth: int, rg: var PCG): BVHNode =
+proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, maxShapesPerLeaf: int, rg: var PCG): BVHNode =
     if handlers.len == 0: return nil
 
-    let handlersAABBs = handlers.mapIt(it.getAABB)
+    let handlersAABBs = handlers.mapIt(it.val.getAABB)
     
     if handlers.len <= maxShapesPerLeaf:
         return BVHNode(
             kind: nkLeaf, 
             aabb: handlersAABBs.getTotalAABB, 
-            handlers: handlers
+            indexes: handlers.mapIt(it.key)
         )
     
     let clusters = kMeans(handlersAABBs.mapIt(it.getCentroid), kClusters, rg).pairs.toSeq
 
     var childNodes = newSeq[BVHNode](kClusters)
     for i in 0..<kClusters: 
-        childNodes[i] = newBVHNode(clusters.filterIt(it.val == i).mapIt(handlers[it.key]), kClusters, maxShapesPerLeaf, depth + 1, rg)
+        childNodes[i] = newBVHNode(clusters.filterIt(it.val == i).mapIt(handlers[it.key]), kClusters, maxShapesPerLeaf, rg)
 
     BVHNode(
         kind: nkBranch, 
@@ -212,13 +214,9 @@ proc newBVHNode*(handlers: seq[ObjectHandler], kClusters, maxShapesPerLeaf, dept
 
 
 proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], rg: var PCG, treeKind: TreeKind, maxShapesPerLeaf: int = 1): Scene {.inline.} =
-    Scene(bgColor: bgColor, handlers: handlers, tree: newBVHNode(handlers, treeKind.int, maxShapesPerLeaf, 0, rg))
-
-    # while true:
-    #     let node = 
-    #     result.nodes.add node
-        
-
-
-    # Scene(bgColor: bgColor, handlers: handlers, tree: newBVHNode(handlers, log2(handlers.len.float32).floor.int, maxShapesPerLeaf, 0, rg))
-    
+    assert handlers.len > 0, "Error! Cannot create a Scene from an empty sequence of ObjectHandlers."
+    Scene(
+        bgColor: bgColor,
+        handlers: handlers,
+        tree: (treeKind, newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rg))
+    )
