@@ -125,37 +125,40 @@ proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray):
     var nodeStack: seq[HitInfo[BVHNode]] = @[(tree.root, tree.root.aabb.getIntersection(worldRay))]
     while nodeStack.len > 0:
         let currentBVH = nodeStack.pop
-        if currentBVH.t >= result.t: break
+        if currentBVH.t > result.t: continue
+        # here break and continue have the same output... 
+        # but the correct output is the one without any of them
 
         case currentBVH.hit.kind
         of nkBranch: 
-            let nodesHitInfos = collect:
+            let nodesHitInfos: seq[HitInfo[BVHNode]] = collect:
                 for node in currentBVH.hit.children:
                     if not node.isNil:
                         let tBoxHit = node.aabb.getIntersection(worldRay)
-                        if tBoxHit < Inf: (node, tBoxHit)
+                        if tBoxHit < result.t: (node, tBoxHit)
             
             if nodesHitInfos.len > 0:
                 nodeStack.add nodesHitInfos
                 nodeStack.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
 
         of nkLeaf:
-            var handlersHitInfos = collect:
+            var handlersHitInfos: seq[HitInfo[ObjectHandler]] = collect:
                 for handler in currentBVH.hit.indexes.mapIt(handlers[it]):
                     let tBoxHit = handler.getAABB.getIntersection(worldRay)
-                    if tBoxHit < Inf: (handler, tBoxHit)
+                    if tBoxHit < result.t: (handler, tBoxHit)
             
-            handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
+            if handlersHitInfos.len > 0:
+                handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
 
-            for (handler, tBoxHit) in handlersHitInfos:
-                if tBoxHit >= result.t: break
-                
-                case handler.kind
-                of hkShape: 
-                    let tShapeHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
-                    if tShapeHit < result.t: result = (handler, tShapeHit)
+                for (handler, tBoxHit) in handlersHitInfos:
+                    if tBoxHit >= result.t: break
                     
-                of hkMesh: 
-                    let meshHit = handler.mesh.tree.getClosestHit(handler.mesh.shapes, worldRay)
-                    if not meshHit.hit.isNil and meshHit.t < result.t: result = meshHit
-
+                    case handler.kind
+                    of hkShape: 
+                        let tShapeHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
+                        if tShapeHit < result.t: result = (handler, tShapeHit)
+                        
+                    of hkMesh: 
+                        let meshHit = handler.mesh.tree.getClosestHit(handler.mesh.shapes, worldRay)
+                        if not meshHit.hit.isNil:
+                            if meshHit.t < result.t: result = meshHit
