@@ -548,18 +548,26 @@ suite "Cylinder":
 suite "Scene":
 
     setup:
+        var rg = newPCG()
+
         let 
             tri1 = newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0))
             tri2 = newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0), transformation = newTranslation([float32 1, 1, -2]))
-            sc1 = newScene(@[tri1, tri2])
-            sc2 = newScene(@[newSphere(ORIGIN3D, 3), newUnitarySphere(newPoint3D(4, 4, 4))], newColor(1, 0.3, 0.7))
-            sc3 = newScene(@[newUnitarySphere(newPoint3D(3, 3, 3)), tri1])
+            sc1 = newScene(BLACK, @[tri1, tri2], rg, tkBinary)
+            sc2 = newScene(
+                newColor(1, 0.3, 0.7),
+                @[newSphere(ORIGIN3D, 3), newUnitarySphere(newPoint3D(4, 4, 4))],
+                rg, tkBinary
+                )
+            sc3 = newScene(BLACK, @[newUnitarySphere(newPoint3D(3, 3, 3)), tri1], rg, tkBinary)
     
     teardown:
-        discard tri1
-        discard tri2
+        discard rg
         discard sc1
         discard sc2
+        discard sc3
+        discard tri1
+        discard tri2
 
     
     test "newScene proc":
@@ -591,24 +599,31 @@ suite "Scene":
         check areClose(sc3.handlers[1].shape.vertices[0], newPoint3D(0, -2, 0))
 
 
-    test "getBVHTree proc":
-        var 
-            sceneTree: BVHNode
-            rg = newPCG()
+    test "newBVHNode proc":
+        var sceneTree: BVHNode
 
         # First scene, only triangles
-        sceneTree = getBVHTree(scene = sc1, kind = tkBinary, rg = rg)
+        sceneTree = newBVHNode(
+            @[(0, tri1), (1, tri2)], 2,
+            1, rg
+        )
         check areClose(sceneTree.aabb.min, newPoint3D(0, -2, -2))
         check areClose(sceneTree.aabb.max, newPoint3D(3, 4, 1))
 
 
         # Second scene, only spheres
-        sceneTree = getBVHTree(scene = sc2, kind = tkBinary, rg = rg)
+        sceneTree = newBVHNode(
+            @[(0, newSphere(ORIGIN3D, 3)), (1, newUnitarySphere(newPoint3D(4, 4, 4)))], 2,
+            1, rg
+        )
         check areClose(sceneTree.aabb.min, newPoint3D(-3, -3, -3))
         check areClose(sceneTree.aabb.max, newPoint3D(5, 5, 5))
 
 
         # Third scene, one sphere and one triangle
-        sceneTree = getBVHTree(scene = sc3, kind = tkBinary, rg = rg)
+        sceneTree = newBVHNode(
+            @[(0, newUnitarySphere(newPoint3D(3, 3, 3))), (1, tri1)], 2,
+            1, rg
+        )
         check areClose(sceneTree.aabb.min, newPoint3D(0, -2, 0))
         check areClose(sceneTree.aabb.max, newPoint3D(4, 4, 4))
