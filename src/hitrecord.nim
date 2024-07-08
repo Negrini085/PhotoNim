@@ -1,4 +1,4 @@
-import geometry, scene, bvh
+import geometry, scene
 
 from std/math import sqrt, arctan2, PI
 from std/fenv import epsilon
@@ -125,7 +125,7 @@ proc getClosestHit*(root: BVHNode, worldRay: Ray): HitInfo[ObjectHandler] =
     while nodeStack.len > 0:
 
         let currentBVH = nodeStack.pop
-        if currentBVH.t > result.t + 1e3: break
+        if currentBVH.t - result.t >= epsilon(float32): break
 
         case currentBVH.hit.kind
         of nkBranch: 
@@ -148,14 +148,13 @@ proc getClosestHit*(root: BVHNode, worldRay: Ray): HitInfo[ObjectHandler] =
             handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
 
             for (handler, tBoxHit) in handlersHitInfos:
-                if tBoxHit > result.t + 1e3: break
+                if tBoxHit - result.t >= epsilon(float32): break
                 
                 case handler.kind
                 of hkShape: 
                     let tShapeHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
-                    if tShapeHit < result.t: result = (handler, tShapeHit)
+                    if tShapeHit - result.t < epsilon(float32): result = (handler, tShapeHit)
                     
                 of hkMesh:
                     let meshHit = handler.mesh.tree.getClosestHit(worldRay)
-                    if meshHit.hit.isNil: continue
-                    elif meshHit.t < result.t: result = meshHit
+                    if not meshHit.hit.isNil and meshHit.t - result.t < epsilon(float32): result = meshHit

@@ -6,17 +6,17 @@ from std/osproc import execCmd
 
 
 let 
-    nSpheres = 2048  
+    nSpheres = 512  
     timeStart = cpuTime()
     camera = newPerspectiveCamera(
-        renderer = newPathTracer(numRays = 4, maxDepth = 2),
+        renderer = newPathTracer(numRays = 1, maxDepth = 0),
         viewport = (600, 600), 
         distance = 1.0, 
         transformation = newTranslation(newPoint3D(-10, 0, 0))
     )
 
 var 
-    rg = newPCG()
+    rg = newPCG(42, 1)
     shapes = newSeq[ObjectHandler](nSpheres)
 
 for i in 0..<nSpheres: 
@@ -26,8 +26,8 @@ for i in 0..<nSpheres:
     )
 
 let
-    scene = newScene(shapes)
-    image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkOctonary, maxShapesPerLeaf = 4)
+    scene = newScene(BLACK, shapes, rg, treeKind = tkOctonary, maxShapesPerLeaf = 8)
+    image = camera.sample(scene, rg, samplesPerSide = 1)
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 

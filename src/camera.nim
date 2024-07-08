@@ -1,4 +1,4 @@
-import geometry, pcg, hdrimage, material, scene, shape, bvh, hitrecord
+import geometry, pcg, hdrimage, material, scene, shape, hitrecord
 
 from std/fenv import epsilon
 from std/strutils import repeat
@@ -75,7 +75,7 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleRay(camera: Camera; scene: Scene, sceneTree: BVHNode, worldRay: Ray, rg: var PCG): Color =
+proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color =
     result = scene.bgColor
     
     case camera.renderer.kind
@@ -85,7 +85,7 @@ proc sampleRay(camera: Camera; scene: Scene, sceneTree: BVHNode, worldRay: Ray, 
     of rkPathTracer: 
         if (worldRay.depth > camera.renderer.maxDepth): return BLACK
 
-        let closestHitInfo = sceneTree.getClosestHit(worldRay)
+        let closestHitInfo = scene.tree.getClosestHit(worldRay)
         if closestHitInfo.hit.isNil: return result
 
         let 
@@ -115,16 +115,14 @@ proc sampleRay(camera: Camera; scene: Scene, sceneTree: BVHNode, worldRay: Ray, 
                     )
 
                 # hitCol *= closestHit.handler.shape.material.brdf.eval(surfacePt, shapeLocalHitNormal.Vec3f, closestHit.ray.dir, localOutDir)
-                accumulatedRadiance += hitCol * camera.sampleRay(scene, sceneTree, scatteredRay, rg) #* closestHit.handler.shape.material.brdf.reflectance
+                accumulatedRadiance += hitCol * camera.sampleRay(scene, scatteredRay, rg) #* closestHit.handler.shape.material.brdf.reflectance
 
             result += accumulatedRadiance / camera.renderer.numRays.float32
 
 
-proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSide: int = 1, treeKind: TreeKind = tkBinary, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
+proc sample*(camera: Camera; scene: Scene, rg: var PCG, samplesPerSide: int = 1, treeKind: TreeKind = tkBinary, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
 
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
-    var rg = newPCG(rgState, rgSeq)
-    let sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
 
     for y in 0..<camera.viewport.height:
         if displayProgress: displayProgress(y, camera.viewport.height - 1)
@@ -142,7 +140,7 @@ proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSid
                         )
                     )
                     
-                    accumulatedColor += camera.sampleRay(scene, sceneTree, ray, rg)
+                    accumulatedColor += camera.sampleRay(scene, ray, rg)
 
             result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
                                     
