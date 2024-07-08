@@ -7,15 +7,15 @@ from std/sugar import collect
 from std/sequtils import mapIt
 
 
-proc getIntersection(aabb: Interval[Point3D]; ray: Ray): float32 {.inline.} =
+proc getIntersection(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.} =
     let
-        (min, max) = (aabb.min - ray.origin, aabb.max - ray.origin)
-        txSpan = newInterval(min.x / ray.dir[0], max.x / ray.dir[0])
-        tySpan = newInterval(min.y / ray.dir[1], max.y / ray.dir[1])
+        (min, max) = (aabb.min - worldRay.origin, aabb.max - worldRay.origin)
+        txSpan = newInterval(min.x / worldRay.dir[0], max.x / worldRay.dir[0])
+        tySpan = newInterval(min.y / worldRay.dir[1], max.y / worldRay.dir[1])
 
     if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return Inf
 
-    let tzSpan = newInterval(min.z / ray.dir[2], max.z / ray.dir[2])
+    let tzSpan = newInterval(min.z / worldRay.dir[2], max.z / worldRay.dir[2])
     
     var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
     if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return Inf
@@ -23,8 +23,8 @@ proc getIntersection(aabb: Interval[Point3D]; ray: Ray): float32 {.inline.} =
     if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
     if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
                 
-    result = if aabb.contains(ray.origin): hitSpan.max else: hitSpan.min
-    if not ray.tspan.contains(result): return Inf
+    result = if aabb.contains(worldRay.origin): hitSpan.max else: hitSpan.min
+    if not worldRay.tspan.contains(result): return Inf
 
 
 proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
@@ -125,7 +125,7 @@ proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray):
     var nodeStack: seq[HitInfo[BVHNode]] = @[(tree.root, tree.root.aabb.getIntersection(worldRay))]
     while nodeStack.len > 0:
         let currentBVH = nodeStack.pop
-        if currentBVH.t - result.t >= epsilon(float32): break
+        if currentBVH.t >= result.t: break
 
         case currentBVH.hit.kind
         of nkBranch: 
@@ -135,7 +135,7 @@ proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray):
                         let tBoxHit = node.aabb.getIntersection(worldRay)
                         if tBoxHit < Inf: (node, tBoxHit)
             
-            if nodesHitInfos.len > 0:             
+            if nodesHitInfos.len > 0:
                 nodeStack.add nodesHitInfos
                 nodeStack.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
 
@@ -148,14 +148,14 @@ proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray):
             handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
 
             for (handler, tBoxHit) in handlersHitInfos:
-                if tBoxHit - result.t >= epsilon(float32): break
+                if tBoxHit >= result.t: break
                 
                 case handler.kind
                 of hkShape: 
                     let tShapeHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
-                    if tShapeHit - result.t < epsilon(float32): result = (handler, tShapeHit)
+                    if tShapeHit < result.t: result = (handler, tShapeHit)
                     
                 of hkMesh: 
                     let meshHit = handler.mesh.tree.getClosestHit(handler.mesh.shapes, worldRay)
-                    if not meshHit.hit.isNil and meshHit.t - result.t < epsilon(float32): result = meshHit
+                    if not meshHit.hit.isNil and meshHit.t < result.t: result = meshHit
 
