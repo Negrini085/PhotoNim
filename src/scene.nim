@@ -46,7 +46,7 @@ type
             aabb*: Interval[Point3D]
 
         of skTriangle: 
-            vertices*: array[3, Point3D]            
+            vertices*: seq[Point3D]            
 
         of skSphere: 
             radius*: float32
@@ -93,14 +93,14 @@ proc getCentroid*(aabb: Interval[Point3D]): Vec3f {.inline.} =
 proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     case shape.kind
     of skAABox: shape.aabb
-    of skTriangle: newAABB(shape.vertices.toSeq)
+    of skTriangle: newAABB(shape.vertices)
     of skSphere: (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
     of skCylinder: (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
     of skPlane: (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
     
 
-proc getVertices*(aabb: Interval[Point3D]): array[8, Point3D] {.inline.} =
-    [
+proc getVertices*(aabb: Interval[Point3D]): seq[Point3D] {.inline.} =
+    @[
         aabb.min, aabb.max,
         newPoint3D(aabb.min.x, aabb.min.y, aabb.max.z),
         newPoint3D(aabb.min.x, aabb.max.y, aabb.min.z),
@@ -112,9 +112,9 @@ proc getVertices*(aabb: Interval[Point3D]): array[8, Point3D] {.inline.} =
 
 proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
-    of skAABox: shape.aabb.getVertices.toSeq
-    of skTriangle: shape.vertices.toSeq
-    else: shape.getAABB.getVertices.toSeq
+    of skAABox: shape.aabb.getVertices
+    of skTriangle: shape.vertices
+    else: shape.getAABB.getVertices
 
 
 proc getAABB*(handler: ObjectHandler): Interval[Point3D] {.inline.} =
