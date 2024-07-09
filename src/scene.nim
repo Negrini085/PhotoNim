@@ -6,6 +6,7 @@ from std/sequtils import toSeq, filterIt, map, mapIt
 type    
     Scene* = object 
         bgColor*: Color
+        lights*: seq[Light]
         handlers*: seq[ObjectHandler]
         tree*: BVHTree
 
@@ -25,7 +26,19 @@ type
             indexes*: seq[int]
 
 
-    ObjectHandlerKind* = enum hkShape, hkMesh
+    LightKind* = enum lkPoint, lkSurface
+    Light* = object
+        color: Color
+
+        case kind: LightKind
+        of lkPoint: 
+            point: Point3D
+
+        of lkSurface:
+            handler: ObjectHandler
+
+
+    ObjectHandlerKind = enum hkShape, hkMesh
     ObjectHandler* = ref object
         transformation*: Transformation
 

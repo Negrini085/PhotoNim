@@ -3,6 +3,31 @@ import geometry, material, scene
 from std/math import sgn, floor, arccos, arctan2, PI
 
 
+proc newShapeHandler(shape: Shape, transformation = Transformation.id): ObjectHandler {.inline.} =
+    ObjectHandler(kind: hkShape, shape: shape, transformation: transformation)
+
+proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): ObjectHandler {.inline.} =   
+    newShapeHandler(Shape(kind: skSphere, material: material, radius: radius), if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
+
+proc newUnitarySphere*(center: Point3D; material = newMaterial()): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skSphere, material: material, radius: 1.0), if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
+
+proc newPlane*(material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPlane, material: material), transformation)
+
+proc newBox*(aabb: Interval[Point3D], material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} =
+    newShapeHandler(Shape(kind: skAABox, aabb: aabb, material: material), transformation)
+
+proc newTriangle*(a, b, c: Point3D; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skTriangle, material: material, vertices: [a, b, c]), transformation)
+
+proc newTriangle*(vertices: array[3, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skTriangle, material: material, vertices: vertices), transformation)
+
+proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} =
+    newShapeHandler(Shape(kind: skCylinder, material: material, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), transformation)
+
+
 proc getUV*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
     of skAABox:
