@@ -366,19 +366,13 @@ suite "HitPayload":
         check areClose(hitPayload.get.ray.dir, -eX)
         check areClose(hitPayload.get.ray.origin, newPoint3D(4, 0, 0))
         
-        hitPayload = getHitPayload(cylinder, ray3)
-        check hitPayload.isSome
-        # check hitPayload.get.t == 2                   # It's nan, found another bug
-        check hitPayload.get.handler.shape.kind == skCylinder
-        check areClose(hitPayload.get.ray.dir, eZ)
-        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, -4))
-
+        check not getHitPayload(cylinder, ray3).isSome
         check not getHitPayload(cylinder, ray4).isSome
 
 
-    #-----------------------------------#
+    #----------------------------------#
     #     getHitPayloads proc test     #
-    #-----------------------------------#
+    #----------------------------------#
     test "getHitPayloads":
         # Checking getHitPayloads
         let

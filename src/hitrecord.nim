@@ -1,7 +1,7 @@
 import geometry, scene
 
 from std/options import Option, none, some, isNone, isSome, get
-from std/math import sqrt, arctan2, PI
+from std/math import sqrt, arctan2, PI, pow
 from std/fenv import epsilon
 from std/algorithm import sorted
 from std/sequtils import concat, foldl, mapIt, filterIt
@@ -135,6 +135,10 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         var phi = arctan2(hitPt.y, hitPt.x)
         if phi < 0.0: phi += 2.0 * PI
 
+        if areClose(worldInvRay.dir[0], 0) and areClose(worldInvRay.dir[1], 0) and worldInvRay.dir[2] != 0:
+            if not areClose(pow(worldInvRay.origin.x, 2) + pow(worldInvRay.origin.y, 2), pow(handler.shape.R, 2)):
+                return none HitPayload
+
         if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax:
             if tHit == tspan.max: return none HitPayload
             tHit = tspan.max
@@ -191,7 +195,8 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
 
         some HitPayload(handler: handler, ray: worldInvRay, t: hit.get.t)
     
-    of skCSGUnion: none HitPayload
+    of skCSGUnion: 
+        return none HitPayload
         
 
 proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
