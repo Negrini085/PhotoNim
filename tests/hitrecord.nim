@@ -118,7 +118,7 @@ suite "HitPayload":
         discard rg
         discard scene
         discard sceneTree
-#          discard HitPayload
+        discard hitPayload
         discard hitPayloads
 
 
@@ -375,35 +375,75 @@ suite "HitPayload":
         var 
             sph = newSphere(newPoint3D(1, 3, 3), 2)
             cyl = newCylinder(2, -2, 4)
-            csgUnion = newCSGUnion(sph, cyl, newTranslation(eY))
+            csgUnion1 = newCSGUnion(sph, cyl, newTranslation(eY))
+            csgUnion2 = newCSGUnion(csgUnion1, newUnitarySphere(newPoint3D(-3, -3, -3)))
 
             ray1 = newRay(ORIGIN3D, eX)
             ray2 = newRay(newPoint3D(4, 0, 0), -eX)
             ray3 = newRay(newPoint3D(1, 3, 6), -eZ)
             ray4 = newRay(newPoint3D(-3, -3, -1), eY)
 
-        hitPayload = getHitPayload(csgUnion, ray1)
+        #---------------------------------#
+        #       First CSGUnion shape      #
+        #---------------------------------#
+        hitPayload = getHitPayload(csgUnion1, ray1)
         check hitPayload.isSome
         check hitPayload.get.t == 2
         check hitPayload.get.handler.shape.kind == skCylinder
         check areClose(hitPayload.get.ray.dir, eX)
         check areClose(hitPayload.get.ray.origin, ORIGIN3D)
 
-        hitPayload = getHitPayload(csgUnion, ray2)
+        hitPayload = getHitPayload(csgUnion1, ray2)
         check hitPayload.isSome
         check hitPayload.get.t == 2
         check hitPayload.get.handler.shape.kind == skCylinder
         check areClose(hitPayload.get.ray.dir, -eX)
         check areClose(hitPayload.get.ray.origin, newPoint3D(4, 0, 0))
         
-        hitPayload = getHitPayload(csgUnion, ray3)
+        hitPayload = getHitPayload(csgUnion1, ray3)
         check hitPayload.isSome
         #check hitPayload.get.t == 1
         check hitPayload.get.handler.shape.kind == skSphere
         check areClose(hitPayload.get.ray.dir, -eZ)
         check areClose(hitPayload.get.ray.origin, newPoint3D(1, 3, 6))
 
-        check not getHitPayload(csgUnion, ray4).isSome
+        check not getHitPayload(csgUnion1, ray4).isSome
+
+        #----------------------------------#
+        #       Second csgUnion shape      #
+        #----------------------------------#
+        ray1.origin = newPoint3D(0, 1, 0)
+        hitPayload = getHitPayload(csgUnion2, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skCylinder
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 1, 0))
+
+        ray2.origin = newPoint3D(4, 1, 0)
+        hitPayload = getHitPayload(csgUnion2, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skCylinder
+        check areClose(hitPayload.get.ray.dir, -eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 1, 0))
+        
+        ray3.origin = newPoint3D(1, 4, 6)
+        hitPayload = getHitPayload(csgUnion2, ray3)
+        check hitPayload.isSome
+        check hitPayload.get.t == 1
+        check hitPayload.get.handler.shape.kind == skSphere
+        check areClose(hitPayload.get.ray.dir, -eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(1, 4, 6))
+
+        ray4.origin = newPoint3D(-6, -3, -3); ray4.dir = eX
+        hitPayload = getHitPayload(csgUnion2, ray4)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skSphere
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(-6, -3, -3))
+
 
 
     #----------------------------------#
