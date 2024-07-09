@@ -190,6 +190,8 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         if hit.isNone: return none HitPayload
 
         some HitPayload(handler: handler, ray: worldInvRay, t: hit.get.t)
+    
+    of skCSGUnion: none HitPayload
         
 
 proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =

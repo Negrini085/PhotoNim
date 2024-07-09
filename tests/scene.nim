@@ -690,6 +690,49 @@ suite "Ellipsoid":
 
 
 
+#----------------------------#
+#    Ellipsoid test suite    #
+#----------------------------# 
+suite "Ellipsoid":
+
+    setup:
+        let 
+            comp = newComposition(newRotX(90), newTranslation(eY))
+            
+            spSh = newSphere(newPoint3D(1, 2, 3), 2)
+            triSh = newTriangle(eX.Point3D, eY.Point3D, eZ.Point3D, transformation = comp)
+            csgUnion = newCSGUnion(spSh, triSh, newTranslation(eX))
+    
+    teardown:
+        discard comp
+        discard spSh
+        discard triSh
+        discard csgUnion
+    
+    
+    test "newCSGUnion proc":
+        # Checking newCSGUnion proc
+        
+        # Checking first shape
+        check csgUnion.shape.shapes.primary.kind == skSphere
+        check csgUnion.shape.shapes.primary.radius == 2
+        check csgUnion.shape.shTrans.tPrimary.kind == tkTranslation
+        check areClose(csgUnion.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+
+        # Checking second shape
+        check csgUnion.shape.shapes.secondary.kind == skTriangle
+        check csgUnion.shape.shapes.secondary.vertices[0] == eX.Point3D
+        check csgUnion.shape.shapes.secondary.vertices[1] == eY.Point3D
+        check csgUnion.shape.shapes.secondary.vertices[2] == eZ.Point3D
+        check csgUnion.shape.shTrans.tSecondary.kind == tkComposition
+        check areClose(csgUnion.shape.shTrans.tSecondary.transformations[0].mat, newRotX(90).mat, eps = 1e-6)
+        check areClose(csgUnion.shape.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)
+
+        # Checking transformation
+        check areClose(csgUnion.transformation.mat, newTranslation(eX).mat)
+
+
+
 #---------------------------------------#
 #           Scene test suite            #
 #---------------------------------------#
