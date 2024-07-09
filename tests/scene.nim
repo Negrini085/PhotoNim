@@ -690,46 +690,64 @@ suite "Ellipsoid":
 
 
 
-#----------------------------#
-#    Ellipsoid test suite    #
-#----------------------------# 
-suite "Ellipsoid":
+#---------------------------#
+#    CSGUnion test suite    #
+#---------------------------# 
+suite "CSGUnion":
 
     setup:
         let 
             comp = newComposition(newRotX(90), newTranslation(eY))
             
-            spSh = newSphere(newPoint3D(1, 2, 3), 2)
+            spSh1 = newSphere(newPoint3D(1, 2, 3), 2)
+            spSh2 = newSphere(newPoint3D(-1, -2, -3), 2)
             triSh = newTriangle(eX.Point3D, eY.Point3D, eZ.Point3D, transformation = comp)
-            csgUnion = newCSGUnion(spSh, triSh, newTranslation(eX))
+            csgUnion1 = newCSGUnion(spSh1, triSh, newTranslation(eX))
+            csgUnion2 = newCSGUnion(csgUnion1, spSh2)
     
     teardown:
         discard comp
-        discard spSh
+        discard spSh1
+        discard spSh2
         discard triSh
-        discard csgUnion
+        discard csgUnion1
+        discard csgUnion2
     
     
     test "newCSGUnion proc":
         # Checking newCSGUnion proc
         
         # Checking first shape
-        check csgUnion.shape.shapes.primary.kind == skSphere
-        check csgUnion.shape.shapes.primary.radius == 2
-        check csgUnion.shape.shTrans.tPrimary.kind == tkTranslation
-        check areClose(csgUnion.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check csgUnion1.shape.shapes.primary.kind == skSphere
+        check csgUnion1.shape.shapes.primary.radius == 2
+        check csgUnion1.shape.shTrans.tPrimary.kind == tkTranslation
+        check areClose(csgUnion1.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
 
         # Checking second shape
-        check csgUnion.shape.shapes.secondary.kind == skTriangle
-        check csgUnion.shape.shapes.secondary.vertices[0] == eX.Point3D
-        check csgUnion.shape.shapes.secondary.vertices[1] == eY.Point3D
-        check csgUnion.shape.shapes.secondary.vertices[2] == eZ.Point3D
-        check csgUnion.shape.shTrans.tSecondary.kind == tkComposition
-        check areClose(csgUnion.shape.shTrans.tSecondary.transformations[0].mat, newRotX(90).mat, eps = 1e-6)
-        check areClose(csgUnion.shape.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)
+        check csgUnion1.shape.shapes.secondary.kind == skTriangle
+        check csgUnion1.shape.shapes.secondary.vertices[0] == eX.Point3D
+        check csgUnion1.shape.shapes.secondary.vertices[1] == eY.Point3D
+        check csgUnion1.shape.shapes.secondary.vertices[2] == eZ.Point3D
+        check csgUnion1.shape.shTrans.tSecondary.kind == tkComposition
+        check areClose(csgUnion1.shape.shTrans.tSecondary.transformations[0].mat, newRotX(90).mat, eps = 1e-6)
+        check areClose(csgUnion1.shape.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)
 
         # Checking transformation
-        check areClose(csgUnion.transformation.mat, newTranslation(eX).mat)
+        check areClose(csgUnion1.transformation.mat, newTranslation(eX).mat)
+    
+
+    test "getAABB proc":
+        # Gives aabb for a csgUnion shape in world reference system
+        var aabb: Interval[Point3D]
+
+        aabb = csgUnion1.getAABB
+        check areClose(aabb.min, newPoint3D(0, -1, 1), eps = 1e-6)
+        check areClose(aabb.max, newPoint3D(4, 4, 5), eps = 1e-6)
+
+        aabb = csgUnion2.getAABB
+        check areClose(aabb.min, newPoint3D(-3, -4, -5), eps = 1e-6)
+        check areClose(aabb.max, newPoint3D(4, 4, 5), eps = 1e-6)
+
 
 
 

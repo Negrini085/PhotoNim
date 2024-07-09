@@ -117,15 +117,24 @@ proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     of skTriangularMesh: return shape.tree.aabb
     of skEllipsoid: return (newPoint3D(-shape.axis.a, -shape.axis.b, -shape.axis.c), newPoint3D(shape.axis.a, shape.axis.b, shape.axis.c))
     of skCSGUnion: discard
+
     
 proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
     of skTriangle: return shape.vertices.toSeq
     of skAABox: return shape.aabb.getVertices.toSeq
+    of skCSGUnion:
+        var vert: seq[Point3D]
+
+        vert = vert.concat shape.shapes.primary.getVertices.mapIt(apply(shape.shTrans.tPrimary, it))
+        vert = vert.concat shape.shapes.secondary.getVertices.mapIt(apply(shape.shTrans.tSecondary, it))
+
+        return vert
+
     else: return shape.getAABB.getVertices.toSeq
     
 
-proc getAABB*(handler: ShapeHandler): Interval[Point3D] {.inline.} =
+proc getAABB*(handler: ShapeHandler): Interval[Point3D] {.inline.} = 
     newAABB handler.shape.getVertices.mapIt(apply(handler.transformation, it))
 
 
