@@ -760,6 +760,48 @@ suite "CSGUnion":
         check areClose(csgUnion2.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(-1, -2, -3)).mat)  
 
 
+    test "getVertices proc":
+        # Gives vertices for all aabb being a part of CSGUnion shape, in "shape reference system".
+        # We are not accounting for handler transformation
+        let     
+            vert1 = getVertices(csgUnion1.shape)
+            vert2 = getVertices(csgUnion2.shape)
+    
+        # First CSGUnion
+        check areClose(vert1[0], newPoint3D(-1,  0,  1))
+        check areClose(vert1[1], newPoint3D( 3,  4,  5))
+        check areClose(vert1[2], newPoint3D(-1,  0,  5))
+        check areClose(vert1[3], newPoint3D(-1,  4,  1))
+        check areClose(vert1[4], newPoint3D(-1,  4,  5))
+        check areClose(vert1[5], newPoint3D( 3,  0,  1))
+        check areClose(vert1[6], newPoint3D( 3,  0,  5))
+        check areClose(vert1[7], newPoint3D( 3,  4,  1))
+        check areClose(vert1[8], newPoint3D( 1,  0,  1))
+        check areClose(vert1[9], newPoint3D( 0,  0,  2))
+        check areClose(vert1[10], newPoint3D( 0, -1,  1))
+
+        # Second CSGUnion
+        check areClose(vert2[0], newPoint3D( 0,  0,  1))
+        check areClose(vert2[1], newPoint3D( 4,  4,  5))
+        check areClose(vert2[2], newPoint3D( 0,  0,  5))
+        check areClose(vert2[3], newPoint3D( 0,  4,  1))
+        check areClose(vert2[4], newPoint3D( 0,  4,  5))
+        check areClose(vert2[5], newPoint3D( 4,  0,  1))
+        check areClose(vert2[6], newPoint3D( 4,  0,  5))
+        check areClose(vert2[7], newPoint3D( 4,  4,  1))
+        check areClose(vert2[8], newPoint3D( 2,  0,  1))
+        check areClose(vert2[9], newPoint3D( 1,  0,  2))
+        check areClose(vert2[10], newPoint3D( 1, -1,  1))
+        check areClose(vert2[11], newPoint3D(-3, -4, -5))
+        check areClose(vert2[12], newPoint3D( 1,  0, -1))
+        check areClose(vert2[13], newPoint3D(-3, -4, -1))
+        check areClose(vert2[14], newPoint3D(-3,  0, -5))
+        check areClose(vert2[15], newPoint3D(-3,  0, -1))
+        check areClose(vert2[16], newPoint3D( 1, -4, -5))
+        check areClose(vert2[17], newPoint3D( 1, -4, -1))
+        check areClose(vert2[18], newPoint3D( 1,  0, -5))
+    
+
     test "getAABB proc":
         # Gives aabb for a csgUnion shape in world reference system
         var aabb: Interval[Point3D]
