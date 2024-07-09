@@ -216,7 +216,7 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         appo = appo.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
         return some HitPayload(
             handler: ShapeHandler(shape: appo[0].handler.shape, transformation: handler.transformation @ appo[0].handler.transformation),
-            ray: worldInvRay, t: appo[0].t
+            ray: worldInvRay.transform(appo[0].handler.transformation.inverse), t: appo[0].t
         )
         
 

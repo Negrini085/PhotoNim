@@ -17,6 +17,7 @@ let
     csgUnion = newCSGUnion(
         newSphere(newPoint3D(0,1,0), 1.5, newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 0, 0))), newUniformPigment(newColor(1, 0, 0)))),
         newSphere(newPoint3D(0,-1,0), 1.5, newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 0, 0))), newUniformPigment(newColor(0, 1, 0)))),
+        newRotZ(30)
     )
     scene = newScene(@[csgUnion])
     image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)

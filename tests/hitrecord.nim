@@ -405,7 +405,7 @@ suite "HitPayload":
         #check hitPayload.get.t == 1
         check hitPayload.get.handler.shape.kind == skSphere
         check areClose(hitPayload.get.ray.dir, -eZ)
-        check areClose(hitPayload.get.ray.origin, newPoint3D(1, 3, 6))
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, 3))
 
         check not getHitPayload(csgUnion1, ray4).isSome
 
@@ -418,7 +418,7 @@ suite "HitPayload":
         check hitPayload.get.t == 2
         check hitPayload.get.handler.shape.kind == skCylinder
         check areClose(hitPayload.get.ray.dir, eX)
-        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 1, 0))
+        check areClose(hitPayload.get.ray.origin, ORIGIN3D)
 
         ray2.origin = newPoint3D(4, 1, 0)
         hitPayload = getHitPayload(csgUnion2, ray2)
@@ -426,7 +426,7 @@ suite "HitPayload":
         check hitPayload.get.t == 2
         check hitPayload.get.handler.shape.kind == skCylinder
         check areClose(hitPayload.get.ray.dir, -eX)
-        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 1, 0))
+        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 0, 0))
         
         ray3.origin = newPoint3D(1, 4, 6)
         hitPayload = getHitPayload(csgUnion2, ray3)
@@ -434,7 +434,7 @@ suite "HitPayload":
         check hitPayload.get.t == 1
         check hitPayload.get.handler.shape.kind == skSphere
         check areClose(hitPayload.get.ray.dir, -eZ)
-        check areClose(hitPayload.get.ray.origin, newPoint3D(1, 4, 6))
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, 3))
 
         ray4.origin = newPoint3D(-6, -3, -3); ray4.dir = eX
         hitPayload = getHitPayload(csgUnion2, ray4)
@@ -442,7 +442,7 @@ suite "HitPayload":
         check hitPayload.get.t == 2
         check hitPayload.get.handler.shape.kind == skSphere
         check areClose(hitPayload.get.ray.dir, eX)
-        check areClose(hitPayload.get.ray.origin, newPoint3D(-6, -3, -3))
+        check areClose(hitPayload.get.ray.origin, newPoint3D(-3, 0, 0))
 
 
     #----------------------------------#
