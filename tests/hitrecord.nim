@@ -370,6 +370,42 @@ suite "HitPayload":
         check not getHitPayload(cylinder, ray4).isSome
 
 
+    test "getHitPayload (CSGUnion)":
+        # Checking getHitPayload on CSGUnion
+        var 
+            sph = newSphere(newPoint3D(1, 3, 3), 2)
+            cyl = newCylinder(2, -2, 4)
+            csgUnion = newCSGUnion(sph, cyl, newTranslation(eY))
+
+            ray1 = newRay(ORIGIN3D, eX)
+            ray2 = newRay(newPoint3D(4, 0, 0), -eX)
+            ray3 = newRay(newPoint3D(1, 3, 6), -eZ)
+            ray4 = newRay(newPoint3D(-3, -3, -1), eY)
+
+        hitPayload = getHitPayload(csgUnion, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skCylinder
+        check areClose(hitPayload.get.ray.dir, eX)
+        check areClose(hitPayload.get.ray.origin, ORIGIN3D)
+
+        hitPayload = getHitPayload(csgUnion, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 2
+        check hitPayload.get.handler.shape.kind == skCylinder
+        check areClose(hitPayload.get.ray.dir, -eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 0, 0))
+        
+        hitPayload = getHitPayload(csgUnion, ray3)
+        check hitPayload.isSome
+        #check hitPayload.get.t == 1
+        check hitPayload.get.handler.shape.kind == skSphere
+        check areClose(hitPayload.get.ray.dir, -eZ)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(1, 3, 6))
+
+        check not getHitPayload(csgUnion, ray4).isSome
+
+
     #----------------------------------#
     #     getHitPayloads proc test     #
     #----------------------------------#

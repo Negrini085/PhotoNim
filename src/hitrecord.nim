@@ -196,7 +196,28 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         some HitPayload(handler: handler, ray: worldInvRay, t: hit.get.t)
     
     of skCSGUnion: 
-        return none HitPayload
+        var 
+            hitS: seq[Option[HitPayload]]
+            appo: seq[HitPayload]
+
+        hitS.add getHitPayload(
+            ShapeHandler(shape: handler.shape.shapes.primary, transformation: handler.shape.shTrans.tPrimary),
+            worldInvRay.transform(handler.shape.shTrans.tPrimary.inverse)
+            )
+        
+        hitS.add getHitPayload(
+            ShapeHandler(shape: handler.shape.shapes.secondary, transformation: handler.shape.shTrans.tSecondary),
+            worldInvRay.transform(handler.shape.shTrans.tSecondary.inverse)
+            )
+        
+        appo = hitS.filterIt(it.isSome).mapIt(it.get)
+        if appo.len == 0: return none HitPayload
+
+        appo = appo.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
+        return some HitPayload(
+            handler: ShapeHandler(shape: appo[0].handler.shape, transformation: handler.transformation @ appo[0].handler.transformation),
+            ray: worldInvRay, t: appo[0].t
+        )
         
 
 proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
