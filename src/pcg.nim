@@ -12,7 +12,7 @@ proc random*(gen: var PCG): uint32 =
     result = ((xorshift shr rot) or (xorshift shl ((-rot) and 31)))
 
 proc newPCG*(inState: uint64 = 42, inSeq: uint64 = 54): PCG = 
-    result = PCG(state: 0, incr: (inSeq shl 1) or 1)
+    (result.state, result.incr) = (0.uint64, (inSeq shl 1) or 1)
     discard result.random
     result.state += inState
     discard result.random

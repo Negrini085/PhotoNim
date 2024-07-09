@@ -17,16 +17,16 @@ type
 
     CookTorranceNDF* = enum ndfGGX, ndfBeckmann
 
-    BRDFKind* = enum LambertianBRDF, FresnelMetalBRDF, CookTorranceBRDF
+    BRDFKind* = enum DiffuseBRDF, SpecularBRDF, CookTorranceBRDF
 
     BRDF* = object
         pigment*: Pigment
 
         case kind*: BRDFKind
-        of LambertianBRDF:
+        of DiffuseBRDF:
             reflectance*: float32
 
-        of FresnelMetalBRDF: discard
+        of SpecularBRDF: discard
     
         of CookTorranceBRDF:
             ndf*: CookTorranceNDF
@@ -77,11 +77,11 @@ proc getColor*(pigment: Pigment; uv: Point2D): Color =
         return (if (col mod 2) == (row mod 2): pigment.grid.c1 else: pigment.grid.c2)
 
 
-proc newLambertianBRDF*(pigment = newUniformPigment(WHITE), reflectance = 1.0): BRDF {.inline.} =
-    BRDF(kind: LambertianBRDF, pigment: pigment, reflectance: reflectance)
+proc newDiffuseBRDF*(pigment = newUniformPigment(WHITE), reflectance = 1.0): BRDF {.inline.} =
+    BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
 
-proc newFresnelMetalBRDF*(pigment = newUniformPigment(WHITE)): BRDF {.inline.} =
-    BRDF(kind: FresnelMetalBRDF, pigment: pigment) 
+proc newSpecularBRDF*(pigment = newUniformPigment(WHITE)): BRDF {.inline.} =
+    BRDF(kind: SpecularBRDF, pigment: pigment) 
 
 
 proc newCookTorranceBRDF*(pigment = newUniformPigment(WHITE), diffuseCoeff: float32 = 0.3, specularCoeff: float32 = 0.7, roughness: float32 = 0.5, refractionIndex: float32 = 1.0, ndf: CookTorranceNDF = CookTorranceNDF.ndfGGX): BRDF =
@@ -114,9 +114,9 @@ proc GeometricAttenuation(normal, inDir, outDir, midDir: Vec3f): float32 {.inlin
 
 proc eval*(brdf: BRDF; surfacePoint: Point2D, normal, inDir, outDir: Vec3f): float32 {.inline.} =
     case brdf.kind: 
-    of LambertianBRDF: return brdf.reflectance / PI
+    of DiffuseBRDF: return brdf.reflectance / PI
 
-    of FresnelMetalBRDF: return 1.0
+    of SpecularBRDF: return 1.0
 
     of CookTorranceBRDF: 
         let
@@ -133,7 +133,7 @@ proc eval*(brdf: BRDF; surfacePoint: Point2D, normal, inDir, outDir: Vec3f): flo
 
 proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec3f =
     case brdf.kind
-    of LambertianBRDF:
+    of DiffuseBRDF:
         let 
             (cos2, phi) = (rg.rand, 2 * PI.float32 * rg.rand)
             cos = sqrt(cos2)
@@ -141,7 +141,7 @@ proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec
         
         return cos * cos(phi) * base[0] + cos * sin(phi) * base[1] + sqrt(1 - cos2) * base[2]
 
-    of FresnelMetalBRDF: 
+    of SpecularBRDF: 
         return hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
 
     of CookTorranceBRDF:
@@ -158,4 +158,4 @@ proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec
         return base[0] * sin(theta) * cos(phi) + base[1] * sin(theta) * sin(phi) + base[2] * cos(theta)
 
 
-proc newMaterial*(brdf = newLambertianBRDF(), pigment = newUniformPigment(BLACK)): Material {.inline.} = (brdf: brdf, radiance: pigment)
+proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(BLACK)): Material {.inline.} = (brdf: brdf, radiance: pigment)

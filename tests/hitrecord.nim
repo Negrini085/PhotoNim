@@ -46,7 +46,7 @@ suite "HitLeafs":
         # Checking getHitLeafs proc
         var 
             rg = newPCG()
-            appo: Option[seq[SceneNode]]
+            appo: Option[seq[BVHNode]]
 
         let 
             scene = newScene(@[newSphere(ORIGIN3D, 2), newUnitarySphere(newPoint3D(4, 4, 4))])
@@ -73,7 +73,7 @@ suite "HitLeafs":
         # Checking getHitLeafs proc when you have more than one hit
         var 
             rg = newPCG()
-            appo: Option[seq[SceneNode]]
+            appo: Option[seq[BVHNode]]
 
         let 
             scene = newScene(@[newSphere(ORIGIN3D, 2), newSphere(newPoint3D(5, 0, 0), 2)])
@@ -109,7 +109,7 @@ suite "HitPayload":
         var
             rg = newPCG()
             scene: Scene
-            sceneTree: SceneNode
+            sceneTree: BVHNode
 
             hitPayload: Option[HitPayload]
             hitPayloads: seq[HitPayload]

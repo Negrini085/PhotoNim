@@ -1,201 +1,164 @@
 import geometry, scene
 
-from std/options import Option, none, some, isNone, isSome, get
 from std/math import sqrt, arctan2, PI
 from std/fenv import epsilon
-from std/algorithm import sorted
-from std/sequtils import concat, foldl, mapIt, filterIt
+from std/algorithm import sort, SortOrder
+from std/sugar import collect
+from std/sequtils import mapIt
 
 
-proc checkIntersection*(aabb: Interval[Point3D], ray: Ray): bool {.inline.} =
+proc getIntersection(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.} =
     let
-        (min, max) = (aabb.min - ray.origin, aabb.max - ray.origin)
-        txSpan = newInterval(min.x / ray.dir[0], max.x / ray.dir[0])
-        tySpan = newInterval(min.y / ray.dir[1], max.y / ray.dir[1])
+        (min, max) = (aabb.min - worldRay.origin, aabb.max - worldRay.origin)
+        txSpan = newInterval(min.x / worldRay.dir[0], max.x / worldRay.dir[0])
+        tySpan = newInterval(min.y / worldRay.dir[1], max.y / worldRay.dir[1])
 
-    if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return false
+    if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return Inf
 
-    let tzSpan = newInterval(min.z / ray.dir[2], max.z / ray.dir[2])
-    var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
+    let tzSpan = newInterval(min.z / worldRay.dir[2], max.z / worldRay.dir[2])
     
-    if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return false
+    var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
+    if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return Inf
 
     if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
     if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
                 
-    let tHit = if aabb.contains(ray.origin): hitSpan.max else: hitSpan.min
-    if not ray.tspan.contains(tHit): return false
-
-    return true
+    result = if aabb.contains(worldRay.origin): hitSpan.max else: hitSpan.min
+    if not worldRay.tspan.contains(result): return Inf
 
 
-proc getHitLeafs*(sceneTree: SceneNode; ray: Ray): Option[seq[SceneNode]] =
-    if sceneTree.isNil: return none seq[SceneNode]
-
-    if not checkIntersection(sceneTree.aabb, ray): return none seq[SceneNode]
-
-    var sceneNodes: seq[SceneNode]
-    case sceneTree.kind
-    of nkLeaf: sceneNodes.add sceneTree
-    
-    of nkBranch:
-        for childNode in sceneTree.children:
-            let hits = childNode.getHitLeafs(ray)
-            if hits.isSome: sceneNodes = concat(sceneNodes, hits.get)
-
-        if sceneNodes.len == 0: return none seq[SceneNode]
-
-    some sceneNodes
-
-
-type HitPayload* = object
-    handler*: ShapeHandler
-    ray*: Ray
-    t*: float32
-    
-
-proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload] =
-
-    case handler.shape.kind
+proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
+    case shape.kind
     of skAABox:
         let
-            (min, max) = (handler.shape.aabb.min - worldInvRay.origin, handler.shape.aabb.max - worldInvRay.origin)
+            (min, max) = (shape.aabb.min - worldInvRay.origin, shape.aabb.max - worldInvRay.origin)
             txSpan = newInterval(min.x / worldInvRay.dir[0], max.x / worldInvRay.dir[0])
             tySpan = newInterval(min.y / worldInvRay.dir[1], max.y / worldInvRay.dir[1])
 
-        if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return none HitPayload
+        if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return Inf
 
         let tzSpan = newInterval(min.z / worldInvRay.dir[2], max.z / worldInvRay.dir[2])
         var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
 
-        if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return none HitPayload
+        if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return Inf
 
         if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
         if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
 
-        let tHit = if handler.shape.aabb.contains(worldInvRay.origin): hitSpan.max else: hitSpan.min
-        if not worldInvRay.tspan.contains(tHit): return none HitPayload
+        result = if shape.aabb.contains(worldInvRay.origin): hitSpan.max else: hitSpan.min
+        if not worldInvRay.tspan.contains(result): return Inf
 
-        return some HitPayload(handler: handler, ray: worldinvRay, t: tHit)
 
     of skTriangle:
         let 
             mat = [
-                [handler.shape.vertices[1].x - handler.shape.vertices[0].x, handler.shape.vertices[2].x - handler.shape.vertices[0].x, -worldInvRay.dir[0]], 
-                [handler.shape.vertices[1].y - handler.shape.vertices[0].y, handler.shape.vertices[2].y - handler.shape.vertices[0].y, -worldInvRay.dir[1]], 
-                [handler.shape.vertices[1].z - handler.shape.vertices[0].z, handler.shape.vertices[2].z - handler.shape.vertices[0].z, -worldInvRay.dir[2]]
+                [shape.vertices[1].x - shape.vertices[0].x, shape.vertices[2].x - shape.vertices[0].x, -worldInvRay.dir[0]], 
+                [shape.vertices[1].y - shape.vertices[0].y, shape.vertices[2].y - shape.vertices[0].y, -worldInvRay.dir[1]], 
+                [shape.vertices[1].z - shape.vertices[0].z, shape.vertices[2].z - shape.vertices[0].z, -worldInvRay.dir[2]]
             ]
-            vec = [worldInvRay.origin.x - handler.shape.vertices[0].x, worldInvRay.origin.y - handler.shape.vertices[0].y, worldInvRay.origin.z - handler.shape.vertices[0].z]
+            vec = [worldInvRay.origin.x - shape.vertices[0].x, worldInvRay.origin.y - shape.vertices[0].y, worldInvRay.origin.z - shape.vertices[0].z]
 
-        let sol = try: solve(mat, vec) except ValueError: return none HitPayload
-        if not worldInvRay.tspan.contains(sol[2]): return none HitPayload
-        if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return none HitPayload
+        let sol = try: solve(mat, vec) except ValueError: return Inf
+        if not worldInvRay.tspan.contains(sol[2]): return Inf
+        if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return Inf
 
-        return some HitPayload(handler: handler, ray: worldInvRay, t: sol[2])
+        result = sol[2]
 
     of skSphere:
-        let (a, b, c) = (norm2(worldInvRay.dir), dot(worldInvRay.origin.Vec3f, worldInvRay.dir), norm2(worldInvRay.origin.Vec3f) - handler.shape.radius * handler.shape.radius)
-        let delta_4 = b * b - a * c
-        if delta_4 < 0: return none HitPayload
+        let 
+            (a, b, c) = (norm2(worldInvRay.dir), dot(worldInvRay.origin.Vec3f, worldInvRay.dir), norm2(worldInvRay.origin.Vec3f) - shape.radius * shape.radius)
+            delta_4 = b * b - a * c
+        
+        if delta_4 < 0: return Inf
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-        let tHit = 
+        
+        result = 
             if worldInvRay.tspan.contains(t_l): t_l 
             elif worldInvRay.tspan.contains(t_r): t_r 
-            else: return none HitPayload
-
-        return some HitPayload(handler: handler, ray: worldInvRay, t: tHit)
+            else: Inf
 
     of skPlane:
-        if abs(worldInvRay.dir[2]) < epsilon(float32): return none HitPayload
-        let tHit = -worldInvRay.origin.z / worldInvRay.dir[2]
-        if not worldInvRay.tspan.contains(t_hit): return none HitPayload
-
-        return some HitPayload(handler: handler, ray: worldInvRay, t: tHit)
+        if abs(worldInvRay.dir[2]) < epsilon(float32): return Inf
+        result = -worldInvRay.origin.z / worldInvRay.dir[2]
+        if not worldInvRay.tspan.contains(result): return Inf
 
     of skCylinder:
         let
             a = worldInvRay.dir[0] * worldInvRay.dir[0] + worldInvRay.dir[1] * worldInvRay.dir[1]
             b = 2 * (worldInvRay.dir[0] * worldInvRay.origin.x + worldInvRay.dir[1] * worldInvRay.origin.y)
-            c = worldInvRay.origin.x * worldInvRay.origin.x + worldInvRay.origin.y * worldInvRay.origin.y - handler.shape.R * handler.shape.R
+            c = worldInvRay.origin.x * worldInvRay.origin.x + worldInvRay.origin.y * worldInvRay.origin.y - shape.R * shape.R
             delta = b * b - 4.0 * a * c
 
-        if delta < 0.0: return none HitPayload
+        if delta < 0.0: return Inf
 
         var tspan = newInterval((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
 
-        if tspan.min > worldInvRay.tspan.max or tspan.max < worldInvRay.tspan.min: return none HitPayload
+        if tspan.min > worldInvRay.tspan.max or tspan.max < worldInvRay.tspan.min: return Inf
 
-        var tHit = tspan.min
-        if tHit < worldInvRay.tspan.min:
-            if tspan.max > worldInvRay.tspan.max: return none HitPayload
-            tHit = tspan.max
+        result = tspan.min
+        if result < worldInvRay.tspan.min:
+            if tspan.max > worldInvRay.tspan.max: return Inf
+            result = tspan.max
 
-        var hitPt = worldInvRay.at(tHit)
+        var hitPt = worldInvRay.at(result)
         var phi = arctan2(hitPt.y, hitPt.x)
         if phi < 0.0: phi += 2.0 * PI
 
-        if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax:
-            if tHit == tspan.max: return none HitPayload
-            tHit = tspan.max
-            if tHit > worldInvRay.tspan.max: return none HitPayload
+        if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax:
+            if result == tspan.max: return Inf
+            result = tspan.max
+            if result > worldInvRay.tspan.max: return Inf
             
-            hitPt = worldInvRay.at(tHit)
+            hitPt = worldInvRay.at(result)
             phi = arctan2(hitPt.y, hitPt.x)
             if phi < 0.0: phi += 2.0 * PI
-            if hitPt.z < handler.shape.zSpan.min or hitPt.z > handler.shape.zSpan.max or phi > handler.shape.phiMax: return none HitPayload
+            if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax: return Inf
 
-        return some HitPayload(handler: handler, ray: worldInvRay, t: tHit)
 
-    of skTriangularMesh: 
-        let localHitLeafNodes = handler.shape.tree.getHitLeafs(worldInvRay)
-        if localHitLeafNodes.isNone: return none HitPayload
-        
-        proc localHitPayloads(sceneTree: SceneNode; worldInvRay: Ray): seq[HitPayload] =
-            var hittedHandlers: seq[ShapeHandler]
-            for handler in sceneTree.handlers:
-                if checkIntersection(handler.getAABB, worldInvRay): hittedHandlers.add handler
+type HitInfo[T] = tuple[hit: T, t: float32]
 
-            if hittedHandlers.len == 0: return @[]
+proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray): HitInfo[ObjectHandler] =
+    result = (nil, Inf.float32)
+    if tree.root.isNil: return result
 
-            hittedHandlers
-                .mapIt(it.getHitPayload(worldInvRay))
-                .filterIt(it.isSome)
-                .mapIt(it.get)
+    var nodeStack: seq[HitInfo[BVHNode]] = @[(tree.root, tree.root.aabb.getIntersection(worldRay))]
+    while nodeStack.len > 0:
+        let currentBVH = nodeStack.pop
+        if currentBVH.t > result.t: continue
+        # here break and continue have the same output... 
+        # but the correct output is the one without any of them
 
-        proc localHitRecord(hitLeafs: seq[SceneNode]; worldInvRay: Ray): Option[seq[HitPayload]] =
-            let hitPayloads = hitLeafs
-                .mapIt(it.localHitPayloads(worldInvRay))
-                .filterIt(it.len > 0)
-
-            if hitPayloads.len == 0: return none seq[HitPayload]
+        case currentBVH.hit.kind
+        of nkBranch: 
+            let nodesHitInfos: seq[HitInfo[BVHNode]] = collect:
+                for node in currentBVH.hit.children:
+                    if not node.isNil:
+                        let tBoxHit = node.aabb.getIntersection(worldRay)
+                        if tBoxHit < result.t: (node, tBoxHit)
             
-            some hitPayloads.foldl(concat(a, b))
-                
-        let hitRecord = localHitLeafNodes.get.localHitRecord(worldInvRay)
-        if hitRecord.isNone: return none HitPayload
-        
-        some hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
+            if nodesHitInfos.len > 0:
+                nodeStack.add nodesHitInfos
+                nodeStack.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
 
+        of nkLeaf:
+            var handlersHitInfos: seq[HitInfo[ObjectHandler]] = collect:
+                for handler in currentBVH.hit.indexes.mapIt(handlers[it]):
+                    let tBoxHit = handler.getAABB.getIntersection(worldRay)
+                    if tBoxHit < result.t: (handler, tBoxHit)
+            
+            if handlersHitInfos.len > 0:
+                handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
 
-proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
-    var hittedHandlers: seq[ShapeHandler]
-    for handler in sceneTree.handlers:
-        if checkIntersection(handler.getAABB, worldRay): hittedHandlers.add handler
-
-    if hittedHandlers.len == 0: return @[]
-
-    hittedHandlers
-        .mapIt(it.getHitPayload(worldRay.transform(it.transformation.inverse)))
-        .filterIt(it.isSome)
-        .mapIt(it.get)
-
-
-proc getHitRecord*(hitLeafs: seq[SceneNode]; worldRay: Ray): Option[seq[HitPayload]] =
-    let hitPayloads = hitLeafs
-        .mapIt(it.getHitPayloads(worldRay))
-        .filterIt(it.len > 0)
-
-    if hitPayloads.len == 0: return none seq[HitPayload]
-    
-    some hitPayloads.foldl(concat(a, b))
+                for (handler, tBoxHit) in handlersHitInfos:
+                    if tBoxHit >= result.t: break
+                    
+                    case handler.kind
+                    of hkShape: 
+                        let tShapeHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
+                        if tShapeHit < result.t: result = (handler, tShapeHit)
+                        
+                    of hkMesh: 
+                        let meshHit = handler.mesh.tree.getClosestHit(handler.mesh.shapes, worldRay)
+                        if not meshHit.hit.isNil:
+                            if meshHit.t < result.t: result = meshHit

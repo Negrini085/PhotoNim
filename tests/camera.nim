@@ -1,4 +1,4 @@
-import std/[unittest, options]
+import std/unittest
 from math import sqrt, degToRad, PI
 import PhotoNim
 
@@ -241,7 +241,7 @@ suite "BRDF":
     setup:
         var
             dif = newDiffuseBRDF(newUniformPigment(newColor(1, 2, 3)), 0.2)
-            spe = newSpecularBRDF(newUniformPigment(newColor(1, 2, 3)), 110)
+            spe = newSpecularBRDF(newUniformPigment(newColor(1, 2, 3)))
 
     teardown:
         discard dif
@@ -259,7 +259,6 @@ suite "BRDF":
         check areClose(spe.pigment.color.r, 1)
         check areClose(spe.pigment.color.g, 2)
         check areClose(spe.pigment.color.b, 3)
-        check areClose(spe.threshold_angle, 0.1 * degToRad(110.0).float32)
     
 
 #    test "eval proc":
