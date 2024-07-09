@@ -716,7 +716,10 @@ suite "CSGUnion":
     
     test "newCSGUnion proc":
         # Checking newCSGUnion proc
-        
+
+        #------------------------------------#
+        #          First CSGUnion            #
+        #------------------------------------#        
         # Checking first shape
         check csgUnion1.shape.shapes.primary.kind == skSphere
         check csgUnion1.shape.shapes.primary.radius == 2
@@ -734,7 +737,28 @@ suite "CSGUnion":
 
         # Checking transformation
         check areClose(csgUnion1.transformation.mat, newTranslation(eX).mat)
-    
+
+        #-------------------------------------#
+        #          Second CSGUnion            #
+        #-------------------------------------#
+        # Checking first shape
+        check csgUnion2.shape.shapes.primary.kind == skCSGUnion
+        check csgUnion2.shape.shapes.primary.shapes.primary.kind == skSphere
+        check csgUnion2.shape.shapes.primary.shapes.secondary.kind == skTriangle
+        check areClose(csgUnion2.shape.shapes.primary.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)  
+        check areClose(csgUnion2.shape.shapes.primary.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)  
+        
+        check csgUnion2.shape.shTrans.tPrimary.kind == tkTranslation
+        check areClose(csgUnion2.shape.shTrans.tPrimary.mat, newTranslation(eX).mat)  
+
+        # Checking second shape
+        check csgUnion2.shape.shapes.secondary.kind == skSphere
+        check csgUnion2.shape.shapes.primary.shapes.primary.kind == skSphere
+        check csgUnion2.shape.shapes.primary.shapes.secondary.kind == skTriangle
+
+        check csgUnion2.shape.shTrans.tSecondary.kind == tkTranslation
+        check areClose(csgUnion2.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(-1, -2, -3)).mat)  
+
 
     test "getAABB proc":
         # Gives aabb for a csgUnion shape in world reference system
