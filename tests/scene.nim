@@ -690,6 +690,63 @@ suite "Ellipsoid":
 
 
 
+#-----------------------------#
+#       Shape test suite      #
+#-----------------------------#
+suite "Shape":
+
+    setup:
+        let
+            sh = newSphere(newPoint3D(1, 2, 3), 2)
+            cyl = newCylinder(2, -2, 4)
+            box = newBox((min: newPoint3D(-2, -3, -4), max: newPoint3D(1, 2 ,3)))
+            ell = newEllipsoid(1, 2, 3)
+            plane = newPlane()
+    
+    teardown:
+        discard sh
+        discard cyl
+        discard box
+        discard ell
+        discard plane
+
+    
+    test "inShape proc":
+        # Checking inShape proc
+        var pt1, pt2: Point3D
+
+        # Sphere shape
+        pt1 = newPoint3D(2, 2, 2)
+        pt2 = newPoint3D(5, 5, 6)
+        check sh.shape.inShape(sh.transformation.inverse.apply(pt1))
+        check not sh.shape.inShape(sh.transformation.inverse.apply(pt2))
+
+        # Cylinder shape
+        pt1 = newPoint3D(0, 2, 2)
+        pt2 = newPoint3D(2, 0, 6)
+        check cyl.shape.inShape(cyl.transformation.inverse.apply(pt1))
+        check not cyl.shape.inShape(cyl.transformation.inverse.apply(pt2))
+    
+        # Box shape
+        pt1 = newPoint3D(0, 2, 2)
+        pt2 = newPoint3D(6, 6, 6)
+        check box.shape.inShape(box.transformation.inverse.apply(pt1))
+        check not box.shape.inShape(box.transformation.inverse.apply(pt2))
+
+        # Plane shape
+        pt1 = newPoint3D(0, 2, -2)
+        pt2 = newPoint3D(6, 6, 6)
+        check plane.shape.inShape(plane.transformation.inverse.apply(pt1))
+        check not plane.shape.inShape(plane.transformation.inverse.apply(pt2))
+
+        # Ellipsoid shape
+        pt1 = newPoint3D(0.5, 1, 1.5)
+        pt2 = newPoint3D(6, 6, 6)
+        check ell.shape.inShape(ell.transformation.inverse.apply(pt1))
+        check not ell.shape.inShape(ell.transformation.inverse.apply(pt2))
+
+
+
 #---------------------------#
 #    CSGUnion test suite    #
 #---------------------------# 

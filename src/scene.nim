@@ -1,6 +1,6 @@
 import geometry, pcg, hdrimage, material
 
-from std/math import sgn, floor, arccos, arctan2, PI
+from std/math import sgn, floor, arccos, arctan2, PI, pow, sqrt
 from std/streams import newFileStream, close, atEnd, readLine 
 from std/sequtils import concat, foldl, toSeq, filterIt, mapIt
 from std/strutils import isEmptyOrWhiteSpace, rsplit, splitWhitespace, parseFloat, parseInt
@@ -136,6 +136,44 @@ proc getVertices*(shape: Shape): seq[Point3D] {.inline.} =
 
 proc getAABB*(handler: ShapeHandler): Interval[Point3D] {.inline.} = 
     newAABB handler.shape.getVertices.mapIt(apply(handler.transformation, it))
+
+
+proc inShape*(shape: Shape, pt: Point3D): bool = 
+    # Procedure to check wether a point is in a shape or not
+    case shape.kind
+    of skSphere:
+        let dist = sqrt(pow(pt.x, 2) + pow(pt.y, 2) + pow(pt.z, 2))
+        if dist <= shape.radius:
+            return true
+        return false
+    
+    of skPlane:
+        if pt.z <= 0:
+            return true
+        return false
+    
+    of skAABox:
+        if shape.aabb.contains(pt):
+            return true
+        return false
+    
+    of skCylinder:
+        let r = sqrt(pow(pt.x, 2) + pow(pt.y, 2))
+        if not areClose(r, shape.R, eps = 1e-6):
+            return false
+        if (pt.z < shape.zSpan.min) or (pt.z > shape.zSpan.max):
+            return false
+        return true
+
+    of skEllipsoid:
+        return inShape(
+            Shape(kind: skSphere, material: shape.material, radius: 1), 
+            newScaling(newVec3f(shape.axis.a, shape.axis.b, shape.axis.c)).inverse.apply(pt)
+            )
+    
+    of skTriangularMesh: discard
+    of skCSGUnion: discard
+    of skTriangle: discard
 
 
 proc getUV*(shape: Shape; pt: Point3D): Point2D = 
