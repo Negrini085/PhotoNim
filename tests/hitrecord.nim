@@ -445,7 +445,6 @@ suite "HitPayload":
         check areClose(hitPayload.get.ray.origin, newPoint3D(-6, -3, -3))
 
 
-
     #----------------------------------#
     #     getHitPayloads proc test     #
     #----------------------------------#

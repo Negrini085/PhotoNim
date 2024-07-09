@@ -1111,6 +1111,36 @@ suite "Parse":
         check areClose(meshSH.transformation.mat, newTranslation(newVec3f(1, 2, 3)).mat)
 
 
+    test "parseCSGUnionSH proc":
+        # Cheking parseCSGUnionSH procedure, returns a shapeHandler of a CSGUnion shape
+        var
+            csgUnionSH: ShapeHandler
+            keys = @[KeywordKind.PLANE, KeywordKind.CSGUNION, KeywordKind.SPHERE]
+        
+        fname = "files/Parse/Handlers/csgUnionSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+    
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.CSGUNION
+        
+        csgUnionSH = inStr.parseCSGUnionSH(dSc)
+        check csgUnionSH.shape.kind == skCSGUnion
+
+        check csgUnionSH.shape.shapes.primary.kind == skSphere
+        check csgUnionSH.shape.shapes.secondary.kind == skTriangle
+
+        check areClose(csgUnionSH.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check areClose(csgUnionSH.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+
+        check csgUnionSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
+        check csgUnionSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
+
+        check csgUnionSH.transformation.kind == tkTranslation
+        check areClose(csgUnionSH.transformation.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+
+
     test "parseCamera proc":
         # Checking parseCamera procedure
         var 
