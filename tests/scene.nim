@@ -755,6 +755,19 @@ suite "Shape":
         check csgUnion.shape.inShape(csgUnion.transformation.inverse.apply(pt2))
         check not csgUnion.shape.inShape(csgUnion.transformation.inverse.apply(pt3))
 
+    
+    test "inAllShapes proc":
+        # Checking inAllShapes proc 
+        let
+            pt1 = ORIGIN3D
+            pt2 = newPoint3D(5, 6, 7)
+        
+            shHand = newSphere(ORIGIN3D, 2)
+            ellHand = newEllipsoid(1, 2, 3, newTranslation(newVec3f(0, 0, 2)))
+        
+        check @[shHand, ellHand].inAllShapes(pt1)
+        check not @[shHand, ellHand].inAllShapes(pt2)
+
 
 #---------------------------#
 #    CSGUnion test suite    #
