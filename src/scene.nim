@@ -181,7 +181,16 @@ proc inShape*(shape: Shape, pt: Point3D): bool =
             return true
         return false
     
-    of skCSGInt: discard
+    of skCSGInt: 
+        var in1, in2: bool
+
+        in1 = inShape(shape.shapes.primary, shape.shTrans.tPrimary.inverse.apply(pt))
+        in2 = inShape(shape.shapes.secondary, shape.shTrans.tSecondary.inverse.apply(pt))
+
+        if in1 and in2:
+            return true
+        return false
+    
     of skTriangularMesh: discard
     of skTriangle: discard
 
