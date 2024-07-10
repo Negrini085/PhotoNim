@@ -1008,6 +1008,19 @@ suite "CSGInt":
         check areClose(vert2[18], newPoint3D( 1,  0, -5))
 
 
+    test "getAABB proc":
+        # Gives aabb for a csgInt shape in world reference system
+        var aabb: Interval[Point3D]
+
+        aabb = csgInt1.getAABB
+        check areClose(aabb.min, newPoint3D(0, -1, 1), eps = 1e-6)
+        check areClose(aabb.max, newPoint3D(4, 4, 5), eps = 1e-6)
+
+        aabb = csgInt2.getAABB
+        check areClose(aabb.min, newPoint3D(-3, -4, -5), eps = 1e-6)
+        check areClose(aabb.max, newPoint3D(4, 4, 5), eps = 1e-6)
+
+
 #---------------------------------------#
 #           Scene test suite            #
 #---------------------------------------#
