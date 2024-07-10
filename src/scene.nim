@@ -123,7 +123,7 @@ proc getVertices*(shape: Shape): seq[Point3D] {.inline.} =
     case shape.kind
     of skTriangle: return shape.vertices.toSeq
     of skAABox: return shape.aabb.getVertices.toSeq
-    of skCSGUnion:
+    of skCSGUnion, skCSGInt:
         var vert: seq[Point3D]
 
         vert = vert.concat shape.shapes.primary.getVertices.mapIt(apply(shape.shTrans.tPrimary, it))
