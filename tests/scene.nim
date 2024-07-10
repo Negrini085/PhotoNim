@@ -702,6 +702,7 @@ suite "Shape":
             box = newBox((min: newPoint3D(-2, -3, -4), max: newPoint3D(1, 2 ,3)))
             ell = newEllipsoid(1, 2, 3)
             plane = newPlane()
+            csgUnion = newCSGUnion(sh, cyl)
     
     teardown:
         discard sh
@@ -709,11 +710,12 @@ suite "Shape":
         discard box
         discard ell
         discard plane
+        discard csgUnion
 
     
     test "inShape proc":
         # Checking inShape proc
-        var pt1, pt2: Point3D
+        var pt1, pt2, pt3: Point3D
 
         # Sphere shape
         pt1 = newPoint3D(2, 2, 2)
@@ -745,6 +747,13 @@ suite "Shape":
         check ell.shape.inShape(ell.transformation.inverse.apply(pt1))
         check not ell.shape.inShape(ell.transformation.inverse.apply(pt2))
 
+        # CSGUnion shape
+        pt1 = newPoint3D(1, 2, 3)
+        pt2 = newPoint3D(2, 0, 0)
+        pt3 = ORIGIN3D
+        check csgUnion.shape.inShape(csgUnion.transformation.inverse.apply(pt1))
+        check csgUnion.shape.inShape(csgUnion.transformation.inverse.apply(pt2))
+        check not csgUnion.shape.inShape(csgUnion.transformation.inverse.apply(pt3))
 
 
 #---------------------------#

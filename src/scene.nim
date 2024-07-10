@@ -171,8 +171,17 @@ proc inShape*(shape: Shape, pt: Point3D): bool =
             newScaling(newVec3f(shape.axis.a, shape.axis.b, shape.axis.c)).inverse.apply(pt)
             )
     
+    of skCSGUnion: 
+        var in1, in2: bool
+
+        in1 = inShape(shape.shapes.primary, shape.shTrans.tPrimary.inverse.apply(pt))
+        in2 = inShape(shape.shapes.secondary, shape.shTrans.tSecondary.inverse.apply(pt))
+
+        if in1 or in2:
+            return true
+        return false
+    
     of skTriangularMesh: discard
-    of skCSGUnion: discard
     of skTriangle: discard
 
 
