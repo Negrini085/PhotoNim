@@ -21,7 +21,7 @@ type
 
 
     ShapeKind* = enum
-        skAABox, skTriangle, skSphere, skPlane, skCylinder, skTriangularMesh, skEllipsoid, skCSGUnion
+        skAABox, skTriangle, skSphere, skPlane, skCylinder, skTriangularMesh, skEllipsoid, skCSGUnion, skCSGInt
         
     Shape* = ref object
         material*: Material
@@ -50,7 +50,7 @@ type
             edges*: seq[int]
             tree*: SceneNode
 
-        of skCSGUnion:
+        of skCSGUnion, skCSGInt:
             shapes*: tuple[primary, secondary: Shape]
             shTrans*: tuple[tPrimary, tSecondary: Transformation]
         
@@ -116,7 +116,7 @@ proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     of skPlane: return (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
     of skTriangularMesh: return shape.tree.aabb
     of skEllipsoid: return (newPoint3D(-shape.axis.a, -shape.axis.b, -shape.axis.c), newPoint3D(shape.axis.a, shape.axis.b, shape.axis.c))
-    of skCSGUnion: discard
+    of skCSGUnion, skCSGInt: discard
 
     
 proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
@@ -181,8 +181,10 @@ proc inShape*(shape: Shape, pt: Point3D): bool =
             return true
         return false
     
+    of skCSGInt: discard
     of skTriangularMesh: discard
     of skTriangle: discard
+
 
 proc inAllShapes*(shHand: seq[ShapeHandler], pt: Point3D): bool = 
     # Procedure to check wether a point is in all shapes or not
@@ -192,7 +194,7 @@ proc inAllShapes*(shHand: seq[ShapeHandler], pt: Point3D): bool =
             return false
     
     return true
-    
+
 
 proc getUV*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
@@ -239,7 +241,7 @@ proc getUV*(shape: Shape; pt: Point3D): Point2D =
         let scal = newScaling(newVec3f(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c))
         return getUV(Shape(kind: skSphere, radius: 1), apply(scal, pt))
 
-    of skCSGUnion: discard
+    of skCSGUnion, skCSGInt: discard
 
 
 proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal = 
@@ -273,7 +275,7 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
         return apply(scal.inverse, nSp).normalize
 
-    of skCSGUnion: discard
+    of skCSGUnion, skCSGInt: discard
 
 
 proc nearestCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =
@@ -461,6 +463,24 @@ proc newCSGUnion*(sh1, sh2: ShapeHandler, transformation = Transformation.id): S
     newShapeHandler(
         Shape(
             kind: skCSGUnion,
+            shapes:(
+                primary: sh1.shape,
+                secondary: sh2.shape
+                ),
+            shTrans:(
+                tPrimary: sh1.transformation,
+                tSecondary: sh2.transformation
+            )
+        ),
+        transformation
+    )    
+
+
+proc newCSGInt*(sh1, sh2: ShapeHandler, transformation = Transformation.id): ShapeHandler = 
+    # Procedure to create a newCSGInt ShapeHandler
+    newShapeHandler(
+        Shape(
+            kind: skCSGInt,
             shapes:(
                 primary: sh1.shape,
                 secondary: sh2.shape

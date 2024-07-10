@@ -895,6 +895,76 @@ suite "CSGUnion":
 
 
 
+#-------------------------#
+#    CSGInt test suite    #
+#-------------------------# 
+suite "CSGInt":
+
+    setup:
+        let 
+            comp = newComposition(newRotX(90), newTranslation(eY))
+            
+            spSh1 = newSphere(newPoint3D(1, 2, 3), 2)
+            spSh2 = newSphere(newPoint3D(-1, -2, -3), 2)
+            triSh = newTriangle(eX.Point3D, eY.Point3D, eZ.Point3D, transformation = comp)
+            csgInt1 = newCSGInt(spSh1, triSh, newTranslation(eX))
+            csgInt2 = newCSGInt(csgInt1, spSh2)
+    
+    teardown:
+        discard comp
+        discard spSh1
+        discard spSh2
+        discard triSh
+        discard csgInt1
+        discard csgInt2
+    
+    
+    test "newCSGInt proc":
+        # Checking newCSGInt proc
+
+        #----------------------------------#
+        #          First CSGInt            #
+        #----------------------------------#        
+        # Checking first shape
+        check csgInt1.shape.shapes.primary.kind == skSphere
+        check csgInt1.shape.shapes.primary.radius == 2
+        check csgInt1.shape.shTrans.tPrimary.kind == tkTranslation
+        check areClose(csgInt1.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+
+        # Checking second shape
+        check csgInt1.shape.shapes.secondary.kind == skTriangle
+        check csgInt1.shape.shapes.secondary.vertices[0] == eX.Point3D
+        check csgInt1.shape.shapes.secondary.vertices[1] == eY.Point3D
+        check csgInt1.shape.shapes.secondary.vertices[2] == eZ.Point3D
+        check csgInt1.shape.shTrans.tSecondary.kind == tkComposition
+        check areClose(csgInt1.shape.shTrans.tSecondary.transformations[0].mat, newRotX(90).mat, eps = 1e-6)
+        check areClose(csgInt1.shape.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)
+
+        # Checking transformation
+        check areClose(csgInt1.transformation.mat, newTranslation(eX).mat)
+
+
+        #-----------------------------------#
+        #          Second CSGInt            #
+        #-----------------------------------#
+        # Checking first shape
+        check csgInt2.shape.shapes.primary.kind == skCSGInt
+        check csgInt2.shape.shapes.primary.shapes.primary.kind == skSphere
+        check csgInt2.shape.shapes.primary.shapes.secondary.kind == skTriangle
+        check areClose(csgInt2.shape.shapes.primary.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)  
+        check areClose(csgInt2.shape.shapes.primary.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)  
+        
+        check csgInt2.shape.shTrans.tPrimary.kind == tkTranslation
+        check areClose(csgInt2.shape.shTrans.tPrimary.mat, newTranslation(eX).mat)  
+
+        # Checking second shape
+        check csgInt2.shape.shapes.secondary.kind == skSphere
+        check csgInt2.shape.shapes.primary.shapes.primary.kind == skSphere
+        check csgInt2.shape.shapes.primary.shapes.secondary.kind == skTriangle
+
+        check csgInt2.shape.shTrans.tSecondary.kind == tkTranslation
+        check areClose(csgInt2.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(-1, -2, -3)).mat)  
+
 
 #---------------------------------------#
 #           Scene test suite            #

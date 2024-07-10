@@ -207,7 +207,8 @@ proc getAllHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[seq[HitP
         appo = hitS.filterIt(it.isSome).mapIt(it.get).concat
         if appo.len == 0: return none seq[HitPayload]
         return some appo
-        
+
+    of skCSGInt: discard       
     of skTriangularMesh: discard
 
 
@@ -375,6 +376,8 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
             handler: ShapeHandler(shape: appo[0].handler.shape, transformation: handler.transformation @ appo[0].handler.transformation),
             ray: worldInvRay.transform(appo[0].handler.transformation.inverse), t: appo[0].t
         )
+    
+    of skCSGInt: none HitPayload      
         
 
 proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
