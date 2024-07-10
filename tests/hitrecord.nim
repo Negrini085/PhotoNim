@@ -113,6 +113,7 @@ suite "HitPayload":
 
             hitPayload: Option[HitPayload]
             hitPayloads: seq[HitPayload]
+            allHitPayload: Option[seq[HitPayload]]
     
     teardown:
         discard rg
@@ -120,6 +121,7 @@ suite "HitPayload":
         discard sceneTree
         discard hitPayload
         discard hitPayloads
+        discard allHitPayload
 
 
     #----------------------------------#
@@ -188,6 +190,38 @@ suite "HitPayload":
         check hitPayload.get.handler.shape.kind == skSphere and hitPayload.get.handler.shape.radius == 3
         check areClose(hitPayload.get.ray.dir, eX)
         check areClose(hitPayload.get.ray.origin, ORIGIN3D)
+
+
+    test "getAllHitPayload proc (Sphere)":
+        # Checking getAllHitPayload for a Sphere-Ray intersection
+        let sphere = newSphere(newPoint3D(0, 1, 0), 3.0)
+
+        var
+            ray1 = newRay(newPoint3D(0, 1, 5), -eZ)
+            ray2 = newRay(newPoint3D(5, 5, 5),  eX)
+
+        # First ray ---> Origin: (0, 1, 5), Direction: -eZ
+        # Should be transformed in shape local reference system
+        ray1 = ray1.transform(sphere.transformation.inverse)
+        # I should get two intersection
+        allHitPayload = getAllHitPayload(sphere, ray1)
+        check allHitPayload.isSome and allHitPayload.get.len == 2
+
+        check areClose(allHitPayload.get[0].t, 2)
+        check allHitPayload.get[0].handler.shape.kind == skSphere and areClose(allHitPayload.get[0].handler.shape.radius, 3)
+        check areClose(allHitPayload.get[0].ray.dir, -eZ)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(0, 0, 5))
+    
+        check areClose(allHitPayload.get[1].t, 8)
+        check allHitPayload.get[1].handler.shape.kind == skSphere and areClose(allHitPayload.get[1].handler.shape.radius, 3)
+        check areClose(allHitPayload.get[1].ray.dir, -eZ)
+        check areClose(allHitPayload.get[1].ray.origin, newPoint3D(0, 0, 5))
+
+        # Second ray ---> Origin: (5, 5, 5), Direction: eX
+        # Should be transformed in shape local reference system
+        ray2 = ray2.transform(sphere.transformation.inverse)
+        # I shouldn't get intersections
+        check getAllHitPayload(sphere, ray2).isNone
 
 
     test "getHitPayload proc (Ellipsoid)":
@@ -272,8 +306,58 @@ suite "HitPayload":
         check hitPayload.isNone
 
 
+    test "getAllHitPayload proc (Ellipsoid)":
+        # Checking getAllHitPayload for an Ellipsoid-Ray intersection
+        let ell = newEllipsoid(1, 2, 3)
+
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
+            ray2 = newRay(newPoint3D(4, 0, 0), -eX)
+            ray3 = newRay(newPoint3D(5, 5, 5), eX)
+
+        
+        # First ray ---> Origin: (0, 0, 2), Direction: -eZ
+        # We should get only one intersection, within the ellipsoid itself
+        allHitPayload = getAllHitPayload(ell, ray1)
+        check allHitPayload.isSome and allHitPayload.get.len == 1
+        check allHitPayload.get[0].t == 5
+        check allHitPayload.get[0].handler.shape.kind == skEllipsoid 
+        check areClose(allHitPayload.get[0].handler.shape.axis.a, 1)
+        check areClose(allHitPayload.get[0].handler.shape.axis.b, 2)
+        check areClose(allHitPayload.get[0].handler.shape.axis.c, 3)
+        check areClose(allHitPayload.get[0].ray.dir, -eZ)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(0, 0, 2))
+
+
+        # Second ray ---> Origin: (4, 0, 0), Direction: -eX
+        # We should get two intersections, all along the x axis
+        allHitPayload = getAllHitPayload(ell, ray2)
+        check allHitPayload.isSome and allHitPayload.get.len == 2
+
+        check allHitPayload.get[0].t == 3
+        check allHitPayload.get[0].handler.shape.kind == skEllipsoid 
+        check areClose(allHitPayload.get[0].handler.shape.axis.a, 1)
+        check areClose(allHitPayload.get[0].handler.shape.axis.b, 2)
+        check areClose(allHitPayload.get[0].handler.shape.axis.c, 3)
+        check areClose(allHitPayload.get[0].ray.dir, -eX)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(4, 0, 0))
+
+        check allHitPayload.get[1].t == 5
+        check allHitPayload.get[1].handler.shape.kind == skEllipsoid 
+        check areClose(allHitPayload.get[1].handler.shape.axis.a, 1)
+        check areClose(allHitPayload.get[1].handler.shape.axis.b, 2)
+        check areClose(allHitPayload.get[1].handler.shape.axis.c, 3)
+        check areClose(allHitPayload.get[1].ray.dir, -eX)
+        check areClose(allHitPayload.get[1].ray.origin, newPoint3D(4, 0, 0))
+
+
+        # Third ray ---> Origin: (5, 5, 5), Direction: eX
+        # We should get no intersection at all
+        check getAllHitPayload(ell, ray3).isNone
+
+
     test "getHitPayload proc (Plane)":
-        # Checking getHitPayloads on Planes
+        # Checking getHitPayload on Planes
         var
             ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
             ray2 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
@@ -296,6 +380,28 @@ suite "HitPayload":
         check areClose(hitPayload.get.ray.origin, newPoint3D(1, -2, -3))
 
         check not getHitPayload(plane, ray3).isSome
+
+
+    test "getAllHitPayload proc (Plane)":
+        # Checking getAllHitPayload on Planes
+        let plane = newPlane()
+
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
+            ray2 = newRay(newPoint3D(3, 0, 0), -eX)
+
+        # First ray ---> Origin: (0, 0, 2), Direction: -eZ
+        # We should only one intersection with plane
+        allHitPayload = getAllHitPayload(plane, ray1)
+        check allHitPayload.isSome and allHitPayload.get.len == 1
+        check allHitPayload.get[0].t == 2
+        check allHitPayload.get[0].handler.shape.kind == skPlane
+        check areClose(allHitPayload.get[0].ray.dir, -eZ)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(0, 0, 2))
+
+        # Second ray ---> Origin: (3, 0, 0), Direction: -eX
+        # We should get no intersection at all
+        check not getAllHitPayload(plane, ray2).isSome
 
 
     test "getHitPayload proc (AABox)":
@@ -324,6 +430,45 @@ suite "HitPayload":
         check not getHitPayload(box, ray3).isSome
 
 
+    test "getAllHitPayload proc (AABox)":
+        # Checking getAllHitPayloads on Planes
+        let box = newBox((newPoint3D(-1, 0, 1), newPoint3D(3, 2, 5)))
+        
+        var
+            ray1 = newRay(newPoint3D(-5, 1, 3), eX)
+            ray2 = newRay(newPoint3D(1, 1, 3), eY)
+            ray3 = newRay(newPoint3D(4, -4, 4), eX)
+
+        # First ray ---> Origin: (-5, 1, 3), Direction: eX
+        # We should get two intersections
+        allHitPayload = getAllHitPayload(box, ray1)
+        check allHitPayload.isSome and allHitPayload.get.len == 2
+        
+        check allHitPayload.get[0].t == 4
+        check allHitPayload.get[0].handler.shape.kind == skAABox
+        check areClose(allHitPayload.get[0].ray.dir, eX)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(-5, 1, 3))
+
+        check allHitPayload.get[1].t == 8
+        check allHitPayload.get[1].handler.shape.kind == skAABox
+        check areClose(allHitPayload.get[1].ray.dir, eX)
+        check areClose(allHitPayload.get[1].ray.origin, newPoint3D(-5, 1, 3))
+
+        # Second ray ---> Origin: (1, 1, 3), Direction: eY
+        # We should get  only one intersection
+        allHitPayload = getAllHitPayload(box, ray2)
+        check allHitPayload.isSome and allHitPayload.get.len == 1
+
+        check allHitPayload.get[0].t == 1
+        check allHitPayload.get[0].handler.shape.kind == skAABox
+        check areClose(allHitPayload.get[0].ray.dir, eY)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(1, 1, 3))
+
+        # Third ray ---> Origin: (4, -4, 4), Direction: eX
+        # We should get no intersections
+        check getAllHitPayload(box, ray3).isNone
+
+
     test "getHitPayload (Triangle)":
         # Checking getHitPayload on triangle shape
         var
@@ -340,6 +485,28 @@ suite "HitPayload":
         check areClose(hitPayload.get.ray.origin, newPoint3D(0, 1, -2))
 
         check not getHitPayload(triangle, ray2).isSome
+
+
+    test "getAllHitPayload (Triangle)":
+        # Checking getAllHitPayload on triangle shape
+        let triangle = newTriangle(newPoint3D(3, 0, 0), newPoint3D(-2, 0, 0), newPoint3D(0.5, 2, 0))
+        
+        var
+            ray1 = newRay(newPoint3D(0, 1, -2), eZ)
+            ray2 = newRay(newPoint3D(0, 1, -2), eX)
+
+        # First ray ---> Origin: (1, 1, -2), Direction: eZ
+        # We should get  only one intersection
+        allHitPayload = getAllHitPayload(triangle, ray1)
+        check allHitPayload.isSome and allHitPayload.get.len == 1
+        check allHitPayload.get[0].t == 2
+        check allHitPayload.get[0].handler.shape.kind == skTriangle
+        check areClose(allHitPayload.get[0].ray.dir, eZ)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(0, 1, -2))
+
+        # Second ray ---> Origin: (1, 1, -2), Direction: eX
+        # We should get no intersections
+        check getAllHitPayload(triangle, ray2).isNone
 
 
     test "getHitPayload (Cylinder)":
@@ -368,6 +535,44 @@ suite "HitPayload":
         
         check not getHitPayload(cylinder, ray3).isSome
         check not getHitPayload(cylinder, ray4).isSome
+
+
+    test "getAllHitPayload (Cylinder)":
+        # Checking getAllHitPayload on cylinder shape
+        let cylinder = newCylinder(2, -2, 2)
+
+        var
+            ray1 = newRay(ORIGIN3D, eX)
+            ray2 = newRay(newPoint3D(4, 0, 0), -eX)
+            ray3 = newRay(newPoint3D(0, 0, -4), eZ)
+
+        # First ray ---> Origin: (0, 0, 0), Direction: eX
+        # We should get only one intersection
+        allHitPayload = getAllHitPayload(cylinder, ray1)
+        check allHitPayload.isSome and allHitPayload.get.len == 1
+        check allHitPayload.get[0].t == 2
+        check allHitPayload.get[0].handler.shape.kind == skCylinder
+        check areClose(allHitPayload.get[0].ray.dir, eX)
+        check areClose(allHitPayload.get[0].ray.origin, ORIGIN3D)
+
+        # Second ray ---> Origin: (4, 0, 0), Direction: -eX
+        # We should get two intersections
+        allHitPayload = getAllHitPayload(cylinder, ray2)
+        check allHitPayload.isSome and allHitPayload.get.len == 2
+
+        check allHitPayload.get[0].t == 2
+        check allHitPayload.get[0].handler.shape.kind == skCylinder
+        check areClose(allHitPayload.get[0].ray.dir, -eX)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(4, 0, 0))
+
+        check allHitPayload.get[1].t == 6
+        check allHitPayload.get[1].handler.shape.kind == skCylinder
+        check areClose(allHitPayload.get[1].ray.dir, -eX)
+        check areClose(allHitPayload.get[1].ray.origin, newPoint3D(4, 0, 0))
+
+        # Third ray ---> Origin: (0, 0, -4), Direction: eZ
+        # We should get no intersections       
+        check getAllHitPayload(cylinder, ray3).isNone
 
 
     test "getHitPayload (CSGUnion)":
@@ -402,7 +607,7 @@ suite "HitPayload":
         
         hitPayload = getHitPayload(csgUnion1, ray3)
         check hitPayload.isSome
-        #check hitPayload.get.t == 1
+        check hitPayload.get.t == 1
         check hitPayload.get.handler.shape.kind == skSphere
         check areClose(hitPayload.get.ray.dir, -eZ)
         check areClose(hitPayload.get.ray.origin, newPoint3D(0, 0, 3))
@@ -443,6 +648,67 @@ suite "HitPayload":
         check hitPayload.get.handler.shape.kind == skSphere
         check areClose(hitPayload.get.ray.dir, eX)
         check areClose(hitPayload.get.ray.origin, newPoint3D(-3, 0, 0))
+
+
+    test "getAllHitPayload (CSGUnion)":
+        # Checking getAllHitPayload on CSGUnion
+        let 
+            sph = newSphere(newPoint3D(1, 3, 3), 2)
+            cyl = newCylinder(2, -2, 4)
+            csgUnion = newCSGUnion(sph, cyl, newTranslation(eY))
+
+        var
+            ray1 = newRay(ORIGIN3D, eX)
+            ray2 = newRay(newPoint3D(4, 0, 0), -eX)
+            ray3 = newRay(newPoint3D(1, 3, 6), -eZ)
+            ray4 = newRay(newPoint3D(-3, -3, -1), eY)
+
+
+        # First ray ---> Origin: (0, 0, 0), Direction: eX
+        # We should get only one intersection
+        allHitPayload = getAllHitPayload(csgUnion, ray1)
+        check allHitPayload.isSome and allHitPayload.get.len == 1
+        check allHitPayload.get[0].t == 2
+        check allHitPayload.get[0].handler.shape.kind == skCylinder
+        check areClose(allHitPayload.get[0].ray.dir, eX)
+        check areClose(allHitPayload.get[0].ray.origin, ORIGIN3D)
+
+
+        # Second ray ---> Origin: (4, 0, 0), Direction: -eX
+        # We should get two intersections
+        allHitPayload = getAllHitPayload(csgUnion, ray2)
+        check allHitPayload.isSome and allHitPayload.get.len == 2
+
+        check allHitPayload.get[0].t == 2
+        check allHitPayload.get[0].handler.shape.kind == skCylinder
+        check areClose(allHitPayload.get[0].ray.dir, -eX)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(4, 0, 0))
+
+        check allHitPayload.get[1].t == 6
+        check allHitPayload.get[1].handler.shape.kind == skCylinder
+        check areClose(allHitPayload.get[1].ray.dir, -eX)
+        check areClose(allHitPayload.get[1].ray.origin, newPoint3D(4, 0, 0))
+
+
+        # Third ray ---> Origin: (1, 3, 6), Direction: -eZ
+        # We should get two intersections
+        allHitPayload = getAllHitPayload(csgUnion, ray3)
+        check allHitPayload.isSome and allHitPayload.get.len == 2
+
+        check allHitPayload.get[0].t == 1
+        check allHitPayload.get[0].handler.shape.kind == skSphere
+        check areClose(allHitPayload.get[0].ray.dir, -eZ)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(0, 0, 3))
+
+        check allHitPayload.get[1].t == 5
+        check allHitPayload.get[1].handler.shape.kind == skSphere
+        check areClose(allHitPayload.get[1].ray.dir, -eZ)
+        check areClose(allHitPayload.get[1].ray.origin, newPoint3D(0, 0, 3))
+
+
+        # Fourth ray ---> Origin: (-3, -3, -1), Direction: eY
+        # We should get two intersections
+        check not getHitPayload(csgUnion, ray4).isSome
 
 
     #----------------------------------#
