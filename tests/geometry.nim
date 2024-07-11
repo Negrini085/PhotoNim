@@ -323,6 +323,30 @@ suite "transformations":
         check areClose(apply(ty, p), newPoint3D(-1.0, 2.0, -3.0), 1e-6)
         check areClose(apply(tz, p), newPoint3D(-1.0, -2.0, 3.0), 1e-6)
 
+
+    test "Rotation of Vec3f":
+        var
+            tx = newRotation(180, axisX) 
+            ty = newRotation(180, axisY) 
+            tz = newRotation(180, axisZ) 
+            vec = newVec3f(1, 2, 3)
+        
+        check areClose(apply(tx, vec), newVec3f(1.0, -2.0, -3.0), 1e-6)
+        check areClose(apply(ty, vec), newVec3f(-1.0, 2.0, -3.0), 1e-6)
+        check areClose(apply(tz, vec), newVec3f(-1.0, -2.0, 3.0), 1e-6)
+
+
+    test "Rotation of Normal":
+        var
+            tx = newRotation(90, axisX) 
+            ty = newRotation(90, axisY) 
+            tz = newRotation(90, axisZ) 
+            norm = newNormal(1, 2, 3)
+
+        check areClose(apply(tx, norm), newNormal(1.0, -3.0, 2.0), 1e-6)
+        check areClose(apply(ty, norm), newNormal(3.0, 2.0, -1.0), 1e-6)
+        check areClose(apply(tz, norm), newNormal(-2.0, 1.0, 3.0), 1e-6)
+
     
     test "@ composition operator":
         var
