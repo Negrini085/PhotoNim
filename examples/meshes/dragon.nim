@@ -12,7 +12,7 @@ let
     camera = newPerspectiveCamera(
         newPathTracer(numRays = 1, maxDepth = 1), 
         viewport = (1600, 900), distance = 3.0, 
-        newComposition(newRotX(-90), newTranslation(newPoint3D(-5, 1.5, 0.5)))
+        newComposition(newRotation(-90, axisX), newTranslation(newPoint3D(-5, 1.5, 0.5)))
     )
 
     comp = newScaling(0.05)
