@@ -82,26 +82,23 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleLights*(scene: Scene, worldRay: Ray, hitHandler: ObjectHandler, worldHitPt: Point3D, hitNormal: Normal): Color =
+proc sampleLights*(scene: Scene, worldRay: Ray, hitHandler: ObjectHandler, worldHitPt: Point3D, hitNormal: Normal, hitSurfacePt: Point2D): Color =
     for lightHandler in scene.handlers.filterIt(it.isLight):
         case lightHandler.kind:
         of hkPoint:
             let 
-                lightDir = (worldHitPt - apply(lightHandler.transformation, ORIGIN3D)).Vec3f.normalize
+                lightDir = apply(lightHandler.transformation, ORIGIN3D) - worldHitPt
                 lightRay = newRay(worldHitPt, lightDir)
                 lightHit = scene.tree.getClosestHit(scene.handlers, lightRay)
-                distance2 = lightDir.norm2
-            
-            if lightHit.info.val.isNil or pow(lightHit.info.t, 2) <= distance2: continue
+
+            if lightHit.info.val.isNil or lightHit.info.t < lightDir.norm: continue
 
             let
-                lightHitPt = lightRay.at(lightHit.info.t)
-                lightHitSurfacePt = lightHit.info.val.shape.getUV(lightHitPt)
+                brdfFactor = hitHandler.material.brdf.eval(hitNormal.Vec3f, lightDir, worldRay.dir)
+                # angleFactor = max(0, dot(lightDir, hitNormal.Vec3f))
 
-                brdfFactor = hitHandler.material.brdf.eval(hitNormal.Vec3f, -lightDir, worldRay.dir)
-                angleFactor = max(0, dot(-lightDir, hitNormal.Vec3f))
-
-            result += lightHandler.material.emittedRadiance.getColor(lightHitSurfacePt) * brdfFactor * angleFactor / distance2
+            # result += lightHandler.material.emittedRadiance.getColor(ORIGIN2D) * brdfFactor / lightDir.norm2
+            result += hitHandler.material.brdf.pigment.getColor(hitSurfacePt)
 
         of hkShape: discard
             # for _ in 0..<camera.renderer.directSamples:
@@ -137,7 +134,7 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
         let closestHit = scene.tree.getClosestHit(scene.handlers, worldRay)
         if closestHit.info.val.isNil: return scene.bgColor
         
-        if closestHit.info.val.isLight: return BLUE
+        # if closestHit.info.val.isLight: return BLUE
 
         let 
             hitSurfacePt = closestHit.info.val.shape.getUV(closestHit.pt)
@@ -145,7 +142,7 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
             worldHitNormal = apply(closestHit.info.val.transformation, closestHit.normal)
         
         result = closestHit.info.val.material.emittedRadiance.getColor(hitSurfacePt)
-        result += scene.sampleLights(worldRay, closestHit.info.val, worldHitPt, worldHitNormal)
+        # result += scene.sampleLights(worldRay, closestHit.info.val, worldHitPt, worldHitNormal, hitSurfacePt)
 
         # var hitCol = closestHit.info.val.material.brdf.pigment.getColor(hitSurfacePt)
         # if worldRay.depth >= camera.renderer.rouletteLimit:

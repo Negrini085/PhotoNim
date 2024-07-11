@@ -38,13 +38,13 @@ let
     box1 = newBox(
         (newPoint3D(-0.5, -1.5, -2), newPoint3D(0.5, -0.9, 0.7)), 
         newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5)))), 
-        newRotZ(40)
+        newRotation(40, axisZ)
     )
 
     box2 = newBox(
         (newPoint3D(-0.5, 0.9, -2), newPoint3D(0.5, 1.5, 0.4)), 
         newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5)))), 
-        newRotZ(-40)
+        newRotation(-40, axisZ)
     )
 
 
@@ -58,8 +58,8 @@ let airplane = newMesh(
     ),
     transformation = newComposition(
         newTranslation(-eX - 0.5.float32 * eY), 
-        newRotZ(30), newRotY(20), newRotX(10), 
-        newScaling(2 * 3e-4)
+        newRotation(30, axisZ), newRotation(-20, axisY), newRotation(10, axisX), 
+        newScaling(3e-4)
     ), 
     treeKind = tkOctonary, 
     maxShapesPerLeaf = 4, 
@@ -72,9 +72,9 @@ timeStart = cpuTime()
 
 handlers.add room; handlers.add lwall; handlers.add rwall; handlers.add airplane; handlers.add box1; handlers.add box2
 
-for i in 0..<10: 
-    for j in 0..<10: 
-        handlers.add newPointLight(WHITE, newPoint3D(-0.5 + j / 5, -0.5 + i / 5, 0))
+# for i in 0..<10: 
+#     for j in 0..<10: 
+handlers.add newPointLight(WHITE, newPoint3D(0, 0, 1.5))
         # newSurfaceLight(WHITE, Shape(kind: skAABox, aabb: (newPoint3D(0.5, -0.5, 1.8), newPoint3D(1.5, 0.5, 2))))
 
 let

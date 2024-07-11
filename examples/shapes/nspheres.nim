@@ -7,16 +7,22 @@ from std/osproc import execCmd
 
 let 
     nSpheres = 512  
+    samplesPerSide: int = 1
+    numRays: int = 1
+    maxDepth: int = 1
+    rgSetUp = newRandomSetUp(67, 4)
+    filename = fmt"assets/images/examples/spheres_n{nSpheres}_r{numRays}_d{maxDepth}.png"
+
     timeStart = cpuTime()
     camera = newPerspectiveCamera(
-        renderer = newPathTracer(numRays = 1, maxDepth = 0),
+        renderer = newPathTracer(numRays, maxDepth),
         viewport = (600, 600), 
         distance = 1.0, 
         transformation = newTranslation(newPoint3D(-10, 0, 0))
     )
 
 var 
-    rg = newPCG(42, 1)
+    rg = newPCG(rgSetUp)
     shapes = newSeq[ObjectHandler](nSpheres)
 
 for i in 0..<nSpheres: 
@@ -26,11 +32,10 @@ for i in 0..<nSpheres:
     )
 
 let
-    scene = newScene(BLACK, shapes, rg, treeKind = tkOctonary, maxShapesPerLeaf = 8)
-    image = camera.sample(scene, rg, samplesPerSide = 1)
+    scene = newScene(BLACK, shapes, newRandomSetUp(rg.random, rg.random), treeKind = tkOctonary, maxShapesPerLeaf = 8)
+    image = camera.sample(scene, newRandomSetUp(rg.random, rg.random), samplesPerSide)
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
-let filename = fmt"assets/images/examples/spheres_n{nSpheres}_r{camera.renderer.numRays}_d{camera.renderer.maxDepth}.png"
 image.savePNG(filename, 0.18, 1.0, 0.1)
 discard execCmd fmt"open {filename}"

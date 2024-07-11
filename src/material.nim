@@ -111,7 +111,7 @@ proc GeometricAttenuation(normal, inDir, outDir, midDir: Vec3f): float32 {.inlin
 
 proc eval*(brdf: BRDF; normal, inDir, outDir: Vec3f): float32 {.inline.} =
     case brdf.kind: 
-    of DiffuseBRDF: return brdf.reflectance / PI
+    of DiffuseBRDF: return brdf.reflectance # / PI
 
     of SpecularBRDF: return 1.0
 

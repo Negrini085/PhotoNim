@@ -10,12 +10,12 @@ from std/sequtils import mapIt, insert, filterIt
 proc getIntersection(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.} =
     let
         (min, max) = (aabb.min - worldRay.origin, aabb.max - worldRay.origin)
-        txSpan = newInterval(min.x / worldRay.dir[0], max.x / worldRay.dir[0])
-        tySpan = newInterval(min.y / worldRay.dir[1], max.y / worldRay.dir[1])
+        txSpan = newInterval(min[0] / worldRay.dir[0], max[0] / worldRay.dir[0])
+        tySpan = newInterval(min[1] / worldRay.dir[1], max[1] / worldRay.dir[1])
 
     if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return Inf
 
-    let tzSpan = newInterval(min.z / worldRay.dir[2], max.z / worldRay.dir[2])
+    let tzSpan = newInterval(min[1] / worldRay.dir[2], max[1] / worldRay.dir[2])
     
     var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
     if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return Inf
@@ -48,12 +48,12 @@ proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
     of skAABox:
         let
             (min, max) = (shape.aabb.min - worldInvRay.origin, shape.aabb.max - worldInvRay.origin)
-            txSpan = newInterval(min.x / worldInvRay.dir[0], max.x / worldInvRay.dir[0])
-            tySpan = newInterval(min.y / worldInvRay.dir[1], max.y / worldInvRay.dir[1])
+            txSpan = newInterval(min[0] / worldInvRay.dir[0], max[0] / worldInvRay.dir[0])
+            tySpan = newInterval(min[1] / worldInvRay.dir[1], max[1] / worldInvRay.dir[1])
 
         if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return Inf
 
-        let tzSpan = newInterval(min.z / worldInvRay.dir[2], max.z / worldInvRay.dir[2])
+        let tzSpan = newInterval(min[2] / worldInvRay.dir[2], max[2] / worldInvRay.dir[2])
         var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
 
         if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return Inf
@@ -140,7 +140,7 @@ proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray):
     if tRootHit == Inf: return result
 
     var 
-        nodesStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int)
+        nodesStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int * tree.kind.int)
         handlersStack = newSeqOfCap[HitInfo[ObjectHandler]](tree.mspl)
         currentHitInfo: HitInfo[BVHNode] = (tRootHit, tree.root)
 
@@ -148,21 +148,30 @@ proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray):
 
     while nodesStack.len > 0:
         currentHitInfo = nodesStack.pop
-        # if currentHitInfo.t >= result.t: break
+
+        if currentHitInfo.t >= result.info.t: break
         
         case currentHitInfo.val.kind
         of nkBranch: 
             for child in currentHitInfo.val.children:
                 if not child.isNil:
-                    let tBoxHit = child.aabb.getIntersection(worldRay)
+                    let tBoxHit = 
+                        # if child.aabb.contains(worldRay.origin): min(child.aabb.getIntersection(worldRay), child.aabb.getIntersection(newRay(worldRay.origin, -worldRay.dir)))
+                        # else: 
+                        child.aabb.getIntersection(worldRay)
+
                     if tBoxHit < result.info.t: 
-                        let hitInfo = (tBoxHit, child)
-                        nodesStack.insert(hitInfo, nodesStack.upperBound(hitInfo))
+                        let bvhHitInfo = (tBoxHit, child)
+                        nodesStack.insert(bvhHitInfo, nodesStack.upperBound(bvhHitInfo))
 
         of nkLeaf:
-            for handler in currentHitInfo.val.indexes.mapIt(handlers[it]).filterIt(it.kind != hkPoint):
+            for handler in currentHitInfo.val.indexes.mapIt(handlers[it]):
+                if handler.kind == hkPoint: continue
+
                 let tBoxHit = handler.getAABB.getIntersection(worldRay)
-                if tBoxHit < result.info.t: handlersStack.insert((tBoxHit, handler), handlersStack.upperBound((tBoxHit, handler)))
+                if tBoxHit < result.info.t: 
+                    let handlerHit = (tBoxHit, handler)
+                    handlersStack.insert(handlerHit, handlersStack.upperBound(handlerHit))
             
             while handlersStack.len > 0:
                 let handlerHitInfo = handlersStack.pop

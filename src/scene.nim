@@ -240,5 +240,5 @@ proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], rgSetUp: RandomSetU
     Scene(
         bgColor: bgColor,
         handlers: handlers,
-        tree: (treeKind, maxShapesPerLeaf, newBVHNode(handlers.filterIt(it.kind != hkPoint).pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp))
+        tree: (treeKind, maxShapesPerLeaf, newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp))
     )

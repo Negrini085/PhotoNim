@@ -74,7 +74,7 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal {.inline.} =
         return sgn(-dot(result.Vec3f, dir)).float32 * result
 
     of skTriangle:
-        let cross = cross((shape.vertices[1] - shape.vertices[0]).Vec3f, (shape.vertices[2] - shape.vertices[0]).Vec3f)
+        let cross = cross(shape.vertices[1] - shape.vertices[0], shape.vertices[2] - shape.vertices[0])
         return sgn(-dot(cross, dir)).float32 * cross.toNormal
         
     of skSphere: return sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
