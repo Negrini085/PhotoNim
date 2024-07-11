@@ -626,19 +626,19 @@ proc parseTransformation*(inStr: var InputStream, dSc: var DefScene): Transforma
 
             if count == 0:
                 if key == KeywordKind.ROTATION_X:
-                    result = newRotX(inStr.expectNumber(dSc))
+                    result = newRotation(inStr.expectNumber(dSc), axisX)
                 elif key == KeywordKind.ROTATION_Y:
-                    result = newRotY(inStr.expectNumber(dSc))
+                    result = newRotation(inStr.expectNumber(dSc), axisY)
                 elif key == KeywordKind.ROTATION_Z:
-                    result = newRotZ(inStr.expectNumber(dSc))
+                    result = newRotation(inStr.expectNumber(dSc), axisZ)
 
             else:
                 if key == KeywordKind.ROTATION_X:
-                    result = result @ newRotX(inStr.expectNumber(dSc))
+                    result = result @ newRotation(inStr.expectNumber(dSc), axisX)
                 elif key == KeywordKind.ROTATION_Y:
-                    result = result @ newRotY(inStr.expectNumber(dSc))
+                    result = result @ newRotation(inStr.expectNumber(dSc), axisY)
                 elif key == KeywordKind.ROTATION_Z:
-                    result = result @ newRotZ(inStr.expectNumber(dSc))
+                    result = result @ newRotation(inStr.expectNumber(dSc), axisZ)
 
             count += 1  
             inStr.expectSymbol(')')
@@ -648,9 +648,15 @@ proc parseTransformation*(inStr: var InputStream, dSc: var DefScene): Transforma
             inStr.expectSymbol('(')
             
             if count == 0: 
-                result = newScaling(inStr.parseVec(dSc))
+                let pars = inStr.parseVec(dSc)
+                if (pars[0] == pars[1]) and (pars[1] == pars[2]):
+                    result = newScaling(pars[0])
+                result = newScaling(pars[0], pars[1], pars[2])
             else: 
-                result = result @ newScaling(inStr.parseVec(dSc))
+                let pars = inStr.parseVec(dSc)
+                if (pars[0] == pars[1]) and (pars[1] == pars[2]):
+                    result = result @ newScaling(pars[0])
+                result = result @ newScaling(pars[0], pars[1], pars[2])
             
             count += 1
             inStr.expectSymbol(')') 
