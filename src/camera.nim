@@ -98,7 +98,7 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
                 hitPt = hit.ray.at(hit.t)
                 surfPt = hit.handler.shape.getUV(hitPt)
 
-            return hit.handler.shape.material.brdf.pigment.getColor(surfPt) + hit.handler.shape.material.radiance.getColor(surfPt)
+            return hit.handler.shape.material.brdf.pigment.getColor(surfPt) + hit.handler.shape.material.emittedRadiance.getColor(surfPt)
 
     of rkPathTracer: 
         if (worldRay.depth > camera.renderer.maxDepth): return BLACK
@@ -114,7 +114,7 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
             
             surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
             
-        result = closestHit.handler.shape.material.radiance.getColor(surfacePt)
+        result = closestHit.handler.shape.material.emittedRadiance.getColor(surfacePt)
 
         var hitCol = closestHit.handler.shape.material.brdf.pigment.getColor(surfacePt)
         if worldRay.depth >= camera.renderer.rouletteLimit:
@@ -126,7 +126,7 @@ proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Col
             var accumulatedRadiance = BLACK
             for _ in 0..<camera.renderer.numRays:
                 let 
-                    localOutDir = closestHit.handler.shape.material.brdf.scatterDir(shapeLocalHitNormal, closestHit.ray.dir, rg).normalize
+                    localOutDir = closestHit.handler.shape.material.brdf.scatterDir(closestHit.ray.dir, shapeLocalHitNormal, rg).normalize
                     scatteredRay = Ray(
                         origin: apply(closestHit.handler.transformation, shapeLocalHitPt), 
                         dir: apply(closestHit.handler.transformation, localOutDir),
