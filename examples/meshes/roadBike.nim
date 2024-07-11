@@ -15,17 +15,15 @@ let
         newTranslation(newPoint3D(-10, 0, 0))
     )
 
-    comp2 = newComposition(newRotX(90), newScaling(4.0))
-
+    comp2 = newComposition(newRotation(90, axisX), newScaling(4.0))
     roadBike = newMesh("assets/meshes/roadBike.obj", transformation = comp2, 
                         treeKind = tkOctonary, maxShapesPerLeaf = 40, rgState = 42, rgSeq = 2)
+    scene = newScene(@[roadBike])
 
 echo fmt"Successfully loaded mesh in {cpuTime() - timeStart} seconds."   
 timeStart = cpuTime()
 
-let
-    scene = newScene(@[roadBike])
-    image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
+let image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
 
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."   

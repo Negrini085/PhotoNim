@@ -14,7 +14,7 @@ let
         newTranslation(newPoint3D(-10, 0, 0))
     )
 
-    comp = newComposition(newScaling(0.05), newRotZ(-45))
+    comp = newComposition(newScaling(0.05), newRotation(-45, axisZ))
     mini = newMesh("assets/meshes/minicooper.obj", transformation = comp, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
     scene = newScene(@[mini])
 
