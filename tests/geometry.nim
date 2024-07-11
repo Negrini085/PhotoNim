@@ -275,6 +275,17 @@ suite "transformations":
         check areClose(apply(t2, p), newVec3f(0, 6, 3))
 
 
+    test "Scaling of Normal":
+
+        var p = newNormal(0, 3, 1)
+        
+        # Checking omogeneous scaling
+        check areClose(apply(t1, p), newNormal(0, 3, 1))
+
+        # Checking arbitrary scaling
+        check areClose(apply(t2, p), newNormal(0, 3/2, 1/3).normalize)
+
+
     test "Translation of Vec3f":
         var 
             v1 = newVec3f(0, 0, 0)
