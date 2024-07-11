@@ -7,7 +7,6 @@ from std/osproc import execCmd
 
 
 let 
-    timeStart = cpuTime()
     outFile = "assets/images/examples/meshes/airplane"
     camera = newPerspectiveCamera(
         newPathTracer(numRays = 1, maxDepth = 1), 
@@ -15,10 +14,13 @@ let
         newTranslation(newPoint3D(-10, 0, 0))
     )
 
-    comp2 = newScaling(3e-3)
+    comp2 = newComposition(newScaling(3e-3), newTranslation(eX), newRotation(2, axisX))
     airplane = newMesh("assets/meshes/airplane.obj", transformation = comp2, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
    
     scene = newScene(@[airplane])
+    
+let
+    timeStart = cpuTime()
     image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
 
 
