@@ -356,11 +356,9 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
     let det = mat.det
     if det == 0.0: raise newException(ValueError, "Matrix is not invertible.")
     
-    # Create matrices for each variable by replacing the corresponding column
     var matX, matY, matZ = mat
     for i in 0..<3: (matX[i][0], matY[i][1], matZ[i][2]) = (vec[i], vec[i], vec[i])
 
-    # Solve for each variable
     result[0] = matX.det / det
     result[1] = matY.det / det
     result[2] = matZ.det / det
@@ -392,19 +390,6 @@ proc newTranslation*(vec: Vec3f): Transformation {.inline.} =
 proc newTranslation*(pt: Point3D): Transformation {.inline.} = 
     Transformation(kind: tkTranslation, offset: pt.Vec3f)
 
-#mat: [
-#    [1.0, 0.0, 0.0, vec[0]], 
-#    [0.0, 1.0, 0.0, vec[1]], 
-#    [0.0, 0.0, 1.0, vec[2]], 
-#    [0.0, 0.0, 0.0, 1.0]
-#],
-#matInv: [
-#    [1.0, 0.0, 0.0, -vec[0]], 
-#    [0.0, 1.0, 0.0, -vec[1]], 
-#    [0.0, 0.0, 1.0, -vec[2]], 
-#    [0.0, 0.0, 0.0,  1.0]   
-#]
-
 proc newScaling*(x: SomeNumber): Transformation {.inline.} =
     assert x != 0, "Cannot create a new scaling Transformation with zero as factor."
     Transformation(kind: tkUniformScaling, factor: when x is float32: x else: x.float32)
@@ -413,88 +398,9 @@ proc newScaling*(a, b, c: float32): Transformation {.inline.} =
     assert a != 0 and b != 0 and c != 0, "Cannot create a new scaling Transformation with zero as factor."
     Transformation(kind: tkGenericScaling, factors: (a, b, c))
 
-#proc newScaling*(x: Vec3f): Transformation {.inline.} =
-#    Transformation(
-#        kind: tkScaling,
-#        mat: [
-#            [x[0], 0.0, 0.0, 0.0], 
-#            [0.0, x[1], 0.0, 0.0], 
-#            [0.0, 0.0, x[2], 0.0], 
-#            [0.0, 0.0,  0.0, 1.0]
-#        ],
-#        matInv: [
-#            [1/x[0], 0.0, 0.0, 0.0], 
-#            [0.0, 1/x[1], 0.0, 0.0], 
-#            [0.0, 0.0, 1/x[2], 0.0], 
-#            [0.0,  0.0,  0.0,  1.0]   
-#        ]
-#    )
-#
-
 proc newRotation*(angle: SomeNumber, axis: AxisKind): Transformation {.inline.} = 
     let theta = degToRad(when angle is float32: angle else: angle.float32)
     Transformation(kind: tkRotation, axis: axis, cos: cos(theta), sin: sin(theta))
-
-#    Transformation(
-#        kind: tkRotation,
-#        mat: [
-#            [1.0, 0.0, 0.0, 0.0], 
-#            [0.0,   c,  -s, 0.0], 
-#            [0.0,   s,   c, 0.0], 
-#            [0.0, 0.0, 0.0, 1.0]
-#        ],
-#        matInv: [
-#            [1.0, 0.0, 0.0, 0.0], 
-#            [0.0,   c,   s, 0.0], 
-#            [0.0,  -s,   c, 0.0], 
-#            [0.0, 0.0, 0.0, 1.0]
-#        ]
-#    )
-#
-#
-#proc newRotY*(angle: SomeNumber): Transformation = 
-#    let
-#        theta = degToRad(when angle is float32: angle else: angle.float32)
-#        (c, s) = (cos(theta), sin(theta))
-#
-#    Transformation(
-#        kind: tkRotation, 
-#        mat: [
-#            [  c, 0.0,   s, 0.0], 
-#            [0.0, 1.0, 0.0, 0.0], 
-#            [ -s, 0.0,   c, 0.0], 
-#            [0.0, 0.0, 0.0, 1.0]
-#        ],
-#        matInv: [
-#            [  c, 0.0,  -s, 0.0], 
-#            [0.0, 1.0, 0.0, 0.0], 
-#            [  s, 0.0,   c, 0.0], 
-#            [0.0, 0.0, 0.0, 1.0]
-#        ]
-#    )
-#
-#
-#proc newRotZ*(angle: SomeNumber): Transformation = 
-#    let
-#        theta = degToRad(when angle is float32: angle else: angle.float32)
-#        (c, s) = (cos(theta), sin(theta))
-#
-#    Transformation(
-#        kind: tkRotation,
-#        mat: [
-#            [  c,  -s, 0.0, 0.0], 
-#            [  s,   c, 0.0, 0.0], 
-#            [0.0, 0.0, 1.0, 0.0], 
-#            [0.0, 0.0, 0.0, 1.0]
-#        ],
-#        matInv: [
-#            [  c,   s, 0.0, 0.0], 
-#            [ -s,   c, 0.0, 0.0], 
-#            [0.0, 0.0, 1.0, 0.0], 
-#            [0.0, 0.0, 0.0, 1.0]
-#        ]
-#    )
-#
 
 proc `@`*(a, b: Transformation): Transformation =
     if a.kind == tkIdentity: return b
@@ -515,7 +421,6 @@ proc `@`*(a, b: Transformation): Transformation =
     else: transforms.add a; transforms.add b
 
     Transformation(kind: tkComposition, transformations: transforms)
-
 
 proc newComposition*(transformations: varargs[Transformation]): Transformation =
     if transformations.len == 1: return transformations[0]
@@ -541,142 +446,65 @@ proc inverse*(t: Transformation): Transformation =
     of tkRotation: Transformation(kind: tkRotation, axis: t.axis, cos: t.cos, sin: -t.sin)
     
 
-#proc `*`*(t: Transformation, scal: float32): Transformation = 
-#    let kind = t.kind
-#    case kind:
-#    of tkIdentity: 
-#        return Transformation(kind: tkGeneric, mat: Mat4f.id * scal, matInv: Mat4f.id / scal)
-#    of tkGeneric, tkTranslation, tkScaling, tkRotation:
-#        return Transformation(kind: kind, mat: t.mat * scal, matInv: t.matInv / scal)
-#    of tkComposition:
-#        var transfs = newSeq[Transformation](t.transformations.len)
-#        for i in 0..<t.transformations.len: transfs[i] = t.transformations[i] * scal
-#        return Transformation(kind: tkComposition, transformations: transfs)
-#    
-#proc `*`*(scal: float32, transf: Transformation): Transformation {.inline.} = transf * scal
-#
-#proc `/`*(transf: Transformation, scal: float32): Transformation = 
-#    let kind = transf.kind
-#    case kind:
-#    of tkIdentity: 
-#        return Transformation(kind: tkGeneric, mat: Mat4f.id / scal, matInv: Mat4f.id * scal)
-#    of tkGeneric, tkTranslation, tkScaling, tkRotation:
-#        return Transformation(kind: kind, mat: transf.mat / scal, matInv: transf.matInv * scal)
-#    of tkComposition:
-#        var transfs = newSeq[Transformation](transf.transformations.len)
-#        for i in 0..<transf.transformations.len: transfs[i] = transf.transformations[i] / scal
-#        return Transformation(kind: tkComposition, transformations: transfs)
-
-
-# proc apply*[T](t: Transformation, x: T): T =
-#     case t.kind
-#     of tkComposition:
-#         if t.transformations.len == 1: return apply(t.transformations[0], x)
-# 
-#         when T is Normal:
-#             return dot(x, t.transformations.mapIt(it.matInv).foldl(dot(a, b))).toNormal
-#         else:
-#             result = x
-#             for i in countdown(t.transformations.len - 1, 0):
-#                 result = apply(t.transformations[i], result)
-#     
-#     of tkIdentity: return x
-# 
-#     of tkRotation: 
-#         when T is Point3D: 
-#             case t.axis
-#             of axisX: return newPoint3D(x.x, x.y * t.cos - x.z * t.sin, x.y * t.sin + x.z * t.cos)
-#             of axisY: return newPoint3D(x.x * t.cos + x.z * t.sin, x.y, x.z * t.cos - x.x * t.sin)
-#             of axisZ: return newPoint3D(x.x * t.cos - x.y * t.sin, x.x * t.sin + x.y * t.cos, x.z)
-#         elif T is Vec3f:
-#             case t.axis
-#             of axisX: return newVec3f(x[0], x[1] * t.cos - x[2] * t.sin, x[1] * t.sin + x[2] * t.cos)
-#             of axisY: return newVec3f(x[0] * t.cos + x[2] * t.sin, x[1], x[2] * t.cos - x[0] * t.sin)
-#             of axisZ: return newVec3f(x[0] * t.cos - x[1] * t.sin, x[0] * t.sin + x[1] * t.cos, x[2])
-#         elif T is Vec4f:
-#             case t.axis
-#             of axisX: return newVec4f(x[0], x[1] * t.cos - x[2] * t.sin, x[1] * t.sin + x[2] * t.cos, 0)
-#             of axisY: return newVec4f(x[0] * t.cos + x[2] * t.sin, x[1], x[2] * t.cos - x[0] * t.sin, 0)
-#             of axisZ: return newVec4f(x[0] * t.cos - x[1] * t.sin, x[0] * t.sin + x[1] * t.cos, x[2], 0)
-#         elif T is Normal:
-#             case t.axis
-#             of axisX: return newNormal(x.x, x.y * t.cos - x.z * t.sin, x.y * t.sin + x.z * t.cos)
-#             of axisY: return newNormal(x.x * t.cos + x.z * t.sin, x.y, x.z * t.cos - x.x * t.sin)
-#             of axisZ: return newNormal(x.x * t.cos - x.y * t.sin, x.x * t.sin + x.y * t.cos, x.z)
-# 
-#     of tkTranslation: 
-#         when T is Vec4f: return x + t.offset.toVec4
-#         elif T is Vec3f: return x
-#         elif T is Point3D: return x + t.offset
-#         elif T is Normal: return x
-# 
-#     of tkUniformScaling:
-#         when T is Vec4f: return newVec4(x[0] * t.factor, x[1] * t.factor, x[2] * t.factor, x[3])
-#         elif T is Vec3f: return newVec3(x[0] * t.factor, x[1] * t.factor, x[2] * t.factor)
-#         elif T is Point3D: return newPoint3D(x.x * t.factor, x.y * t.factor, x.z * t.factor)
-#         elif T is Normal: return x
-#     
-#     of tkGenericScaling:
-#         when T is Vec4f: return newVec4(x[0] * t.factors.a, x[1] * t.factors.b, x[2] * t.factors.c, x[3])
-#         elif T is Vec3f: return newVec3(x[0] * t.factors.a, x[1] * t.factors.b, x[2] * t.factors.c)
-#         elif T is Point3D: return newPoint3D(x.x * t.factors.a, x.y * t.factors.b, x.z * t.factors.c)
-#         elif T is Normal: return newNormal(x[0] / t.factors.a, x[1] / t.factors.b, x[2] / t.factors.c)
-
-
-proc apply*(t: Transformation, x: Vec2f): T =
+proc apply*(t: Transformation, vec: Vec3f): Vec3f =
     case t.kind
     of tkComposition:
-        if t.transformations.len == 1: return apply(t.transformations[0], x)
-
-        when T is Normal:
-            return dot(x, t.transformations.mapIt(it.matInv).foldl(dot(a, b))).toNormal
-        else:
-            result = x
-            for i in countdown(t.transformations.len - 1, 0):
-                result = apply(t.transformations[i], result)
+        if t.transformations.len == 1: return apply(t.transformations[0], vec)
+        result = vec
+        for i in countdown(t.transformations.len - 1, 0):
+            result = apply(t.transformations[i], result)
     
-    of tkIdentity: return x
+    of tkIdentity: return vec
 
     of tkRotation: 
-        when T is Point3D: 
-            case t.axis
-            of axisX: return newPoint3D(x.x, x.y * t.cos - x.z * t.sin, x.y * t.sin + x.z * t.cos)
-            of axisY: return newPoint3D(x.x * t.cos + x.z * t.sin, x.y, x.z * t.cos - x.x * t.sin)
-            of axisZ: return newPoint3D(x.x * t.cos - x.y * t.sin, x.x * t.sin + x.y * t.cos, x.z)
-        elif T is Vec3f:
-            case t.axis
-            of axisX: return newVec3f(x[0], x[1] * t.cos - x[2] * t.sin, x[1] * t.sin + x[2] * t.cos)
-            of axisY: return newVec3f(x[0] * t.cos + x[2] * t.sin, x[1], x[2] * t.cos - x[0] * t.sin)
-            of axisZ: return newVec3f(x[0] * t.cos - x[1] * t.sin, x[0] * t.sin + x[1] * t.cos, x[2])
-        elif T is Vec4f:
-            case t.axis
-            of axisX: return newVec4f(x[0], x[1] * t.cos - x[2] * t.sin, x[1] * t.sin + x[2] * t.cos, 0)
-            of axisY: return newVec4f(x[0] * t.cos + x[2] * t.sin, x[1], x[2] * t.cos - x[0] * t.sin, 0)
-            of axisZ: return newVec4f(x[0] * t.cos - x[1] * t.sin, x[0] * t.sin + x[1] * t.cos, x[2], 0)
-        elif T is Normal:
-            case t.axis
-            of axisX: return newNormal(x.x, x.y * t.cos - x.z * t.sin, x.y * t.sin + x.z * t.cos)
-            of axisY: return newNormal(x.x * t.cos + x.z * t.sin, x.y, x.z * t.cos - x.x * t.sin)
-            of axisZ: return newNormal(x.x * t.cos - x.y * t.sin, x.x * t.sin + x.y * t.cos, x.z)
+        case t.axis
+        of axisX: return newVec3f(vec[0], vec[1] * t.cos - vec[2] * t.sin, vec[1] * t.sin + vec[2] * t.cos)
+        of axisY: return newVec3f(vec[0] * t.cos + vec[2] * t.sin, vec[1], vec[2] * t.cos - vec[0] * t.sin)
+        of axisZ: return newVec3f(vec[0] * t.cos - vec[1] * t.sin, vec[0] * t.sin + vec[1] * t.cos, vec[2])
 
-    of tkTranslation: 
-        when T is Vec4f: return x + t.offset.toVec4
-        elif T is Vec3f: return x
-        elif T is Point3D: return x + t.offset
-        elif T is Normal: return x
+    of tkTranslation: return vec
+    of tkUniformScaling: return newVec3(vec[0] * t.factor, vec[1] * t.factor, vec[2] * t.factor)
+    of tkGenericScaling: return newVec3(vec[0] * t.factors.a, vec[1] * t.factors.b, vec[2] * t.factors.c)
 
-    of tkUniformScaling:
-        when T is Vec4f: return newVec4(x[0] * t.factor, x[1] * t.factor, x[2] * t.factor, x[3])
-        elif T is Vec3f: return newVec3(x[0] * t.factor, x[1] * t.factor, x[2] * t.factor)
-        elif T is Point3D: return newPoint3D(x.x * t.factor, x.y * t.factor, x.z * t.factor)
-        elif T is Normal: return x
+proc apply*(t: Transformation, pt: Point3D): Point3D =
+    case t.kind
+    of tkComposition:
+        if t.transformations.len == 1: return apply(t.transformations[0], pt)
+
+        result = pt
+        for i in countdown(t.transformations.len - 1, 0):
+            result = apply(t.transformations[i], result)
     
-    of tkGenericScaling:
-        when T is Vec4f: return newVec4(x[0] * t.factors.a, x[1] * t.factors.b, x[2] * t.factors.c, x[3])
-        elif T is Vec3f: return newVec3(x[0] * t.factors.a, x[1] * t.factors.b, x[2] * t.factors.c)
-        elif T is Point3D: return newPoint3D(x.x * t.factors.a, x.y * t.factors.b, x.z * t.factors.c)
-        elif T is Normal: return newNormal(x[0] / t.factors.a, x[1] / t.factors.b, x[2] / t.factors.c)
+    of tkIdentity: return pt
 
+    of tkRotation: 
+        case t.axis
+        of axisX: return newPoint3D(pt.x, pt.y * t.cos - pt.z * t.sin, pt.y * t.sin + pt.z * t.cos)
+        of axisY: return newPoint3D(pt.x * t.cos + pt.z * t.sin, pt.y, pt.z * t.cos - pt.x * t.sin)
+        of axisZ: return newPoint3D(pt.x * t.cos - pt.y * t.sin, pt.x * t.sin + pt.y * t.cos, pt.z)
+
+    of tkTranslation: return pt + t.offset
+    of tkUniformScaling: return newPoint3D(pt.x * t.factor, pt.y * t.factor, pt.z * t.factor)
+    of tkGenericScaling: return newPoint3D(pt.x * t.factors.a, pt.y * t.factors.b, pt.z * t.factors.c)
+
+proc apply*(t: Transformation, norm: Normal): Normal =
+    case t.kind
+    of tkComposition:
+        if t.transformations.len == 1: return apply(t.transformations[0], norm)
+        for tr in t.transformations.mapIt(it.inverse):
+            result = apply(tr, norm)
+    
+    of tkIdentity: return norm
+
+    of tkRotation: 
+        case t.axis
+        of axisX: return newNormal(norm.x, norm.y * t.cos - norm.z * t.sin, norm.y * t.sin + norm.z * t.cos)
+        of axisY: return newNormal(norm.x * t.cos + norm.z * t.sin, norm.y, norm.z * t.cos - norm.x * t.sin)
+        of axisZ: return newNormal(norm.x * t.cos - norm.y * t.sin, norm.x * t.sin + norm.y * t.cos, norm.z)
+
+    of tkTranslation: return norm
+    of tkUniformScaling: return norm
+    of tkGenericScaling: return newNormal(norm.x / t.factors.a, norm.y / t.factors.b, norm.z / t.factors.c)
 
 type Ray* = ref object
     origin*: Point3D
@@ -772,7 +600,6 @@ proc toMat4*(q: Quat): Mat4f =
     result[1][3] = q.j
     result[2][3] = q.k
 
-    # Manually transpose the matrix
     var tmp: float
     for i in 0..3:
         for j in i + 1..3:
