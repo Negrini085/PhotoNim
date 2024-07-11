@@ -63,6 +63,7 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- *(examples)* Nspheres.nim updated.
 - RoadBike example updated.
 - *(HDRImage)* Add HDRImage definitive docs
 - *(Geometry)* Final geometry documentation
