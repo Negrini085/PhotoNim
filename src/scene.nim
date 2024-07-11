@@ -1,79 +1,55 @@
 import geometry, pcg, hdrimage, material
 
-from std/sequtils import toSeq, filterIt, map, mapIt
+from std/sequtils import newSeqWith, toSeq, filterIt, map, mapIt
 
 
 type    
     Scene* = object 
         bgColor*: Color
-        lights*: seq[Light]
-        handlers*: seq[ObjectHandler]
         tree*: BVHTree
+        handlers*: seq[ObjectHandler]
 
-    BVHTree* = tuple[kind: TreeKind, root: BVHNode]
 
     TreeKind* = enum tkBinary = 2, tkTernary = 3, tkQuaternary = 4, tkOctonary = 8
-    
+    BVHTree* = tuple[kind: TreeKind, mspl: int, root: BVHNode]
+
+
     BVHNodeKind* = enum nkBranch, nkLeaf
     BVHNode* = ref object
         aabb*: Interval[Point3D]
         
         case kind*: BVHNodeKind
-        of nkBranch:
-            children*: seq[BVHNode]
-        
-        of nkLeaf: 
-            indexes*: seq[int]
+        of nkBranch: children*: seq[BVHNode]
+        of nkLeaf: indexes*: seq[int]
 
 
-    LightKind* = enum lkPoint, lkSurface
-    Light* = object
-        color: Color
-
-        case kind: LightKind
-        of lkPoint: 
-            point: Point3D
-
-        of lkSurface:
-            handler: ObjectHandler
-
-
-    ObjectHandlerKind = enum hkShape, hkMesh
+    ObjectHandlerKind* = enum hkPoint, hkShape, hkMesh
     ObjectHandler* = ref object
+        isLight*: bool = false
         transformation*: Transformation
+        material*: Material
 
         case kind*: ObjectHandlerKind
-        of hkShape: 
-            shape*: Shape 
-        
-        of hkMesh: 
-            mesh*: Mesh
+        of hkPoint: discard
+        of hkShape: shape*: Shape 
+        of hkMesh: mesh*: Mesh
 
 
     ShapeKind* = enum skAABox, skTriangle, skSphere, skPlane, skCylinder
-    Shape* = object
-        material*: Material
-
+    Shape* = ref object
         case kind*: ShapeKind 
-        of skAABox: 
-            aabb*: Interval[Point3D]
-
-        of skTriangle: 
-            vertices*: seq[Point3D]            
-
-        of skSphere: 
-            radius*: float32
-
+        of skPlane: discard
+        of skAABox: aabb*: Interval[Point3D]
+        of skTriangle: vertices*: seq[Point3D]            
+        of skSphere: radius*: float32
         of skCylinder:
             R*, phiMax*: float32
             zSpan*: Interval[float32]
 
-        of skPlane: discard
 
-
-    Mesh* = ref object
-        shapes*: seq[ObjectHandler]
+    Mesh* = object
         tree*: BVHTree
+        shapes*: seq[ObjectHandler]
 
 
 proc newAABB*(points: seq[Point3D]): Interval[Point3D] =
@@ -112,7 +88,7 @@ proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     of skPlane: (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
     
 
-proc getVertices*(aabb: Interval[Point3D]): seq[Point3D] {.inline.} =
+proc getVertices(aabb: Interval[Point3D]): seq[Point3D] {.inline.} =
     @[
         aabb.min, aabb.max,
         newPoint3D(aabb.min.x, aabb.min.y, aabb.max.z),
@@ -123,7 +99,7 @@ proc getVertices*(aabb: Interval[Point3D]): seq[Point3D] {.inline.} =
         newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z),
     ]
 
-proc getVertices*(shape: Shape): seq[Point3D] {.inline.} = 
+proc getVertices(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
     of skAABox: shape.aabb.getVertices
     of skTriangle: shape.vertices
@@ -132,6 +108,7 @@ proc getVertices*(shape: Shape): seq[Point3D] {.inline.} =
 
 proc getAABB*(handler: ObjectHandler): Interval[Point3D] {.inline.} =
     case handler.kind
+    of hkPoint: (apply(handler.transformation, ORIGIN3D), apply(handler.transformation, ORIGIN3D))
     of hkShape: newAABB handler.shape.getVertices.mapIt(apply(handler.transformation, it))
     of hkMesh: newAABB handler.mesh.tree.root.aabb.getVertices.mapIt(apply(handler.transformation, it))
 
@@ -149,9 +126,8 @@ proc updateCentroids(data: seq[Vec3f], clusters: seq[int], k: int): seq[Vec3f] =
     result = newSeq[Vec3f](k)
 
     var counts = newSeq[int](k)
-    for i, point in data.pairs:
-        result[clusters[i]] += point
-        counts[clusters[i]] += 1
+    for i, point in data.pairs: 
+        result[clusters[i]] += point; counts[clusters[i]] += 1
 
     for i in 0..<k:
         if counts[i] > 0: result[i] /= counts[i].float32
@@ -188,9 +164,9 @@ proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): seq[int] =
         converged = false
 
     while not converged:
+
         result = data.mapIt(it.nearestCentroid(centroids).index)
         tmpCentroids = updateCentroids(data, result, k)
-
         converged = true
         for i in 0..<k:
             if not areClose(centroids[i], tmpCentroids[i], 1.0e-3):
@@ -201,7 +177,7 @@ proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): seq[int] =
 
 
 
-proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, maxShapesPerLeaf: int, rg: var PCG): BVHNode =
+proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): BVHNode =
     if handlers.len == 0: return nil
 
     let handlersAABBs = handlers.mapIt(it.val.getAABB)
@@ -213,23 +189,56 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
             indexes: handlers.mapIt(it.key)
         )
     
-    let clusters = kMeans(handlersAABBs.mapIt(it.getCentroid), kClusters, rg).pairs.toSeq
+    var 
+        rg = newPCG(rgSetUp)
+        clusters = newSeqWith[seq[int]](kClusters, newSeqOfCap[int](handlers.len div kClusters))
+
+    for handlerIdx, clusterIdx in kMeans(handlersAABBs.mapIt(it.getCentroid), kClusters, rg).pairs: 
+        clusters[clusterIdx].add handlerIdx
 
     var childNodes = newSeq[BVHNode](kClusters)
-    for i in 0..<kClusters: 
-        childNodes[i] = newBVHNode(clusters.filterIt(it.val == i).mapIt(handlers[it.key]), kClusters, maxShapesPerLeaf, rg)
+    for i in 0..<kClusters:         
+        childNodes[i] = 
+            if clusters[i].len == 0: nil
+            else: newBVHNode(clusters[i].mapIt(handlers[it]), kClusters, maxShapesPerLeaf, newRandomSetUp(rg.random, rg.random))
 
     BVHNode(
         kind: nkBranch, 
-        aabb: handlersAABBs.getTotalAABB, 
+        aabb: handlersAABBs.getTotalAABB,
         children: childNodes
     )
 
 
-proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], rg: var PCG, treeKind: TreeKind, maxShapesPerLeaf: int = 1): Scene {.inline.} =
+proc newPointLight*(color: Color, position: Point3D): ObjectHandler {.inline.} =
+    ObjectHandler(
+        kind: hkPoint,
+        isLight: true,
+        transformation: newTranslation(position), 
+        material: newMaterial(brdf = nil, newUniformPigment(color))
+    )
+
+proc newSurfaceLight*(color: Color, surface: Shape, transformation = Transformation.id): ObjectHandler {.inline.} =
+    ObjectHandler(
+        kind: hkShape, 
+        isLight: true,
+        transformation: transformation, 
+        shape: surface,
+        material: newMaterial(brdf = nil, newUniformPigment(color))
+    )
+
+proc newSurfaceLight*(color: Color, surface: Mesh, transformation = Transformation.id): ObjectHandler {.inline.} =
+    ObjectHandler(
+        kind: hkMesh, 
+        isLight: true,
+        transformation: transformation, 
+        mesh: surface,
+        material: newMaterial(brdf = nil, newUniformPigment(color))
+    )
+
+proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], rgSetUp: RandomSetUp, treeKind: TreeKind, maxShapesPerLeaf: int = 1): Scene {.inline.} =
     assert handlers.len > 0, "Error! Cannot create a Scene from an empty sequence of ObjectHandlers."
     Scene(
         bgColor: bgColor,
         handlers: handlers,
-        tree: (treeKind, newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rg))
+        tree: (treeKind, maxShapesPerLeaf, newBVHNode(handlers.filterIt(it.kind != hkPoint).pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp))
     )

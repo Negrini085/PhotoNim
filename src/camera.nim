@@ -4,6 +4,11 @@ from std/fenv import epsilon
 from std/strutils import repeat
 from std/terminal import fgWhite, fgRed, fgYellow, fgGreen, eraseLine, styledWrite, resetAttributes
 from std/strformat import fmt
+from std/math import pow
+from std/sequtils import applyIt, filterIt
+
+from std/threadpool import parallel, spawn, spawnX, sync
+# {.experimental.}
 
 
 type
@@ -18,7 +23,9 @@ type
             hitCol*: Color
 
         of rkPathTracer:
-            numRays*, maxDepth*, rouletteLimit*: int
+            directSamples*: int
+            indirectSamples*: int
+            depthLimit*, rouletteLimit*: int
 
 
     CameraKind* = enum
@@ -40,8 +47,8 @@ type
 proc newFlatRenderer*(): Renderer {.inline.} = Renderer(kind: rkFlat)
 proc newOnOffRenderer*(hitCol = WHITE): Renderer {.inline.} = Renderer(kind: rkOnOff, hitCol: hitCol)
 
-proc newPathTracer*(numRays: SomeInteger = 25, maxDepth: SomeInteger = 10, rouletteLimit: SomeInteger = 3): Renderer {.inline.} =
-    Renderer(kind: rkPathTracer, numRays: numRays, maxDepth: maxDepth, rouletteLimit: rouletteLimit)
+proc newPathTracer*(directSamples: SomeInteger = 5, indirectSamples: SomeInteger = 5, depthLimit: SomeInteger = 10, rouletteLimit: SomeInteger = 3): Renderer {.inline.} =
+    Renderer(kind: rkPathTracer, directSamples: directSamples, indirectSamples: indirectSamples, depthLimit: depthLimit, rouletteLimit: rouletteLimit)
 
 
 proc newOrthogonalCamera*(renderer: Renderer, viewport: tuple[width, height: int], transformation = Transformation.id): Camera {.inline.} = 
@@ -75,72 +82,135 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
+proc sampleLights*(scene: Scene, worldRay: Ray, hitHandler: ObjectHandler, worldHitPt: Point3D, hitNormal: Normal): Color =
+    for lightHandler in scene.handlers.filterIt(it.isLight):
+        case lightHandler.kind:
+        of hkPoint:
+            let 
+                lightDir = (worldHitPt - apply(lightHandler.transformation, ORIGIN3D)).Vec3f.normalize
+                lightRay = newRay(worldHitPt, lightDir)
+                lightHit = scene.tree.getClosestHit(scene.handlers, lightRay)
+                distance2 = lightDir.norm2
+            
+            if lightHit.info.val.isNil or pow(lightHit.info.t, 2) <= distance2: continue
+
+            let
+                lightHitPt = lightRay.at(lightHit.info.t)
+                lightHitSurfacePt = lightHit.info.val.shape.getUV(lightHitPt)
+
+                brdfFactor = hitHandler.material.brdf.eval(hitNormal.Vec3f, -lightDir, worldRay.dir)
+                angleFactor = max(0, dot(-lightDir, hitNormal.Vec3f))
+
+            result += lightHandler.material.emittedRadiance.getColor(lightHitSurfacePt) * brdfFactor * angleFactor / distance2
+
+        of hkShape: discard
+            # for _ in 0..<camera.renderer.directSamples:
+                # let
+                #     lightSamplePt = lightHandler.shape.samplePoint(rg)
+                #     lightPos = apply(lightHandler.transformation, lightSamplePt)
+                #     lightDir = (lightPos - worldHitPt).Vec3f.normalize
+                #     lightRay = newRay(worldHitPt, lightDir)
+                #     lightHit = scene.tree.getClosestHit(scene.handlers, lightRay)
+                #     distance2 = (lightPos - worldHitPt).norm2
+
+                # if lightHit.info.val.isNil or pow(lightHit.info.t, 2) > distance2:
+                #     let
+                #         brdfFactor = hitHandler.material.brdf.eval(hitNormal.Vec3f, lightDir, worldRay.dir)
+                #         angleFactor = max(0, dot(lightDir, hitNormal.Vec3f))
+                #         pdf = lightHandler.shape.pdf(worldHitPt, lightPos)
+
+                #     result += (lightHandler.material.emittedRadiance.getColor(Point2D(0.0, 0.0)) * brdfFactor * angleFactor / (pdf * distance2)) / camera.renderer.numLightSamples.float32
+
+        
+        of hkMesh: discard
+
+
 proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color =
-    result = scene.bgColor
     
     case camera.renderer.kind
     of rkOnOff: discard
     of rkFlat: discard
 
     of rkPathTracer: 
-        if (worldRay.depth > camera.renderer.maxDepth): return BLACK
+        if (worldRay.depth > camera.renderer.depthLimit): return BLACK
 
-        let closestHitInfo = scene.tree.getClosestHit(scene.handlers, worldRay)
-        if closestHitInfo.hit.isNil: return result
+        let closestHit = scene.tree.getClosestHit(scene.handlers, worldRay)
+        if closestHit.info.val.isNil: return scene.bgColor
+        
+        if closestHit.info.val.isLight: return BLUE
 
         let 
-            invRay = worldRay.transform(closestHitInfo.hit.transformation.inverse)
-            hitPt = invRay.at(closestHitInfo.t)
-            hitNormal = closestHitInfo.hit.shape.getNormal(hitPt, invRay.dir)
-            surfacePt = closestHitInfo.hit.shape.getUV(hitPt)
-            
-        result = closestHitInfo.hit.shape.material.radiance.getColor(surfacePt)
+            hitSurfacePt = closestHit.info.val.shape.getUV(closestHit.pt)
+            worldHitPt = apply(closestHit.info.val.transformation, closestHit.pt)
+            worldHitNormal = apply(closestHit.info.val.transformation, closestHit.normal)
+        
+        result = closestHit.info.val.material.emittedRadiance.getColor(hitSurfacePt)
+        result += scene.sampleLights(worldRay, closestHit.info.val, worldHitPt, worldHitNormal)
 
-        var hitCol = closestHitInfo.hit.shape.material.brdf.pigment.getColor(surfacePt)
-        if worldRay.depth >= camera.renderer.rouletteLimit:
-            let q = max(0.05, 1 - hitCol.luminosity)
-            if rg.rand > q: hitCol /= (1.0 - q)
-            else: return result
+        # var hitCol = closestHit.info.val.material.brdf.pigment.getColor(hitSurfacePt)
+        # if worldRay.depth >= camera.renderer.rouletteLimit:
+        #     let q = max(0.05, 1 - hitCol.luminosity)
+        #     if rg.rand > q: hitCol /= (1.0 - q)
+        #     else: return result
 
-        if hitCol.luminosity > 0.0:
-            var accumulatedRadiance = BLACK
-            for _ in 0..<camera.renderer.numRays:
-                let 
-                    outDir = closestHitInfo.hit.shape.material.brdf.scatterDir(hitNormal, invRay.dir, rg).normalize
-                    scatteredRay = Ray(
-                        origin: apply(closestHitInfo.hit.transformation, hitPt), 
-                        dir: apply(closestHitInfo.hit.transformation, outDir),
-                        tSpan: (1e-5.float32, Inf.float32),
-                        depth: worldRay.depth + 1
-                    )
+        let hitColor = closestHit.info.val.material.brdf.pigment.getColor(hitSurfacePt)
 
-                accumulatedRadiance += hitCol * camera.sampleRay(scene, scatteredRay, rg)
+        let invNumRays = 1 / camera.renderer.directSamples.float32
+        for _ in 0..<camera.renderer.directSamples:
+            let 
+                outDir = closestHit.info.val.material.brdf.scatterDir(closestHit.normal, closestHit.dir, rg).normalize
+                scatteredRay = Ray(
+                    origin: worldHitPt, 
+                    dir: apply(closestHit.info.val.transformation, outDir),
+                    tSpan: (1e-5.float32, Inf.float32),
+                    depth: worldRay.depth + 1
+                )
 
-            result += accumulatedRadiance / camera.renderer.numRays.float32
+            result += invNumRays * hitColor * camera.sampleRay(scene, scatteredRay, rg)
+
+        
+proc samplePixel(x, y: int, rgSetUp: RandomSetUp, aaSamples: int; camera: Camera, scene: Scene): Color =
+    let aaFactor = 1 / aaSamples.float32
+
+    var rg = newPCG(rgSetUp)
+    for u in 0..<aaSamples:
+        for v in 0..<aaSamples:
+            let ray = camera.fireRay(
+                newPoint2D(
+                    (x.float32 + (u.float32 + rg.rand) * aaFactor) / camera.viewport.width.float32,
+                    1 - (y.float32 + (v.float32 + rg.rand) * aaFactor) / camera.viewport.height.float32
+                )
+            )
+
+            result += camera.sampleRay(scene, ray, rg)
+    
+    result *= pow(aaFactor, 2)
 
 
-proc sample*(camera: Camera; scene: Scene, rg: var PCG, samplesPerSide: int = 1, displayProgress = true): HDRImage =
+proc sample*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, aaSamples: int = 1, displayProgress = true): HDRImage =
+    var rg = newPCG(rgSetUp)
 
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
-
     for y in 0..<camera.viewport.height:
         if displayProgress: displayProgress(y, camera.viewport.height - 1)
-
         for x in 0..<camera.viewport.width:
+            result.setPixel(x, y, samplePixel(x, y, newRandomSetUp(rg.random, rg.random), aaSamples, camera, scene))
 
-            var accumulatedColor = BLACK
-            for u in 0..<samplesPerSide:
-                for v in 0..<samplesPerSide:
-
-                    let ray = camera.fireRay(
-                        newPoint2D(
-                            (x.float32 + (u.float32 + rg.rand) / samplesPerSide.float32) / camera.viewport.width.float32,
-                            1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / camera.viewport.height.float32
-                        )
-                    )
-                    
-                    accumulatedColor += camera.sampleRay(scene, ray, rg)
-
-            result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
-                                    
     if displayProgress: stdout.eraseLine; stdout.resetAttributes
+
+
+proc samples*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, nSamples: int = 1, aaSamples: int = 1, displayProgress = true): HDRImage =
+    result = newHDRImage(camera.viewport.width, camera.viewport.height)
+
+    if nSamples > 1:
+        var rg = newPCG(rgSetUp)
+        for _ in countup(0, nSamples): 
+            spawn stack(
+                addr result, 
+                camera.sample(scene, newRandomSetUp(rg.random, rg.random), aaSamples, displayProgress = false)
+            )
+        
+        sync()
+        result.pixels.applyIt(it / nSamples.float32)
+
+    else: result = camera.sample(scene, rgSetUp, aaSamples, displayProgress = true)

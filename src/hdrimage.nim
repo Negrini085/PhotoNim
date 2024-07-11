@@ -64,10 +64,13 @@ proc setPixel*(img: HDRImage; x, y: int, color: Color) {.inline.} =
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HDRImage"
     img.pixels[img.pixelOffset(x, y)] = color
 
+
+proc stack*(base: ptr HDRImage, sample: HDRImage) =
+    for i in countup(0, sample.pixels.len - 1): 
+        base[].pixels[i] += sample.pixels[i]
+
 proc avLuminosity*(img: HDRImage; eps = epsilon(float32)): float32 {.inline.} =
     pow(10, sum(img.pixels.mapIt(log10(eps + it.luminosity))) / img.pixels.len.float32)
-
-
 proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
 proc clamp(x: Color): Color {.inline.} = newColor(clamp(x.r), clamp(x.g), clamp(x.b))
 

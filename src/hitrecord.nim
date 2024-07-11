@@ -1,10 +1,10 @@
-import geometry, scene
+import geometry, scene, shape
 
-from std/math import sqrt, arctan2, PI
+from std/math import pow, sqrt, arctan2, PI
 from std/fenv import epsilon
-from std/algorithm import sort, SortOrder
-from std/sugar import collect
-from std/sequtils import mapIt
+from std/algorithm import upperBound
+from std/sequtils import mapIt, insert, filterIt
+# from std/strformat import fmt
 
 
 proc getIntersection(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.} =
@@ -27,7 +27,23 @@ proc getIntersection(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.}
     if not worldRay.tspan.contains(result): return Inf
 
 
+type HitInfo[T] = tuple[t: float32, val: T] 
+
+type HitPayload* = ref object
+    info*: HitInfo[ObjectHandler]
+    pt*: Point3D 
+    normal*: Normal
+    dir*: Vec3f
+
+proc `<`[T](a, b: HitInfo[T]): bool {.inline.} = b.t < a.t
+
+proc newHitPayload(hit: ObjectHandler, ray: Ray, t: float32): HitPayload {.inline.} =
+    let hitPt = ray.at(t)
+    HitPayload(info: (t, hit), pt: hitPt, normal: hit.shape.getNormal(hitPt, ray.dir), dir: ray.dir)
+
+
 proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
+
     case shape.kind
     of skAABox:
         let
@@ -47,7 +63,6 @@ proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
 
         result = if shape.aabb.contains(worldInvRay.origin): hitSpan.max else: hitSpan.min
         if not worldInvRay.tspan.contains(result): return Inf
-
 
     of skTriangle:
         let 
@@ -116,49 +131,53 @@ proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
             if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax: return Inf
 
 
-type HitInfo[T] = tuple[hit: T, t: float32]
+proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray): HitPayload =
+    result = HitPayload(info: (Inf.float32, nil), pt: ORIGIN3D, normal: newNormal(0, 0, 0), dir: newVec3f(0, 0, 0))
 
-proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray): HitInfo[ObjectHandler] =
-    result = (nil, Inf.float32)
     if tree.root.isNil: return result
 
-    var nodeStack: seq[HitInfo[BVHNode]] = @[(tree.root, tree.root.aabb.getIntersection(worldRay))]
-    while nodeStack.len > 0:
-        let currentBVH = nodeStack.pop
-        if currentBVH.t > result.t: continue
-        # here break and continue have the same output... 
-        # but the correct output is the one without any of them
+    let tRootHit = tree.root.aabb.getIntersection(worldRay)
+    if tRootHit == Inf: return result
 
-        case currentBVH.hit.kind
+    var 
+        nodesStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int)
+        handlersStack = newSeqOfCap[HitInfo[ObjectHandler]](tree.mspl)
+        currentHitInfo: HitInfo[BVHNode] = (tRootHit, tree.root)
+
+    nodesStack.add currentHitInfo
+
+    while nodesStack.len > 0:
+        currentHitInfo = nodesStack.pop
+        # if currentHitInfo.t >= result.t: break
+        
+        case currentHitInfo.val.kind
         of nkBranch: 
-            let nodesHitInfos: seq[HitInfo[BVHNode]] = collect:
-                for node in currentBVH.hit.children:
-                    if not node.isNil:
-                        let tBoxHit = node.aabb.getIntersection(worldRay)
-                        if tBoxHit < result.t: (node, tBoxHit)
-            
-            if nodesHitInfos.len > 0:
-                nodeStack.add nodesHitInfos
-                nodeStack.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
+            for child in currentHitInfo.val.children:
+                if not child.isNil:
+                    let tBoxHit = child.aabb.getIntersection(worldRay)
+                    if tBoxHit < result.info.t: 
+                        let hitInfo = (tBoxHit, child)
+                        nodesStack.insert(hitInfo, nodesStack.upperBound(hitInfo))
 
         of nkLeaf:
-            var handlersHitInfos: seq[HitInfo[ObjectHandler]] = collect:
-                for handler in currentBVH.hit.indexes.mapIt(handlers[it]):
-                    let tBoxHit = handler.getAABB.getIntersection(worldRay)
-                    if tBoxHit < result.t: (handler, tBoxHit)
+            for handler in currentHitInfo.val.indexes.mapIt(handlers[it]).filterIt(it.kind != hkPoint):
+                let tBoxHit = handler.getAABB.getIntersection(worldRay)
+                if tBoxHit < result.info.t: handlersStack.insert((tBoxHit, handler), handlersStack.upperBound((tBoxHit, handler)))
             
-            if handlersHitInfos.len > 0:
-                handlersHitInfos.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Ascending)
+            while handlersStack.len > 0:
+                let handlerHitInfo = handlersStack.pop
+                if handlerHitInfo.t >= result.info.t: break
+                
+                case handlerHitInfo.val.kind
+                of hkShape: 
+                    let 
+                        invRay = worldRay.transform(handlerHitInfo.val.transformation.inverse)
+                        tShapeHit = handlerHitInfo.val.shape.getLocalIntersection(invRay)
 
-                for (handler, tBoxHit) in handlersHitInfos:
-                    if tBoxHit >= result.t: break
+                    if tShapeHit < result.info.t: result = handlerHitInfo.val.newHitPayload(invRay, tShapeHit)
                     
-                    case handler.kind
-                    of hkShape: 
-                        let tShapeHit = handler.shape.getLocalIntersection(worldRay.transform(handler.transformation.inverse))
-                        if tShapeHit < result.t: result = (handler, tShapeHit)
-                        
-                    of hkMesh: 
-                        let meshHit = handler.mesh.tree.getClosestHit(handler.mesh.shapes, worldRay)
-                        if not meshHit.hit.isNil:
-                            if meshHit.t < result.t: result = meshHit
+                of hkMesh: 
+                    let meshHit = handlerHitInfo.val.mesh.tree.getClosestHit(handlerHitInfo.val.mesh.shapes, worldRay)
+                    if not meshHit.info.val.isNil and meshHit.info.t < result.info.t: result = meshHit
+
+                of hkPoint: discard

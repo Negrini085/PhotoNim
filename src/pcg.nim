@@ -1,8 +1,9 @@
-type PCG* = object 
-    state*, incr*: uint64
+type 
+    PCG* = tuple[state, incr: uint64]
+    RandomSetUp* = tuple[inState, inSeq: uint64]
 
 
-proc random*(gen: var PCG): uint32 =
+proc random*(gen: var PCG): uint64 =
     var 
         oldstate = gen.state
         xorshift = uint32(((oldstate shr 18) xor oldstate) shr 27)
@@ -11,11 +12,13 @@ proc random*(gen: var PCG): uint32 =
     gen.state = oldstate * uint64(6364136223846793005) + gen.incr
     result = ((xorshift shr rot) or (xorshift shl ((-rot) and 31)))
 
-proc newPCG*(inState: uint64 = 42, inSeq: uint64 = 54): PCG = 
-    (result.state, result.incr) = (0.uint64, (inSeq shl 1) or 1)
+proc newPCG*(setUp: RandomSetUp): PCG = 
+    (result.state, result.incr) = (0.uint64, (setUp.inSeq shl 1) or 1)
     discard result.random
-    result.state += inState
+    result.state += setUp.inState
     discard result.random
+
+proc newRandomSetUp*(inState, inSeq: uint64): RandomSetUp {.inline.} = (inState, inSeq)
 
 proc rand*(pcg: var PCG): float32 =
     ## Returns a new random number uniformly distributed over [0, 1]

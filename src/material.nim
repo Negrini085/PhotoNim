@@ -8,18 +8,15 @@ type
 
     Pigment* = object
         case kind*: PigmentKind
-        of pkUniform: 
-            color*: Color
-        of pkTexture: 
-            texture*: HDRImage
-        of pkCheckered:
-            grid*: tuple[c1, c2: Color, nRows, nCols: int]
+        of pkUniform: color*: Color
+        of pkTexture: texture*: HDRImage
+        of pkCheckered: grid*: tuple[c1, c2: Color, nRows, nCols: int]
 
     CookTorranceNDF* = enum ndfGGX, ndfBeckmann
 
     BRDFKind* = enum DiffuseBRDF, SpecularBRDF, CookTorranceBRDF
 
-    BRDF* = object
+    BRDF* = ref object
         pigment*: Pigment
 
         case kind*: BRDFKind
@@ -36,7 +33,7 @@ type
             refractionIndex*: float32
 
         
-    Material* = tuple[brdf: BRDF, radiance: Pigment]
+    Material* = tuple[brdf: BRDF, emittedRadiance: Pigment]
 
 
 proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
@@ -112,7 +109,7 @@ proc GeometricAttenuation(normal, inDir, outDir, midDir: Vec3f): float32 {.inlin
     min(1, 2 * dot(normal, midDir) * min(dot(normal, inDir), dot(normal, outDir)) / dot(inDir, midDir))
 
 
-proc eval*(brdf: BRDF; surfacePoint: Point2D, normal, inDir, outDir: Vec3f): float32 {.inline.} =
+proc eval*(brdf: BRDF; normal, inDir, outDir: Vec3f): float32 {.inline.} =
     case brdf.kind: 
     of DiffuseBRDF: return brdf.reflectance / PI
 
@@ -158,4 +155,5 @@ proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec
         return base[0] * sin(theta) * cos(phi) + base[1] * sin(theta) * sin(phi) + base[2] * cos(theta)
 
 
-proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(BLACK)): Material {.inline.} = (brdf: brdf, radiance: pigment)
+proc newMaterial*(brdf = newDiffuseBRDF(), emittedRadiance = newUniformPigment(BLACK)): Material {.inline.} = 
+    (brdf: brdf, emittedRadiance: emittedRadiance)

@@ -39,19 +39,19 @@ proc loadMesh*(source: string): tuple[nodes: seq[Point3D], edges: seq[int]] =
 
 
 
-proc newMesh*(source: string; material = newMaterial(), transformation: Transformation, treeKind: TreeKind, maxShapesPerLeaf: int, rg: var PCG): ObjectHandler =    
+proc newMesh*(source: string; material = newMaterial(), transformation = Transformation.id, treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): ObjectHandler =    
     let (nodes, edges) = loadMesh(source)
     var shapes = newSeq[ObjectHandler](edges.len div 3)
 
     for i in 0..<edges.len div 3: 
         shapes[i] = newTriangle(
             vertices = [nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]]], 
-            material = material,
-            transformation = transformation    
+            material, transformation
         )
 
     ObjectHandler(
         kind: hkMesh, 
-        mesh: Mesh(shapes: shapes, tree: (treeKind, newBVHNode(shapes.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rg))),
+        mesh: Mesh(shapes: shapes, tree: (treeKind, maxShapesPerLeaf, newBVHNode(shapes.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp))),
+        material: newMaterial(),
         transformation: Transformation.id
     )
