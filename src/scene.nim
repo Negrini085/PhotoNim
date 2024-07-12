@@ -24,17 +24,21 @@ type
 
     HandlerKind* = enum hkShape, hkMesh
     ObjectHandler* = ref object
-        transformation*: Transformation
-        emittedRadiance*: Pigment = newUniformPigment(BLACK)
+        emittedRadiance*: Pigment
         brdf*: BRDF
+        
+        transformation*: Transformation
 
         case kind*: HandlerKind
-        of hkShape: shape*: Shape 
+        of hkShape: 
+            aabb*: Interval[Point3D] 
+            shape*: Shape 
+
         of hkMesh: mesh*: BVHTree
 
 
     ShapeKind* = enum skPlane, skSphere, skAABox, skTriangle, skCylinder
-    Shape* = ref object
+    Shape* = object
         case kind*: ShapeKind 
         of skPlane: discard
         of skSphere: radius*: float32
@@ -72,40 +76,24 @@ proc getCentroid*(aabb: Interval[Point3D]): Vec3f {.inline.} =
     newVec3f((aabb.min.x + aabb.max.x) / 2.0, (aabb.min.y + aabb.max.y) / 2.0, (aabb.min.z + aabb.max.z) / 2.0)
 
 
-proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
-    case shape.kind
-    of skAABox: shape.aabb
-    of skTriangle: newAABB(shape.vertices)
-    of skSphere: (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
-    of skCylinder: (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
-    of skPlane: (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
-    
-
-proc getVertices(aabb: Interval[Point3D]): seq[Point3D] {.inline.} =
-    @[
-        aabb.min, aabb.max,
-        newPoint3D(aabb.min.x, aabb.min.y, aabb.max.z),
-        newPoint3D(aabb.min.x, aabb.max.y, aabb.min.z),
-        newPoint3D(aabb.min.x, aabb.max.y, aabb.max.z),
-        newPoint3D(aabb.max.x, aabb.min.y, aabb.min.z),
-        newPoint3D(aabb.max.x, aabb.min.y, aabb.max.z),
-        newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z),
-    ]
-
-proc getVertices(shape: Shape): seq[Point3D] {.inline.} = 
-    case shape.kind
-    of skAABox: shape.aabb.getVertices
-    of skTriangle: shape.vertices
-    else: shape.getAABB.getVertices
+proc getVertices*(aabb: Interval[Point3D]): seq[Point3D] {.inline.} =
+    result = newSeqOfCap[Point3D](8)
+    result.add aabb.min; result.add aabb.max
+    result.add newPoint3D(aabb.min.x, aabb.min.y, aabb.max.z)
+    result.add newPoint3D(aabb.min.x, aabb.max.y, aabb.min.z)
+    result.add newPoint3D(aabb.min.x, aabb.max.y, aabb.max.z)
+    result.add newPoint3D(aabb.max.x, aabb.min.y, aabb.min.z)
+    result.add newPoint3D(aabb.max.x, aabb.min.y, aabb.max.z)
+    result.add newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z)
 
 
 proc getAABB*(handler: ObjectHandler): Interval[Point3D] {.inline.} =
     case handler.kind
-    of hkShape: newAABB handler.shape.getVertices.mapIt(apply(handler.transformation, it))
-    of hkMesh: newAABB handler.mesh.root.aabb.getVertices.mapIt(apply(handler.transformation, it))
+    of hkShape: handler.aabb
+    of hkMesh: handler.mesh.root.aabb
 
 
-proc nearestCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =
+proc nearestCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =   
     result = (index: 0, sqDist: Inf.float32)
 
     var tmp: float32
@@ -140,9 +128,7 @@ proc kMeansPlusPlusInit(data: seq[Vec3f], k: int, rg: var PCG): seq[Vec3f] =
         var cumulativeDist: float32
         for j, dist in distances.pairs:
             cumulativeDist += dist
-            if cumulativeDist >= target:
-                result[i] = data[j]
-                break
+            if cumulativeDist >= target: result[i] = data[j]; break
 
 
 proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): seq[int] =
@@ -156,7 +142,6 @@ proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): seq[int] =
         converged = false
 
     while not converged:
-
         result = data.mapIt(it.nearestCentroid(centroids).index)
         tmpCentroids = updateCentroids(data, result, k)
         converged = true
@@ -168,18 +153,13 @@ proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): seq[int] =
         centroids = tmpCentroids
 
 
-
 proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): BVHNode =
     if handlers.len == 0: return nil
 
     let handlersAABBs = handlers.mapIt(it.val.getAABB)
     
     if handlers.len <= maxShapesPerLeaf:
-        return BVHNode(
-            kind: nkLeaf, 
-            aabb: handlersAABBs.getTotalAABB, 
-            indexes: handlers.mapIt(it.key)
-        )
+        return BVHNode(kind: nkLeaf, aabb: handlersAABBs.getTotalAABB, indexes: handlers.mapIt(it.key))
     
     var 
         rg = newPCG(rgSetUp)
@@ -201,9 +181,10 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
     )
 
 
+proc newBVHTree(treeKind: TreeKind, maxShapesPerLeaf: int, handlers: seq[ObjectHandler], rgSetUp: RandomSetUp): BVHTree {.inline.} =
+    let root = newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp)
+    (treeKind, maxShapesPerLeaf, root, handlers)
+
 proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): Scene {.inline.} =
     assert handlers.len > 0, "Error! Cannot create a Scene from an empty sequence of ObjectHandlers."
-    Scene(
-        bgColor: bgColor,
-        tree: (treeKind, maxShapesPerLeaf, newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp), handlers)
-    )
+    Scene(bgColor: bgColor, tree: newBVHTree(treeKind, maxShapesPerLeaf, handlers, rgSetUp))

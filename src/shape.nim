@@ -1,27 +1,50 @@
 import geometry, hdrimage, pigment, brdf, scene
 
 from std/math import sgn, floor, arccos, arctan2, PI
+from std/sequtils import mapIt
 
 
-proc newShapeHandler(shape: Shape, brdf: BRDF, emittedRadiance: Pigment, transformation: Transformation): ObjectHandler {.inline.} =
-    ObjectHandler(kind: hkShape, transformation: transformation, shape: shape, brdf: brdf, emittedRadiance: emittedRadiance)
+proc getAABB(shape: Shape): Interval[Point3D] {.inline.} =
+    case shape.kind
+    of skAABox: shape.aabb
+    of skTriangle: newAABB(shape.vertices)
+    of skSphere: (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
+    of skCylinder: (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
+    of skPlane: (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
+    
+proc getVertices(shape: Shape): seq[Point3D] {.inline.} = 
+    case shape.kind
+    of skAABox: shape.aabb.getVertices
+    of skTriangle: shape.vertices
+    else: shape.getAABB.getVertices
 
-proc newSphere*(center: Point3D, radius: float32; brdf: BRDF, emittedRadiance = newUniformPigment(WHITE)): ObjectHandler {.inline.} =   
+
+proc newShapeHandler*(shape: Shape, brdf: BRDF, emittedRadiance: Pigment, transformation: Transformation): ObjectHandler {.inline.} =
+    ObjectHandler(
+        kind: hkShape, 
+        aabb: newAABB shape.getVertices.mapIt(apply(transformation, it)),
+        transformation: transformation, 
+        shape: shape, 
+        brdf: brdf, emittedRadiance: emittedRadiance
+    )
+
+
+proc newSphere*(center: Point3D, radius: float32; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK)): ObjectHandler {.inline.} =   
     newShapeHandler(Shape(kind: skSphere, radius: radius), brdf, emittedRadiance, if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
 
-proc newUnitarySphere*(center: Point3D; brdf: BRDF, emittedRadiance = newUniformPigment(WHITE)): ObjectHandler {.inline.} = 
+proc newUnitarySphere*(center: Point3D; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK)): ObjectHandler {.inline.} = 
     newShapeHandler(Shape(kind: skSphere, radius: 1.0), brdf, emittedRadiance, if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
 
-proc newPlane*(brdf: BRDF, emittedRadiance = newUniformPigment(WHITE), transformation = Transformation.id): ObjectHandler {.inline.} = 
+proc newPlane*(brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} = 
     newShapeHandler(Shape(kind: skPlane), brdf, emittedRadiance, transformation)
 
-proc newBox*(aabb: Interval[Point3D], brdf: BRDF, emittedRadiance = newUniformPigment(WHITE), transformation = Transformation.id): ObjectHandler {.inline.} =
+proc newBox*(aabb: Interval[Point3D], brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} =
     newShapeHandler(Shape(kind: skAABox, aabb: aabb), brdf, emittedRadiance, transformation)
 
-proc newTriangle*(vertices: array[3, Point3D]; brdf: BRDF, emittedRadiance = newUniformPigment(WHITE), transformation = Transformation.id): ObjectHandler {.inline.} = 
+proc newTriangle*(vertices: array[3, Point3D]; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} = 
     newShapeHandler(Shape(kind: skTriangle, vertices: @vertices), brdf, emittedRadiance, transformation)
 
-proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; brdf: BRDF, emittedRadiance = newUniformPigment(WHITE), transformation = Transformation.id): ObjectHandler {.inline.} =
+proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} =
     newShapeHandler(Shape(kind: skCylinder, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), brdf, emittedRadiance, transformation)
 
 

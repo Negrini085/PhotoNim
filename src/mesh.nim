@@ -3,7 +3,7 @@ import geometry, pcg, hdrimage, pigment, brdf, scene, shape
 from std/streams import newFileStream, atEnd, readLine
 from std/strutils import parseInt, parseFloat, isEmptyOrWhitespace, splitWhitespace, rsplit
 from std/strformat import fmt
-from std/sequtils import toSeq
+from std/sequtils import toSeq, mapIt
 
 
 proc loadMesh*(source: string): tuple[nodes: seq[Point3D], edges: seq[int]] = 
@@ -46,12 +46,15 @@ proc newMesh*(source: string, treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp
     for i in 0..<edges.len div 3: 
         shapes[i] = newTriangle(
             vertices = [nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]]], 
-            brdf, emittedRadiance, transformation
+            brdf, emittedRadiance, 
+            transformation
         )
+    
+    let root = newBVHNode(shapes.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp)
 
     ObjectHandler(
         kind: hkMesh, 
         brdf: brdf, emittedRadiance: emittedRadiance,
         transformation: Transformation.id,
-        mesh: (treeKind, maxShapesPerLeaf, newBVHNode(shapes.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp), shapes)
+        mesh: (treeKind, maxShapesPerLeaf, root, shapes)
     )

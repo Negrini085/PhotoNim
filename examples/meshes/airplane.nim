@@ -6,10 +6,10 @@ from std/osproc import execCmd
 
 
 let 
-    nSamples: int = 1
-    aaSamples: int = 1
-    nRays: int = 10
-    depthLimit: int = 1
+    nSamples: int = 10
+    aaSamples: int = 2
+    nRays: int = 5
+    depthLimit: int = 4
     rrLimit: int = 3
     rgSetUp = newRandomSetUp(67, 4)
     outFile = "assets/images/examples/meshes/airplane.png"
@@ -22,7 +22,7 @@ let
     lamp = newBox(
         (newPoint3D(0.5, -0.5, 1.9), newPoint3D(1.5, 0.5, 1.999)), 
         brdf = nil,
-        emittedRadiance = newUniformPigment(BLUE)
+        emittedRadiance = newUniformPigment(WHITE)
     ) 
 
     uwall = newBox(
@@ -72,10 +72,11 @@ let
 var timeStart = cpuTime()
 let airplane = newMesh(
     source = "assets/meshes/airplane.obj", 
-    treeKind = tkQuaternary, 
+    treeKind = tkOctonary, 
     maxShapesPerLeaf = 4, 
     newRandomSetUp(rg.random, rg.random),
-    brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
+    brdf = newDiffuseBRDF(newUniformPigment(newColor(0.8, 0.6, 0.2))),
+    # emittedRadiance = newUniformPigment(newColor(0.8, 0.6, 0.2)),
     transformation = newComposition(
         newTranslation(-0.3.float32 * eX - eY), 
         newRotation(30, axisZ), newRotation(20, axisY), newRotation(10, axisX), 
@@ -84,7 +85,6 @@ let airplane = newMesh(
 )
 
 echo fmt"Successfully loaded mesh in {cpuTime() - timeStart} seconds"
-echo fmt"Mesh AABB: {airplane.getAABB}"   
 timeStart = cpuTime()
 
 handlers.add lamp
@@ -102,8 +102,8 @@ let
     scene = newScene(
         bgColor = BLACK, 
         handlers = handlers, 
-        treeKind = tkBinary, 
-        maxShapesPerLeaf = 3,
+        treeKind = tkOctonary, 
+        maxShapesPerLeaf = 2,
         newRandomSetUp(rg.random, rg.random)
     )
 
@@ -111,7 +111,7 @@ let
         renderer = newPathTracer(nRays, depthLimit, rrLimit), 
         viewport = (600, 600), 
         distance = 1.0, 
-        transformation = newTranslation(newPoint3D(-1.0, 0.0, 0.2))
+        transformation = newTranslation(newPoint3D(-1.0, 0, 0))
     )
 
     image = camera.samples(scene, newRandomSetUp(rg.random, rg.random), nSamples, aaSamples)
@@ -119,5 +119,5 @@ let
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."   
 
-image.savePNG(outFile & ".png", 0.18, 1.0, 0.1)
-discard execCmd fmt"open {outFile}.png"
+image.savePNG(outFile, 0.18, 1.0, 0.1)
+discard execCmd fmt"open {outFile}"

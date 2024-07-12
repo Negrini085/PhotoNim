@@ -3,7 +3,7 @@ import geometry, scene
 from std/math import sqrt, arctan2, PI
 from std/fenv import epsilon
 from std/algorithm import sort, SortOrder
-from std/sequtils import mapIt
+from std/sequtils import mapIt, keepItIf
 
 
 proc getIntersection(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.} =
@@ -133,7 +133,7 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
     if tRootHit == Inf: return result
 
     var 
-        nodesStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int * tree.kind.int)
+        nodesStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int)
         handlersStack = newSeqOfCap[HitInfo[ObjectHandler]](tree.mspl)
         currentNodeInfo: HitInfo[BVHNode]
 
@@ -157,7 +157,6 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
                 of nkBranch: nodesStack.add (insideNode, -1.0.float32)
                 of nkLeaf:
                     for handler in insideNode.indexes.mapIt(tree.handlers[it]):
-                        if handler.brdf.isNil: continue
                         let tBoxHit = handler.getAABB.getIntersection(worldRay)
                         if tBoxHit < result.info.t: handlersStack.add((handler, tBoxHit))
 
@@ -177,7 +176,6 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
                             let meshHit = currentHandlerInfo.hit.mesh.getClosestHit(worldRay)
                             if not meshHit.info.hit.isNil and meshHit.info.t < result.info.t: result = meshHit
 
-
             for childNode in outsiderNodes:
                 if childNode.isNil: continue
                 let tBoxHit = childNode.aabb.getIntersection(worldRay)
@@ -185,10 +183,8 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
                                
             nodesStack.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
 
-
         of nkLeaf:
             for handler in currentNodeInfo.hit.indexes.mapIt(tree.handlers[it]):
-                if handler.brdf.isNil: continue
                 let tBoxHit = handler.getAABB.getIntersection(worldRay)
                 if tBoxHit < result.info.t: handlersStack.add((handler, tBoxHit))
             
@@ -204,8 +200,12 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
                         invRay = worldRay.transform(currentHandlerInfo.hit.transformation.inverse)
                         tShapeHit = currentHandlerInfo.hit.shape.getLocalIntersection(invRay)
 
-                    if tShapeHit < result.info.t: result = currentHandlerInfo.hit.newHitPayload(invRay, tShapeHit)
+                    if tShapeHit < result.info.t: 
+                        result = currentHandlerInfo.hit.newHitPayload(invRay, tShapeHit)
                     
                 of hkMesh:
                     let meshHit = currentHandlerInfo.hit.mesh.getClosestHit(worldRay)
-                    if not meshHit.info.hit.isNil and meshHit.info.t < result.info.t: result = meshHit
+                    if not meshHit.info.hit.isNil and meshHit.info.t < result.info.t:
+                        result = meshHit
+
+        # nodesStack.keepItIf(it.t < result.info.t)

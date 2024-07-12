@@ -363,7 +363,6 @@ proc solve*(mat: Mat3f, vec: Vec3f): Vec3f {.raises: ValueError.} =
 
 
 type 
-
     AxisKind* = enum axisX = 0, axisY = 1, axisZ = 2
 
     TransformationKind* = enum
@@ -373,12 +372,13 @@ type
         case kind*: TransformationKind
         of tkComposition: transformations*: seq[Transformation]
         of tkIdentity: discard
-        of tkTranslation: offset*: Vec3f
         of tkUniformScaling: factor*: float32
         of tkGenericScaling: factors*: tuple[a, b, c: float32]
+        of tkTranslation: offset*: Vec3f
         of tkRotation: 
             axis*: AxisKind
             sin*, cos*: float32
+
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
 
@@ -454,15 +454,15 @@ proc apply*(t: Transformation, vec: Vec3f): Vec3f =
     
     of tkIdentity: return vec
 
+    of tkUniformScaling: return newVec3(vec[0] * t.factor, vec[1] * t.factor, vec[2] * t.factor)
+    of tkGenericScaling: return newVec3(vec[0] * t.factors.a, vec[1] * t.factors.b, vec[2] * t.factors.c)
+    of tkTranslation: return vec
+
     of tkRotation: 
         case t.axis
         of axisX: return newVec3f(vec[0], vec[1] * t.cos - vec[2] * t.sin, vec[1] * t.sin + vec[2] * t.cos)
         of axisY: return newVec3f(vec[0] * t.cos + vec[2] * t.sin, vec[1], vec[2] * t.cos - vec[0] * t.sin)
         of axisZ: return newVec3f(vec[0] * t.cos - vec[1] * t.sin, vec[0] * t.sin + vec[1] * t.cos, vec[2])
-
-    of tkTranslation: return vec
-    of tkUniformScaling: return newVec3(vec[0] * t.factor, vec[1] * t.factor, vec[2] * t.factor)
-    of tkGenericScaling: return newVec3(vec[0] * t.factors.a, vec[1] * t.factors.b, vec[2] * t.factors.c)
 
 proc apply*(t: Transformation, pt: Point3D): Point3D =
     case t.kind
@@ -506,6 +506,7 @@ proc apply*(t: Transformation, norm: Normal): Normal =
     of tkUniformScaling: return norm
     of tkGenericScaling: 
         return newNormal(norm.x / t.factors.a, norm.y / t.factors.b, norm.z / t.factors.c)
+
 
 type Ray* = ref object
     origin*: Point3D

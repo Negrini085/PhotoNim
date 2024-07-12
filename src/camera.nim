@@ -86,7 +86,10 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
     of rkFlat: 
         let closestHit = scene.tree.getClosestHit(worldRay)
         if closestHit.info.hit.isNil: return scene.bgColor
-        # else: return closestHit.info.hit.pigment.getColor(closestHit.info.hit.shape.getUV(closestHit.pt))
+        elif closestHit.info.hit.brdf.isNil: 
+            return closestHit.info.hit.emittedRadiance.getColor(closestHit.info.hit.shape.getUV(closestHit.pt))
+        else: 
+            return closestHit.info.hit.brdf.pigment.getColor(closestHit.info.hit.shape.getUV(closestHit.pt))
 
     of rkPathTracer: 
         if (worldRay.depth > camera.renderer.depthLimit): return BLACK
@@ -109,7 +112,7 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
             if rg.rand > q: hitColor /= (1.0 - q)
             else: return result
 
-        let invNRays = 1 / camera.renderer.nRays.float32
+        let nRaysInv = 1 / camera.renderer.nRays.float32
         for _ in 0..<camera.renderer.nRays:
             let 
                 outDir = closestHit.info.hit.brdf.scatterDir(hitNormal, closestHit.rayDir, rg).normalize
@@ -120,7 +123,7 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
                     depth: worldRay.depth + 1
                 )
 
-            result += invNRays * hitColor * camera.sampleRay(scene, scatteredRay, rg)
+            result += nRaysInv * hitColor * camera.sampleRay(scene, scatteredRay, rg)
 
 
 proc samplePixel(x, y: int, rgSetUp: RandomSetUp, aaSamples: int; camera: Camera, scene: Scene): Color =
