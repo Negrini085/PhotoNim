@@ -190,19 +190,9 @@ proc inShape*(shape: Shape, pt: Point3D): bool =
         if in1 and in2:
             return true
         return false
-    
+
     of skTriangularMesh: discard
     of skTriangle: discard
-
-
-proc inAllShapes*(shHand: seq[ShapeHandler], pt: Point3D): bool = 
-    # Procedure to check wether a point is in all shapes or not
-    
-    for i in shHand:
-        if not i.shape.inShape(i.transformation.inverse.apply(pt)):
-            return false
-    
-    return true
 
 
 proc getUV*(shape: Shape; pt: Point3D): Point2D = 
