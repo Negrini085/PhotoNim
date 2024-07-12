@@ -422,6 +422,26 @@ suite "transformations":
         check areClose(apply(comp, vec), newVec3f(1, -3, 2),eps = 1e-6)
 
 
+    test "Composition on Normal":
+
+        var
+            sc = newScaling(1, 1/2, 1/3)
+            rotx = newRotation(90, axisX)
+            rotz = newRotation(90, axisZ)
+            
+            comp: Transformation
+            norm = newNormal(1, 2, 3)
+
+        comp = t2 @ sc
+        check areClose(apply(comp, norm), newNormal(1, 2, 3), eps = 1e-6)
+
+        comp = t3 @ rotx
+        check areClose(apply(comp, norm), newNormal(1, -3, 2),eps = 1e-6)
+
+        comp = rotz @ rotx
+        check areClose(apply(comp, norm), newNormal(3, 1, 2),eps = 1e-6)
+
+
 #-------------------------------------------#
 #       Orthonormal basis test suite        #
 #-------------------------------------------#

@@ -491,8 +491,10 @@ proc apply*(t: Transformation, norm: Normal): Normal =
     case t.kind
     of tkComposition:
         if t.transformations.len == 1: return apply(t.transformations[0], norm)
-        for tr in t.transformations.mapIt(it.inverse):
-            result = apply(tr, norm)
+        result = norm
+        for i in countdown(t.transformations.len-1, 0):
+            result = apply(t.transformations[i], result)
+
     
     of tkIdentity: return norm
 
@@ -504,7 +506,8 @@ proc apply*(t: Transformation, norm: Normal): Normal =
 
     of tkTranslation: return norm
     of tkUniformScaling: return norm
-    of tkGenericScaling: return newNormal(norm.x / t.factors.a, norm.y / t.factors.b, norm.z / t.factors.c)
+    of tkGenericScaling: 
+        return newNormal(norm.x / t.factors.a, norm.y / t.factors.b, norm.z / t.factors.c)
 
 type Ray* = ref object
     origin*: Point3D
