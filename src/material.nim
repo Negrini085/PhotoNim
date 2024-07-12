@@ -28,7 +28,7 @@ type
         of SpecularBRDF:
             thresholdAngle*: float32
 
-    Material* = tuple[brdf: BRDF, radiance: Pigment]
+    Material* = tuple[brdf: BRDF, emittedRadiance: Pigment]
 
 
 proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
@@ -100,4 +100,4 @@ proc scatterDir*(brdf: BRDF, hitDir: Vec3f, hitNormal: Normal, rg: var PCG): Vec
     of SpecularBRDF: hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
 
 
-proc newMaterial*(brdf = newDiffuseBRDF(), pigment = newUniformPigment(WHITE)): Material {.inline.} = (brdf: brdf, radiance: pigment)
+proc newMaterial*(brdf = newDiffuseBRDF(), emittedRadiance = newUniformPigment(WHITE)): Material {.inline.} = (brdf: brdf, emittedRadiance: emittedRadiance)

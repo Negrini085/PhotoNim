@@ -1,3 +1,4 @@
 docs/_site/
 docs/Gemfile.lock
 examples/**/frames
+examples/cornell/frames

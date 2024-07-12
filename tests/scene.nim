@@ -37,7 +37,7 @@ suite "AABox & AABB":
         check areClose(box1.shape.aabb.min, ORIGIN3D)
         check areClose(box1.shape.aabb.max, newPoint3D(1, 2, 3))
         check box1.shape.material.brdf.kind == DiffuseBRDF
-        check box1.shape.material.radiance.kind == pkUniform
+        check box1.shape.material.emittedRadiance.kind == pkUniform
 
         check box1.transformation.kind == tkIdentity
 
@@ -46,9 +46,10 @@ suite "AABox & AABB":
         check areClose(box2.shape.aabb.min, ORIGIN3D)
         check areClose(box2.shape.aabb.max, newPoint3D(1, 2, 3))
         check box2.shape.material.brdf.kind == SpecularBRDF
-        check box2.shape.material.radiance.kind == pkUniform
+        check box2.shape.material.emittedRadiance.kind == pkUniform
 
-        check areClose(box2.transformation.mat, newTranslation(eX).mat)
+        check box2.transformation.kind == tkTranslation
+        check areClose(box2.transformation.offset, eX)
 
 
     
@@ -207,14 +208,15 @@ suite "Sphere":
     test "newUnitarySphere proc":
         # Checking newUnitarySphere proc
         check usphere.shape.radius == 1.0
-        check areClose(usphere.transformation.mat, newTranslation(eX).mat)
+        check usphere.transformation.kind == tkTranslation
+        check areClose(usphere.transformation.offset, eX)
 
         check usphere.shape.material.brdf.kind == SpecularBRDF
-        check usphere.shape.material.radiance.kind == pkCheckered 
-        check usphere.shape.material.radiance.grid.nCols == 2.int
-        check usphere.shape.material.radiance.grid.nRows == 2.int
-        check areClose(usphere.shape.material.radiance.grid.c1, BLACK)
-        check areClose(usphere.shape.material.radiance.grid.c2, WHITE)
+        check usphere.shape.material.emittedRadiance.kind == pkCheckered 
+        check usphere.shape.material.emittedRadiance.grid.nCols == 2.int
+        check usphere.shape.material.emittedRadiance.grid.nRows == 2.int
+        check areClose(usphere.shape.material.emittedRadiance.grid.c1, BLACK)
+        check areClose(usphere.shape.material.emittedRadiance.grid.c2, WHITE)
 
 
     test "newSphere proc":
@@ -223,8 +225,8 @@ suite "Sphere":
         check sphere.transformation.kind == tkIdentity
 
         check sphere.shape.material.brdf.kind == DiffuseBRDF
-        check sphere.shape.material.radiance.kind == pkUniform
-        check areClose(sphere.shape.material.radiance.color, WHITE)
+        check sphere.shape.material.emittedRadiance.kind == pkUniform
+        check areClose(sphere.shape.material.emittedRadiance.color, WHITE)
 
     
     test "getNormal proc":
@@ -333,11 +335,11 @@ suite "Triangle":
         check areClose(tri1.shape.vertices[2], eZ.Point3D)
 
         check tri1.shape.material.brdf.kind == SpecularBRDF
-        check tri1.shape.material.radiance.kind == pkCheckered
-        check tri1.shape.material.radiance.grid.nCols == 3
-        check tri1.shape.material.radiance.grid.nRows == 3
-        check areClose(tri1.shape.material.radiance.grid.c1, WHITE)
-        check areClose(tri1.shape.material.radiance.grid.c2, BLACK)
+        check tri1.shape.material.emittedRadiance.kind == pkCheckered
+        check tri1.shape.material.emittedRadiance.grid.nCols == 3
+        check tri1.shape.material.emittedRadiance.grid.nRows == 3
+        check areClose(tri1.shape.material.emittedRadiance.grid.c1, WHITE)
+        check areClose(tri1.shape.material.emittedRadiance.grid.c2, BLACK)
 
 
         # Triangle 2 --> Transformation is translation of (1, 2, 3)
@@ -346,8 +348,8 @@ suite "Triangle":
         check areClose(tri2.shape.vertices[2], eZ.Point3D)
 
         check tri2.shape.material.brdf.kind == DiffuseBRDF
-        check tri2.shape.material.radiance.kind == pkUniform
-        check areClose(tri2.shape.material.radiance.color, WHITE)
+        check tri2.shape.material.emittedRadiance.kind == pkUniform
+        check areClose(tri2.shape.material.emittedRadiance.color, WHITE)
     
 
     test "getNormal proc":
@@ -452,8 +454,8 @@ suite "Cylinder":
         check cyl1.shape.zSpan.min == 0.0 and cyl1.shape.zSpan.max == 1.0
 
         check cyl1.shape.material.brdf.kind == DiffuseBRDF
-        check cyl1.shape.material.radiance.kind == pkUniform
-        check areClose(cyl1.shape.material.radiance.color, WHITE)
+        check cyl1.shape.material.emittedRadiance.kind == pkUniform
+        check areClose(cyl1.shape.material.emittedRadiance.color, WHITE)
 
         check cyl1.transformation.kind == tkIdentity
     
@@ -464,14 +466,14 @@ suite "Cylinder":
         check cyl2.shape.zSpan.min == 0.0 and cyl2.shape.zSpan.max == 1.0
 
         check cyl2.shape.material.brdf.kind == SpecularBRDF
-        check cyl2.shape.material.radiance.kind == pkCheckered
-        check cyl2.shape.material.radiance.grid.nRows == 2
-        check cyl2.shape.material.radiance.grid.nCols == 2
-        check areClose(cyl2.shape.material.radiance.grid.c1, WHITE)
-        check areClose(cyl2.shape.material.radiance.grid.c2, BLACK)
+        check cyl2.shape.material.emittedRadiance.kind == pkCheckered
+        check cyl2.shape.material.emittedRadiance.grid.nRows == 2
+        check cyl2.shape.material.emittedRadiance.grid.nCols == 2
+        check areClose(cyl2.shape.material.emittedRadiance.grid.c1, WHITE)
+        check areClose(cyl2.shape.material.emittedRadiance.grid.c2, BLACK)
 
         check cyl2.transformation.kind == tkTranslation
-        check areClose(cyl2.transformation.mat, newTranslation(eZ).mat)
+        check areClose(cyl2.transformation.offset, eZ)
 
 
     test "getNormal proc":
