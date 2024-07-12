@@ -731,7 +731,7 @@ suite "HitPayload":
         check areClose(hitPayload.get.ray.dir, eY)
         check areClose(hitPayload.get.ray.origin, newPoint3D(0, 1, 0))
 
-        # Second ray ---> Origin: (0, 1, 0), Direction: eX
+        # Second ray ---> Origin: (4, 1, 0), Direction: -eX
         # We should intersection in (1, 1, 0)
         hitPayload = getHitPayload(csgInt, ray2)
         check hitPayload.isSome
@@ -743,6 +743,50 @@ suite "HitPayload":
         # Third ray ---> Origin: (1, 3, 6), Direction: -eZ
         # We should get no intersection
         check not getHitPayload(csgInt, ray3).isSome
+
+
+    test "getAllHitPayload (CSGInt)":
+        # Checking getAllHitPayload on CSGInt
+        var 
+            sph1 = newSphere(newPoint3D(0, 1, 0), 2)
+            sph2 = newSphere(newPoint3D(0, -1, 0), 2)
+            csgInt = newCSGInt(sph1, sph2)
+
+            ray1 = newRay(ORIGIN3D, eY)
+            ray2 = newRay(newPoint3D(0, 4, 0), -eY)
+            ray3 = newRay(newPoint3D(1, 3, 6), -eZ)
+
+        csgInt = newCSGInt(csgInt, newSphere(newPoint3D(0, 0, 1), 2))
+
+        # First ray ---> Origin: (0, 0, 0), Direction: eY
+        # We should intersection in (0, 1, 0)
+        allHitPayload = getAllHitPayload(csgInt, ray1)
+        check allHitPayload.isSome
+        check allHitPayload.get.len == 1
+        check allHitPayload.get[0].t == 1
+        check allHitPayload.get[0].handler.shape.kind == skSphere
+        check areClose(allHitPayload.get[0].ray.dir, eY)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(0, 1, 0))
+
+        # Second ray ---> Origin: (0, 4, 0), Direction: -eY
+        # We should intersection in (1, 1, 0)
+        allHitPayload = getAllHitPayload(csgInt, ray2)
+        check allHitPayload.isSome
+        check allHitPayload.get.len == 2
+
+        check allHitPayload.get[0].t == 3
+        check allHitPayload.get[0].handler.shape.kind == skSphere
+        check areClose(allHitPayload.get[0].ray.dir, -eY)
+        check areClose(allHitPayload.get[0].ray.origin, newPoint3D(0, 5, 0))
+
+        check allHitPayload.get[1].t == 5
+        check allHitPayload.get[1].handler.shape.kind == skSphere
+        check areClose(allHitPayload.get[1].ray.dir, -eY)
+        check areClose(allHitPayload.get[1].ray.origin, newPoint3D(0, 3, 0))
+
+        # Third ray ---> Origin: (1, 3, 6), Direction: -eZ
+        # We should get no intersection
+        check getAllHitPayload(csgInt, ray3).isNone
 
 
     #----------------------------------#
