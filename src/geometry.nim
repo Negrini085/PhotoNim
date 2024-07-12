@@ -172,10 +172,9 @@ proc toVec3*(a: Vec4f): Vec3f {.inline.} = newVec3(a[0], a[1], a[2])
 proc toVec3*(a: Normal): Vec3f {.inline.} = newVec3(a.x, a.y, a.z)
 
 
-type
-    Interval*[T] = tuple[min, max: T]
+type Interval*[T] = tuple[min, max: T]
 
-proc newInterval*[T](a, b: T): Interval[T] =
+proc newInterval*[T](a, b: T): Interval[T] {.inline.} =
     when T is SomeNumber: 
         result = if a > b: (b, a) else: (a, b)
 

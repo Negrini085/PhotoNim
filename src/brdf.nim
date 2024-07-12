@@ -1,22 +1,15 @@
-import geometry, pcg, hdrimage
+import geometry, pcg, pigment
 
-from std/math import floor, pow, sqrt, exp, ln, sin, cos, arccos, arctan, PI, degToRad
-from std/streams import FileStream, newFileStream, close
+from std/math import pow, sqrt, exp, ln, sin, cos, arctan, PI
+
 
 type
-    PigmentKind* = enum pkUniform, pkTexture, pkCheckered
-
-    Pigment* = object
-        case kind*: PigmentKind
-        of pkUniform: color*: Color
-        of pkTexture: texture*: HDRImage
-        of pkCheckered: grid*: tuple[c1, c2: Color, nRows, nCols: int]
-
     CookTorranceNDF* = enum ndfGGX, ndfBeckmann
 
     BRDFKind* = enum DiffuseBRDF, SpecularBRDF, CookTorranceBRDF
 
     BRDF* = ref object
+        pigment*: Pigment
         case kind*: BRDFKind
         of DiffuseBRDF: reflectance*: float32
         of SpecularBRDF: discard
@@ -27,50 +20,12 @@ type
             roughness*: float32
             refractionIndex*: float32
 
-        
-    Material* = tuple[pigment: Pigment, brdf: BRDF]
 
+proc newDiffuseBRDF*(pigment: Pigment, reflectance = 1.0): BRDF {.inline.} = 
+    BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
 
-proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
-
-proc newTexturePigment*(texture: HDRImage): Pigment {.inline.} = Pigment(kind: pkTexture, texture: texture)
-
-
-proc newTexturePigment*(fname: string): Pigment = 
-    # Procedure to create a texture pigment from file
-    var 
-        str: FileStream
-        img: HDRImage
-
-    try:
-        str = newFileStream(fname, fmRead)
-    except:
-        let msg = "Some problem occured in texture pigment file stream opening"
-        raise newException(CatchableError, msg)
-
-    img = str.readPFM().img
-    Pigment(kind: pkTexture, texture: img)  
-
-proc newCheckeredPigment*(color1, color2: Color, nRows, nCols: int): Pigment {.inline.} = Pigment(kind: pkCheckered, grid: (color1, color2, nRows, nCols))
-
-proc getColor*(pigment: Pigment; uv: Point2D): Color =
-    case pigment.kind: 
-    of pkUniform: pigment.color
-
-    of pkTexture: 
-        var (col, row) = (floor(uv.u * pigment.texture.width.float32).int, floor(uv.v * pigment.texture.height.float32).int)
-        if col >= pigment.texture.width: col = pigment.texture.width - 1
-        if row >= pigment.texture.height: row = pigment.texture.height - 1
-
-        return pigment.texture.getPixel(col, row)
-
-    of pkCheckered:
-        let (col, row) = (floor(uv.u * pigment.grid.nCols.float32).int, floor(uv.v * pigment.grid.nRows.float32).int)
-        return (if (col mod 2) == (row mod 2): pigment.grid.c1 else: pigment.grid.c2)
-
-
-proc newDiffuseBRDF*(reflectance = 1.0): BRDF {.inline.} = BRDF(kind: DiffuseBRDF, reflectance: reflectance)
-proc newSpecularBRDF*(): BRDF {.inline.} = BRDF(kind: SpecularBRDF) 
+proc newSpecularBRDF*(pigment: Pigment): BRDF {.inline.} = 
+    BRDF(kind: SpecularBRDF, pigment: pigment) 
 
 proc newCookTorranceBRDF*(diffuseCoeff: float32 = 0.3, specularCoeff: float32 = 0.7, roughness: float32 = 0.5, refractionIndex: float32 = 1.0, ndf: CookTorranceNDF = CookTorranceNDF.ndfGGX): BRDF =
     assert (diffuseCoeff + specularCoeff <= 1.0)
@@ -143,7 +98,3 @@ proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec
                 of ndfGGX: arctan(brdf.roughness * sqrt(rand) / sqrt(1 - rand))
 
         return base[0] * sin(theta) * cos(phi) + base[1] * sin(theta) * sin(phi) + base[2] * cos(theta)
-
-
-# proc newMaterial*(brdf = newDiffuseBRDF(), emittedRadiance = newUniformPigment(BLACK)): Material {.inline.} = 
-#     (brdf: brdf, emittedRadiance: emittedRadiance)

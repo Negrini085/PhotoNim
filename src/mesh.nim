@@ -1,4 +1,4 @@
-import geometry, pcg, material, scene, shape
+import geometry, pcg, hdrimage, pigment, brdf, scene, shape
 
 from std/streams import newFileStream, atEnd, readLine
 from std/strutils import parseInt, parseFloat, isEmptyOrWhitespace, splitWhitespace, rsplit
@@ -7,9 +7,9 @@ from std/sequtils import toSeq
 
 
 proc loadMesh*(source: string): tuple[nodes: seq[Point3D], edges: seq[int]] = 
-    var istream = newFileStream(source, fmRead)
-
-    if istream.isNil: quit fmt"Error! Cannot open file {source}."
+    var istream =
+        try: newFileStream(source, fmRead)
+        except: quit "Error: something happend while trying to read a texture. " & getCurrentExceptionMsg()
 
     while not istream.atEnd:
 
@@ -39,19 +39,19 @@ proc loadMesh*(source: string): tuple[nodes: seq[Point3D], edges: seq[int]] =
 
 
 
-proc newMesh*(source: string; transformation = Transformation.id, brdf: BRDF, pigment: Pigment; treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): ObjectHandler =    
+proc newMesh*(source: string, treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler =    
     let (nodes, edges) = loadMesh(source)
     var shapes = newSeq[ObjectHandler](edges.len div 3)
 
     for i in 0..<edges.len div 3: 
         shapes[i] = newTriangle(
             vertices = [nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]]], 
-            transformation, brdf, pigment
+            brdf, emittedRadiance, transformation
         )
 
     ObjectHandler(
         kind: hkMesh, 
+        brdf: brdf, emittedRadiance: emittedRadiance,
         transformation: Transformation.id,
-        brdf: brdf, pigment: pigment,
-        mesh: Mesh(shapes: shapes, tree: (treeKind, maxShapesPerLeaf, newBVHNode(shapes.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp)))
+        mesh: (treeKind, maxShapesPerLeaf, newBVHNode(shapes.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp), shapes)
     )

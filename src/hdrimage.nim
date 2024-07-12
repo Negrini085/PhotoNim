@@ -1,6 +1,6 @@
 import geometry
 
-from std/math import sum, pow, log10
+from std/math import sum, pow, log10, floor
 from std/fenv import epsilon 
 from std/sequtils import applyIt, mapIt
 from std/strutils import split, parseFloat, parseInt
@@ -16,6 +16,7 @@ type
     HDRImage* = ref object
         width*, height*: int
         pixels*: seq[Color]
+
 
 proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
 
@@ -65,12 +66,9 @@ proc setPixel*(img: HDRImage; x, y: int, color: Color) {.inline.} =
     img.pixels[img.pixelOffset(x, y)] = color
 
 
-proc stack*(base: ptr HDRImage, sample: HDRImage) =
-    for i in countup(0, sample.pixels.len - 1): 
-        base[].pixels[i] += sample.pixels[i]
-
 proc avLuminosity*(img: HDRImage; eps = epsilon(float32)): float32 {.inline.} =
     pow(10, sum(img.pixels.mapIt(log10(eps + it.luminosity))) / img.pixels.len.float32)
+
 proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
 proc clamp(x: Color): Color {.inline.} = newColor(clamp(x.r), clamp(x.g), clamp(x.b))
 
@@ -82,6 +80,11 @@ proc toneMap*(img: HDRImage; alpha, avLum: float32): HDRImage =
 proc applyToneMap*(img: var HDRImage; alpha, avLum: float32) =
     let lum = if avLum == 0.0: img.avLuminosity else: avLum
     img.pixels.applyIt(clamp(it * (alpha / lum)))
+
+
+proc stack*(base: ptr HDRImage, sample: HDRImage) =
+    for i in countup(0, sample.pixels.len - 1): 
+        base[].pixels[i] += sample.pixels[i]
 
 
 proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 
