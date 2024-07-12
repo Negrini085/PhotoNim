@@ -173,7 +173,7 @@ proc getAllHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[seq[HitP
     of skEllipsoid: 
         var 
             hit: Option[seq[HitPayload]]
-            scal = newScaling(newVec3f(1/handler.shape.axis.a, 1/handler.shape.axis.b, 1/handler.shape.axis.c))
+            scal = newScaling(1/handler.shape.axis.a, 1/handler.shape.axis.b, 1/handler.shape.axis.c)
         
         hit = getAllHitPayload(
             ShapeHandler(shape: Shape(kind: skSphere, radius: 1), transformation: handler.transformation),
@@ -266,7 +266,7 @@ proc getAllHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[seq[HitP
 
         appo = appo.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
         return some appo
-        
+
     of skTriangularMesh: discard
 
 
@@ -400,7 +400,7 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
     of skEllipsoid: 
         var 
             hit: Option[HitPayload]
-            scal = newScaling(newVec3f(1/handler.shape.axis.a, 1/handler.shape.axis.b, 1/handler.shape.axis.c))
+            scal = newScaling(1/handler.shape.axis.a, 1/handler.shape.axis.b, 1/handler.shape.axis.c)
         
         hit = getHitPayload(
             ShapeHandler(shape: Shape(kind: skSphere, radius: 1), transformation: handler.transformation),

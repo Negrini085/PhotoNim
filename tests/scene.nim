@@ -553,7 +553,7 @@ suite "Ellipsoid":
     setup:
         let 
             tr = newTranslation(eZ)
-            comp = newComposition(newRotX(45), newTranslation(eY))
+            comp = newComposition(newRotation(45, axisX), newTranslation(eY))
 
             ell1 = newEllipsoid(1, 2, 3, tr)
             ell2 = newEllipsoid(3.0, 2.0, 1.0, comp)
@@ -575,7 +575,7 @@ suite "Ellipsoid":
         check areClose(ell1.shape.axis.c, 3.0)
 
         check ell1.transformation.kind == tkTranslation
-        check areClose(ell1.transformation.mat, newTranslation(eZ).mat)
+        check areClose(ell1.transformation.offset, eZ)
     
         # Second Ellipsoid
         check ell2.shape.kind == skEllipsoid
@@ -585,8 +585,12 @@ suite "Ellipsoid":
 
         check ell2.transformation.kind == tkComposition
         check ell2.transformation.transformations.len == 2
-        check areClose(ell2.transformation.transformations[1].mat, newTranslation(eY).mat)
-        check areClose(ell2.transformation.transformations[0].mat, newRotX(45).mat, eps = 1e-6)
+        check ell2.transformation.transformations[0].kind == tkRotation
+        check ell2.transformation.transformations[1].kind == tkTranslation
+        check ell2.transformation.transformations[0].axis == axisX
+        check areClose(ell2.transformation.transformations[0].cos, newRotation(45, axisX).cos, eps = 1e-6)
+        check areClose(ell2.transformation.transformations[0].sin, newRotation(45, axisX).sin, eps = 1e-6)
+        check areClose(ell2.transformation.transformations[1].offset, eY)
 
 
     test "getNormal proc":
@@ -698,7 +702,7 @@ suite "CSGUnion":
 
     setup:
         let 
-            comp = newComposition(newRotX(90), newTranslation(eY))
+            comp = newComposition(newRotation(90, axisX), newTranslation(eY))
             
             spSh1 = newSphere(newPoint3D(1, 2, 3), 2)
             spSh2 = newSphere(newPoint3D(-1, -2, -3), 2)
@@ -725,7 +729,7 @@ suite "CSGUnion":
         check csgUnion1.shape.shapes.primary.kind == skSphere
         check csgUnion1.shape.shapes.primary.radius == 2
         check csgUnion1.shape.shTrans.tPrimary.kind == tkTranslation
-        check areClose(csgUnion1.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check areClose(csgUnion1.shape.shTrans.tPrimary.offset, newVec3f(1, 2, 3))
 
         # Checking second shape
         check csgUnion1.shape.shapes.secondary.kind == skTriangle
@@ -733,11 +737,16 @@ suite "CSGUnion":
         check csgUnion1.shape.shapes.secondary.vertices[1] == eY.Point3D
         check csgUnion1.shape.shapes.secondary.vertices[2] == eZ.Point3D
         check csgUnion1.shape.shTrans.tSecondary.kind == tkComposition
-        check areClose(csgUnion1.shape.shTrans.tSecondary.transformations[0].mat, newRotX(90).mat, eps = 1e-6)
-        check areClose(csgUnion1.shape.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)
+        check csgUnion1.shape.shTrans.tSecondary.transformations[0].kind == tkRotation
+        check csgUnion1.shape.shTrans.tSecondary.transformations[1].kind == tkTranslation
+        check csgUnion1.shape.shTrans.tSecondary.transformations[0].axis == axisX
+        check areClose(csgUnion1.shape.shTrans.tSecondary.transformations[0].cos, newRotation(90, axisX).cos, eps = 1e-6)
+        check areClose(csgUnion1.shape.shTrans.tSecondary.transformations[0].sin, newRotation(90, axisX).sin, eps = 1e-6)
+        check areClose(csgUnion1.shape.shTrans.tSecondary.transformations[1].offset, eY)
 
         # Checking transformation
-        check areClose(csgUnion1.transformation.mat, newTranslation(eX).mat)
+        check csgUnion1.transformation.kind == tkTranslation
+        check areClose(csgUnion1.transformation.offset, eX)
 
         #-------------------------------------#
         #          Second CSGUnion            #
@@ -746,11 +755,13 @@ suite "CSGUnion":
         check csgUnion2.shape.shapes.primary.kind == skCSGUnion
         check csgUnion2.shape.shapes.primary.shapes.primary.kind == skSphere
         check csgUnion2.shape.shapes.primary.shapes.secondary.kind == skTriangle
-        check areClose(csgUnion2.shape.shapes.primary.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)  
-        check areClose(csgUnion2.shape.shapes.primary.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)  
+        check csgUnion2.shape.shapes.primary.shTrans.tPrimary.kind == tkTranslation
+        check csgUnion2.shape.shapes.primary.shTrans.tSecondary.transformations[1].kind == tkTranslation
+        check areClose(csgUnion2.shape.shapes.primary.shTrans.tPrimary.offset, newVec3f(1, 2, 3))  
+        check areClose(csgUnion2.shape.shapes.primary.shTrans.tSecondary.transformations[1].offset, eY)  
         
         check csgUnion2.shape.shTrans.tPrimary.kind == tkTranslation
-        check areClose(csgUnion2.shape.shTrans.tPrimary.mat, newTranslation(eX).mat)  
+        check areClose(csgUnion2.shape.shTrans.tPrimary.offset, eX)  
 
         # Checking second shape
         check csgUnion2.shape.shapes.secondary.kind == skSphere
@@ -758,7 +769,7 @@ suite "CSGUnion":
         check csgUnion2.shape.shapes.primary.shapes.secondary.kind == skTriangle
 
         check csgUnion2.shape.shTrans.tSecondary.kind == tkTranslation
-        check areClose(csgUnion2.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(-1, -2, -3)).mat)  
+        check areClose(csgUnion2.shape.shTrans.tSecondary.offset, newVec3f(-1, -2, -3))  
 
 
     test "getVertices proc":
@@ -824,7 +835,7 @@ suite "CSGInt":
 
     setup:
         let 
-            comp = newComposition(newRotX(90), newTranslation(eY))
+            comp = newComposition(newRotation(90, axisX), newTranslation(eY))
             
             spSh1 = newSphere(newPoint3D(1, 2, 3), 2)
             spSh2 = newSphere(newPoint3D(-1, -2, -3), 2)
@@ -851,7 +862,7 @@ suite "CSGInt":
         check csgInt1.shape.shapes.primary.kind == skSphere
         check csgInt1.shape.shapes.primary.radius == 2
         check csgInt1.shape.shTrans.tPrimary.kind == tkTranslation
-        check areClose(csgInt1.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check areClose(csgInt1.shape.shTrans.tPrimary.offset, newVec3f(1, 2, 3))
 
         # Checking second shape
         check csgInt1.shape.shapes.secondary.kind == skTriangle
@@ -859,11 +870,16 @@ suite "CSGInt":
         check csgInt1.shape.shapes.secondary.vertices[1] == eY.Point3D
         check csgInt1.shape.shapes.secondary.vertices[2] == eZ.Point3D
         check csgInt1.shape.shTrans.tSecondary.kind == tkComposition
-        check areClose(csgInt1.shape.shTrans.tSecondary.transformations[0].mat, newRotX(90).mat, eps = 1e-6)
-        check areClose(csgInt1.shape.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)
+        check csgInt1.shape.shTrans.tSecondary.transformations[0].kind == tkRotation
+        check csgInt1.shape.shTrans.tSecondary.transformations[1].kind == tkTranslation
+        check csgInt1.shape.shTrans.tSecondary.transformations[0].axis == axisX
+        check areClose(csgInt1.shape.shTrans.tSecondary.transformations[0].cos, newRotation(90, axisX).cos, eps = 1e-6)
+        check areClose(csgInt1.shape.shTrans.tSecondary.transformations[0].sin, newRotation(90, axisX).sin, eps = 1e-6)
+        check areClose(csgInt1.shape.shTrans.tSecondary.transformations[1].offset, eY)
 
         # Checking transformation
-        check areClose(csgInt1.transformation.mat, newTranslation(eX).mat)
+        check csgInt1.transformation.kind == tkTranslation
+        check areClose(csgInt1.transformation.offset, eX)
 
 
         #-----------------------------------#
@@ -873,11 +889,13 @@ suite "CSGInt":
         check csgInt2.shape.shapes.primary.kind == skCSGInt
         check csgInt2.shape.shapes.primary.shapes.primary.kind == skSphere
         check csgInt2.shape.shapes.primary.shapes.secondary.kind == skTriangle
-        check areClose(csgInt2.shape.shapes.primary.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)  
-        check areClose(csgInt2.shape.shapes.primary.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)  
+        check csgInt2.shape.shapes.primary.shTrans.tPrimary.kind == tkTranslation
+        check csgInt2.shape.shapes.primary.shTrans.tSecondary.transformations[1].kind == tkTranslation
+        check areClose(csgInt2.shape.shapes.primary.shTrans.tPrimary.offset, newVec3f(1, 2, 3))  
+        check areClose(csgInt2.shape.shapes.primary.shTrans.tSecondary.transformations[1].offset, eY)  
         
         check csgInt2.shape.shTrans.tPrimary.kind == tkTranslation
-        check areClose(csgInt2.shape.shTrans.tPrimary.mat, newTranslation(eX).mat)  
+        check areClose(csgInt2.shape.shTrans.tPrimary.offset, eX)  
 
         # Checking second shape
         check csgInt2.shape.shapes.secondary.kind == skSphere
@@ -885,7 +903,7 @@ suite "CSGInt":
         check csgInt2.shape.shapes.primary.shapes.secondary.kind == skTriangle
 
         check csgInt2.shape.shTrans.tSecondary.kind == tkTranslation
-        check areClose(csgInt2.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(-1, -2, -3)).mat)  
+        check areClose(csgInt2.shape.shTrans.tSecondary.offset, newVec3f(-1, -2, -3))  
 
 
     test "getVertices proc":
@@ -950,7 +968,7 @@ suite "CSGDiff":
 
     setup:
         let 
-            comp = newComposition(newRotX(90), newTranslation(eY))
+            comp = newComposition(newRotation(90, axisX), newTranslation(eY))
             
             spSh1 = newSphere(newPoint3D(1, 2, 3), 2)
             spSh2 = newSphere(newPoint3D(-1, -2, -3), 2)
@@ -977,7 +995,7 @@ suite "CSGDiff":
         check csgDiff1.shape.shapes.primary.kind == skSphere
         check csgDiff1.shape.shapes.primary.radius == 2
         check csgDiff1.shape.shTrans.tPrimary.kind == tkTranslation
-        check areClose(csgDiff1.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check areClose(csgDiff1.shape.shTrans.tPrimary.offset, newVec3f(1, 2, 3))
 
         # Checking second shape
         check csgDiff1.shape.shapes.secondary.kind == skTriangle
@@ -985,11 +1003,16 @@ suite "CSGDiff":
         check csgDiff1.shape.shapes.secondary.vertices[1] == eY.Point3D
         check csgDiff1.shape.shapes.secondary.vertices[2] == eZ.Point3D
         check csgDiff1.shape.shTrans.tSecondary.kind == tkComposition
-        check areClose(csgDiff1.shape.shTrans.tSecondary.transformations[0].mat, newRotX(90).mat, eps = 1e-6)
-        check areClose(csgDiff1.shape.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)
+        check csgDiff1.shape.shTrans.tSecondary.transformations[0].kind == tkRotation
+        check csgDiff1.shape.shTrans.tSecondary.transformations[1].kind == tkTranslation
+        check csgDiff1.shape.shTrans.tSecondary.transformations[0].axis == axisX
+        check areClose(csgDiff1.shape.shTrans.tSecondary.transformations[0].cos, newRotation(90, axisX).cos, eps = 1e-6)
+        check areClose(csgDiff1.shape.shTrans.tSecondary.transformations[0].sin, newRotation(90, axisX).sin, eps = 1e-6)
+        check areClose(csgDiff1.shape.shTrans.tSecondary.transformations[1].offset, eY)
 
         # Checking transformation
-        check areClose(csgDiff1.transformation.mat, newTranslation(eX).mat)
+        check csgDiff1.transformation.kind == tkTranslation
+        check areClose(csgDiff1.transformation.offset, eX)
 
         #-------------------------------------#
         #          Second CSGDiff            #
@@ -998,11 +1021,13 @@ suite "CSGDiff":
         check csgDiff2.shape.shapes.primary.kind == skCSGDiff
         check csgDiff2.shape.shapes.primary.shapes.primary.kind == skSphere
         check csgDiff2.shape.shapes.primary.shapes.secondary.kind == skTriangle
-        check areClose(csgDiff2.shape.shapes.primary.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)  
-        check areClose(csgDiff2.shape.shapes.primary.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)  
+        check csgDiff2.shape.shapes.primary.shTrans.tPrimary.kind  == tkTranslation  
+        check csgDiff2.shape.shapes.primary.shTrans.tSecondary.transformations[1].kind  == tkTranslation  
+        check areClose(csgDiff2.shape.shapes.primary.shTrans.tPrimary.offset, newVec3f(1, 2, 3))  
+        check areClose(csgDiff2.shape.shapes.primary.shTrans.tSecondary.transformations[1].offset, eY)
         
         check csgDiff2.shape.shTrans.tPrimary.kind == tkTranslation
-        check areClose(csgDiff2.shape.shTrans.tPrimary.mat, newTranslation(eX).mat)  
+        check areClose(csgDiff2.shape.shTrans.tPrimary.offset, eX)  
 
         # Checking second shape
         check csgDiff2.shape.shapes.secondary.kind == skSphere
@@ -1010,7 +1035,7 @@ suite "CSGDiff":
         check csgDiff2.shape.shapes.primary.shapes.secondary.kind == skTriangle
 
         check csgDiff2.shape.shTrans.tSecondary.kind == tkTranslation
-        check areClose(csgDiff2.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(-1, -2, -3)).mat)  
+        check areClose(csgDiff2.shape.shTrans.tSecondary.offset, newVec3f(-1, -2, -3))  
 
     
     test "getVertices proc":

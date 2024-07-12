@@ -168,7 +168,7 @@ proc inShape*(shape: Shape, pt: Point3D): bool =
     of skEllipsoid:
         return inShape(
             Shape(kind: skSphere, material: shape.material, radius: 1), 
-            newScaling(newVec3f(shape.axis.a, shape.axis.b, shape.axis.c)).inverse.apply(pt)
+            newScaling(shape.axis.a, shape.axis.b, shape.axis.c).inverse.apply(pt)
             )
     
     of skCSGUnion: 
@@ -247,7 +247,7 @@ proc getUV*(shape: Shape; pt: Point3D): Point2D =
     of skTriangularMesh: quit "This should not be used"
     
     of skEllipsoid: 
-        let scal = newScaling(newVec3f(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c))
+        let scal = newScaling(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c)
         return getUV(Shape(kind: skSphere, radius: 1), apply(scal, pt))
 
     of skCSGUnion, skCSGInt, skCSGDiff: discard
@@ -279,7 +279,7 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal =
 
     of skEllipsoid: 
         let 
-            scal = newScaling(newVec3f(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c))
+            scal = newScaling(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c)
             nSp = getNormal(Shape(kind: skSphere, radius: 1), apply(scal, pt), apply(scal, dir).normalize)
 
         return apply(scal.inverse, nSp).normalize
