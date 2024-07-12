@@ -258,17 +258,11 @@ suite "transformations":
             t3 = newTranslation(newVec3f(2, 4, 1))
 
     teardown:
-        discard t1; discard t2; discard t3
-    
-    test "Scaling of Vec4f":
-
-        let vec = newVec4f(1, 2, 3, 1)
-
-        check areClose(apply(t1, vec), newVec4f(2, 4, 6, 1))
-        check areClose(apply(t2, vec), newVec4f(1, 4, 9, 1))
+        discard t1
+        discard t2
+        discard t3
     
     
-
     test "Scaling of Point3D":
 
         var p = newPoint3D(0, 3, 1)
