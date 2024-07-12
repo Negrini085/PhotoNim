@@ -9,8 +9,8 @@ let
     nSamples: int = 1
     aaSamples: int = 1
     directSamples: int = 1
-    indirectSamples: int = 2
-    depthLimit: int = 1
+    indirectSamples: int = 4
+    depthLimit: int = 3
     rgSetUp = newRandomSetUp(67, 4)
     outFile = "assets/images/examples/meshes/airplane.png"
 
@@ -50,14 +50,14 @@ let
 
     box1 = newBox(
         (newPoint3D(-0.5, -1.0, -2), newPoint3D(0.5, -0.3, 0.7)), 
-        transformation = newComposition(newTranslation(0.5.float32 * eX), newRotZ(40)),
+        transformation = newComposition(newTranslation(0.5.float32 * eX), newRotation(40, axisZ)),
         brdf = newDiffuseBRDF(),
         pigment = newUniformPigment(newColor(0.5, 0.5, 0.5))
     )
 
     box2 = newBox(
         (newPoint3D(-0.5, 0.9, -2), newPoint3D(0.5, 1.5, 0.4)), 
-        transformation = newRotZ(-40),
+        transformation = newRotation(-40, axisZ),
         brdf = newDiffuseBRDF(),
         pigment = newUniformPigment(newColor(0.5, 0.5, 0.5))
     )
@@ -68,7 +68,7 @@ let airplane = newMesh(
     source = "assets/meshes/airplane.obj", 
     transformation = newComposition(
         newTranslation(-0.3.float32 * eX - eY), 
-        newRotZ(30), newRotY(20), newRotX(10), 
+        newRotation(30, axisZ), newRotation(20, axisY), newRotation(10, axisX), 
         newScaling(2 * 3e-4)
     ), 
     brdf = newDiffuseBRDF(),
@@ -91,10 +91,10 @@ handlers.add box1
 handlers.add box2
 handlers.add airplane
 
-for i in 0..<2: 
-    for j in 0..<2: 
-        handlers.add newPointLight(WHITE, newPoint3D(-0.5 + i.float32, -0.5 + j.float32, 2))
-# handlers.add newPointLight(WHITE, newPoint3D(0, 0, 1.999))
+# for i in 0..<2: 
+#     for j in 0..<2: 
+#         handlers.add newPointLight(WHITE, newPoint3D(-0.5 + i.float32, -0.5 + j.float32, 2))
+handlers.add newPointLight(WHITE, newPoint3D(0, 0, 1.999))
         # newSurfaceLight(WHITE, Shape(kind: skAABox, aabb: (newPoint3D(0.5, -0.5, 1.8), newPoint3D(1.5, 0.5, 2))))
 
 let
@@ -111,7 +111,7 @@ let
         renderer = newPathTracer(directSamples, indirectSamples, depthLimit), 
         viewport = (600, 600), 
         distance = 1.0, 
-        transformation = newTranslation(newPoint3D(-1.0, 0, 0))
+        transformation = newTranslation(newPoint3D(-1.0, 0.0, 0.2))
     )
 
     image = camera.samples(scene, newRandomSetUp(rg.random, rg.random), nSamples, aaSamples)
