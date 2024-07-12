@@ -212,7 +212,6 @@ proc getAllHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[seq[HitP
             
         var 
             hitS: seq[Option[seq[HitPayload]]]
-            shHand: seq[ShapeHandler]
             hit1: seq[HitPayload]
             hit2: seq[HitPayload]
             appo: seq[HitPayload]
@@ -241,7 +240,6 @@ proc getAllHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[seq[HitP
     of skCSGDiff:
         var 
             hitS: seq[Option[seq[HitPayload]]]
-            shHand: seq[ShapeHandler]
             hit1: seq[HitPayload]
             hit2: seq[HitPayload]
             appo: seq[HitPayload]
@@ -439,7 +437,6 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
         
         var 
             hitS: seq[Option[seq[HitPayload]]]
-            shHand: seq[ShapeHandler]
             hit1: seq[HitPayload]
             hit2: seq[HitPayload]
             appo: seq[HitPayload]
@@ -471,7 +468,6 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
     of skCSGDiff:
         var 
             hitS: seq[Option[seq[HitPayload]]]
-            shHand: seq[ShapeHandler]
             hit1: seq[HitPayload]
             hit2: seq[HitPayload]
             appo: seq[HitPayload]

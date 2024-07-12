@@ -1164,14 +1164,16 @@ suite "Parse":
         check csgUnionSH.shape.shapes.primary.kind == skSphere
         check csgUnionSH.shape.shapes.secondary.kind == skTriangle
 
-        check areClose(csgUnionSH.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
-        check areClose(csgUnionSH.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check csgUnionSH.shape.shTrans.tPrimary.kind == tkTranslation
+        check csgUnionSH.shape.shTrans.tSecondary.kind == tkTranslation
+        check areClose(csgUnionSH.shape.shTrans.tPrimary.offset, newVec3f(1, 2, 3))
+        check areClose(csgUnionSH.shape.shTrans.tSecondary.offset, newVec3f(1, 2, 3))
 
         check csgUnionSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
         check csgUnionSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
 
         check csgUnionSH.transformation.kind == tkTranslation
-        check areClose(csgUnionSH.transformation.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check areClose(csgUnionSH.transformation.offset, newVec3f(1, 2, 3))
 
 
     test "parseCamera proc":
