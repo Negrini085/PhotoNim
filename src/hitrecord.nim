@@ -208,7 +208,7 @@ proc getAllHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[seq[HitP
         if appo.len == 0: return none seq[HitPayload]
         return some appo
 
-    of skCSGInt: discard       
+    of skCSGInt: discard
     of skTriangularMesh: discard
 
 
@@ -377,7 +377,38 @@ proc getHitPayload*(handler: ShapeHandler, worldInvRay: Ray): Option[HitPayload]
             ray: worldInvRay.transform(appo[0].handler.transformation.inverse), t: appo[0].t
         )
     
-    of skCSGInt: none HitPayload      
+    of skCSGInt:         
+        
+        var 
+            hitS: seq[Option[seq[HitPayload]]]
+            shHand: seq[ShapeHandler]
+            hit1: seq[HitPayload]
+            hit2: seq[HitPayload]
+            appo: seq[HitPayload]
+
+        let
+            sh1 = ShapeHandler(shape: handler.shape.shapes.primary, transformation: handler.shape.shTrans.tPrimary)
+            sh2 = ShapeHandler(shape: handler.shape.shapes.secondary, transformation: handler.shape.shTrans.tSecondary)
+
+        hitS.add getAllHitPayload(sh1, worldInvRay.transform(sh1.transformation.inverse))
+
+        hit1 = hitS.filterIt(it.isSome).mapIt(it.get).concat
+        hit1 = hit1.filterIt(sh2.shape.inShape(worldInvRay.transform(sh2.transformation.inverse).at(it.t)))
+        
+        hitS = @[]
+        hitS.add getAllHitPayload(sh2, worldInvRay.transform(sh2.transformation.inverse))
+        
+        hit2 = hitS.filterIt(it.isSome).mapIt(it.get).concat
+        hit2 = hit2.filterIt(sh1.shape.inShape(worldInvRay.transform(sh1.transformation.inverse).at(it.t)))        
+        
+        appo = hit1 & hit2
+        if appo.len == 0: return none HitPayload
+
+        appo = appo.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))
+        return some HitPayload(
+            handler: ShapeHandler(shape: appo[0].handler.shape, transformation: handler.transformation @ appo[0].handler.transformation),
+            ray: worldInvRay.transform(appo[0].handler.transformation.inverse), t: appo[0].t
+        )  
         
 
 proc getHitPayloads*(sceneTree: SceneNode; worldRay: Ray): seq[HitPayload] =
