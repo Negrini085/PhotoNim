@@ -941,6 +941,76 @@ suite "CSGInt":
         check areClose(aabb.max, newPoint3D(4, 4, 5), eps = 1e-6)
 
 
+#---------------------------#
+#    CSGDiff test suite    #
+#---------------------------# 
+suite "CSGDiff":
+
+    setup:
+        let 
+            comp = newComposition(newRotX(90), newTranslation(eY))
+            
+            spSh1 = newSphere(newPoint3D(1, 2, 3), 2)
+            spSh2 = newSphere(newPoint3D(-1, -2, -3), 2)
+            triSh = newTriangle(eX.Point3D, eY.Point3D, eZ.Point3D, transformation = comp)
+            csgDiff1 = newCSGDiff(spSh1, triSh, newTranslation(eX))
+            csgDiff2 = newCSGDiff(csgDiff1, spSh2)
+    
+    teardown:
+        discard comp
+        discard spSh1
+        discard spSh2
+        discard triSh
+        discard csgDiff1
+        discard csgDiff2
+    
+    
+    test "newCSGDiff proc":
+        # Checking newCSGDiff proc
+
+        #------------------------------------#
+        #          First CSGDiff            #
+        #------------------------------------#        
+        # Checking first shape
+        check csgDiff1.shape.shapes.primary.kind == skSphere
+        check csgDiff1.shape.shapes.primary.radius == 2
+        check csgDiff1.shape.shTrans.tPrimary.kind == tkTranslation
+        check areClose(csgDiff1.shape.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+
+        # Checking second shape
+        check csgDiff1.shape.shapes.secondary.kind == skTriangle
+        check csgDiff1.shape.shapes.secondary.vertices[0] == eX.Point3D
+        check csgDiff1.shape.shapes.secondary.vertices[1] == eY.Point3D
+        check csgDiff1.shape.shapes.secondary.vertices[2] == eZ.Point3D
+        check csgDiff1.shape.shTrans.tSecondary.kind == tkComposition
+        check areClose(csgDiff1.shape.shTrans.tSecondary.transformations[0].mat, newRotX(90).mat, eps = 1e-6)
+        check areClose(csgDiff1.shape.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)
+
+        # Checking transformation
+        check areClose(csgDiff1.transformation.mat, newTranslation(eX).mat)
+
+        #-------------------------------------#
+        #          Second CSGDiff            #
+        #-------------------------------------#
+        # Checking first shape
+        check csgDiff2.shape.shapes.primary.kind == skCSGDiff
+        check csgDiff2.shape.shapes.primary.shapes.primary.kind == skSphere
+        check csgDiff2.shape.shapes.primary.shapes.secondary.kind == skTriangle
+        check areClose(csgDiff2.shape.shapes.primary.shTrans.tPrimary.mat, newTranslation(newVec3f(1, 2, 3)).mat)  
+        check areClose(csgDiff2.shape.shapes.primary.shTrans.tSecondary.transformations[1].mat, newTranslation(eY).mat)  
+        
+        check csgDiff2.shape.shTrans.tPrimary.kind == tkTranslation
+        check areClose(csgDiff2.shape.shTrans.tPrimary.mat, newTranslation(eX).mat)  
+
+        # Checking second shape
+        check csgDiff2.shape.shapes.secondary.kind == skSphere
+        check csgDiff2.shape.shapes.primary.shapes.primary.kind == skSphere
+        check csgDiff2.shape.shapes.primary.shapes.secondary.kind == skTriangle
+
+        check csgDiff2.shape.shTrans.tSecondary.kind == tkTranslation
+        check areClose(csgDiff2.shape.shTrans.tSecondary.mat, newTranslation(newVec3f(-1, -2, -3)).mat)  
+
+
 
 #-----------------------------#
 #       Shape test suite      #
