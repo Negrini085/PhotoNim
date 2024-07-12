@@ -6,7 +6,6 @@ from std/algorithm import sort, SortOrder, upperBound
 from std/sequtils import mapIt, insert, filterIt
 # from std/strformat import fmt
 
-
 proc getIntersection(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.} =
     let
         (min, max) = (aabb.min - worldRay.origin, aabb.max - worldRay.origin)
@@ -135,27 +134,61 @@ proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray):
     if tRootHit == Inf: return result
 
     var 
-        currentNodeHitInfo: HitInfo[BVHNode] = (tree.root, tRootHit)
-        nodesStack = @[currentNodeHitInfo] 
-
+        nodesStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int * tree.kind.int)
         handlersStack = newSeqOfCap[HitInfo[ObjectHandler]](tree.mspl)
+        currentNodeInfo: HitInfo[BVHNode]
+
+    nodesStack.add (tree.root, tRootHit) 
 
     while nodesStack.len > 0:
-        currentNodeHitInfo = nodesStack.pop
-        # if currentNodeHitInfo.t >= result.info.t: break
+        currentNodeInfo = nodesStack.pop
+        if currentNodeInfo.t >= result.info.t: break
         
-        case currentNodeHitInfo.hit.kind
+        case currentNodeInfo.hit.kind
         of nkBranch: 
-            for child in currentNodeHitInfo.hit.children:
-                # if not child.isNil and not child.aabb.contains(worldRay.origin):
-                if not child.isNil:
-                    let tBoxHit = child.aabb.getIntersection(worldRay)
-                    if tBoxHit < result.info.t: nodesStack.add((child, tBoxHit))
-            
+            var insiderNodes, outsiderNodes = newSeqOfCap[BVHNode](tree.kind.int)
+
+            for childNode in currentNodeInfo.hit.children:
+                if childNode.isNil: continue
+                elif childNode.aabb.contains(worldRay.origin): insiderNodes.add childNode
+                else: outsiderNodes.add childNode
+
+            for insideNode in insiderNodes:
+                case insideNode.kind
+                of nkBranch: nodesStack.add (insideNode, -1.0.float32)
+                of nkLeaf:
+                    for handler in insideNode.indexes.mapIt(handlers[it]):
+                        if handler.brdf.isNil: continue
+                        let tBoxHit = handler.getAABB.getIntersection(worldRay)
+                        if tBoxHit < result.info.t: handlersStack.add((handler, tBoxHit))
+
+                    while handlersStack.len > 0:
+                        let currentHandlerInfo = handlersStack.pop
+                        if currentHandlerInfo.t >= result.info.t: break
+                        
+                        case currentHandlerInfo.hit.kind
+                        of hkShape: 
+                            let 
+                                invRay = worldRay.transform(currentHandlerInfo.hit.transformation.inverse)
+                                tShapeHit = currentHandlerInfo.hit.shape.getLocalIntersection(invRay)
+
+                            if tShapeHit < result.info.t: result = currentHandlerInfo.hit.newHitPayload(invRay, tShapeHit)
+                            
+                        of hkMesh:
+                            let meshHit = currentHandlerInfo.hit.mesh.tree.getClosestHit(currentHandlerInfo.hit.mesh.shapes, worldRay)
+                            if not meshHit.info.hit.isNil and meshHit.info.t < result.info.t: result = meshHit
+
+
+            for childNode in outsiderNodes:
+                if childNode.isNil: continue
+                let tBoxHit = childNode.aabb.getIntersection(worldRay)
+                if tBoxHit < result.info.t: nodesStack.add (childNode, tBoxHit)
+                               
             nodesStack.sort(proc(a, b: HitInfo[BVHNode]): int = cmp(a.t, b.t), SortOrder.Descending)
 
+
         of nkLeaf:
-            for handler in currentNodeHitInfo.hit.indexes.mapIt(handlers[it]):
+            for handler in currentNodeInfo.hit.indexes.mapIt(handlers[it]):
                 if handler.brdf.isNil: continue
                 let tBoxHit = handler.getAABB.getIntersection(worldRay)
                 if tBoxHit < result.info.t: handlersStack.add((handler, tBoxHit))
@@ -163,17 +196,17 @@ proc getClosestHit*(tree: BVHTree, handlers: seq[ObjectHandler], worldRay: Ray):
             handlersStack.sort(proc(a, b: HitInfo[ObjectHandler]): int = cmp(a.t, b.t), SortOrder.Descending)
 
             while handlersStack.len > 0:
-                let handlerHitInfo = handlersStack.pop
-                if handlerHitInfo.t >= result.info.t: break
+                let currentHandlerInfo = handlersStack.pop
+                if currentHandlerInfo.t >= result.info.t: break
                 
-                case handlerHitInfo.hit.kind
+                case currentHandlerInfo.hit.kind
                 of hkShape: 
                     let 
-                        invRay = worldRay.transform(handlerHitInfo.hit.transformation.inverse)
-                        tShapeHit = handlerHitInfo.hit.shape.getLocalIntersection(invRay)
+                        invRay = worldRay.transform(currentHandlerInfo.hit.transformation.inverse)
+                        tShapeHit = currentHandlerInfo.hit.shape.getLocalIntersection(invRay)
 
-                    if tShapeHit < result.info.t: result = handlerHitInfo.hit.newHitPayload(invRay, tShapeHit)
+                    if tShapeHit < result.info.t: result = currentHandlerInfo.hit.newHitPayload(invRay, tShapeHit)
                     
                 of hkMesh:
-                    let meshHit = handlerHitInfo.hit.mesh.tree.getClosestHit(handlerHitInfo.hit.mesh.shapes, worldRay)
+                    let meshHit = currentHandlerInfo.hit.mesh.tree.getClosestHit(currentHandlerInfo.hit.mesh.shapes, worldRay)
                     if not meshHit.info.hit.isNil and meshHit.info.t < result.info.t: result = meshHit
