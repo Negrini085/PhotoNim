@@ -3,30 +3,31 @@ import geometry, material, scene
 from std/math import sgn, floor, arccos, arctan2, PI
 
 
-proc newShapeHandler(shape: Shape, material: Material, transformation: Transformation): ObjectHandler {.inline.} =
-    ObjectHandler(kind: hkShape, shape: shape, material: material, transformation: transformation)
+proc newShapeHandler(shape: Shape, transformation: Transformation, brdf: BRDF, pigment: Pigment): ObjectHandler {.inline.} =
+    ObjectHandler(kind: hkShape, transformation: transformation, shape: shape, brdf: brdf, pigment: pigment)
 
-proc newSphere*(center: Point3D, radius: float32; material = newMaterial()): ObjectHandler {.inline.} =   
-    newShapeHandler(Shape(kind: skSphere, radius: radius), material, if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
+proc newSphere*(center: Point3D, radius: float32; brdf: BRDF, pigment: Pigment): ObjectHandler {.inline.} =   
+    newShapeHandler(Shape(kind: skSphere, radius: radius), if center != ORIGIN3D: newTranslation(center) else: Transformation.id, brdf, pigment)
 
-proc newUnitarySphere*(center: Point3D; material = newMaterial()): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skSphere, radius: 1.0), material, if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
+proc newUnitarySphere*(center: Point3D; brdf: BRDF, pigment: Pigment): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skSphere, radius: 1.0), if center != ORIGIN3D: newTranslation(center) else: Transformation.id, brdf, pigment)
 
-proc newPlane*(material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skPlane), material, transformation)
+proc newPlane*(transformation = Transformation.id, brdf: BRDF, pigment: Pigment): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPlane), transformation, brdf, pigment)
 
-proc newBox*(aabb: Interval[Point3D], material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} =
-    newShapeHandler(Shape(kind: skAABox, aabb: aabb), material, transformation)
+proc newBox*(aabb: Interval[Point3D], transformation = Transformation.id, brdf: BRDF, pigment: Pigment): ObjectHandler {.inline.} =
+    newShapeHandler(Shape(kind: skAABox, aabb: aabb), transformation, brdf, pigment)
 
-proc newTriangle*(vertices: array[3, Point3D]; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skTriangle, vertices: @vertices), material, transformation)
+proc newTriangle*(vertices: array[3, Point3D]; transformation = Transformation.id, brdf: BRDF, pigment: Pigment): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skTriangle, vertices: @vertices), transformation, brdf, pigment)
 
-proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material = newMaterial(), transformation = Transformation.id): ObjectHandler {.inline.} =
-    newShapeHandler(Shape(kind: skCylinder, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), material, transformation)
+proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; transformation = Transformation.id, brdf: BRDF, pigment: Pigment): ObjectHandler {.inline.} =
+    newShapeHandler(Shape(kind: skCylinder, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), transformation, brdf, pigment)
 
 
 proc getUV*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
+    of skPoint: discard
     of skAABox:
         if pt.x == shape.aabb.min.x: 
             return newPoint2D((pt.y - shape.aabb.min.y) / (shape.aabb.max.y - shape.aabb.min.y), (pt.z - shape.aabb.min.z) / (shape.aabb.max.z - shape.aabb.min.z))
@@ -66,6 +67,7 @@ proc getUV*(shape: Shape; pt: Point3D): Point2D =
 
 proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal {.inline.} =
     case shape.kind
+    of skPoint: discard
     of skAABox:
         if   areClose(pt.x, shape.aabb.min.x, 1e-6) or areClose(pt.x, shape.aabb.max.x, 1e-6): result = newNormal(1, 0, 0)
         elif areClose(pt.y, shape.aabb.min.y, 1e-6) or areClose(pt.y, shape.aabb.max.y, 1e-6): result = newNormal(0, 1, 0)

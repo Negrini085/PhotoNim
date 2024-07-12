@@ -22,24 +22,25 @@ var timeStart = cpuTime()
 
 let dragon = newMesh(
     source = "assets/meshes/dragon.obj", 
-    material = newMaterial(
-        newDiffuseBRDF(newUniformPigment(WHITE)),
-        newUniformPigment(WHITE)
-    ),
-    transformation = newScaling(0.05), 
+    transformation = newTranslation(newPoint3D(20, 20, 20)) @ newScaling(0.05), 
+    brdf = newDiffuseBRDF(),
+    pigment = newUniformPigment(RED),
     treeKind = tkOctonary, 
     maxShapesPerLeaf = 4, 
     newRandomSetUp(rg.random, rg.random)
 )
 
 echo fmt"Successfully loaded mesh in {cpuTime() - timeStart} seconds"
+echo fmt"Dragon AABB: {dragon.mesh.tree.root.aabb}"
+
+
 timeStart = cpuTime()
 
 handlers.add dragon
 
 let
     scene = newScene(
-        bgColor = BLACK, 
+        bgColor = BLUE, 
         handlers, 
         newRandomSetUp(rg.random, rg.random), 
         treeKind = tkBinary, 
@@ -47,10 +48,10 @@ let
     )
 
     camera = newPerspectiveCamera(
-        renderer = newPathTracer(directSamples, indirectSamples, depthLimit), 
+        renderer = newOnOffRenderer(RED), # newPathTracer(directSamples, indirectSamples, depthLimit), 
         viewport = (600, 600), 
-        distance = 3.0, 
-        transformation = newComposition(newRotation(-90, axisX), newTranslation(newPoint3D(-0.5, 1.5, 0.5)))
+        distance = -1.0, 
+        transformation = Transformation.id
     )
 
     image = camera.samples(scene, newRandomSetUp(rg.random, rg.random), nSamples, aaSamples)

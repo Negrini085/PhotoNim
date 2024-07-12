@@ -23,22 +23,21 @@ type
         of nkLeaf: indexes*: seq[int]
 
 
-    ObjectHandlerKind* = enum hkPoint, hkShape, hkMesh
+    ObjectHandlerKind* = enum hkShape, hkMesh
     ObjectHandler* = ref object
-        isLight*: bool = false
         transformation*: Transformation
-        material*: Material
+        pigment*: Pigment
+        brdf*: BRDF
 
         case kind*: ObjectHandlerKind
-        of hkPoint: discard
         of hkShape: shape*: Shape 
         of hkMesh: mesh*: Mesh
 
 
-    ShapeKind* = enum skAABox, skTriangle, skSphere, skPlane, skCylinder
+    ShapeKind* = enum skPoint, skAABox, skTriangle, skSphere, skPlane, skCylinder
     Shape* = ref object
         case kind*: ShapeKind 
-        of skPlane: discard
+        of skPoint, skPlane: discard
         of skAABox: aabb*: Interval[Point3D]
         of skTriangle: vertices*: seq[Point3D]            
         of skSphere: radius*: float32
@@ -81,6 +80,7 @@ proc getCentroid*(aabb: Interval[Point3D]): Vec3f {.inline.} =
 
 proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     case shape.kind
+    of skPoint: (ORIGIN3D, ORIGIN3D)
     of skAABox: shape.aabb
     of skTriangle: newAABB(shape.vertices)
     of skSphere: (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
@@ -101,6 +101,7 @@ proc getVertices(aabb: Interval[Point3D]): seq[Point3D] {.inline.} =
 
 proc getVertices(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
+    of skPoint: @[ORIGIN3D]
     of skAABox: shape.aabb.getVertices
     of skTriangle: shape.vertices
     else: shape.getAABB.getVertices
@@ -108,7 +109,7 @@ proc getVertices(shape: Shape): seq[Point3D] {.inline.} =
 
 proc getAABB*(handler: ObjectHandler): Interval[Point3D] {.inline.} =
     case handler.kind
-    of hkPoint: (apply(handler.transformation, ORIGIN3D), apply(handler.transformation, ORIGIN3D))
+    # of hkPoint: (apply(handler.transformation, ORIGIN3D), apply(handler.transformation, ORIGIN3D))
     of hkShape: newAABB handler.shape.getVertices.mapIt(apply(handler.transformation, it))
     of hkMesh: newAABB handler.mesh.tree.root.aabb.getVertices.mapIt(apply(handler.transformation, it))
 
@@ -211,28 +212,29 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
 
 proc newPointLight*(color: Color, position: Point3D): ObjectHandler {.inline.} =
     ObjectHandler(
-        kind: hkPoint,
-        isLight: true,
+        kind: hkShape,
         transformation: newTranslation(position), 
-        material: newMaterial(brdf = nil, newUniformPigment(color))
+        brdf: nil, 
+        pigment: newUniformPigment(color),
+        shape: Shape(kind: skPoint)
     )
 
 proc newSurfaceLight*(color: Color, surface: Shape, transformation = Transformation.id): ObjectHandler {.inline.} =
     ObjectHandler(
         kind: hkShape, 
-        isLight: true,
         transformation: transformation, 
-        shape: surface,
-        material: newMaterial(brdf = nil, newUniformPigment(color))
+        brdf: nil, 
+        pigment: newUniformPigment(color),
+        shape: surface
     )
 
 proc newSurfaceLight*(color: Color, surface: Mesh, transformation = Transformation.id): ObjectHandler {.inline.} =
     ObjectHandler(
         kind: hkMesh, 
-        isLight: true,
         transformation: transformation, 
-        mesh: surface,
-        material: newMaterial(brdf = nil, newUniformPigment(color))
+        brdf: nil, 
+        pigment: newUniformPigment(color),
+        mesh: surface
     )
 
 proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], rgSetUp: RandomSetUp, treeKind: TreeKind, maxShapesPerLeaf: int = 1): Scene {.inline.} =

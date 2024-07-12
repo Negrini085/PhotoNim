@@ -19,18 +19,14 @@ type
         case kind*: RendererKind
         of rkFlat: discard
 
-        of rkOnOff:
-            hitCol*: Color
+        of rkOnOff: hitColor*: Color
 
         of rkPathTracer:
-            directSamples*: int
-            indirectSamples*: int
+            directSamples*, indirectSamples: int
             depthLimit*, rouletteLimit*: int
 
 
-    CameraKind* = enum
-        ckOrthogonal, ckPerspective
-
+    CameraKind* = enum ckOrthogonal, ckPerspective
     Camera* = object
         renderer*: Renderer
 
@@ -45,7 +41,7 @@ type
 
 
 proc newFlatRenderer*(): Renderer {.inline.} = Renderer(kind: rkFlat)
-proc newOnOffRenderer*(hitCol = WHITE): Renderer {.inline.} = Renderer(kind: rkOnOff, hitCol: hitCol)
+proc newOnOffRenderer*(hitColor = WHITE): Renderer {.inline.} = Renderer(kind: rkOnOff, hitColor: hitColor)
 
 proc newPathTracer*(directSamples: SomeInteger = 5, indirectSamples: SomeInteger = 5, depthLimit: SomeInteger = 10, rouletteLimit: SomeInteger = 3): Renderer {.inline.} =
     Renderer(kind: rkPathTracer, directSamples: directSamples, indirectSamples: indirectSamples, depthLimit: depthLimit, rouletteLimit: rouletteLimit)
@@ -82,88 +78,96 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleLights*(scene: Scene, worldRay: Ray, hitHandler: ObjectHandler, worldHitPt: Point3D, hitNormal: Normal, hitSurfacePt: Point2D): Color =
-    for lightHandler in scene.handlers.filterIt(it.isLight):
-        case lightHandler.kind:
-        of hkPoint:
-            let 
-                lightDir = apply(lightHandler.transformation, ORIGIN3D) - worldHitPt
-                lightRay = newRay(worldHitPt, lightDir)
-                lightHit = scene.tree.getClosestHit(scene.handlers, lightRay)
-
-            if lightHit.info.val.isNil or lightHit.info.t < lightDir.norm: continue
-
-            let
-                brdfFactor = hitHandler.material.brdf.eval(hitNormal.Vec3f, lightDir, worldRay.dir)
-                # angleFactor = max(0, dot(lightDir, hitNormal.Vec3f))
-
-            # result += lightHandler.material.emittedRadiance.getColor(ORIGIN2D) * brdfFactor / lightDir.norm2
-            result += hitHandler.material.brdf.pigment.getColor(hitSurfacePt)
-
-        of hkShape: discard
-            # for _ in 0..<camera.renderer.directSamples:
-                # let
-                #     lightSamplePt = lightHandler.shape.samplePoint(rg)
-                #     lightPos = apply(lightHandler.transformation, lightSamplePt)
-                #     lightDir = (lightPos - worldHitPt).Vec3f.normalize
-                #     lightRay = newRay(worldHitPt, lightDir)
-                #     lightHit = scene.tree.getClosestHit(scene.handlers, lightRay)
-                #     distance2 = (lightPos - worldHitPt).norm2
-
-                # if lightHit.info.val.isNil or pow(lightHit.info.t, 2) > distance2:
-                #     let
-                #         brdfFactor = hitHandler.material.brdf.eval(hitNormal.Vec3f, lightDir, worldRay.dir)
-                #         angleFactor = max(0, dot(lightDir, hitNormal.Vec3f))
-                #         pdf = lightHandler.shape.pdf(worldHitPt, lightPos)
-
-                #     result += (lightHandler.material.emittedRadiance.getColor(Point2D(0.0, 0.0)) * brdfFactor * angleFactor / (pdf * distance2)) / camera.renderer.numLightSamples.float32
-
-        
-        of hkMesh: discard
-
-
 proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color =
     
     case camera.renderer.kind
-    of rkOnOff: discard
-    of rkFlat: discard
+    of rkOnOff: 
+        let closestHit = scene.tree.getClosestHit(scene.handlers, worldRay)
+        if closestHit.info.hit.isNil: return scene.bgColor
+        else: return camera.renderer.hitColor
+
+    of rkFlat: 
+        let closestHit = scene.tree.getClosestHit(scene.handlers, worldRay)
+        if closestHit.info.hit.isNil: return scene.bgColor
+        else: return closestHit.info.hit.pigment.getColor(closestHit.info.hit.shape.getUV(closestHit.pt))
 
     of rkPathTracer: 
         if (worldRay.depth > camera.renderer.depthLimit): return BLACK
 
         let closestHit = scene.tree.getClosestHit(scene.handlers, worldRay)
-        if closestHit.info.val.isNil: return scene.bgColor
+        if closestHit.info.hit.isNil: return scene.bgColor
         
-        # if closestHit.info.val.isLight: return BLUE
-
         let 
-            hitSurfacePt = closestHit.info.val.shape.getUV(closestHit.pt)
-            worldHitPt = apply(closestHit.info.val.transformation, closestHit.pt)
-            worldHitNormal = apply(closestHit.info.val.transformation, closestHit.normal)
-        
-        result = closestHit.info.val.material.emittedRadiance.getColor(hitSurfacePt)
-        # result += scene.sampleLights(worldRay, closestHit.info.val, worldHitPt, worldHitNormal, hitSurfacePt)
+            hitNormal = closestHit.info.hit.shape.getNormal(closestHit.pt, closestHit.rayDir)
+            hitSurfacePt = closestHit.info.hit.shape.getUV(closestHit.pt)
+            worldHitPt = apply(closestHit.info.hit.transformation, closestHit.pt)
+            hitColor = closestHit.info.hit.pigment.getColor(hitSurfacePt)
 
-        # var hitCol = closestHit.info.val.material.brdf.pigment.getColor(hitSurfacePt)
-        # if worldRay.depth >= camera.renderer.rouletteLimit:
-        #     let q = max(0.05, 1 - hitCol.luminosity)
-        #     if rg.rand > q: hitCol /= (1.0 - q)
-        #     else: return result
+            # worldHitNormal = apply(closestHit.info.hit.transformation, hitNormal)
+        # result = closestHit.info.hit.pigment.getColor(hitSurfacePt)
 
-        let hitColor = closestHit.info.val.material.brdf.pigment.getColor(hitSurfacePt)
+        for lightHandler in scene.handlers.filterIt(it.brdf.isNil):
+            case lightHandler.kind:
+            of hkShape: 
+                case lightHandler.shape.kind:
+                of skPoint:
+                    let 
+                        lightPos = apply(lightHandler.transformation, ORIGIN3D)
+                        lightDir = worldHitPt - lightPos
+                        distance2 = lightDir.norm2
 
-        let invNumRays = 1 / camera.renderer.directSamples.float32
-        for _ in 0..<camera.renderer.directSamples:
+                        lightHit = scene.tree.getClosestHit(scene.handlers, newRay(lightPos, lightDir.normalize))
+
+                    if not areClose(pow(lightHit.info.t, 2), distance2, 1e-3): continue
+
+                    let
+                        brdfFactor = closestHit.info.hit.brdf.eval(hitNormal.Vec3f, -lightDir, closestHit.rayDir)
+                        angleFactor = max(0, dot(-lightDir, hitNormal.Vec3f))
+
+                    result += hitColor * lightHandler.pigment.getColor(ORIGIN2D) * brdfFactor * angleFactor / distance2
+                
+                else: discard
+                # result += hitHandler.pigment.getColor(hitSurfacePt)
+                # for _ in 0..<camera.renderer.directSamples:
+                    # let
+                    #     lightSamplePt = lightHandler.shape.samplePoint(rg)
+                    #     lightPos = apply(lightHandler.transformation, lightSamplePt)
+                    #     lightDir = (lightPos - worldHitPt).Vec3f.normalize
+                    #     lightRay = newRay(worldHitPt, lightDir)
+                    #     lightHit = scene.tree.getClosestHit(scene.handlers, lightRay)
+                    #     distance2 = (lightPos - worldHitPt).norm2
+
+                    # if lightHit.info.val.isNil or pow(lightHit.info.t, 2) > distance2:
+                    #     let
+                    #         brdfFactor = hitHandler.brdf.eval(hitNormal.Vec3f, lightDir, worldRay.dir)
+                    #         angleFactor = max(0, dot(lightDir, hitNormal.Vec3f))
+                    #         pdf = lightHandler.shape.pdf(worldHitPt, lightPos)
+
+                    #     result += (lightHandler.pigment.getColor(Point2D(0.0, 0.0)) * brdfFactor * angleFactor / (pdf * distance2)) / camera.renderer.numLightSamples.float32
+
+            of hkMesh: discard
+
+
+        let invNumRays = 1 / camera.renderer.indirectSamples.float32
+        for _ in 0..<camera.renderer.indirectSamples:
             let 
-                outDir = closestHit.info.val.material.brdf.scatterDir(closestHit.normal, closestHit.dir, rg).normalize
+                outDir = closestHit.info.hit.brdf.scatterDir(hitNormal, closestHit.rayDir, rg).normalize
                 scatteredRay = Ray(
                     origin: worldHitPt, 
-                    dir: apply(closestHit.info.val.transformation, outDir),
+                    dir: apply(closestHit.info.hit.transformation, outDir),
                     tSpan: (1e-5.float32, Inf.float32),
                     depth: worldRay.depth + 1
                 )
 
             result += invNumRays * hitColor * camera.sampleRay(scene, scatteredRay, rg)
+
+        # result += sampleLights(newRandomSetUp(rg.random, rg.random))
+        # result += sampleEnvironment(newRandomSetUp(rg.random, rg.random), worldRay.depth)
+        # var hitCol = closestHit.info.hit.brdf.pigment.getColor(hitSurfacePt)
+        # if worldRay.depth >= camera.renderer.rouletteLimit:
+        #     let q = max(0.05, 1 - hitCol.luminosity)
+        #     if rg.rand > q: hitCol /= (1.0 - q)
+        #     else: return result
 
         
 proc samplePixel(x, y: int, rgSetUp: RandomSetUp, aaSamples: int; camera: Camera, scene: Scene): Color =

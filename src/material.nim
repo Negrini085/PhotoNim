@@ -17,14 +17,9 @@ type
     BRDFKind* = enum DiffuseBRDF, SpecularBRDF, CookTorranceBRDF
 
     BRDF* = ref object
-        pigment*: Pigment
-
         case kind*: BRDFKind
-        of DiffuseBRDF:
-            reflectance*: float32
-
+        of DiffuseBRDF: reflectance*: float32
         of SpecularBRDF: discard
-    
         of CookTorranceBRDF:
             ndf*: CookTorranceNDF
             diffuseCoeff*: float32
@@ -33,7 +28,7 @@ type
             refractionIndex*: float32
 
         
-    Material* = tuple[brdf: BRDF, emittedRadiance: Pigment]
+    Material* = tuple[pigment: Pigment, brdf: BRDF]
 
 
 proc newUniformPigment*(color: Color): Pigment {.inline.} = Pigment(kind: pkUniform, color: color)
@@ -74,17 +69,13 @@ proc getColor*(pigment: Pigment; uv: Point2D): Color =
         return (if (col mod 2) == (row mod 2): pigment.grid.c1 else: pigment.grid.c2)
 
 
-proc newDiffuseBRDF*(pigment = newUniformPigment(WHITE), reflectance = 1.0): BRDF {.inline.} =
-    BRDF(kind: DiffuseBRDF, pigment: pigment, reflectance: reflectance)
+proc newDiffuseBRDF*(reflectance = 1.0): BRDF {.inline.} = BRDF(kind: DiffuseBRDF, reflectance: reflectance)
+proc newSpecularBRDF*(): BRDF {.inline.} = BRDF(kind: SpecularBRDF) 
 
-proc newSpecularBRDF*(pigment = newUniformPigment(WHITE)): BRDF {.inline.} =
-    BRDF(kind: SpecularBRDF, pigment: pigment) 
-
-
-proc newCookTorranceBRDF*(pigment = newUniformPigment(WHITE), diffuseCoeff: float32 = 0.3, specularCoeff: float32 = 0.7, roughness: float32 = 0.5, refractionIndex: float32 = 1.0, ndf: CookTorranceNDF = CookTorranceNDF.ndfGGX): BRDF =
+proc newCookTorranceBRDF*(diffuseCoeff: float32 = 0.3, specularCoeff: float32 = 0.7, roughness: float32 = 0.5, refractionIndex: float32 = 1.0, ndf: CookTorranceNDF = CookTorranceNDF.ndfGGX): BRDF =
     assert (diffuseCoeff + specularCoeff <= 1.0)
     BRDF(
-        kind: CookTorranceBRDF, ndf: ndf, pigment: pigment, 
+        kind: CookTorranceBRDF, ndf: ndf, 
         diffuseCoeff: diffuseCoeff, 
         specularCoeff: specularCoeff, 
         roughness: roughness, refractionIndex: refractionIndex 
@@ -138,8 +129,7 @@ proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec
         
         return cos * cos(phi) * base[0] + cos * sin(phi) * base[1] + sqrt(1 - cos2) * base[2]
 
-    of SpecularBRDF: 
-        return hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
+    of SpecularBRDF: return hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
 
     of CookTorranceBRDF:
         let
@@ -155,5 +145,5 @@ proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec
         return base[0] * sin(theta) * cos(phi) + base[1] * sin(theta) * sin(phi) + base[2] * cos(theta)
 
 
-proc newMaterial*(brdf = newDiffuseBRDF(), emittedRadiance = newUniformPigment(BLACK)): Material {.inline.} = 
-    (brdf: brdf, emittedRadiance: emittedRadiance)
+# proc newMaterial*(brdf = newDiffuseBRDF(), emittedRadiance = newUniformPigment(BLACK)): Material {.inline.} = 
+#     (brdf: brdf, emittedRadiance: emittedRadiance)
