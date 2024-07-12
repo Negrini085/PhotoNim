@@ -60,7 +60,8 @@ type KeywordKind* = enum
     FLOAT = 24,
     IMAGE = 25,
     BOX = 26,
-    CSGUNION = 27
+    CSGUNION = 27,
+    CSGINT = 28
 
 
 const KEYWORDS* = {
@@ -90,7 +91,8 @@ const KEYWORDS* = {
     "float": KeywordKind.FLOAT,
     "image": KeywordKind.IMAGE,
     "box": KeywordKind.BOX,
-    "csgUnion": KeywordKind.CSGUNION 
+    "csgUnion": KeywordKind.CSGUNION, 
+    "csgInt": KeywordKind.CSGINT 
 }.toTable
 
 
@@ -897,6 +899,52 @@ proc parseCSGUnionSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler =
     return newCSGUnion(sh[0], sh[1], trans)
 
 
+
+proc parseCSGIntSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
+    # Procedure to parse CSGInt shape handler
+    var 
+        tryTok: Token
+        trans: Transformation
+        sh = newSeq[ShapeHandler](2)
+
+    # Parsing CSGUnion variables
+    inStr.expectSymbol('(')
+
+    for i in 0..<2:
+        tryTok = inStr.readToken()
+        
+        if tryTok.kind != KeywordToken:
+            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+        
+        if tryTok.keyword == KeywordKind.SPHERE:
+            sh[i] = inStr.parseSphereSH(dSc)
+        
+        elif tryTok.keyword == KeywordKind.PLANE:
+            sh[i] = inStr.parsePlaneSH(dSc)
+
+        elif tryTok.keyword == KeywordKind.BOX:
+            sh[i] = inStr.parseBoxSH(dSc)
+        
+        elif tryTok.keyword == KeywordKind.TRIANGLE:
+            sh[i] = inStr.parseTriangleSH(dSc)
+
+        elif tryTok.keyword == KeywordKind.CYLINDER:
+            sh[i] = inStr.parseCylinderSH(dSc)
+
+        else:
+            let msg = fmt"You can't use {tryTok.keyword} in a CSGInt. Error in: " & $inStr.location
+            raise newException(CatchableError, msg)
+
+        inStr.expectSymbol(',')
+
+    # Parsing transformation
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    return newCSGInt(sh[0], sh[1], trans)
+
+
 proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera = 
     # Procedure to parse a camera
     let
@@ -1003,6 +1051,10 @@ proc parseDefScene*(inStr: var InputStream): DefScene =
         # What if we have a csgunion?
         elif tryTok.keyword == KeywordKind.CSGUNION:
             dSc.scene.add(inStr.parseCSGUnionSH(dSc))
+
+        # What if we have a csgint?
+        elif tryTok.keyword == KeywordKind.CSGINT:
+            dSc.scene.add(inStr.parseCSGIntSH(dSc))
         
         # What if we have a camera
         elif tryTok.keyword == KeywordKind.CAMERA:
