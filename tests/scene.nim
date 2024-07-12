@@ -1080,6 +1080,7 @@ suite "Shape":
             plane = newPlane()
             csgUnion = newCSGUnion(sh, cyl)
             csgInt = newCSGInt(newSphere(newPoint3D(-1, 0, 0), 2), newSphere(newPoint3D(1, 0, 0), 2))
+            csgDiff = newCSGDiff(newSphere(newPoint3D(-1, 0, 0), 2), newSphere(newPoint3D(1, 0, 0), 2))
     
     teardown:
         discard sh
@@ -1087,6 +1088,8 @@ suite "Shape":
         discard box
         discard ell
         discard plane
+        discard csgInt
+        discard csgDiff
         discard csgUnion
 
     
@@ -1139,6 +1142,14 @@ suite "Shape":
         check not csgInt.shape.inShape(csgInt.transformation.inverse.apply(pt1))
         check not csgInt.shape.inShape(csgInt.transformation.inverse.apply(pt2))
         check csgInt.shape.inShape(csgInt.transformation.inverse.apply(pt3))
+
+        # CSGDiff shape
+        pt1 = newPoint3D(1, 2, 3)
+        pt2 = newPoint3D(2, 0, 0)
+        pt3 = newPoint3D(-1.5, 0, 0)
+        check not csgDiff.shape.inShape(csgDiff.transformation.inverse.apply(pt1))
+        check not csgDiff.shape.inShape(csgDiff.transformation.inverse.apply(pt2))
+        check csgDiff.shape.inShape(csgDiff.transformation.inverse.apply(pt3))
 
 
 
