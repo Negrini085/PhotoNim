@@ -711,6 +711,40 @@ suite "HitPayload":
         check not getHitPayload(csgUnion, ray4).isSome
 
 
+    test "getHitPayload (CSGInt)":
+        # Checking getHitPayload on CSGInt
+        var 
+            sph1 = newSphere(newPoint3D(0, 1, 0), 2)
+            sph2 = newSphere(newPoint3D(0, -1, 0), 2)
+            csgInt = newCSGInt(sph1, sph2)
+
+            ray1 = newRay(ORIGIN3D, eY)
+            ray2 = newRay(newPoint3D(4, 1, 0), -eX)
+            ray3 = newRay(newPoint3D(1, 3, 6), -eZ)
+
+        # First ray ---> Origin: (0, 0, 0), Direction: eY
+        # We should intersection in (0, 1, 0)
+        hitPayload = getHitPayload(csgInt, ray1)
+        check hitPayload.isSome
+        check hitPayload.get.t == 1
+        check hitPayload.get.handler.shape.kind == skSphere
+        check areClose(hitPayload.get.ray.dir, eY)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(0, 1, 0))
+
+        # Second ray ---> Origin: (0, 1, 0), Direction: eX
+        # We should intersection in (1, 1, 0)
+        hitPayload = getHitPayload(csgInt, ray2)
+        check hitPayload.isSome
+        check hitPayload.get.t == 4
+        check hitPayload.get.handler.shape.kind == skSphere
+        check areClose(hitPayload.get.ray.dir, -eX)
+        check areClose(hitPayload.get.ray.origin, newPoint3D(4, 2, 0))
+
+        # Third ray ---> Origin: (1, 3, 6), Direction: -eZ
+        # We should get no intersection
+        check not getHitPayload(csgInt, ray3).isSome
+
+
     #----------------------------------#
     #     getHitPayloads proc test     #
     #----------------------------------#
