@@ -4,7 +4,9 @@ import PhotoNim
 suite "PCG":
 
     setup:
-        var gen = newPCG(42, 54)
+        var 
+            randSet = newRandomSetUp(42, 54)
+            gen = newPCG(randSet)
 
     test "newPCG proc":
         # Checking PCG constructor
