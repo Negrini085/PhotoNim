@@ -1,4 +1,4 @@
-import geometry, pcg, hdrimage, pigment, brdf
+import pcg, geometry, color, pigment, brdf
 
 from std/sequtils import newSeqWith, toSeq, filterIt, map, mapIt
 

@@ -1,7 +1,7 @@
 let PhotoNimVersion* = "PhotoNim 0.3.1"
 
-import src/[geometry, pcg, hdrimage, pigment, brdf, scene, shape, mesh, hitrecord, camera]
-export geometry, pcg, hdrimage, pigment, brdf, scene, shape, mesh, hitrecord, camera
+import src/[pcg, geometry, color, hdrimage, pigment, brdf, scene, shape, mesh, hitrecord, camera]
+export pcg, geometry, color, hdrimage, pigment, brdf, scene, shape, mesh, hitrecord, camera
 
 
 from std/streams import newFileStream, close, FileStream

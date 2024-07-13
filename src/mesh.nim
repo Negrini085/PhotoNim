@@ -1,4 +1,4 @@
-import geometry, pcg, hdrimage, pigment, brdf, scene, shape
+import pcg, geometry, color, pigment, brdf, scene, shape
 
 from std/streams import newFileStream, atEnd, readLine
 from std/strutils import parseInt, parseFloat, isEmptyOrWhitespace, splitWhitespace, rsplit

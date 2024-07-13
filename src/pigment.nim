@@ -1,4 +1,4 @@
-import geometry, hdrimage
+import geometry, color, hdrimage
 
 from std/streams import newFileStream
 from std/math import floor

@@ -1,4 +1,4 @@
-import geometry, hdrimage, pigment, brdf, scene
+import geometry, color, pigment, brdf, scene
 
 from std/math import sgn, floor, arccos, arctan2, PI
 from std/sequtils import mapIt

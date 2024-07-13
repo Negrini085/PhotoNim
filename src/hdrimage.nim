@@ -1,4 +1,4 @@
-import geometry
+import color
 
 from std/math import sum, pow, log10, floor
 from std/fenv import epsilon 
@@ -6,49 +6,13 @@ from std/sequtils import applyIt, mapIt
 from std/strutils import split, parseFloat, parseInt
 from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
-from nimPNG import savePNG24
 from std/strformat import fmt
+from nimPNG import savePNG24
 
 
-type 
-    Color* {.borrow: `.`.} = distinct Vec3f
-
-    HDRImage* = ref object
-        width*, height*: int
-        pixels*: seq[Color]
-
-
-proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
-
-const 
-    WHITE* = newColor(1, 1, 1)
-    BLACK* = newColor(0, 0, 0)
-    RED*   = newColor(1, 0, 0)
-    GREEN* = newColor(0, 1, 0)
-    BLUE*  = newColor(0, 0, 1)
-
-proc r*(a: Color): float32 {.inline.} = a.Vec3f[0]
-proc g*(a: Color): float32 {.inline.} = a.Vec3f[1]
-proc b*(a: Color): float32 {.inline.} = a.Vec3f[2]
-
-proc `==`*(a, b: Color): bool {.borrow.}
-proc areClose*(a, b: Color; epsilon = epsilon(float32)): bool {.borrow.}
-
-proc `+`*(a, b: Color): Color {.borrow.}
-proc `+=`*(a: var Color, b: Color) {.borrow.}
-proc `-`*(a, b: Color): Color {.borrow.}
-proc `-=`*(a: var Color, b: Color) {.borrow.}
-
-proc `*`*(a: Color, b: float32): Color {.borrow.}
-proc `*`*(a: float32, b: Color): Color {.borrow.}
-proc `*=`*(a: var Color, b: float32) {.borrow.}
-proc `/`*(a: Color, b: float32): Color {.borrow.}
-proc `/=`*(a: var Color, b: float32) {.borrow.}
-
-proc `*`*(a: Color, b: Color): Color {.inline.} = newColor(a.r*b.r, a.g*b.g, a.b*b.b)
-
-proc `$`*(a: Color): string {.borrow.}
-proc luminosity*(a: Color): float32 {.inline.} = 0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
+type HDRImage* = ref object
+    width*, height*: int
+    pixels*: seq[Color]
 
 
 proc newHDRImage*(width, height: int): HDRImage {.inline.} = 
