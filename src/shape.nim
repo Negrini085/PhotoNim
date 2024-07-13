@@ -4,7 +4,7 @@ from std/math import sgn, floor, arccos, arctan2, PI
 from std/sequtils import mapIt
 
 
-proc getAABB(shape: Shape): Interval[Point3D] {.inline.} =
+proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     case shape.kind
     of skAABox: shape.aabb
     of skTriangle: newAABB(shape.vertices)

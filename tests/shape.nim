@@ -12,12 +12,12 @@ suite "AABox & AABB":
         let
             p1 = ORIGIN3D
             p2 = newPoint3D(1, 2, 3)
-            p3 = newPoint3D(-2, 4, -8)
-            p4 = newPoint3D(-1, 2, 2)
+            p3 = newPoint3D(-2, 2, -8)
+            p4 = newPoint3D(-1, 4, 2)
             tr = newTranslation(eX)
             
-            box1 = newBox((p1, p2), newMaterial(newDiffuseBRDF(), newUniformPigment(newColor(0.3, 0.7, 1))))
-            box2 = newBox((p1, p2), newMaterial(newSpecularBRDF(), newUniformPigment(newColor(1, 223/255, 0))), tr)
+            box1 = newBox((p1, p2), newDiffuseBRDF(newUniformPigment(newColor(0.3, 0.7, 1))), newUniformPigment(newColor(0.3, 0.7, 1)))
+            box2 = newBox((p3, p4), newSpecularBRDF(newUniformPigment(newColor(1, 223/255, 0))), newUniformPigment(newColor(1, 223/255, 0)), tr)
 
     teardown:
         discard box1
@@ -36,22 +36,20 @@ suite "AABox & AABB":
         # box1 --> No transformation given
         check areClose(box1.shape.aabb.min, ORIGIN3D)
         check areClose(box1.shape.aabb.max, newPoint3D(1, 2, 3))
-        check box1.shape.material.brdf.kind == DiffuseBRDF
-        check box1.shape.material.radiance.kind == pkUniform
+        check box1.brdf.kind == DiffuseBRDF
+        check box1.emittedRadiance.kind == pkUniform
 
         check box1.transformation.kind == tkIdentity
 
 
         # box2 --> giving min and max as input
-        check areClose(box2.shape.aabb.min, ORIGIN3D)
-        check areClose(box2.shape.aabb.max, newPoint3D(1, 2, 3))
-        check box2.shape.material.brdf.kind == SpecularBRDF
-        check box2.shape.material.radiance.kind == pkUniform
+        check areClose(box2.shape.aabb.min, newPoint3D(-2, 2,-8))
+        check areClose(box2.shape.aabb.max, newPoint3D(-1, 4, 2))
+        check box2.brdf.kind == SpecularBRDF
+        check box2.emittedRadiance.kind == pkUniform
 
-        check areClose(box2.transformation.mat, newTranslation(eX).mat)
-
-
-    
+        check box2.transformation.kind == tkTranslation
+        check areClose(box2.transformation.offset, eX)
 
     test "getNormal proc":
         # Checking getNormal proc
@@ -64,24 +62,24 @@ suite "AABox & AABB":
             pt6 = newPoint3D(0.5, 0.5, 3)
         
         # box1 --> default constructor
-        check areClose(box1.shape.getNormal(pt1, newVec3f( 1, 0, 0)).Vec3f, newVec3f(-1, 0, 0))
-        check areClose(box1.shape.getNormal(pt2, newVec3f(-1, 0, 0)).Vec3f, newVec3f( 1, 0, 0))
-        check areClose(box1.shape.getNormal(pt3, newVec3f(0,  1, 0)).Vec3f, newVec3f(0, -1, 0))
-        check areClose(box1.shape.getNormal(pt4, newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
-        check areClose(box1.shape.getNormal(pt5, newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
-        check areClose(box1.shape.getNormal(pt6, newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
+        check areClose(box1.shape.getNormal(pt1, newVec3f( 1, 0, 0)), newNormal(-1, 0, 0))
+        check areClose(box1.shape.getNormal(pt2, newVec3f(-1, 0, 0)), newNormal( 1, 0, 0))
+        check areClose(box1.shape.getNormal(pt3, newVec3f(0,  1, 0)), newNormal(0, -1, 0))
+        check areClose(box1.shape.getNormal(pt4, newVec3f(0, -1, 0)), newNormal(0,  1, 0))
+        check areClose(box1.shape.getNormal(pt5, newVec3f(0, 0,  1)), newNormal(0, 0, -1))
+        check areClose(box1.shape.getNormal(pt6, newVec3f(0, 0, -1)), newNormal(0, 0,  1))
 
         
         # box2 --> giving min and max as input
-        pt1 = newPoint3D(1, 0.5, 0.5); pt2 = newPoint3D(2, 0.5, 0.5); pt3 = newPoint3D(1.5, 0, 0.5)
-        pt4 = newPoint3D(1.5, 2, 0.5); pt5 = newPoint3D(1.5, 0.5, 0); pt6 = newPoint3D(1.5, 0.5, 3)
+        pt1 = newPoint3D(-1.0, 3.0,-3.0); pt2 = newPoint3D( 0.0, 3.0,-3.0); pt3 = newPoint3D(-0.5, 2.0,-3.0)
+        pt4 = newPoint3D(-0.5, 4.0,-3.0); pt5 = newPoint3D(-0.5, 3.0,-8.0); pt6 = newPoint3D(-0.5, 3.0, 2.0)
 
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt1), newVec3f( 1, 0, 0)).Vec3f, newVec3f(-1, 0, 0))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt2), newVec3f(-1, 0, 0)).Vec3f, newVec3f( 1, 0, 0))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt3), newVec3f(0,  1, 0)).Vec3f, newVec3f(0, -1, 0))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt4), newVec3f(0, -1, 0)).Vec3f, newVec3f(0,  1, 0))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt5), newVec3f(0, 0,  1)).Vec3f, newVec3f(0, 0, -1))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt6), newVec3f(0, 0, -1)).Vec3f, newVec3f(0, 0,  1))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt1), newVec3f( 1, 0, 0)), newNormal(-1, 0, 0))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt2), newVec3f(-1, 0, 0)), newNormal( 1, 0, 0))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt3), newVec3f(0,  1, 0)), newNormal(0, -1, 0))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt4), newVec3f(0, -1, 0)), newNormal(0,  1, 0))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt5), newVec3f(0, 0,  1)), newNormal(0, 0, -1))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt6), newVec3f(0, 0, -1)), newNormal(0, 0,  1))
 
 
     test "getUV proc":
@@ -104,8 +102,8 @@ suite "AABox & AABB":
 
         
         # box2 --> transformation is translation along x-axis
-        pt1 = newPoint3D(1.0, 1.0, 1.5); pt2 = newPoint3D(2.0, 1.0, 1.5); pt3 = newPoint3D(1.5, 0.0, 1.5)
-        pt4 = newPoint3D(1.5, 2.0, 1.5); pt5 = newPoint3D(1.5, 1.0, 0.0); pt6 = newPoint3D(1.5, 1.0, 3.0)
+        pt1 = newPoint3D(-1.0, 3.0,-3.0); pt2 = newPoint3D( 0.0, 3.0,-3.0); pt3 = newPoint3D(-0.5, 2.0,-3.0)
+        pt4 = newPoint3D(-0.5, 4.0,-3.0); pt5 = newPoint3D(-0.5, 3.0,-8.0); pt6 = newPoint3D(-0.5, 3.0, 2.0)
 
         check areClose(box2.shape.getUV(apply(box2.transformation.inverse, pt1)), newPoint2D(0.5, 0.5))
         check areClose(box2.shape.getUV(apply(box2.transformation.inverse, pt2)), newPoint2D(0.5, 0.5))
@@ -113,9 +111,57 @@ suite "AABox & AABB":
         check areClose(box2.shape.getUV(apply(box2.transformation.inverse, pt4)), newPoint2D(0.5, 0.5))
         check areClose(box2.shape.getUV(apply(box2.transformation.inverse, pt5)), newPoint2D(0.5, 0.5))
         check areClose(box2.shape.getUV(apply(box2.transformation.inverse, pt6)), newPoint2D(0.5, 0.5))
-    
-    
-    test "getAABB (from AABox shape) proc":
+
+
+    test "getAABB (Box) proc":
+        # Checking getAABB proc for box.shape
+        # Gives AABB in shape local reference system
+        let
+            aabb1 = getAABB(box1.shape)
+            aabb2 = getAABB(box2.shape)
+        
+        # First Box --> <min: (0, 0, 0), max: (1, 2, 3)>
+        check areClose(aabb1.min, ORIGIN3D) 
+        check areClose(aabb1.max, newPoint3D(1, 2, 3))
+
+        # Second Box --> < min: (-2, 2, -8), max: (-1, 4, 2) > 
+        check areClose(aabb2.min, newPoint3D(-2, 2,-8)) 
+        check areClose(aabb2.max, newPoint3D(-1, 4, 2))
+
+
+    test "getVertices (from AABox shape) proc":
+        # Checking getVertices procedure to give aabb vertices locally for AABox
+        let
+            aabb1 = getAABB(box1.shape)
+            aabb2 = getAABB(box2.shape)
+
+            vert1 = getVertices(aabb1)
+            vert2 = getVertices(aabb2)
+        
+        # Box 1 --> <min: (0, 0, 0), max: (1, 2, 3)>
+        check areClose(vert1[0], newPoint3D( 0, 0, 0))
+        check areClose(vert1[1], newPoint3D( 1, 2, 3))
+        check areClose(vert1[2], newPoint3D( 0, 0, 3))
+        check areClose(vert1[3], newPoint3D( 0, 2, 0))
+        check areClose(vert1[4], newPoint3D( 0, 2, 3))
+        check areClose(vert1[5], newPoint3D( 1, 0, 0))
+        check areClose(vert1[6], newPoint3D( 1, 0, 3))
+        check areClose(vert1[7], newPoint3D( 1, 2, 0))
+
+
+        # Box 2 --> <min: (-2, 2, -8), max: (-1, 4, 2)>
+        check areClose(vert2[0], newPoint3D(-2, 2,-8))
+        check areClose(vert2[1], newPoint3D(-1, 4, 2))
+        check areClose(vert2[2], newPoint3D(-2, 2, 2))
+        check areClose(vert2[3], newPoint3D(-2, 4,-8))
+        check areClose(vert2[4], newPoint3D(-2, 4, 2))
+        check areClose(vert2[5], newPoint3D(-1, 2,-8))
+        check areClose(vert2[6], newPoint3D(-1, 2, 2))
+        check areClose(vert2[7], newPoint3D(-1, 4,-8))
+
+
+    test "getAABB (Box handler) proc":
+        # Checking procedure to give aabb in world for AABox
         let 
             aabb1 = getAABB(box1)
             aabb2 = getAABB(box2)
@@ -123,70 +169,9 @@ suite "AABox & AABB":
         check areClose(aabb1.min, box1.shape.aabb.min)
         check areClose(aabb1.max, box1.shape.aabb.max)
 
-        check areClose(aabb2.min, newPoint3D(1, 0, 0))
-        check areClose(aabb2.max, newPoint3D(2, 2, 3))
+        check areClose(aabb2.min, newPoint3D(-1, 2,-8))
+        check areClose(aabb2.max, newPoint3D( 0, 4, 2))
     
-
-    test "getVertices (from AABox shape) proc":
-        var
-            vert = getVertices(box1.shape.aabb)
-            vertBox = getVertices(box1.shape)
-        
-        # box1 --> default constructor
-        check vert.len == vertBox.len
-        for i in 0..<vert.len:
-            check areClose(vert[i], vertBox[i])
-        
-
-        # box2 --> giving min and max as input
-        vert = getVertices(box2.shape.aabb)
-        vertBox = getVertices(box2.shape)
-        
-        check vert.len == vertBox.len
-        for i in 0..<vert.len:
-            check areClose(vert[i], vertBox[i])
-
-
-    test "newAABB (from points) proc":
-        # Checking newAABB (from points) proc
-        let appo = newAABB(@[p1, p2, p3, p4])
-
-        check areClose(appo.min, newPoint3D(-2, 0, -8))
-        check areClose(appo.max, newPoint3D(1, 4, 3))
-    
-
-    test "getTotalAABB (from aabb) proc":
-        # Checking getTotalAABB proc
-        let
-            aabb1 = newAABB(@[p1, p2])
-            aabb2 = newAABB(@[p3, p4])
-            aabbTot = getTotalAABB(@[aabb1, aabb2])
-        
-        check areClose(aabb1.min, ORIGIN3D)
-        check areClose(aabb1.max, p2)
-
-        check areClose(aabb2.min, newPoint3D(-2, 2, -8))
-        check areClose(aabb2.max, newPoint3D(-1, 4, 2))
-
-        check areClose(aabbTot.min, newPoint3D(-2, 0, -8))
-        check areClose(aabbTot.max, newPoint3D(1, 4, 3))
-
-
-    test "getVertices (from aabb) proc":
-        # Checking getVertices proc
-        let 
-            aabb = newAABB(@[p3, p4])
-            appo = aabb.getVertices()
-
-        check areClose(appo[0], aabb.min)
-        check areClose(appo[1], aabb.max)
-        check areClose(appo[2], newPoint3D(-2, 2, 2))
-        check areClose(appo[3], newPoint3D(-2, 4, -8))
-        check areClose(appo[4], newPoint3D(-2, 4, 2))
-        check areClose(appo[5], newPoint3D(-1, 2, -8))
-        check areClose(appo[6], newPoint3D(-1, 2, 2))
-        check areClose(appo[7], newPoint3D(-1, 4, -8))
-
 
 
 #------------------------------#
@@ -196,8 +181,8 @@ suite "Sphere":
 
     setup:
         let
-            sphere = newSphere(ORIGIN3D, 3.0)
-            usphere = newUnitarySphere(eX.Point3D, newMaterial(newSpecularBRDF(), newCheckeredPigment(BLACK, WHITE, 2, 2)))
+            sphere = newSphere(ORIGIN3D, 3.0, newSpecularBRDF(newUniformPigment(WHITE)))
+            usphere = newUnitarySphere(eX.Point3D, newSpecularBRDF(newCheckeredPigment(BLACK, WHITE, 2, 2)), newCheckeredPigment(BLACK, WHITE, 2, 2))
 
     teardown: 
         discard usphere
@@ -207,14 +192,15 @@ suite "Sphere":
     test "newUnitarySphere proc":
         # Checking newUnitarySphere proc
         check usphere.shape.radius == 1.0
-        check areClose(usphere.transformation.mat, newTranslation(eX).mat)
+        check usphere.transformation.kind == tkTranslation
+        check areClose(usphere.transformation.offset, eX)
 
-        check usphere.shape.material.brdf.kind == SpecularBRDF
-        check usphere.shape.material.radiance.kind == pkCheckered 
-        check usphere.shape.material.radiance.grid.nCols == 2.int
-        check usphere.shape.material.radiance.grid.nRows == 2.int
-        check areClose(usphere.shape.material.radiance.grid.c1, BLACK)
-        check areClose(usphere.shape.material.radiance.grid.c2, WHITE)
+        check usphere.brdf.kind == SpecularBRDF
+        check usphere.emittedRadiance.kind == pkCheckered 
+        check usphere.emittedRadiance.grid.nCols == 2.int
+        check usphere.emittedRadiance.grid.nRows == 2.int
+        check areClose(usphere.emittedRadiance.grid.c1, BLACK)
+        check areClose(usphere.emittedRadiance.grid.c2, WHITE)
 
 
     test "newSphere proc":
@@ -222,9 +208,9 @@ suite "Sphere":
         check sphere.shape.radius == 3.0
         check sphere.transformation.kind == tkIdentity
 
-        check sphere.shape.material.brdf.kind == DiffuseBRDF
-        check sphere.shape.material.radiance.kind == pkUniform
-        # check areClose(sphere.shape.material.radiance.color, WHITE)
+        check sphere.brdf.kind == SpecularBRDF
+        check sphere.emittedRadiance.kind == pkUniform
+        check areClose(sphere.emittedRadiance.color, BLACK)
 
     
     test "getNormal proc":
@@ -257,27 +243,30 @@ suite "Sphere":
         check areClose(sphere.shape.getUV((3.float32*pt1.Vec3f).Point3D), newPoint2D(0, 0.5))
         check areClose(sphere.shape.getUV((3.float32*pt2.Vec3f).Point3D), newPoint2D(1/6, 0.5))
 
-    
-    test "getAABB proc":
-        # Checking getAABB proc, gives AABB in world
+
+    test "getAABB (Sphere) proc":
+        # Checking getAABB proc, gives AABB in sphere local reference system
         let
-            aabb1 = getAABB(usphere)
-            aabb2 = getAABB(sphere)
+            aabb1 = getAABB(usphere.shape)
+            aabb2 = getAABB(sphere.shape)
         
         # Unitary sphere
-        check areClose(aabb1.min, newPoint3D(0, -1, -1))
-        check areClose(aabb1.max, newPoint3D(2,  1,  1))
+        check areClose(aabb1.min, newPoint3D(-1,-1,-1))
+        check areClose(aabb1.max, newPoint3D( 1, 1, 1))
 
         # Sphere with arbitrary radius
         check areClose(aabb2.min, newPoint3D(-3, -3, -3))
         check areClose(aabb2.max, newPoint3D( 3,  3,  3))
-    
 
-    test "getVertices proc":
+
+    test "getVertices (Sphere) proc":
         # Checking getVertices proc, gives AABB box vertices in shape local reference system
         let 
-            vert1 = getVertices(usphere.shape)
-            vert2 = getVertices(sphere.shape)
+            aabb1 = getAABB(usphere.shape) 
+            aabb2 = getAABB(sphere.shape) 
+
+            vert1 = getVertices(aabb1)
+            vert2 = getVertices(aabb2)
         
         # Unitary sphere        
         check areClose(vert1[0], newPoint3D(-1, -1, -1))
@@ -298,7 +287,22 @@ suite "Sphere":
         check areClose(vert2[5], newPoint3D( 3, -3, -3))
         check areClose(vert2[6], newPoint3D( 3, -3,  3))
         check areClose(vert2[7], newPoint3D( 3,  3, -3))
+    
 
+    test "getAABB (Sphere handler) proc":
+        # Checking getAABB proc, gives AABB in world
+        let
+            aabb1 = getAABB(usphere)
+            aabb2 = getAABB(sphere)
+        
+        # Unitary sphere
+        check areClose(aabb1.min, newPoint3D(0, -1, -1))
+        check areClose(aabb1.max, newPoint3D(2,  1,  1))
+
+        # Sphere with arbitrary radius
+        check areClose(aabb2.min, newPoint3D(-3, -3, -3))
+        check areClose(aabb2.max, newPoint3D( 3,  3,  3))
+    
 
 
 #-------------------------------#
@@ -309,13 +313,13 @@ suite "Triangle":
     setup:
         let 
             tri1 =  newTriangle(
-                eX.Point3D, eY.Point3D, eZ.Point3D,
-                newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 3, 3))
+                [eX.Point3D, eY.Point3D, eZ.Point3D],
+                newSpecularBRDF(newCheckeredPigment(WHITE, BLACK, 3, 3)), newCheckeredPigment(WHITE, BLACK, 3, 3)
                 )
         
             tri2 =  newTriangle(
-                eX.Point3D, eY.Point3D, eZ.Point3D,
-                newMaterial(newDiffuseBRDF(), newUniformPigment(WHITE)),
+                [eX.Point3D, eY.Point3D, eZ.Point3D],
+                newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE),
                 newTranslation(newVec3f(1, 2, 3))
                 )
     
@@ -332,12 +336,12 @@ suite "Triangle":
         check areClose(tri1.shape.vertices[1], eY.Point3D)
         check areClose(tri1.shape.vertices[2], eZ.Point3D)
 
-        check tri1.shape.material.brdf.kind == SpecularBRDF
-        check tri1.shape.material.radiance.kind == pkCheckered
-        check tri1.shape.material.radiance.grid.nCols == 3
-        check tri1.shape.material.radiance.grid.nRows == 3
-        check areClose(tri1.shape.material.radiance.grid.c1, WHITE)
-        check areClose(tri1.shape.material.radiance.grid.c2, BLACK)
+        check tri1.brdf.kind == SpecularBRDF
+        check tri1.emittedRadiance.kind == pkCheckered
+        check tri1.emittedRadiance.grid.nCols == 3
+        check tri1.emittedRadiance.grid.nRows == 3
+        check areClose(tri1.emittedRadiance.grid.c1, WHITE)
+        check areClose(tri1.emittedRadiance.grid.c2, BLACK)
 
 
         # Triangle 2 --> Transformation is translation of (1, 2, 3)
@@ -345,9 +349,9 @@ suite "Triangle":
         check areClose(tri2.shape.vertices[1], eY.Point3D)
         check areClose(tri2.shape.vertices[2], eZ.Point3D)
 
-        check tri2.shape.material.brdf.kind == DiffuseBRDF
-        check tri2.shape.material.radiance.kind == pkUniform
-        check areClose(tri2.shape.material.radiance.color, WHITE)
+        check tri2.brdf.kind == DiffuseBRDF
+        check tri2.emittedRadiance.kind == pkUniform
+        check areClose(tri2.emittedRadiance.color, WHITE)
     
 
     test "getNormal proc":
@@ -364,9 +368,50 @@ suite "Triangle":
 
         check areClose(tri1.shape.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
         check areClose(tri2.shape.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
+
+
+    test "getAABB (Triangle) proc":
+        # Cheking getAABB proc, gives aabb in local reference system
+        let 
+            aabb1 = getAABB(tri1.shape)
+            aabb2 = getAABB(tri2.shape)
+
+        check areClose(aabb1.min, newPoint3D(0, 0, 0))
+        check areClose(aabb1.max, newPoint3D(1, 1, 1))
+
+        check areClose(aabb2.min, newPoint3D(0, 0, 0))
+        check areClose(aabb2.max, newPoint3D(1, 1, 1))
     
 
-    test "getAABB proc":
+    test "getVertices (Triangle) proc":
+        # Checking getVertices proc, gives aabb vertices in local shape reference system
+        var
+            vert1 = getVertices(tri1.aabb)
+            vert2 = getVertices(tri2.aabb)
+        
+        # First triangle -> identity transformation
+        check areClose(vert1[0], tri1.aabb.min)
+        check areClose(vert1[1], tri1.aabb.max)
+        check areClose(vert1[2], newPoint3D(0, 0, 1))
+        check areClose(vert1[3], newPoint3D(0, 1, 0))
+        check areClose(vert1[4], newPoint3D(0, 1, 1))
+        check areClose(vert1[5], newPoint3D(1, 0, 0))
+        check areClose(vert1[6], newPoint3D(1, 0, 1))
+        check areClose(vert1[7], newPoint3D(1, 1, 0))
+    
+        # Second triangle --> translation of (1, 2, 3)
+        # Triangle AABB vertices
+        check areClose(vert2[0], tri2.aabb.min)
+        check areClose(vert2[1], tri2.aabb.max)
+        check areClose(vert2[2], newPoint3D(1, 2, 4))
+        check areClose(vert2[3], newPoint3D(1, 3, 3))
+        check areClose(vert2[4], newPoint3D(1, 3, 4))
+        check areClose(vert2[5], newPoint3D(2, 2, 3))
+        check areClose(vert2[6], newPoint3D(2, 2, 4))
+        check areClose(vert2[7], newPoint3D(2, 3, 3))
+
+
+    test "getAABB (Triangle handler) proc":
         # Cheking getAABB proc, gives aabb in world
         let 
             aabb1 = getAABB(tri1)
@@ -377,51 +422,8 @@ suite "Triangle":
 
         check areClose(aabb2.min, newPoint3D(1, 2, 3))
         check areClose(aabb2.max, newPoint3D(2, 3, 4))
-    
-
-    test "getVertices proc":
-        # Checking getVertices proc, gives aabb vertices in local shape reference system
-        var
-            aabb = getAABB(tri1)
-            vert1 = getVertices(tri1.shape)
-            vert2 = getVertices(aabb)
-        
-        # First triangle -> identity
-        # Triangle vertices
-        check areClose(vert1[0], tri1.shape.vertices[0])
-        check areClose(vert1[1], tri1.shape.vertices[1])
-        check areClose(vert1[2], tri1.shape.vertices[2])
-
-        # Triangle AABB vertices
-        check areClose(vert2[0], aabb.min)
-        check areClose(vert2[1], aabb.max)
-        check areClose(vert2[2], newPoint3D(0, 0, 1))
-        check areClose(vert2[3], newPoint3D(0, 1, 0))
-        check areClose(vert2[4], newPoint3D(0, 1, 1))
-        check areClose(vert2[5], newPoint3D(1, 0, 0))
-        check areClose(vert2[6], newPoint3D(1, 0, 1))
-        check areClose(vert2[7], newPoint3D(1, 1, 0))
 
 
-        aabb = getAABB(tri2)
-        vert1 = getVertices(tri2.shape)
-        vert2 = getVertices(aabb)
-    
-        # Second triangle --> translation of (1, 2, 3)
-        # Triangle vertices
-        check areClose(vert1[0], tri2.shape.vertices[0])
-        check areClose(vert1[1], tri2.shape.vertices[1])
-        check areClose(vert1[2], tri2.shape.vertices[2])
-
-        # Triangle AABB vertices
-        check areClose(vert2[0], aabb.min)
-        check areClose(vert2[1], aabb.max)
-        check areClose(vert2[2], newPoint3D(1, 2, 4))
-        check areClose(vert2[3], newPoint3D(1, 3, 3))
-        check areClose(vert2[4], newPoint3D(1, 3, 4))
-        check areClose(vert2[5], newPoint3D(2, 2, 3))
-        check areClose(vert2[6], newPoint3D(2, 2, 4))
-        check areClose(vert2[7], newPoint3D(2, 3, 3))
 
 #----------------------------#
 #    Cylinder test suite     #
@@ -432,8 +434,11 @@ suite "Cylinder":
         let 
             tr = newTranslation(eZ)
 
-            cyl1 = newCylinder()
-            cyl2 = newCylinder(R = 2.0, material = newMaterial(newSpecularBRDF(), newCheckeredPigment(WHITE, BLACK, 2, 2)), transformation = tr)
+            cyl1 = newCylinder(brdf = newDiffuseBRDF(newUniformPigment(WHITE)))
+            cyl2 = newCylinder(
+                R = 2.0, brdf = newSpecularBRDF(newCheckeredPigment(WHITE, BLACK, 2, 2)),
+                emittedRadiance = newCheckeredPigment(WHITE, BLACK, 2, 2), transformation = tr
+                )
     
     teardown:
         discard tr
@@ -449,9 +454,9 @@ suite "Cylinder":
         check areClose(cyl1.shape.phiMax, 2*PI)
         check cyl1.shape.zSpan.min == 0.0 and cyl1.shape.zSpan.max == 1.0
 
-        check cyl1.shape.material.brdf.kind == DiffuseBRDF
-        check cyl1.shape.material.radiance.kind == pkUniform
-        # check areClose(cyl1.shape.material.radiance.color, WHITE)
+        check cyl1.brdf.kind == DiffuseBRDF
+        check cyl1.emittedRadiance.kind == pkUniform
+        # check areClose(cyl1.emittedRadiance.color, WHITE)
 
         check cyl1.transformation.kind == tkIdentity
     
@@ -461,15 +466,15 @@ suite "Cylinder":
         check areClose(cyl2.shape.phiMax, 2*PI)
         check cyl2.shape.zSpan.min == 0.0 and cyl2.shape.zSpan.max == 1.0
 
-        check cyl2.shape.material.brdf.kind == SpecularBRDF
-        check cyl2.shape.material.radiance.kind == pkCheckered
-        check cyl2.shape.material.radiance.grid.nRows == 2
-        check cyl2.shape.material.radiance.grid.nCols == 2
-        check areClose(cyl2.shape.material.radiance.grid.c1, WHITE)
-        check areClose(cyl2.shape.material.radiance.grid.c2, BLACK)
+        check cyl2.brdf.kind == SpecularBRDF
+        check cyl2.emittedRadiance.kind == pkCheckered
+        check cyl2.emittedRadiance.grid.nRows == 2
+        check cyl2.emittedRadiance.grid.nCols == 2
+        check areClose(cyl2.emittedRadiance.grid.c1, WHITE)
+        check areClose(cyl2.emittedRadiance.grid.c2, BLACK)
 
         check cyl2.transformation.kind == tkTranslation
-        check areClose(cyl2.transformation.mat, newTranslation(eZ).mat)
+        check areClose(cyl2.transformation.offset, eZ)
 
 
     test "getNormal proc":
@@ -497,7 +502,52 @@ suite "Cylinder":
         check areClose(cyl2.shape.getUV(newPoint3D(2, 0, 0.3)).Vec2f, newVec2f(0.0, 0.3))
 
 
-    test "getAABB proc":
+    test "getAABB (Cylinder) proc":
+        # Cheking getAABB proc, gives aabb in local reference system
+        let
+            aabb1 = getAABB(cyl1.shape)
+            aabb2 = getAABB(cyl2.shape)
+        
+        # First cylinder: default constructor
+        check areClose(aabb1.min, newPoint3D(-1, -1, 0))
+        check areClose(aabb1.max, newPoint3D(1, 1, 1))
+
+        # Second cylinder: specific build
+        check areClose(aabb2.min, newPoint3D(-2, -2, 0))
+        check areClose(aabb2.max, newPoint3D(2, 2, 1))
+
+
+    test "getVertices (Cylinder) proc":
+        # Checking getVertices proc, gives aabb vertices in local shape reference system
+        let
+            aabb1 = getAABB(cyl1.shape)
+            aabb2 = getAABB(cyl2.shape)
+
+            vert1 = getVertices(aabb1)
+            vert2 = getVertices(aabb2)
+        
+        # First cylinder
+        check areClose(vert1[0], cyl1.aabb.min)
+        check areClose(vert1[1], cyl1.aabb.max)
+        check areClose(vert1[2], newPoint3D(-1, -1, 1))
+        check areClose(vert1[3], newPoint3D(-1,  1, 0))
+        check areClose(vert1[4], newPoint3D(-1,  1, 1))
+        check areClose(vert1[5], newPoint3D( 1, -1, 0))
+        check areClose(vert1[6], newPoint3D( 1, -1, 1))
+        check areClose(vert1[7], newPoint3D( 1,  1, 0))
+
+        # Second cylinder  
+        check areClose(vert2[0], newPoint3D(-2, -2, 0))
+        check areClose(vert2[1], newPoint3D( 2,  2, 1))
+        check areClose(vert2[2], newPoint3D(-2, -2, 1))
+        check areClose(vert2[3], newPoint3D(-2,  2, 0))
+        check areClose(vert2[4], newPoint3D(-2,  2, 1))
+        check areClose(vert2[5], newPoint3D( 2, -2, 0))
+        check areClose(vert2[6], newPoint3D( 2, -2, 1))
+        check areClose(vert2[7], newPoint3D( 2,  2, 0))
+
+
+    test "getAABB (Cylinder handler) proc":
         # Cheking getAABB proc, gives aabb in world
         let
             aabb1 = getAABB(cyl1)
@@ -512,118 +562,4 @@ suite "Cylinder":
         check areClose(aabb2.max, newPoint3D(2, 2, 2))
     
 
-    test "getVertices proc":
-        # Checking getVertices proc, gives aabb vertices in local shape reference system
-        let
-            aabb1 = getAABB(cyl1)
-            vert1 = getVertices(cyl1.shape)
-            vert2 = getVertices(cyl2.shape)
-        
-        # First cylinder: default constructor
-        check areClose(vert1[0], aabb1.min)
-        check areClose(vert1[1], aabb1.max)
-        check areClose(vert1[2], newPoint3D(-1, -1, 1))
-        check areClose(vert1[3], newPoint3D(-1,  1, 0))
-        check areClose(vert1[4], newPoint3D(-1,  1, 1))
-        check areClose(vert1[5], newPoint3D( 1, -1, 0))
-        check areClose(vert1[6], newPoint3D( 1, -1, 1))
-        check areClose(vert1[7], newPoint3D( 1,  1, 0))
 
-        # Second cylinder: specific build
-        check areClose(vert2[0], newPoint3D(-2, -2, 0))
-        check areClose(vert2[1], newPoint3D(2, 2, 1))
-        check areClose(vert2[2], newPoint3D(-2, -2, 1))
-        check areClose(vert2[3], newPoint3D(-2,  2, 0))
-        check areClose(vert2[4], newPoint3D(-2,  2, 1))
-        check areClose(vert2[5], newPoint3D( 2, -2, 0))
-        check areClose(vert2[6], newPoint3D( 2, -2, 1))
-        check areClose(vert2[7], newPoint3D( 2,  2, 0))
-
-
-
-
-#---------------------------------------#
-#           Scene test suite            #
-#---------------------------------------#
-suite "Scene":
-
-    setup:
-        var rg = newPCG()
-
-        let 
-            tri1 = newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0))
-            tri2 = newTriangle(newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0), transformation = newTranslation([float32 1, 1, -2]))
-            sc1 = newScene(BLACK, @[tri1, tri2], rg, tkBinary)
-            sc2 = newScene(
-                newColor(1, 0.3, 0.7),
-                @[newSphere(ORIGIN3D, 3), newUnitarySphere(newPoint3D(4, 4, 4))],
-                rg, tkBinary
-                )
-            sc3 = newScene(BLACK, @[newUnitarySphere(newPoint3D(3, 3, 3)), tri1], rg, tkBinary)
-    
-    teardown:
-        discard rg
-        discard sc1
-        discard sc2
-        discard sc3
-        discard tri1
-        discard tri2
-
-    
-    test "newScene proc":
-        # Checking newScene proc
-
-        # First scene --> only triangles
-        check sc1.bgColor == BLACK
-        check sc1.handlers.len == 2
-        check sc1.handlers[0].shape.kind == skTriangle and sc1.handlers[1].shape.kind == skTriangle
-        check areClose(sc1.handlers[0].shape.vertices[0], newPoint3D(0, -2, 0))
-        check areClose(apply(sc1.handlers[1].transformation, sc1.handlers[1].shape.vertices[0]), newPoint3D(1, -1, -2))
-
-        # Second scene --> only Spheres
-        check sc2.bgColor == newColor(1, 0.3, 0.7)
-        check sc2.handlers.len == 2
-        check sc2.handlers[0].shape.kind == skSphere and sc2.handlers[1].shape.kind == skSphere
-        check areClose(sc2.handlers[0].shape.radius, 3)
-        check areClose(sc2.handlers[1].shape.radius, 1)
-        check areClose(apply(sc2.handlers[0].transformation, ORIGIN3D), ORIGIN3D)
-        check areClose(apply(sc2.handlers[1].transformation, ORIGIN3D), newPoint3D(4, 4, 4))
-
-        # Third scene --> one Sphere and one Triangle
-        # Checking newScene proc
-        check sc3.bgColor == BLACK
-        check sc3.handlers.len == 2
-        check sc3.handlers[0].shape.kind == skSphere and sc3.handlers[1].shape.kind == skTriangle
-        check areClose(sc3.handlers[0].shape.radius, 1)
-        check areClose(apply(sc3.handlers[0].transformation, ORIGIN3D), newPoint3D(3, 3, 3))
-        check areClose(sc3.handlers[1].shape.vertices[0], newPoint3D(0, -2, 0))
-
-
-    test "newBVHNode proc":
-        var sceneTree: BVHNode
-
-        # First scene, only triangles
-        sceneTree = newBVHNode(
-            @[(0, tri1), (1, tri2)], 2,
-            1, rg
-        )
-        check areClose(sceneTree.aabb.min, newPoint3D(0, -2, -2))
-        check areClose(sceneTree.aabb.max, newPoint3D(3, 4, 1))
-
-
-        # Second scene, only spheres
-        sceneTree = newBVHNode(
-            @[(0, newSphere(ORIGIN3D, 3)), (1, newUnitarySphere(newPoint3D(4, 4, 4)))], 2,
-            1, rg
-        )
-        check areClose(sceneTree.aabb.min, newPoint3D(-3, -3, -3))
-        check areClose(sceneTree.aabb.max, newPoint3D(5, 5, 5))
-
-
-        # Third scene, one sphere and one triangle
-        sceneTree = newBVHNode(
-            @[(0, newUnitarySphere(newPoint3D(3, 3, 3))), (1, tri1)], 2,
-            1, rg
-        )
-        check areClose(sceneTree.aabb.min, newPoint3D(0, -2, 0))
-        check areClose(sceneTree.aabb.max, newPoint3D(4, 4, 4))
