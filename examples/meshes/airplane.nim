@@ -6,11 +6,11 @@ from std/osproc import execCmd
 
 
 let 
-    nSamples: int = 10
-    aaSamples: int = 2
-    nRays: int = 5
-    depthLimit: int = 4
-    rrLimit: int = 3
+    nSamples: int = 1
+    aaSamples: int = 1
+    nRays: int = 1
+    depthLimit: int = 1
+    rrLimit: int = 1
     rgSetUp = newRandomSetUp(67, 4)
     outFile = "assets/images/examples/meshes/airplane.png"
 
@@ -21,8 +21,8 @@ var
 let 
     lamp = newBox(
         (newPoint3D(0.5, -0.5, 1.9), newPoint3D(1.5, 0.5, 1.999)), 
-        brdf = nil,
-        emittedRadiance = newUniformPigment(WHITE)
+        brdf = nil, # newDiffuseBRDF(newUniformPigment(BLACK)),
+        emittedRadiance = newUniformPigment(5 * WHITE)
     ) 
 
     uwall = newBox(
@@ -46,13 +46,13 @@ let
     lwall = newBox(
         (newPoint3D(-2, 2, -2), newPoint3D(2, 2, 2)), 
         brdf = newDiffuseBRDF(newUniformPigment(GREEN)),
-        # emittedRadiance = newUniformPigment(BLUE)
+        emittedRadiance = newUniformPigment(0.2.float32 * GREEN)
     ) 
 
     rwall = newBox(
         (newPoint3D(-2, -2, -2), newPoint3D(2, -2, 2)), 
         brdf = newDiffuseBRDF(newUniformPigment(RED)),
-        # emittedRadiance = newUniformPigment(BLUE)
+        emittedRadiance = newUniformPigment(0.2.float32 * RED)
     ) 
 
 
@@ -76,11 +76,11 @@ let airplane = newMesh(
     maxShapesPerLeaf = 4, 
     newRandomSetUp(rg.random, rg.random),
     brdf = newDiffuseBRDF(newUniformPigment(newColor(0.8, 0.6, 0.2))),
-    # emittedRadiance = newUniformPigment(newColor(0.8, 0.6, 0.2)),
+    emittedRadiance = newUniformPigment(0.2 * newColor(0.8, 0.6, 0.2)),
     transformation = newComposition(
-        newTranslation(-0.3.float32 * eX - eY), 
+        newTranslation(-0.3.float32 * eX - eY - 0.3.float32 * eZ), 
         newRotation(30, axisZ), newRotation(20, axisY), newRotation(10, axisX), 
-        newScaling(2 * 3e-4)
+        newScaling(3e-4)
     )
 )
 
@@ -102,7 +102,7 @@ let
     scene = newScene(
         bgColor = BLACK, 
         handlers = handlers, 
-        treeKind = tkOctonary, 
+        treeKind = tkQuaternary, 
         maxShapesPerLeaf = 2,
         newRandomSetUp(rg.random, rg.random)
     )
@@ -118,6 +118,6 @@ let
 
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."   
-
+echo fmt"Image lum: {image.avLuminosity}"
 image.savePNG(outFile, 0.18, 1.0, 0.1)
 discard execCmd fmt"open {outFile}"

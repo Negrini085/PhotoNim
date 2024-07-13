@@ -28,12 +28,10 @@ type
         brdf*: BRDF
         
         transformation*: Transformation
+        aabb*: Interval[Point3D] 
 
         case kind*: HandlerKind
-        of hkShape: 
-            aabb*: Interval[Point3D] 
-            shape*: Shape 
-
+        of hkShape: shape*: Shape 
         of hkMesh: mesh*: BVHTree
 
 
@@ -85,12 +83,6 @@ proc getVertices*(aabb: Interval[Point3D]): seq[Point3D] {.inline.} =
     result.add newPoint3D(aabb.max.x, aabb.min.y, aabb.min.z)
     result.add newPoint3D(aabb.max.x, aabb.min.y, aabb.max.z)
     result.add newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z)
-
-
-proc getAABB*(handler: ObjectHandler): Interval[Point3D] {.inline.} =
-    case handler.kind
-    of hkShape: handler.aabb
-    of hkMesh: handler.mesh.root.aabb
 
 
 proc nearestCentroid(point: Vec3f, clusterCentroids: seq[Vec3f]): tuple[index: int, sqDist: float32] =   
@@ -156,7 +148,7 @@ proc kMeans(data: seq[Vec3f], k: int, rg: var PCG): seq[int] =
 proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): BVHNode =
     if handlers.len == 0: return nil
 
-    let handlersAABBs = handlers.mapIt(it.val.getAABB)
+    let handlersAABBs = handlers.mapIt(it.val.aabb)
     
     if handlers.len <= maxShapesPerLeaf:
         return BVHNode(kind: nkLeaf, aabb: handlersAABBs.getTotalAABB, indexes: handlers.mapIt(it.key))

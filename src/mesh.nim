@@ -47,7 +47,7 @@ proc newMesh*(source: string, treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp
         shapes[i] = newTriangle(
             vertices = [nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]]], 
             brdf, emittedRadiance, 
-            transformation
+            Transformation.id
         )
     
     let root = newBVHNode(shapes.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp)
@@ -55,6 +55,7 @@ proc newMesh*(source: string, treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp
     ObjectHandler(
         kind: hkMesh, 
         brdf: brdf, emittedRadiance: emittedRadiance,
-        transformation: Transformation.id,
+        transformation: transformation,
+        aabb: newAABB root.aabb.getVertices.mapIt(apply(transformation, it)),
         mesh: (treeKind, maxShapesPerLeaf, root, shapes)
     )

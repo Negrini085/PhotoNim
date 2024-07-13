@@ -107,6 +107,8 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
         if closestHit.info.hit.brdf.isNil: return result
 
         var hitColor = closestHit.info.hit.brdf.pigment.getColor(hitSurfacePt)
+        if areClose(hitColor.luminosity, 0): return result
+        
         if worldRay.depth >= camera.renderer.rouletteLimit:
             let q = max(0.05, 1 - hitColor.luminosity)
             if rg.rand > q: hitColor /= (1.0 - q)
