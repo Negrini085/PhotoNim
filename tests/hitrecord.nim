@@ -345,7 +345,73 @@ suite "Tree traverse":
                 )
 
             scene = newScene(BLACK, handlSeq, tkBinary, 2, rsSeq[i])
+
+            # Ray --> Origin: (30, 30, 30), Dir: (1, 0, 0)
+            # We should not have an hit
             hitPayload = scene.tree.getClosestHit(ray)
             check hitPayload.info.hit.isNil
+
+            handlSeq = newSeq[ObjectHandler](500)
+
+
+    test "hits (random testing)":
+        # Checking getClosestHit by means of random testing, 
+        # we are creating a bunch of shape and then one we are sure of hitting
+
+        let 
+            ray1 = newRay(newPoint3D(30, 35, 35), eX)
+            ray2 = newRay(newPoint3D(35, 38, 35),-eY)
+            ray3 = newRay(newPoint3D(30, 30, 30), eX)
+
+        var 
+            rg = newPCG(rs)
+            rsSeq = newSeq[RandomSetUp](5)
+            handlSeq = newSeq[ObjectHandler](500)
+
+
+        # I'm gonna test it five times
+        for i in 0..<5:
+
+            rsSeq[i] = newRandomSetUp(rg.random, rg.random)
+
+            for j in 0..<499:
+                handlSeq[j] = newSphere(
+                    newPoint3D(rg.rand(0, 15), rg.rand(0, 15), rg.rand(0, 15)), rg.rand(0, 10),
+                    newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
+                )
+
+            handlSeq[499] = newSphere(
+                newPoint3D(35, 35, 35), 2,
+                newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
+            )
+
+            scene = newScene(BLACK, handlSeq, tkBinary, 2, rsSeq[i])
+
+            # First ray --> Origin: (30, 35, 35), Dir: (1, 0, 0)
+            # We should get hit in (33, 35, 35) in world reference system
+            hitPayload = scene.tree.getClosestHit(ray1)
+
+            check hitPayload.info.hit.shape.kind == skSphere
+            check areClose(hitPayload.info.hit.aabb.min, newPoint3D(33,33,33))
+            check areClose(hitPayload.info.hit.aabb.max, newPoint3D(37,37,37))
+            check areClose(hitPayload.info.t, 3)
+            check areClose(hitPayload.pt, newPoint3D(-2, 0, 0))
+            check areClose(hitPayload.rayDir, eX)
+
+            # Second ray --> Origin: (35, 38, 35), Dir: (0,-1, 0)
+            # We should get hit in (35, 37, 35) in world reference system
+            hitPayload = scene.tree.getClosestHit(ray2)
+
+            check hitPayload.info.hit.shape.kind == skSphere
+            check areClose(hitPayload.info.hit.aabb.min, newPoint3D(33,33,33))
+            check areClose(hitPayload.info.hit.aabb.max, newPoint3D(37,37,37))
+            check areClose(hitPayload.info.t, 1)
+            check areClose(hitPayload.pt, newPoint3D( 0, 2, 0))
+            check areClose(hitPayload.rayDir, -eY)
+
+            # Third ray --> Origin: (30, 30, 30), Dir: (1, 0, 0)
+            hitPayload = scene.tree.getClosestHit(ray3)
+            check scene.tree.getClosestHit(ray3).info.hit.isNil
+
 
             handlSeq = newSeq[ObjectHandler](500)
