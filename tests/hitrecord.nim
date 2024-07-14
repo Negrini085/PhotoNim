@@ -252,3 +252,70 @@ suite "LocalIntersection":
         t = cylinder.shape.getLocalIntersection(ray4.transform(cylinder.transformation.inverse))
         check t == Inf
 
+
+suite "Tree traverse":
+
+    setup:
+        var 
+            scene: Scene
+            hitPayload: HitPayload
+            rs = newRandomSetUp(42, 54)
+
+    teardown:
+        discard rs
+        discard scene
+        discard hitPayload
+    
+
+    test "getClosestHit proc":
+        # Checking getClosestHit procedure, we need to check
+        # if the hit handler is the correct one
+
+        let
+            shsp1 = newSphere(
+                    ORIGIN3D, 2,
+                    newDiffuseBRDF(newUniformPigment(WHITE))
+                )
+
+            shsp2 = newSphere(
+                    newPoint3D(5, 0, 0), 2, 
+                    newDiffuseBRDF(newUniformPigment(WHITE))
+                )
+
+            shsp3 = newUnitarySphere(
+                    newPoint3D(5, 5, 5),
+                    newDiffuseBRDF(newUniformPigment(WHITE))
+                )
+
+            box = newBox(
+                    (newPoint3D(-6, -6, -6), newPoint3D(-4, -4, -4)),
+                    newDiffuseBRDF(newUniformPigment(WHITE))
+                )
+        
+            ray1 = newRay(newPoint3D(-3, 0, 0), eX)
+            ray2 = newRay(newPoint3D(-5,-5,-8), eZ)
+            ray3 = newRay(newPoint3D(-9, 0, 0),-eX)
+
+        scene = newScene(BLACK, @[shsp1, shsp2, shsp3, box], tkBinary, 1, rs)
+
+
+        # First ray --> Origin: (-3, 0, 0), Dir: (1, 0, 0)
+        hitPayload = scene.tree.getClosestHit(ray1)
+
+        check (hitPayload.info.hit.shape.kind == skSphere) and (hitPayload.info.hit.shape.radius == 2)
+        check areClose(hitPayload.info.t, 1)
+        check areClose(hitPayload.pt, newPoint3D(-2, 0, 0))
+        check areClose(hitPayload.rayDir, eX)
+
+        # Second ray --> Origin: (-5,-5,-8), Dir: (0, 0, 1)
+        hitPayload = scene.tree.getClosestHit(ray2)
+
+        check hitPayload.info.hit.shape.kind == skAABox
+        check areClose(hitPayload.info.hit.shape.aabb.min, newPoint3D(-6,-6,-6))
+        check areClose(hitPayload.info.hit.shape.aabb.max, newPoint3D(-4,-4,-4))
+        check areClose(hitPayload.info.t, 2)
+        check areClose(hitPayload.pt, newPoint3D(-5,-5,-6))
+        check areClose(hitPayload.rayDir, eZ)
+
+        # Third ray --> Origin: (-9, 0, 0), Dir: (-1, 0, 0)
+        check scene.tree.getClosestHit(ray3).info.hit.isNil
