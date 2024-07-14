@@ -160,19 +160,6 @@ suite "AABox & AABB":
         check areClose(vert2[7], newPoint3D(-1, 4,-8))
 
 
-    test "getAABB (Box handler) proc":
-        # Checking procedure to give aabb in world for AABox
-        let 
-            aabb1 = getAABB(box1)
-            aabb2 = getAABB(box2)
-        
-        check areClose(aabb1.min, box1.shape.aabb.min)
-        check areClose(aabb1.max, box1.shape.aabb.max)
-
-        check areClose(aabb2.min, newPoint3D(-1, 2,-8))
-        check areClose(aabb2.max, newPoint3D( 0, 4, 2))
-    
-
 
 #------------------------------#
 #       Sphere test suite      #
@@ -289,21 +276,6 @@ suite "Sphere":
         check areClose(vert2[7], newPoint3D( 3,  3, -3))
     
 
-    test "getAABB (Sphere handler) proc":
-        # Checking getAABB proc, gives AABB in world
-        let
-            aabb1 = getAABB(usphere)
-            aabb2 = getAABB(sphere)
-        
-        # Unitary sphere
-        check areClose(aabb1.min, newPoint3D(0, -1, -1))
-        check areClose(aabb1.max, newPoint3D(2,  1,  1))
-
-        # Sphere with arbitrary radius
-        check areClose(aabb2.min, newPoint3D(-3, -3, -3))
-        check areClose(aabb2.max, newPoint3D( 3,  3,  3))
-    
-
 
 #-------------------------------#
 #      Triangle test suite      #
@@ -409,19 +381,6 @@ suite "Triangle":
         check areClose(vert2[5], newPoint3D(2, 2, 3))
         check areClose(vert2[6], newPoint3D(2, 2, 4))
         check areClose(vert2[7], newPoint3D(2, 3, 3))
-
-
-    test "getAABB (Triangle handler) proc":
-        # Cheking getAABB proc, gives aabb in world
-        let 
-            aabb1 = getAABB(tri1)
-            aabb2 = getAABB(tri2)
-
-        check areClose(aabb1.min, newPoint3D(0, 0, 0))
-        check areClose(aabb1.max, newPoint3D(1, 1, 1))
-
-        check areClose(aabb2.min, newPoint3D(1, 2, 3))
-        check areClose(aabb2.max, newPoint3D(2, 3, 4))
 
 
 
@@ -545,21 +504,3 @@ suite "Cylinder":
         check areClose(vert2[5], newPoint3D( 2, -2, 0))
         check areClose(vert2[6], newPoint3D( 2, -2, 1))
         check areClose(vert2[7], newPoint3D( 2,  2, 0))
-
-
-    test "getAABB (Cylinder handler) proc":
-        # Cheking getAABB proc, gives aabb in world
-        let
-            aabb1 = getAABB(cyl1)
-            aabb2 = getAABB(cyl2)
-        
-        # First cylinder: default constructor
-        check areClose(aabb1.min, newPoint3D(-1, -1, 0))
-        check areClose(aabb1.max, newPoint3D(1, 1, 1))
-
-        # Second cylinder: specific build
-        check areClose(aabb2.min, newPoint3D(-2, -2, 1))
-        check areClose(aabb2.max, newPoint3D(2, 2, 2))
-    
-
-

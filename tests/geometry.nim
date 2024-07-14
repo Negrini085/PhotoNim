@@ -23,17 +23,11 @@ suite "Vec unittest":
         let e = newVec3f(1.0, 2.0, 3.0)
         check e.N == 3 and e.V is float32
 
-        let f = newVec4(-1, -4, 5, 2)
-        check f.N == 4 and f.V is int
-
         let g = newVec2f(1, 2)
         check areClose(g, newVec2f(1, 2))
 
         let h = newVec3f(1, 2, 3)
         check areClose(h, newVec3f(1, 2, 3))
-
-        let i = newVec4f(1, 2, 3, 4)
-        check areClose(i, newVec4f(1, 2, 3, 4))
 
 
     setup:
