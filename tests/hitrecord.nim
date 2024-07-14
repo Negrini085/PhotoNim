@@ -319,3 +319,33 @@ suite "Tree traverse":
 
         # Third ray --> Origin: (-9, 0, 0), Dir: (-1, 0, 0)
         check scene.tree.getClosestHit(ray3).info.hit.isNil
+
+    
+    test "no hits (random testing)":
+        # Checking getClosestHit by means of random testing, 
+        # we don't want to have an hit
+
+        let ray = newRay(newPoint3D(30, 30, 30), eX)
+
+        var 
+            rg = newPCG(rs)
+            rsSeq = newSeq[RandomSetUp](5)
+            handlSeq = newSeq[ObjectHandler](500)
+
+
+        # I'm gonna test it five times
+        for i in 0..<5:
+
+            rsSeq[i] = newRandomSetUp(rg.random, rg.random)
+
+            for j in 0..<500:
+                handlSeq[j] = newSphere(
+                    newPoint3D(rg.rand(0, 15), rg.rand(0, 15), rg.rand(0, 15)), rg.rand(0, 10),
+                    newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
+                )
+
+            scene = newScene(BLACK, handlSeq, tkBinary, 2, rsSeq[i])
+            hitPayload = scene.tree.getClosestHit(ray)
+            check hitPayload.info.hit.isNil
+
+            handlSeq = newSeq[ObjectHandler](500)
