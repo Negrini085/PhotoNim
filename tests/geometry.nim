@@ -1,6 +1,5 @@
 import std/unittest
 from math import sqrt, cos, sin, PI
-from std/sequtils import toSeq
 import PhotoNim
 
 

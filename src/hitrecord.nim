@@ -6,7 +6,7 @@ from std/algorithm import sort, sorted, SortOrder
 from std/sequtils import concat, mapIt, filterIt, keepItIf
 
 
-proc getIntersection(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.} =
+proc getIntersection*(aabb: Interval[Point3D]; worldRay: Ray): float32 {.inline.} =
     let
         (min, max) = (aabb.min - worldRay.origin, aabb.max - worldRay.origin)
         txSpan = newInterval(min[0] / worldRay.dir[0], max[0] / worldRay.dir[0])
@@ -34,18 +34,18 @@ type HitPayload* = ref object
     rayDir*: Vec3f
 
 
-proc newHitInfo(hit: BVHNode, ray: Ray): HitInfo[BVHNode] {.inline.} = (hit, hit.aabb.getIntersection(ray))
-proc newHitInfo(hit: ObjectHandler, ray: Ray): HitInfo[ObjectHandler] {.inline.} = (hit, hit.aabb.getIntersection(ray))
+proc newHitInfo*(hit: BVHNode, ray: Ray): HitInfo[BVHNode] {.inline.} = (hit, hit.aabb.getIntersection(ray))
+proc newHitInfo*(hit: ObjectHandler, ray: Ray): HitInfo[ObjectHandler] {.inline.} = (hit, hit.aabb.getIntersection(ray))
 
 proc `<`[T](a, b: HitInfo[T]): bool {.inline.} = a.t < b.t
 
 
-proc newHitPayload(hit: ObjectHandler, ray: Ray, t: float32): HitPayload {.inline.} =
+proc newHitPayload*(hit: ObjectHandler, ray: Ray, t: float32): HitPayload {.inline.} =
     let hitPt = ray.at(t)
     HitPayload(info: (hit, t), pt: hitPt, rayDir: ray.dir)
 
 
-proc getLocalIntersection(shape: Shape, worldInvRay: Ray): float32 =
+proc getLocalIntersection*(shape: Shape, worldInvRay: Ray): float32 =
     case shape.kind
     of skAABox:
         let
