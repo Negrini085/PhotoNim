@@ -132,6 +132,12 @@ proc getLocalIntersection*(shape: Shape, worldInvRay: Ray): float32 =
             if phi < 0.0: phi += 2.0 * PI
             if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax: return Inf
 
+    of skEllipsoid:
+        let scal = newScaling(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c)
+        var t: float32
+        
+        return getLocalIntersection(Shape(kind: skSphere, radius: 1), worldInvRay.transform(scal))
+
 
 proc splitted[T](inSeq: seq[T], condition: proc(t: T): bool): (seq[T], seq[T]) =
     for element in inSeq:

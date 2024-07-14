@@ -3,9 +3,11 @@ from math import sqrt, cos, sin, PI
 import PhotoNim
 
 
-  
-suite "Vec unittest":
-    echo "Testing the `Vec` type and its procedures."
+
+#------------------------------------------#
+#              Vec test suite              #
+#------------------------------------------# 
+suite "Vec":
 
     test "newVec proc":
         let a = newVec([3.0, 3.0])
@@ -121,8 +123,10 @@ suite "Vec unittest":
     
 
 
-suite "Points unittest":
-    echo "Testing the `Point2D` and `Point3D` type and its procedures."
+#---------------------------------------#
+#           Point test suite            #
+#---------------------------------------#
+suite "Point":
 
     setup:
         let 
@@ -147,7 +151,6 @@ suite "Points unittest":
 #        Matrix types test        #
 #---------------------------------#
 suite "Mat unittest":
-    echo "Testing the `Mat` type and its procedures."
 
     test "newMat proc":
         let a = newMat([[1.0, 20.0, 3.0], [1.02, 30.0, -1.0]])
@@ -236,7 +239,7 @@ suite "Mat unittest":
     
 
 
-suite "transformations":
+suite "Transformations":
 
     setup:
         var
@@ -248,8 +251,8 @@ suite "transformations":
         discard t1
         discard t2
         discard t3
-
-
+    
+    
     test "Scaling of Point3D":
 
         var p = newPoint3D(0, 3, 1)
@@ -433,6 +436,8 @@ suite "transformations":
 
         comp = rotz @ rotx
         check areClose(apply(comp, norm), newNormal(3, 1, 2),eps = 1e-6)
+
+
 
 
 #-------------------------------------------#

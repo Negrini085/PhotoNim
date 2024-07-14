@@ -253,7 +253,54 @@ suite "LocalIntersection":
         check t == Inf
 
 
+    test "Ellipsoid":
+        # Checking getLocalIntersection for a ray-ellipsoid intersection.
+        # Here we need to assure that time computation is indeed correct.
+        let 
+            ell1 = newEllipsoid(1, 2, 3, newDiffuseBRDF(newUniformPigment(WHITE)))
+            ell2 = newEllipsoid(3, 2, 1, newDiffuseBRDF(newUniformPigment(WHITE)))
+
+        var
+            ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
+            ray2 = newRay(newPoint3D(4, 0, 0), -eX)
+            ray3 = newRay(ORIGIN3D, eX)
+            ray4 = newRay(newPoint3D(5, 5, 5), eX)
+
+        
+        # First ellipsoid
+        t = ell1.shape.getLocalIntersection(ray1)
+        check areClose(t, 5)
+
+        t = ell1.shape.getLocalIntersection(ray2)
+        check areClose(t, 3)
+
+        t = ell1.shape.getLocalIntersection(ray3)
+        check areClose(t, 1)
+
+        t = ell1.shape.getLocalIntersection(ray4)
+        check t == Inf
+
+    
+        # Second elipsoid
+        t = ell2.shape.getLocalIntersection(ray1)
+        check areClose(t, 1)
+
+        t = ell2.shape.getLocalIntersection(ray2)
+        check areClose(t, 1, eps = 1e-6)
+
+        t = ell2.shape.getLocalIntersection(ray3)
+        check areClose(t, 3, eps = 1e-6)
+
+        t = ell2.shape.getLocalIntersection(ray4)
+        check t == Inf
+
+
+#---------------------------------------#
+#       Tree traverse test suite        #
+#---------------------------------------#
 suite "Tree traverse":
+    # Here we want to check how hit are actually computed
+    # Thanks to BVH and time sorting, we can check it way faster than looping over shapes
 
     setup:
         var 

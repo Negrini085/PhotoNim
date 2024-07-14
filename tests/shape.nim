@@ -1,6 +1,6 @@
 import std/unittest
 import PhotoNim
-from math import sin, cos, PI
+from math import sin, cos, PI, sqrt
 
 
 #-----------------------------------#
@@ -231,22 +231,22 @@ suite "Sphere":
         check areClose(sphere.shape.getUV((3.float32*pt2.Vec3f).Point3D), newPoint2D(1/6, 0.5))
 
 
-    test "getAABB (Sphere) proc":
+    test "getAABB (Local) proc":
         # Checking getAABB proc, gives AABB in sphere local reference system
         let
             aabb1 = getAABB(usphere.shape)
             aabb2 = getAABB(sphere.shape)
         
-        # Unitary sphere
+        # Unitary
         check areClose(aabb1.min, newPoint3D(-1,-1,-1))
         check areClose(aabb1.max, newPoint3D( 1, 1, 1))
 
-        # Sphere with arbitrary radius
+        # Arbitrary radius
         check areClose(aabb2.min, newPoint3D(-3, -3, -3))
         check areClose(aabb2.max, newPoint3D( 3,  3,  3))
 
 
-    test "getVertices (Sphere) proc":
+    test "getVertices (Local) proc":
         # Checking getVertices proc, gives AABB box vertices in shape local reference system
         let 
             aabb1 = getAABB(usphere.shape) 
@@ -274,6 +274,21 @@ suite "Sphere":
         check areClose(vert2[5], newPoint3D( 3, -3, -3))
         check areClose(vert2[6], newPoint3D( 3, -3,  3))
         check areClose(vert2[7], newPoint3D( 3,  3, -3))
+
+
+    test "getAABB (World) proc":
+        # Checking getAABB proc, gives AABB in world reference system
+        let
+            aabb1 = usphere.aabb
+            aabb2 = sphere.aabb
+        
+        # Unitary
+        check areClose(aabb1.min, newPoint3D( 0,-1,-1))
+        check areClose(aabb1.max, newPoint3D( 2, 1, 1))
+
+        # Arbitrary radius
+        check areClose(aabb2.min, newPoint3D(-3, -3, -3))
+        check areClose(aabb2.max, newPoint3D( 3,  3,  3))
     
 
 
@@ -342,7 +357,7 @@ suite "Triangle":
         check areClose(tri2.shape.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
 
 
-    test "getAABB (Triangle) proc":
+    test "getAABB (Local) proc":
         # Cheking getAABB proc, gives aabb in local reference system
         let 
             aabb1 = getAABB(tri1.shape)
@@ -355,7 +370,7 @@ suite "Triangle":
         check areClose(aabb2.max, newPoint3D(1, 1, 1))
     
 
-    test "getVertices (Triangle) proc":
+    test "getVertices (Local) proc":
         # Checking getVertices proc, gives aabb vertices in local shape reference system
         var
             vert1 = getVertices(tri1.aabb)
@@ -381,6 +396,19 @@ suite "Triangle":
         check areClose(vert2[5], newPoint3D(2, 2, 3))
         check areClose(vert2[6], newPoint3D(2, 2, 4))
         check areClose(vert2[7], newPoint3D(2, 3, 3))
+
+
+    test "getAABB (World) proc":
+        # Cheking getAABB proc, gives aabb in world reference system
+        let 
+            aabb1 = tri1.aabb
+            aabb2 = tri2.aabb
+
+        check areClose(aabb1.min, newPoint3D(0, 0, 0))
+        check areClose(aabb1.max, newPoint3D(1, 1, 1))
+
+        check areClose(aabb2.min, newPoint3D(1, 2, 3))
+        check areClose(aabb2.max, newPoint3D(2, 3, 4))
 
 
 
@@ -461,7 +489,7 @@ suite "Cylinder":
         check areClose(cyl2.shape.getUV(newPoint3D(2, 0, 0.3)).Vec2f, newVec2f(0.0, 0.3))
 
 
-    test "getAABB (Cylinder) proc":
+    test "getAABB (Local) proc":
         # Cheking getAABB proc, gives aabb in local reference system
         let
             aabb1 = getAABB(cyl1.shape)
@@ -476,7 +504,7 @@ suite "Cylinder":
         check areClose(aabb2.max, newPoint3D(2, 2, 1))
 
 
-    test "getVertices (Cylinder) proc":
+    test "getVertices (Local) proc":
         # Checking getVertices proc, gives aabb vertices in local shape reference system
         let
             aabb1 = getAABB(cyl1.shape)
@@ -504,3 +532,176 @@ suite "Cylinder":
         check areClose(vert2[5], newPoint3D( 2, -2, 0))
         check areClose(vert2[6], newPoint3D( 2, -2, 1))
         check areClose(vert2[7], newPoint3D( 2,  2, 0))
+
+
+    test "getAABB (World) proc":
+        # Cheking getAABB proc, gives aabb in local reference system
+        let
+            aabb1 = cyl1.aabb
+            aabb2 = cyl2.aabb
+        
+        # First cylinder: no transformation 
+        check areClose(aabb1.min, newPoint3D(-1, -1, 0))
+        check areClose(aabb1.max, newPoint3D(1, 1, 1))
+
+        # Second cylinder: translation along z-axis
+        check areClose(aabb2.min, newPoint3D(-2, -2, 1))
+        check areClose(aabb2.max, newPoint3D(2, 2, 2))
+
+
+
+#----------------------------#
+#    Ellipsoid test suite    #
+#----------------------------# 
+suite "Ellipsoid":
+
+    setup:
+        let 
+            tr = newTranslation(eZ)
+            comp = newComposition(newRotation(45, axisX), newTranslation(eY))
+
+            ell1 = newEllipsoid(
+                    1, 2, 3, newDiffuseBRDF(newUniformPigment(WHITE)), 
+                    newUniformPigment(WHITE), tr
+                )
+
+            ell2 = newEllipsoid(
+                    3.0, 2.0, 1.0, newDiffuseBRDF(newUniformPigment(WHITE)), 
+                    newUniformPigment(WHITE), comp
+                )
+    
+    teardown:
+        discard tr
+        discard comp
+        discard ell1
+        discard ell2
+    
+    
+    test "newEllipsoid proc":
+        # Checking newEllipsoid proc
+        
+        # First Ellipsoid
+        check ell1.shape.kind == skEllipsoid
+        check areClose(ell1.shape.axis.a, 1.0)
+        check areClose(ell1.shape.axis.b, 2.0)
+        check areClose(ell1.shape.axis.c, 3.0)
+
+        check ell1.transformation.kind == tkTranslation
+        check areClose(ell1.transformation.offset, eZ)
+    
+        # Second Ellipsoid
+        check ell2.shape.kind == skEllipsoid
+        check areClose(ell2.shape.axis.a, 3.0)
+        check areClose(ell2.shape.axis.b, 2.0)
+        check areClose(ell2.shape.axis.c, 1.0)
+
+        check ell2.transformation.kind == tkComposition
+        check ell2.transformation.transformations.len == 2
+        check ell2.transformation.transformations[0].kind == tkRotation
+        check ell2.transformation.transformations[1].kind == tkTranslation
+        check ell2.transformation.transformations[0].axis == axisX
+        check areClose(ell2.transformation.transformations[0].cos, newRotation(45, axisX).cos, eps = 1e-6)
+        check areClose(ell2.transformation.transformations[0].sin, newRotation(45, axisX).sin, eps = 1e-6)
+        check areClose(ell2.transformation.transformations[1].offset, eY)
+
+
+    test "getNormal proc":
+        # Checking ellipsoid normal computation method
+        var
+            dir: Vec3f
+            pt: Point3D
+        
+        # First ellipsoid
+        dir = newVec3f(-1, 0, 0)
+        pt = newPoint3D(ell1.shape.axis.a, 0, 0)
+        check areClose(ell1.shape.getNormal(pt, dir), newNormal(1, 0, 0))
+
+        dir = newVec3f(0, -1, 0)
+        pt = newPoint3D(ell1.shape.axis.a * cos(PI/3), ell1.shape.axis.b * sin(PI/3), 0)
+        check areClose(ell1.shape.getNormal(pt, dir), newNormal(1/2, sqrt(3.0)/4, 0), eps = 1e-6)
+    
+        # First ellipsoid
+        dir = newVec3f(-1, 0, 0)
+        pt = newPoint3D(ell2.shape.axis.a, 0, 0)
+        check areClose(ell2.shape.getNormal(pt, dir), newNormal(1, 0, 0))
+
+        dir = newVec3f(0, -1, 0)
+        pt = newPoint3D(ell2.shape.axis.a * cos(PI/3), ell2.shape.axis.b * sin(PI/3), 0)
+        check areClose(ell2.shape.getNormal(pt, dir), newNormal(1/6, sqrt(3.0)/4, 0), eps = 1e-6)
+
+
+    test "getUV proc":
+        # Checking (u, v) coordinates computation
+        var pt1, pt2: Point3D
+
+        # Unitary sphere
+        pt1 = newPoint3D(ell1.shape.axis.a, 0, 0)
+        pt2 = newPoint3D(ell1.shape.axis.a * cos(PI/3), ell1.shape.axis.b * sin(PI/3), 0)
+        check areClose(ell1.shape.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(ell1.shape.getUV(pt2), newPoint2D(1/6, 0.5))
+
+        # Sphere with arbitrary radius
+        pt1 = newPoint3D(ell2.shape.axis.a, 0, 0)
+        pt2 = newPoint3D(ell2.shape.axis.a * cos(PI/3), ell2.shape.axis.b * sin(PI/3), 0)
+        check areClose(ell2.shape.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(ell2.shape.getUV(pt2), newPoint2D(1/6, 0.5))
+
+
+    test "getAABB (Local) proc":
+        # Cheking getAABB proc, gives aabb in local reference system
+        let
+            aabb1 = getAABB(ell1.shape)
+            aabb2 = getAABB(ell2.shape)
+        
+        # First ellipsoid
+        check areClose(aabb1.min, newPoint3D(-1, -2, -3))
+        check areClose(aabb1.max, newPoint3D( 1,  2,  3))
+
+        # Second ellipsoid
+        check areClose(aabb2.min, newPoint3D(-3, -2, -1))
+        check areClose(aabb2.max, newPoint3D( 3,  2,  1))
+
+
+    test "getVertices (Local) proc":
+        # Checking getVertices proc, gives aabb vertices in local shape reference system
+        let
+            aabb1 = getAABB(ell1.shape)
+            aabb2 = getAABB(ell2.shape)
+        
+            vert1 = getVertices(aabb1)
+            vert2 = getVertices(aabb2)
+        
+        # First ellipsoid
+        check areClose(vert1[0], aabb1.min)
+        check areClose(vert1[1], aabb1.max)
+        check areClose(vert1[2], newPoint3D(-1, -2,  3))
+        check areClose(vert1[3], newPoint3D(-1,  2, -3))
+        check areClose(vert1[4], newPoint3D(-1,  2,  3))
+        check areClose(vert1[5], newPoint3D( 1, -2, -3))
+        check areClose(vert1[6], newPoint3D( 1, -2,  3))
+        check areClose(vert1[7], newPoint3D( 1,  2, -3))
+
+        # Second ellipsoid
+        check areClose(vert2[0], aabb2.min)
+        check areClose(vert2[1], aabb2.max)
+        check areClose(vert2[2], newPoint3D(-3, -2,  1))
+        check areClose(vert2[3], newPoint3D(-3,  2, -1))
+        check areClose(vert2[4], newPoint3D(-3,  2,  1))
+        check areClose(vert2[5], newPoint3D( 3, -2, -1))
+        check areClose(vert2[6], newPoint3D( 3, -2,  1))
+        check areClose(vert2[7], newPoint3D( 3,  2, -1))
+
+
+    test "getAABB (World) proc":
+        # Cheking getAABB proc, gives aabb in world
+        let
+            aabb1 = ell1.aabb
+            aabb2 = ell2.aabb
+        
+        # First ellipsoid
+        check areClose(aabb1.min, newPoint3D(-1, -2, -2))
+        check areClose(aabb1.max, newPoint3D(1, 2, 4))
+
+        # Second ellipsoid
+        check areClose(aabb2.min, newPoint3D(-3, -sqrt(2.0), -sqrt(2.0)), eps = 1e-6)
+        check areClose(aabb2.max, newPoint3D(3, 2 * sqrt(2.0), 2 * sqrt(2.0)), eps = 1e-6)

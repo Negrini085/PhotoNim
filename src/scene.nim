@@ -35,7 +35,7 @@ type
         of hkMesh: mesh*: BVHTree
 
 
-    ShapeKind* = enum skPlane, skSphere, skAABox, skTriangle, skCylinder
+    ShapeKind* = enum skPlane, skSphere, skAABox, skTriangle, skCylinder, skEllipsoid
     Shape* = object
         case kind*: ShapeKind 
         of skPlane: discard
@@ -45,6 +45,8 @@ type
         of skCylinder:
             R*, phiMax*: float32
             zSpan*: Interval[float32]
+
+        of skEllipsoid: axis*: tuple[a, b, c: float32]
 
 
 proc newAABB*(points: seq[Point3D]): Interval[Point3D] =
@@ -171,7 +173,6 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
         aabb: handlersAABBs.getTotalAABB,
         children: childNodes
     )
-
 
 proc newBVHTree(treeKind: TreeKind, maxShapesPerLeaf: int, handlers: seq[ObjectHandler], rgSetUp: RandomSetUp): BVHTree {.inline.} =
     let root = newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp)
