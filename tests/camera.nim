@@ -23,14 +23,14 @@ suite "Ray":
         # First ray check
         check ray1.depth == 0.int
         check ray1.tSpan.max == Inf
-        check areClose(ray1.tSpan.min, 1.0)
+        check areClose(ray1.tSpan.min, 1e-5)
         check areClose(ray1.dir, newVec3f(1, 0, 0))
         check areClose(ray1.origin, newPoint3D(1, 2, 3))
 
         # Second ray check
         check ray2.depth == 0.int
         check ray2.tSpan.max == Inf
-        check areClose(ray2.tSpan.min, 1.0)
+        check areClose(ray2.tSpan.min, 1e-5)
         check areClose(ray2.dir, newVec3f(1, 0, 0))
         check areClose(ray2.origin, newPoint3D(1, 2, 0))
     
