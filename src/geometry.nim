@@ -20,7 +20,6 @@ proc newVec*[N: static[int], V](data: array[N, V]): Vec[N, V] {.inline.} = resul
 
 proc newVec2*[V](x, y: V): Vec2[V] {.inline.} = newVec([x, y])
 proc newVec3*[V](x, y, z: V): Vec3[V] {.inline.} = newVec([x, y, z])
-proc newVec4*[V](x, y, z, w: V): Vec4[V] {.inline.} = newVec([x, y, z, w])
 
 proc newVec2f*(x, y: float32): Vec2f {.inline.} = newVec([x, y])
 proc newVec3f*(x, y, z: float32): Vec3f {.inline.} = newVec([x, y, z])
@@ -161,10 +160,6 @@ proc dist*(a, b: Point3D): float32 {.borrow.}
 proc `$`*(p: Point2D): string {.inline.} = fmt"({p.u}, {p.v})"
 proc `$`*(p: Point3D): string {.inline.} = fmt"({p.x}, {p.y}, {p.z})"
 proc `$`*(n: Normal): string {.inline.} = fmt"<{n.x}, {n.y}, {n.z}>"
-
-proc toVec4*(a: Point3D): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 1.0)
-proc toVec4*(a: Normal): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 0.0)
-proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 
 proc toPoint3D*(a: Vec3f | Vec4f): Point3D {.inline.} = newPoint3D(a[0], a[1], a[2])
 proc toNormal*(a: Vec3f | Vec4f): Normal {.inline.} = newNormal(a[0], a[1], a[2])
