@@ -6,7 +6,7 @@ from std/osproc import execCmd
 
 let 
     viewport = (1600, 900)
-    filename = "assets/images/examples/ellipsoid"
+    filename = "assets/images/examples/shapes/ellipsoid"
 
 var handlers: seq[ObjectHandler]
 
