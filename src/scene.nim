@@ -1,16 +1,22 @@
 import pcg, geometry, color, pigment, brdf
 
-from std/sequtils import newSeqWith, toSeq, filterIt, map, mapIt
+from std/sequtils import newSeqWith, toSeq, mapIt
 
 
 type    
-    Scene* = ref object 
+    Scene* = object 
         bgColor*: Color
         tree*: BVHTree
 
 
-    TreeKind* = enum tkBinary = 2, tkTernary = 3, tkQuaternary = 4, tkOctonary = 8
-    BVHTree* = tuple[kind: TreeKind, mspl: int, root: BVHNode, handlers: seq[ObjectHandler]]
+    TreeKind* = enum 
+        tkBinary = 2, tkTernary = 3, tkQuaternary = 4, tkOctonary = 8
+
+    BVHTree* = object 
+        kind*: TreeKind 
+        mspl*: int 
+        root*: BVHNode 
+        handlers*: seq[ObjectHandler]
 
 
     NodeKind* = enum nkBranch, nkLeaf
@@ -24,36 +30,39 @@ type
 
     HandlerKind* = enum hkShape, hkMesh
     ObjectHandler* = ref object
-        emittedRadiance*: Pigment
-        brdf*: BRDF
-        
-        transformation*: Transformation
         aabb*: Interval[Point3D] 
+        transformation*: Transformation
 
         case kind*: HandlerKind
-        of hkShape: shape*: Shape 
+        of hkShape: 
+            shape*: Shape 
+            brdf*: BRDF
+            emittedRadiance*: Pigment
+
         of hkMesh: mesh*: BVHTree
 
 
-    ShapeKind* = enum skPlane, skSphere, skAABox, skTriangle, skCylinder
+    ShapeKind* = enum 
+        skPlane, skSphere, skAABox, skTriangle, skCylinder
+
     Shape* = object
         case kind*: ShapeKind 
         of skPlane: discard
         of skSphere: radius*: float32
         of skAABox: aabb*: Interval[Point3D]
-        of skTriangle: vertices*: seq[Point3D]            
+        of skTriangle: vertices*: seq[Point3D]
         of skCylinder:
             R*, phiMax*: float32
             zSpan*: Interval[float32]
 
 
-proc nearestCentroid(point: Point3D, clusterCentroids: seq[Point3D]): tuple[index: int, sqDist: float32] =   
-    result = (index: 0, sqDist: Inf.float32)
+proc nearestCentroid(point: Point3D, clusterCentroids: seq[Point3D]): tuple[index: int, dist2: float32] =   
+    result = (index: 0, dist2: Inf.float32)
 
     var tmp: float32
     for i, center in clusterCentroids.pairs:
         tmp = dist2(center, point)
-        if result.sqDist > tmp: result = (i, tmp)
+        if result.dist2 > tmp: result = (i, tmp)
 
 
 proc updateCentroids(data: seq[Point3D], clusters: seq[int], k: int): seq[Point3D] =
@@ -74,7 +83,7 @@ proc kMeansPlusPlusInit(data: seq[Point3D], k: int, rg: var PCG): seq[Point3D] =
     for i in 1..<k:
         var totalDist: float32
         for j, point in data.pairs:
-            distances[j] = nearestCentroid(point, result[0..<i]).sqDist
+            distances[j] = nearestCentroid(point, result[0..<i]).dist2
             totalDist += distances[j]
 
         let target = rg.rand(0.0, totalDist)
@@ -134,10 +143,14 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
     )
 
 
-proc newBVHTree(treeKind: TreeKind, maxShapesPerLeaf: int, handlers: seq[ObjectHandler], rgSetUp: RandomSetUp): BVHTree {.inline.} =
-    let root = newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp)
-    (treeKind, maxShapesPerLeaf, root, handlers)
+proc newBVHTree*(handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): BVHTree {.inline.} =
+    BVHTree(
+        kind: treeKind, 
+        mspl: maxShapesPerLeaf, 
+        root: newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp), 
+        handlers: handlers
+    )
 
 proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): Scene {.inline.} =
     assert handlers.len > 0, "Error! Cannot create a Scene from an empty sequence of ObjectHandlers."
-    Scene(bgColor: bgColor, tree: newBVHTree(treeKind, maxShapesPerLeaf, handlers, rgSetUp))
+    Scene(bgColor: bgColor, tree: newBVHTree(handlers, treeKind, maxShapesPerLeaf, rgSetUp))
