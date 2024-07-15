@@ -1,4 +1,4 @@
-import pcg, geometry, color, hdrimage, brdf, pigment, scene, shape, hitrecord
+import pcg, geometry, color, hdrimage, brdf, pigment, scene, shape, ray, hitrecord
 
 from std/fenv import epsilon
 from std/strutils import repeat
