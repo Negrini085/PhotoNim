@@ -30,10 +30,10 @@ proc newShapeHandler*(shape: Shape, brdf: BRDF, emittedRadiance: Pigment, transf
 
 
 proc newSphere*(center: Point3D, radius: float32; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK)): ObjectHandler {.inline.} =   
-    newShapeHandler(Shape(kind: skSphere, radius: radius), brdf, emittedRadiance, if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
+    newShapeHandler(Shape(kind: skSphere, radius: radius), brdf, emittedRadiance, if not areClose(center, ORIGIN3D): newTranslation(center) else: Transformation.id)
 
 proc newUnitarySphere*(center: Point3D; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK)): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skSphere, radius: 1.0), brdf, emittedRadiance, if center != ORIGIN3D: newTranslation(center) else: Transformation.id)
+    newShapeHandler(Shape(kind: skSphere, radius: 1.0), brdf, emittedRadiance, if not areClose(center, ORIGIN3D): newTranslation(center) else: Transformation.id)
 
 proc newPlane*(brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} = 
     newShapeHandler(Shape(kind: skPlane), brdf, emittedRadiance, transformation)
@@ -87,21 +87,21 @@ proc getUV*(shape: Shape; pt: Point3D): Point2D =
     of skPlane: return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
 
-proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3f): Normal {.inline.} =
+proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3): Normal {.inline.} =
     case shape.kind
     of skAABox:
-        if   areClose(pt.x, shape.aabb.min.x, 1e-6) or areClose(pt.x, shape.aabb.max.x, 1e-6): result = newNormal(1, 0, 0)
-        elif areClose(pt.y, shape.aabb.min.y, 1e-6) or areClose(pt.y, shape.aabb.max.y, 1e-6): result = newNormal(0, 1, 0)
-        elif areClose(pt.z, shape.aabb.min.z, 1e-6) or areClose(pt.z, shape.aabb.max.z, 1e-6): result = newNormal(0, 0, 1)
+        if   areClose(pt.x, shape.aabb.min.x, 1e-6) or areClose(pt.x, shape.aabb.max.x, 1e-6): result = Normal(eX)
+        elif areClose(pt.y, shape.aabb.min.y, 1e-6) or areClose(pt.y, shape.aabb.max.y, 1e-6): result = Normal(eY)
+        elif areClose(pt.z, shape.aabb.min.z, 1e-6) or areClose(pt.z, shape.aabb.max.z, 1e-6): result = Normal(eZ)
         else: quit "Something went wrong in calculating the normal for an AABox."
-        return sgn(-dot(result.Vec3f, dir)).float32 * result
+        return sgn(-dot(result.Vec3, dir)) * result
 
     of skTriangle:
         let cross = cross(shape.vertices[1] - shape.vertices[0], shape.vertices[2] - shape.vertices[0])
-        return sgn(-dot(cross, dir)).float32 * cross.toNormal
+        return sgn(-dot(cross, dir)) * newNormal(cross)
         
-    of skSphere: return sgn(-dot(pt.Vec3f, dir)).float32 * newNormal(pt.x, pt.y, pt.z)
+    of skSphere: return sgn(-dot(pt.Vec3, dir)) * newNormal(pt.x, pt.y, pt.z)
 
     of skCylinder: return newNormal(pt.x, pt.y, 0.0)
 
-    of skPlane: return newNormal(0, 0, sgn(-dir[2]).float32)
+    of skPlane: return Normal(sgn(-dir[2]) * eZ)

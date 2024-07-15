@@ -3,13 +3,13 @@ import geometry
 from std/fenv import epsilon 
 
 
-type Color* {.borrow: `.`.} = distinct Vec3f
+type Color* {.borrow: `.`.} = distinct Vec3
 
 proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
 
-proc r*(a: Color): float32 {.inline.} = a.Vec3f[0]
-proc g*(a: Color): float32 {.inline.} = a.Vec3f[1]
-proc b*(a: Color): float32 {.inline.} = a.Vec3f[2]
+proc r*(a: Color): float32 {.inline.} = a.Vec3[0]
+proc g*(a: Color): float32 {.inline.} = a.Vec3[1]
+proc b*(a: Color): float32 {.inline.} = a.Vec3[2]
 
 proc `==`*(a, b: Color): bool {.borrow.}
 proc areClose*(a, b: Color; epsilon = epsilon(float32)): bool {.borrow.}

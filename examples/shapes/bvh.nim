@@ -14,7 +14,7 @@ let
     filename = "assets/images/examples/BVH"
 
 var 
-    pcam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-5.0, 0, 0)) @ newRotZ(20) @ newRotY(-10))
+    pcam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(-5.0, 0, 0)) @ newRotZ(20) @ newRotY(-10))
     image = newHDRImage(900, 600)
     appo = newHDRImage(900, 600)
     renderer = newOnOffRenderer(addr image, pcam)
@@ -44,16 +44,16 @@ aabb.add getAABox(scenery[3])
 
 scenery.add newTriangle(
     newPoint3D(0, -1, -1), newPoint3D(-1, 1, 1), newPoint3D(-1, 0, 3), 
-    newTranslation(newVec3f(0, -3, -3)))
+    newTranslation(newVec3(0, -3, -3)))
 aabb.add getAABox(scenery[4])
 
 scenery.add newTriangle(
     newPoint3D(-2, -1, -1), newPoint3D(-1, 1, 1), newPoint3D(-1, 0, 3), 
-    newScaling(3) @ newTranslation(newVec3f(0, 1, -2)))
+    newScaling(3) @ newTranslation(newVec3(0, 1, -2)))
 aabb.add getAABox(scenery[5])
 
 scenery.add newCylinder(
-    transformation = newTranslation(newVec3f(0.0, -2.0, 1.5)))
+    transformation = newTranslation(newVec3(0.0, -2.0, 1.5)))
 aabb.add getAABox(scenery[6])
 
 #--------------------------------------#

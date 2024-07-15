@@ -807,7 +807,7 @@ suite "Parse":
 
         check not fstr.isNil
         check inStr.readChar() == 'a'
-        check areClose(inStr.parseVec(dSc), newVec3f(4.3, 3, 1))
+        check areClose(inStr.parseVec(dSc), newVec3(4.3, 3, 1))
 
 
     test "parseColor proc":
@@ -815,7 +815,7 @@ suite "Parse":
 
         check not fstr.isNil
         check inStr.readChar() == 'a'
-        check areClose(inStr.parseVec(dSc), newVec3f(4.3, 3, 1))
+        check areClose(inStr.parseVec(dSc), newVec3(4.3, 3, 1))
         check areClose(inStr.parseColor(dSc), newColor(0.2, 0.9, 0))
 
 
@@ -914,7 +914,7 @@ suite "Parse":
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkTranslation
-        check areClose(trans.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+        check areClose(trans.mat, newTranslation(newVec3(1, 2, 3)).mat)
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkRotation
@@ -930,7 +930,7 @@ suite "Parse":
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkScaling
-        check areClose(trans.mat, newScaling(newVec3f(4.3, 0.3, 1.2)).mat)
+        check areClose(trans.mat, newScaling(newVec3(4.3, 0.3, 1.2)).mat)
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkIdentity
@@ -938,14 +938,14 @@ suite "Parse":
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkComposition
         check trans.transformations.len == 2
-        check areClose(trans.transformations[0].mat, newTranslation(newVec3f(4, 5, 6)).mat)
+        check areClose(trans.transformations[0].mat, newTranslation(newVec3(4, 5, 6)).mat)
         check areClose(trans.transformations[1].mat, newRotX(33).mat, eps = 1e-6)
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkComposition
         check trans.transformations.len == 3
-        check areClose(trans.transformations[0].mat, newTranslation(newVec3f(7, 8, 9)).mat)
-        check areClose(trans.transformations[1].mat, newScaling(newVec3f(1, 2, 3)).mat)
+        check areClose(trans.transformations[0].mat, newTranslation(newVec3(7, 8, 9)).mat)
+        check areClose(trans.transformations[1].mat, newScaling(newVec3(1, 2, 3)).mat)
         check areClose(trans.transformations[2].mat, newRotY(90).mat, eps = 1e-6)
     
 
@@ -992,8 +992,8 @@ suite "Parse":
         check planeSH.transformation.kind == tkComposition
 
         check planeSH.transformation.transformations.len == 2
-        check areClose(planeSH.transformation.transformations[0].mat, newTranslation(newVec3f(1, 2, 3)).mat)
-        check areClose(planeSH.transformation.transformations[1].mat, newScaling(newVec3f(0.1, 0.2, 0.3)).mat)
+        check areClose(planeSH.transformation.transformations[0].mat, newTranslation(newVec3(1, 2, 3)).mat)
+        check areClose(planeSH.transformation.transformations[1].mat, newScaling(newVec3(0.1, 0.2, 0.3)).mat)
 
         check planeSH.shape.material.brdf.kind == DiffuseBRDF
         check planeSH.shape.material.radiance.kind == pkCheckered
@@ -1023,7 +1023,7 @@ suite "Parse":
 
         check boxSH.transformation.transformations.len == 2
         check areClose(boxSH.transformation.transformations[0].mat, newRotX(45).mat, eps = 1e-6)
-        check areClose(boxSH.transformation.transformations[1].mat, newScaling(newVec3f(0.1, 0.2, 0.3)).mat)
+        check areClose(boxSH.transformation.transformations[1].mat, newScaling(newVec3(0.1, 0.2, 0.3)).mat)
 
         check boxSH.shape.material.brdf.kind == SpecularBRDF
         check boxSH.shape.material.radiance.kind == pkUniform
@@ -1058,7 +1058,7 @@ suite "Parse":
         check triangleSH.shape.material.radiance.grid.nCols == 2
 
         check triangleSH.transformation.kind == tkTranslation
-        check areClose(triangleSH.transformation.mat, newTranslation(newVec3f(9, 8, 7)).mat)
+        check areClose(triangleSH.transformation.mat, newTranslation(newVec3(9, 8, 7)).mat)
 
 
     test "parseCylinderSH proc":
@@ -1087,7 +1087,7 @@ suite "Parse":
         check areClose(cylinderSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
 
         check cylinderSH.transformation.kind == tkScaling
-        check areClose(cylinderSH.transformation.mat, newScaling(newVec3f(1, 2, 3)).mat)
+        check areClose(cylinderSH.transformation.mat, newScaling(newVec3(1, 2, 3)).mat)
 
 
     # test "parseMeshSH proc":
@@ -1108,7 +1108,7 @@ suite "Parse":
     #     check meshSH.shape.kind == skTriangularMesh
 
     #     check meshSH.transformation.kind == tkTranslation
-    #     check areClose(meshSH.transformation.mat, newTranslation(newVec3f(1, 2, 3)).mat)
+    #     check areClose(meshSH.transformation.mat, newTranslation(newVec3(1, 2, 3)).mat)
 
 
     test "parseCamera proc":
@@ -1140,7 +1140,7 @@ suite "Parse":
         check camP.viewport.width == 1
         check camP.viewport.height == 4
         check camP.transformation.kind == tkTranslation
-        check areClose(camP.transformation.mat, newTranslation(newVec3f(1, 2, 4.3)).mat)
+        check areClose(camP.transformation.mat, newTranslation(newVec3(1, 2, 4.3)).mat)
 
 
     test "parseDefScene proc":
@@ -1197,7 +1197,7 @@ suite "Parse":
         check dSc.scene[0].transformation.transformations.len == 2
         check dSc.scene[0].transformation.transformations[0].kind == tkTranslation
         check dSc.scene[0].transformation.transformations[1].kind == tkRotation
-        check areClose(dSc.scene[0].transformation.transformations[0].mat, newTranslation(newVec3f(0, 0, 100)).mat)
+        check areClose(dSc.scene[0].transformation.transformations[0].mat, newTranslation(newVec3(0, 0, 100)).mat)
         check areClose(dSc.scene[0].transformation.transformations[1].mat, newRotY(150).mat, eps = 1e-6)
 
         check dSc.scene[1].shape.kind == skPlane
@@ -1217,7 +1217,7 @@ suite "Parse":
         check camP.transformation.transformations[0].kind == tkRotation
         check camP.transformation.transformations[1].kind == tkTranslation
         check areClose(camP.transformation.transformations[0].mat, newRotZ(30).mat, eps = 1e-6) 
-        check areClose(camP.transformation.transformations[1].mat, newTranslation(newVec3f(-4, 0, 1)).mat)
+        check areClose(camP.transformation.transformations[1].mat, newTranslation(newVec3(-4, 0, 1)).mat)
         check areClose(camP.distance, 2)
         check camP.viewport.width == 100
         check camP.viewport.height == 100

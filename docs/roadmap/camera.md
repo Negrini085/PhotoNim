@@ -68,7 +68,7 @@ Both cameras are initialized such that the observer is positioned along the nega
 ```nim
 let 
     # transformation to be associated with the chosen camera
-    trans = newTranslation(newVec3f(-1, 0, 0))
+    trans = newTranslation(newVec3(-1, 0, 0))
 
 var
     ray: Ray                                # Ray variable to store rays fired
@@ -180,13 +180,13 @@ You can initialize a new BRDF variable using the ```new``` proc, depending on wh
 It's now crucial to determine how a surface responds to an incoming ray. To achieve this, we can utilize the "eval" procedure.
 
 ```nim
-proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3f, uv: Point2D): Color {.inline.} =
+proc eval*(brdf: BRDF; normal: Normal, in_dir, out_dir: Vec3, uv: Point2D): Color {.inline.} =
     case brdf.kind: 
     of DiffuseBRDF: 
         return brdf.pigment.getColor(uv) * (brdf.reflectance / PI)
 
     of SpecularBRDF: 
-        if abs(arccos(dot(normal.Vec3f, in_dir)) - arccos(dot(normal.Vec3f, out_dir))) < brdf.threshold_angle: 
+        if abs(arccos(dot(normal.Vec3, in_dir)) - arccos(dot(normal.Vec3, out_dir))) < brdf.threshold_angle: 
             return brdf.pigment.getColor(uv)
         else: return BLACK
 ```
@@ -213,21 +213,21 @@ image.setPixel(0, 0, newColor(0.5, 1, 0.3))
 
 # Using getColor procedure in order to show pigment evaluation
 echo "Getting uniform pigment: "
-echo getColor(unif, newPoint2D(0.2, 0.2)).Vec3f       # You should get (1, 0.5, 0.4)
+echo getColor(unif, newPoint2D(0.2, 0.2)).Vec3       # You should get (1, 0.5, 0.4)
 
 echo '\n'
 echo "Getting texture pigment: "
-echo getColor(text, newPoint2D(0.2, 0.1)).Vec3f       # You shoulg get (0.5, 1, 0.3)
-echo getColor(text, newPoint2D(0.8, 0.9)).Vec3f       # You shoulg get (1, 0.5, 0.4)
-echo getColor(text, newPoint2D(0.6, 0.3)).Vec3f       # You shoulg get (0, 0, 0)
-echo getColor(text, newPoint2D(0.3, 0.6)).Vec3f       # You shoulg get (0, 0, 0)
+echo getColor(text, newPoint2D(0.2, 0.1)).Vec3       # You shoulg get (0.5, 1, 0.3)
+echo getColor(text, newPoint2D(0.8, 0.9)).Vec3       # You shoulg get (1, 0.5, 0.4)
+echo getColor(text, newPoint2D(0.6, 0.3)).Vec3       # You shoulg get (0, 0, 0)
+echo getColor(text, newPoint2D(0.3, 0.6)).Vec3       # You shoulg get (0, 0, 0)
 
 echo '\n'
 echo "Getting checkered pigment: "
-echo getColor(chec, newPoint2D(0.2, 0.1)).Vec3f       # You shoulg get (0.5, 1, 0.3)
-echo getColor(chec, newPoint2D(0.8, 0.9)).Vec3f       # You shoulg get (0.5, 1, 0.3)
-echo getColor(chec, newPoint2D(0.6, 0.3)).Vec3f       # You shoulg get (1, 0.5, 0.4)
-echo getColor(chec, newPoint2D(0.3, 0.6)).Vec3f       # You shoulg get (1, 0.5, 0.4)
+echo getColor(chec, newPoint2D(0.2, 0.1)).Vec3       # You shoulg get (0.5, 1, 0.3)
+echo getColor(chec, newPoint2D(0.8, 0.9)).Vec3       # You shoulg get (0.5, 1, 0.3)
+echo getColor(chec, newPoint2D(0.6, 0.3)).Vec3       # You shoulg get (1, 0.5, 0.4)
+echo getColor(chec, newPoint2D(0.3, 0.6)).Vec3       # You shoulg get (1, 0.5, 0.4)
 
 
 
@@ -238,8 +238,8 @@ var
     # Variables needed for BRDF evaluation
     pigm = newUniformPigment(newColor(1, 1, 1))
     norm = newNormal(0, 0, 1)
-    in_dir = newVec3f(0, 1, -1).normalize
-    out_dir = newVec3f(0, 1, 1).normalize
+    in_dir = newVec3(0, 1, -1).normalize
+    out_dir = newVec3(0, 1, 1).normalize
     uv = newPoint2D(0.5, 0.5)
 
     # BRDF variables of different possible kinds
@@ -249,11 +249,11 @@ var
 echo '\n'
 echo '\n'
 echo "Evaluating diffusive BRDF: "
-echo eval(diff, norm, in_dir, out_dir, uv).Vec3f        # You should see (0.3, 0.3, 0.3)/PI
-echo eval(refl, norm, in_dir, out_dir, uv).Vec3f        # You should see (0, 0, 0)
+echo eval(diff, norm, in_dir, out_dir, uv).Vec3        # You should see (0.3, 0.3, 0.3)/PI
+echo eval(refl, norm, in_dir, out_dir, uv).Vec3        # You should see (0, 0, 0)
 
 echo '\n'
 echo "Changing threshold angle value, now 35°: "
 refl.threshold_angle = 35
-echo eval(refl, norm, in_dir, out_dir, uv).Vec3f        # You should see (1, 1, 1)
+echo eval(refl, norm, in_dir, out_dir, uv).Vec3        # You should see (1, 1, 1)
 ```

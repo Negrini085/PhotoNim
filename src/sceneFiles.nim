@@ -463,8 +463,8 @@ proc expectIdentifier*(inStr: var InputStream): string =
 #------------------------------------------------------------------#
 #                           Parse procs                            #
 #------------------------------------------------------------------#
-proc parseVec*(inStr: var InputStream, dSc: var DefScene): Vec3f = 
-    # Procedure to parse a Vec3f, remeber that it's between square brakets
+proc parseVec*(inStr: var InputStream, dSc: var DefScene): Vec3 = 
+    # Procedure to parse a Vec3, remeber that it's between square brakets
     var x, y, z: float32
 
     inStr.expectSymbol('[')
@@ -475,7 +475,7 @@ proc parseVec*(inStr: var InputStream, dSc: var DefScene): Vec3f =
     z = inStr.expectNumber(dSc)
     inStr.expectSymbol(']')
 
-    return newVec3f(x, y, z)
+    return newVec3(x, y, z)
 
 
 proc parseColor*(inStr: var InputStream, dSc: var DefScene): Color = 

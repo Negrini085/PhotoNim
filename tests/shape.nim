@@ -62,24 +62,24 @@ suite "AABox & AABB":
             pt6 = newPoint3D(0.5, 0.5, 3)
         
         # box1 --> default constructor
-        check areClose(box1.shape.getNormal(pt1, newVec3f( 1, 0, 0)), newNormal(-1, 0, 0))
-        check areClose(box1.shape.getNormal(pt2, newVec3f(-1, 0, 0)), newNormal( 1, 0, 0))
-        check areClose(box1.shape.getNormal(pt3, newVec3f(0,  1, 0)), newNormal(0, -1, 0))
-        check areClose(box1.shape.getNormal(pt4, newVec3f(0, -1, 0)), newNormal(0,  1, 0))
-        check areClose(box1.shape.getNormal(pt5, newVec3f(0, 0,  1)), newNormal(0, 0, -1))
-        check areClose(box1.shape.getNormal(pt6, newVec3f(0, 0, -1)), newNormal(0, 0,  1))
+        check areClose(box1.shape.getNormal(pt1, newVec3( 1, 0, 0)), newNormal(-1, 0, 0))
+        check areClose(box1.shape.getNormal(pt2, newVec3(-1, 0, 0)), newNormal( 1, 0, 0))
+        check areClose(box1.shape.getNormal(pt3, newVec3(0,  1, 0)), newNormal(0, -1, 0))
+        check areClose(box1.shape.getNormal(pt4, newVec3(0, -1, 0)), newNormal(0,  1, 0))
+        check areClose(box1.shape.getNormal(pt5, newVec3(0, 0,  1)), newNormal(0, 0, -1))
+        check areClose(box1.shape.getNormal(pt6, newVec3(0, 0, -1)), newNormal(0, 0,  1))
 
         
         # box2 --> giving min and max as input
         pt1 = newPoint3D(-1.0, 3.0,-3.0); pt2 = newPoint3D( 0.0, 3.0,-3.0); pt3 = newPoint3D(-0.5, 2.0,-3.0)
         pt4 = newPoint3D(-0.5, 4.0,-3.0); pt5 = newPoint3D(-0.5, 3.0,-8.0); pt6 = newPoint3D(-0.5, 3.0, 2.0)
 
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt1), newVec3f( 1, 0, 0)), newNormal(-1, 0, 0))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt2), newVec3f(-1, 0, 0)), newNormal( 1, 0, 0))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt3), newVec3f(0,  1, 0)), newNormal(0, -1, 0))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt4), newVec3f(0, -1, 0)), newNormal(0,  1, 0))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt5), newVec3f(0, 0,  1)), newNormal(0, 0, -1))
-        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt6), newVec3f(0, 0, -1)), newNormal(0, 0,  1))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt1), newVec3( 1, 0, 0)), newNormal(-1, 0, 0))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt2), newVec3(-1, 0, 0)), newNormal( 1, 0, 0))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt3), newVec3(0,  1, 0)), newNormal(0, -1, 0))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt4), newVec3(0, -1, 0)), newNormal(0,  1, 0))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt5), newVec3(0, 0,  1)), newNormal(0, 0, -1))
+        check areClose(box2.shape.getNormal(apply(box2.transformation.inverse, pt6), newVec3(0, 0, -1)), newNormal(0, 0,  1))
 
 
     test "getUV proc":
@@ -218,15 +218,15 @@ suite "Sphere":
         var
             pt1 = newPoint3D(1, 0 ,0)
             pt2 = newPoint3D(cos(PI/3), sin(PI/3) ,0)
-            d = newVec3f(-1, 2, 0)
+            d = newVec3(-1, 2, 0)
         
         # Unitary sphere
         check areClose(usphere.shape.getNormal(pt1, d), newNormal(1, 0, 0))
         check areClose(usphere.shape.getNormal(pt2, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
 
         # Sphere with arbitrary radius
-        check areClose(sphere.shape.getNormal((3.float32*pt1.Vec3f).Point3D, d), newNormal(1, 0, 0))
-        check areClose(sphere.shape.getNormal((3.float32*pt2.Vec3f).Point3D, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
+        check areClose(sphere.shape.getNormal((3.float32*pt1.Vec3).Point3D, d), newNormal(1, 0, 0))
+        check areClose(sphere.shape.getNormal((3.float32*pt2.Vec3).Point3D, d), newNormal(-cos(PI/3), -sin(PI/3), 0))
 
     
     test "getUV proc":
@@ -240,8 +240,8 @@ suite "Sphere":
         check areClose(usphere.shape.getUV(pt2), newPoint2D(1/6, 0.5))
 
         # Sphere with arbitrary radius
-        check areClose(sphere.shape.getUV((3.float32*pt1.Vec3f).Point3D), newPoint2D(0, 0.5))
-        check areClose(sphere.shape.getUV((3.float32*pt2.Vec3f).Point3D), newPoint2D(1/6, 0.5))
+        check areClose(sphere.shape.getUV((3.float32*pt1.Vec3).Point3D), newPoint2D(0, 0.5))
+        check areClose(sphere.shape.getUV((3.float32*pt2.Vec3).Point3D), newPoint2D(1/6, 0.5))
 
 
     test "getAABB (Sphere) proc":
@@ -320,7 +320,7 @@ suite "Triangle":
             tri2 =  newTriangle(
                 [eX.Point3D, eY.Point3D, eZ.Point3D],
                 newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE),
-                newTranslation(newVec3f(1, 2, 3))
+                newTranslation(newVec3(1, 2, 3))
                 )
     
     teardown:
@@ -358,8 +358,8 @@ suite "Triangle":
         # Checking getNormal proc
         let pt = newPoint3D(0.2, 0.2, 0.6)
 
-        check areClose(tri1.shape.getNormal(pt, newVec3f(-1, 0, 0)).Vec3f, newVec3f(1, 1, 1).normalize)
-        check areClose(tri2.shape.getNormal(pt, newVec3f(-1, 0, 0)).Vec3f, newVec3f(1, 1, 1).normalize)
+        check areClose(tri1.shape.getNormal(pt, newVec3(-1, 0, 0)).Vec3, newVec3(1, 1, 1).normalize)
+        check areClose(tri2.shape.getNormal(pt, newVec3(-1, 0, 0)).Vec3, newVec3(1, 1, 1).normalize)
     
 
     test "getUV proc":
@@ -483,8 +483,8 @@ suite "Cylinder":
             pt1 = newPoint3D(1, 0, 0.5)
             pt2 = newPoint3D(2, 0, 0.5)
         
-        check areClose(cyl1.shape.getNormal(pt1, newVec3f(0, 0, -1)).Vec3f, newVec3f(1, 0, 0))
-        check areClose(cyl2.shape.getNormal(pt2, newVec3f(0, 0, -1)).Vec3f, newVec3f(1, 0, 0))
+        check areClose(cyl1.shape.getNormal(pt1, newVec3(0, 0, -1)).Vec3, newVec3(1, 0, 0))
+        check areClose(cyl2.shape.getNormal(pt2, newVec3(0, 0, -1)).Vec3, newVec3(1, 0, 0))
     
 
     test "getUV proc":

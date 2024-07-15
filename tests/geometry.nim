@@ -21,7 +21,7 @@ suite "Vec unittest":
         let d = newVec2(1.0, 2.0)
         check d.N == 2 and d.V is float
 
-        let e = newVec3f(1.0, 2.0, 3.0)
+        let e = newVec3(1.0, 2.0, 3.0)
         check e.N == 3 and e.V is float32
 
         let f = newVec4(-1, -4, 5, 2)
@@ -30,8 +30,8 @@ suite "Vec unittest":
         let g = newVec2f(1, 2)
         check areClose(g, newVec2f(1, 2))
 
-        let h = newVec3f(1, 2, 3)
-        check areClose(h, newVec3f(1, 2, 3))
+        let h = newVec3(1, 2, 3)
+        check areClose(h, newVec3(1, 2, 3))
 
         let i = newVec4f(1, 2, 3, 4)
         check areClose(i, newVec4f(1, 2, 3, 4))
@@ -54,11 +54,11 @@ suite "Vec unittest":
         check a[0] == 1.0 and a[1] == 2.0 and a[2] == -3.0
 
     test "`==` proc": 
-        check BLACK.Vec3f == [float32 0, 0, 0]
-        check WHITE.Vec3f == [float32 1, 1, 1]
-        check RED.Vec3f == [float32 1, 0, 0]
-        check GREEN.Vec3f == [float32 0, 1, 0]
-        check BLUE.Vec3f == [float32 0, 0, 1]
+        check BLACK.Vec3 == [float32 0, 0, 0]
+        check WHITE.Vec3 == [float32 1, 1, 1]
+        check RED.Vec3 == [float32 1, 0, 0]
+        check GREEN.Vec3 == [float32 0, 1, 0]
+        check BLUE.Vec3 == [float32 0, 0, 1]
 
 
     test "`+` proc":
@@ -143,8 +143,8 @@ suite "Points unittest":
         check p2.u == 1.0 and p2.v == 20.0
         
     test "toPoint3D proc":
-        check p3.Vec3f is Vec3f
-        check newVec3f(0.01, 0.02, 0.03).toPoint3D is Point3D
+        check p3.Vec3 is Vec3
+        check newVec3(0.01, 0.02, 0.03).toPoint3D is Point3D
 
     test "`$` proc":
         check $p2 == "(1.0, 20.0)"
@@ -233,13 +233,13 @@ suite "Mat unittest":
     test "T proc":
         var mat: Mat3f = newMat3([float32 1, 2, 3], [float32 4, 5, 6], [float32 7, 8, 9])
 
-        check [[float32 1.0, 2.0, 3.0]].Tv is Vec3f
+        check [[float32 1.0, 2.0, 3.0]].Tv is Vec3
         check [float32 1.0, 2.0, 3.0].T is Mat[1, 3, float32]
 
         mat = mat.T
-        check areClose(mat[0], newVec3f(1, 4, 7))
-        check areClose(mat[1], newVec3f(2, 5, 8))
-        check areClose(mat[2], newVec3f(3, 6, 9))
+        check areClose(mat[0], newVec3(1, 4, 7))
+        check areClose(mat[1], newVec3(2, 5, 8))
+        check areClose(mat[2], newVec3(3, 6, 9))
     
 
 
@@ -249,7 +249,7 @@ suite "transformations":
         var
             t1 = newScaling(2.0)
             t2 = newScaling(1, 2, 3)
-            t3 = newTranslation(newVec3f(2, 4, 1))
+            t3 = newTranslation(newVec3(2, 4, 1))
 
     teardown:
         discard t1
@@ -266,13 +266,13 @@ suite "transformations":
         check areClose(apply(t2, p), newPoint3D(0, 6, 3))
     
 
-    test "Scaling of Vec3f":
+    test "Scaling of Vec3":
 
-        var p = newVec3f(0, 3, 1)
+        var p = newVec3(0, 3, 1)
         
         # Checking omogeneous and inomogenous scaling respectively
-        check areClose(apply(t1, p), newVec3f(0, 6, 2))
-        check areClose(apply(t2, p), newVec3f(0, 6, 3))
+        check areClose(apply(t1, p), newVec3(0, 6, 2))
+        check areClose(apply(t2, p), newVec3(0, 6, 3))
 
 
     test "Scaling of Normal":
@@ -286,14 +286,14 @@ suite "transformations":
         check areClose(apply(t2, p), newNormal(0, 3/2, 1/3).normalize)
 
 
-    test "Translation of Vec3f":
+    test "Translation of Vec3":
         var 
-            v1 = newVec3f(0, 0, 0)
-            v2 = newVec3f(0, 3, 1)
+            v1 = newVec3(0, 0, 0)
+            v2 = newVec3(0, 3, 1)
 
         # Checking apply procedure
-        check areClose(apply(t3, v1), newVec3f(0, 0, 0))
-        check areClose(apply(t3, v2), newVec3f(0, 3, 1))
+        check areClose(apply(t3, v1), newVec3(0, 0, 0))
+        check areClose(apply(t3, v2), newVec3(0, 3, 1))
 
 
     test "Translation of Point3D":
@@ -324,16 +324,16 @@ suite "transformations":
         check areClose(apply(tz, p), newPoint3D(-1.0, -2.0, 3.0), 1e-6)
 
 
-    test "Rotation of Vec3f":
+    test "Rotation of Vec3":
         var
             tx = newRotation(180, axisX) 
             ty = newRotation(180, axisY) 
             tz = newRotation(180, axisZ) 
-            vec = newVec3f(1, 2, 3)
+            vec = newVec3(1, 2, 3)
         
-        check areClose(apply(tx, vec), newVec3f(1.0, -2.0, -3.0), 1e-6)
-        check areClose(apply(ty, vec), newVec3f(-1.0, 2.0, -3.0), 1e-6)
-        check areClose(apply(tz, vec), newVec3f(-1.0, -2.0, 3.0), 1e-6)
+        check areClose(apply(tx, vec), newVec3(1.0, -2.0, -3.0), 1e-6)
+        check areClose(apply(ty, vec), newVec3(-1.0, 2.0, -3.0), 1e-6)
+        check areClose(apply(tz, vec), newVec3(-1.0, -2.0, 3.0), 1e-6)
 
 
     test "Rotation of Normal":
@@ -406,20 +406,20 @@ suite "transformations":
         check areClose(apply(comp, p), newPoint3D(3, 1, 3), eps = 1e-6)
 
     
-    test "Composition on Vec3f":
+    test "Composition on Vec3":
 
         var
             rotx = newRotation(90, axisX)
             rotz = newRotation(90, axisZ)
             
             comp: Transformation
-            vec = newVec3f(1, 2, 3)
+            vec = newVec3(1, 2, 3)
 
         comp = rotx @ rotz
-        check areClose(apply(comp, vec), newVec3f(-2, -3, 1), eps = 1e-6)
+        check areClose(apply(comp, vec), newVec3(-2, -3, 1), eps = 1e-6)
 
         comp = t3 @ rotx
-        check areClose(apply(comp, vec), newVec3f(1, -3, 2),eps = 1e-6)
+        check areClose(apply(comp, vec), newVec3(1, -3, 2),eps = 1e-6)
 
 
     test "Composition on Normal":
@@ -474,7 +474,7 @@ suite "OrthoNormal Basis":
             normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
             onb = newONB(normal)
 
-            check areClose(onb[2], normal.Vec3f)
+            check areClose(onb[2], normal.Vec3)
 
             check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
             check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)

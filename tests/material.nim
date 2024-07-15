@@ -96,8 +96,8 @@ suite "BRDF":
 #        # Checking brdf evaluation
 #        var
 #            norm = newNormal(1, 0, 0)
-#            in_dir = newVec3f(1, 2, -1)
-#            out_dir = newVec3f(1, 2, 1)
+#            in_dir = newVec3(1, 2, -1)
+#            out_dir = newVec3(1, 2, 1)
 #            uv = newPoint2D(0.3, 0.5)
 #            appo: Color
 #        

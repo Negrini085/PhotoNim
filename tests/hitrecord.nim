@@ -51,9 +51,9 @@ suite "HitLeafs":
         let 
             scene = newScene(@[newSphere(ORIGIN3D, 2), newUnitarySphere(newPoint3D(4, 4, 4))])
             
-            ray1 = newRay(newPoint3D(-3, 0, 0), newVec3f(1, 0, 0))
-            ray2 = newRay(newPoint3D(-4, 4, 4), newVec3f(1, 0, 0))
-            ray3 = newRay(newPoint3D(-4, 4, 4), newVec3f(-1, 0, 0))
+            ray1 = newRay(newPoint3D(-3, 0, 0), newVec3(1, 0, 0))
+            ray2 = newRay(newPoint3D(-4, 4, 4), newVec3(1, 0, 0))
+            ray3 = newRay(newPoint3D(-4, 4, 4), newVec3(-1, 0, 0))
         
             toCheck = getBVHTree(scene, tkBinary, 1, rg)
 
@@ -193,9 +193,9 @@ suite "HitPayload":
     test "getHitPayload proc (Plane)":
         # Checking getHitPayloads on Planes
         var
-            ray1 = newRay(newPoint3D(0, 0, 2), newVec3f(0, 0, -1))
-            ray2 = newRay(newPoint3D(1, -2, -3), newVec3f(0, 4/5, 3/5))
-            ray3 = newRay(newPoint3D(3, 0, 0), newVec3f(-1, 0, 0))
+            ray1 = newRay(newPoint3D(0, 0, 2), newVec3(0, 0, -1))
+            ray2 = newRay(newPoint3D(1, -2, -3), newVec3(0, 4/5, 3/5))
+            ray3 = newRay(newPoint3D(3, 0, 0), newVec3(-1, 0, 0))
 
             plane = newPlane()
         
@@ -210,7 +210,7 @@ suite "HitPayload":
         check hitPayload.isSome
         check hitPayload.get.t == 5
         check hitPayload.get.handler.shape.kind == skPlane
-        check areClose(hitPayload.get.ray.dir, newVec3f(0, 4/5, 3/5))
+        check areClose(hitPayload.get.ray.dir, newVec3(0, 4/5, 3/5))
         check areClose(hitPayload.get.ray.origin, newPoint3D(1, -2, -3))
 
         check not getHitPayload(plane, ray3).isSome
@@ -221,7 +221,7 @@ suite "HitPayload":
         var
             ray1 = newRay(newPoint3D(-5, 1, 2), eX)
             ray2 = newRay(newPoint3D(1, -2, 3), eY)
-            ray3 = newRay(newPoint3D(4, 1, 0), newVec3f(-1, 0, 0))
+            ray3 = newRay(newPoint3D(4, 1, 0), newVec3(-1, 0, 0))
 
             box = newBox((newPoint3D(-1, 0, 1), newPoint3D(3, 2, 5)))
           

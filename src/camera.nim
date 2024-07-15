@@ -56,8 +56,8 @@ proc aspectRatio*(camera: Camera): float32 {.inline.} = camera.viewport.width.fl
 proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} = 
     let (origin, dir) = 
         case camera.kind
-        of ckOrthogonal: (newPoint3D(-1, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
-        of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3f(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
+        of ckOrthogonal: (newPoint3D(-1.0, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
+        of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
     
     Ray(origin: origin, dir: dir, tSpan: (epsilon(float32), float32 Inf), depth: 0).transform(camera.transformation)
 

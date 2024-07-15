@@ -10,7 +10,7 @@ type
     HitPayload* = ref object
         info*: HitInfo[ObjectHandler]
         pt*: Point3D 
-        rayDir*: Vec3f
+        rayDir*: Vec3
 
 
 proc newHitInfo(hit: BVHNode, ray: Ray): HitInfo[BVHNode] {.inline.} = (hit, ray.getBoxHit(hit.aabb))

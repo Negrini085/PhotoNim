@@ -1,18 +1,17 @@
 import geometry, scene
 
 from std/fenv import epsilon
-from std/strformat import fmt
 from std/math import pow, sqrt, arctan2, PI
 
 
 type Ray* = ref object
     origin*: Point3D
-    dir*: Vec3f
+    dir*: Vec3
     tSpan*: Interval[float32]
     depth*: int
 
 
-proc newRay*(origin: Point3D, direction: Vec3f, depth: int = 0): Ray {.inline.} = 
+proc newRay*(origin: Point3D, direction: Vec3, depth: int = 0): Ray {.inline.} = 
     Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: depth)  
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
@@ -69,8 +68,8 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
         if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return Inf
 
         let tzSpan = newInterval(min[2] / worldInvRay.dir[2], max[2] / worldInvRay.dir[2])
+        
         var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
-
         if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return Inf
 
         if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
@@ -96,7 +95,7 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
 
     of skSphere:
         let 
-            (a, b, c) = (norm2(worldInvRay.dir), dot(worldInvRay.origin.Vec3f, worldInvRay.dir), norm2(worldInvRay.origin.Vec3f) - shape.radius * shape.radius)
+            (a, b, c) = (norm2(worldInvRay.dir), dot(worldInvRay.origin.Vec3, worldInvRay.dir), norm2(worldInvRay.origin.Vec3) - shape.radius * shape.radius)
             delta_4 = b * b - a * c
         
         if delta_4 < 0: return Inf
@@ -123,7 +122,6 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
         if delta < 0.0: return Inf
 
         var tspan = newInterval((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
-
         if tspan.min > worldInvRay.tspan.max or tspan.max < worldInvRay.tspan.min: return Inf
 
         result = tspan.min
@@ -131,8 +129,9 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
             if tspan.max > worldInvRay.tspan.max: return Inf
             result = tspan.max
 
-        var hitPt = worldInvRay.at(result)
-        var phi = arctan2(hitPt.y, hitPt.x)
+        var 
+            hitPt = worldInvRay.at(result)
+            phi = arctan2(hitPt.y, hitPt.x)
         if phi < 0.0: phi += 2.0 * PI
 
         if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax:
@@ -144,7 +143,3 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
             phi = arctan2(hitPt.y, hitPt.x)
             if phi < 0.0: phi += 2.0 * PI
             if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax: return Inf
-
-
-proc `$`(ray: Ray): string {.inline.} =
-    return fmt"Origin: {ray.origin}, Direction: {ray.dir}, Tmin: {ray.tSpan.min}, Tmax: {ray.tSpan.max}, Depth: {ray.depth}"
