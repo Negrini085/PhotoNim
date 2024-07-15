@@ -166,7 +166,7 @@ proc dot*[N: static[int]](a, b: Vec[N]): float32 {.inline.} =
     for i in 0..<N: result += a[i] * b[i]
 
 proc norm2*[N: static[int]](a: Vec[N]): float32 {.inline.} = dot(a, a)
-proc dist2*(a, b: Point2D | Point3D): float32 {.inline.} = (a - b).norm2
+proc dist2*(a, b: Point3D): float32 {.inline.} = (a - b).norm2
 
 proc norm*[N: static[int]](a: Vec[N]): float32 {.inline.} = sqrt(dot(a, a))
 
@@ -182,7 +182,7 @@ proc newNormal*(x: SomeNumber, y: SomeNumber, z: SomeNumber): Normal {.inline.} 
     
 proc newNormal*(v: Vec3): Normal {.inline.} = Normal(v.normalize)
 
-proc newONB*(normal: Normal): array[3, Vec3] = 
+proc newONB*(normal: Normal): array[3, Vec3] {.inline.} = 
     let
         sign = copySign(1.0, normal.z)
         a = -1.0 / (sign + normal.z)
@@ -195,15 +195,16 @@ proc newONB*(normal: Normal): array[3, Vec3] =
     ]
 
 
+proc determinant(m: array[3, Vec3]): float32 {.inline.} = (
+    m[0][0] * m[1][1] * m[2][2] + 
+    m[0][1] * m[1][2] * m[2][0] + 
+    m[0][2] * m[1][0] * m[2][1] - 
+    m[0][2] * m[1][1] * m[2][0] - 
+    m[0][1] * m[1][0] * m[2][2] - 
+    m[0][0] * m[1][2] * m[2][1]
+)
+
 proc solve*(mat: array[3, Vec3], vec: Vec3): Vec3 {.raises: ValueError.} =
-    proc determinant(m: array[3, Vec3]): float32 = (
-        m[0][0] * m[1][1] * m[2][2] + 
-        m[0][1] * m[1][2] * m[2][0] + 
-        m[0][2] * m[1][0] * m[2][1] - 
-        m[0][2] * m[1][1] * m[2][0] - 
-        m[0][1] * m[1][0] * m[2][2] - 
-        m[0][0] * m[1][2] * m[2][1]
-    )
 
     let det = mat.determinant
     if areClose(det, 0.0): raise newException(ValueError, "Matrix is not invertible.")
