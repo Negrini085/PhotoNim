@@ -166,6 +166,13 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
             if meshHit.info.hit.isNil or meshHit.info.t >= tCurrentHit: return nil
             result = meshHit; result.pt = apply(handler.transformation, meshHit.pt)
 
+        of hkCSG:
+            case handler.csg.kind
+            of csgkUnion:
+                let csgHit = handler.csg.tree.getClosestHit(invRay)
+                if csgHit.info.hit.isNil or csgHit.info.t >= tCurrentHit: return nil
+                result = csgHit; result.pt = apply(handler.transformation, csgHit.pt)
+
 
     while nodesHitStack.len > 0:
         var handlersHitStack = newSeqOfCap[HitInfo[ObjectHandler]](tree.mspl)
