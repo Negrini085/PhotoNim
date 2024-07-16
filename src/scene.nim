@@ -22,7 +22,7 @@ type
         of nkLeaf: indexes*: seq[int]
 
 
-    HandlerKind* = enum hkShape, hkMesh
+    HandlerKind* = enum hkShape, hkMesh, hkCSG
     ObjectHandler* = ref object
         emittedRadiance*: Pigment
         brdf*: BRDF
@@ -33,8 +33,8 @@ type
         case kind*: HandlerKind
         of hkShape: shape*: Shape 
         of hkMesh: mesh*: BVHTree
-
-
+        of hkCSG: csg*: CSG
+    
     ShapeKind* = enum skPlane, skSphere, skAABox, skTriangle, skCylinder, skEllipsoid
     Shape* = object
         case kind*: ShapeKind 
@@ -47,6 +47,12 @@ type
             zSpan*: Interval[float32]
 
         of skEllipsoid: axis*: tuple[a, b, c: float32]
+
+    CSGKind* = enum csgkUnion
+    CSG* = object
+        case kind*: CSGKind
+        of csgkUnion:
+            tree*: BVHTree
 
 
 proc newAABB*(points: seq[Point3D]): Interval[Point3D] =
