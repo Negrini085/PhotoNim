@@ -21,7 +21,7 @@ var
 let 
     lamp = newBox(
         (newPoint3D(0.5, -0.5, 1.9), newPoint3D(1.5, 0.5, 1.999)), 
-        brdf = nil, # newDiffuseBRDF(newUniformPigment(BLACK)),
+        brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
         emittedRadiance = newUniformPigment(5 * WHITE)
     ) 
 
