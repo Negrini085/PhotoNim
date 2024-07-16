@@ -174,3 +174,53 @@ suite "Camera":
         check areClose(ray2.at(1.0), apply(trans, newPoint3D(0, -1.2, -1)))
         check areClose(ray3.at(1.0), apply(trans, newPoint3D(0, 1.2, 1)))
         check areClose(ray4.at(1.0), apply(trans, newPoint3D(0, -1.2, 1)))
+
+
+
+#------------------------------------------#
+#           Renderer test suite            #
+#------------------------------------------#
+suite "Renderer":
+
+    setup:
+        let 
+            rs = newRandomSetUp(42, 54)
+            rend = newPathTracer(1, 100, 101)
+            camera = newPerspectiveCamera(rend, (1600, 900), 2)
+        
+    teardown:
+        discard rs
+        discard rend
+        discard camera
+    
+
+    test "Furnace test":
+        # Here we want to check if the path tracing algorithm we
+        # implemented is actually working or not 
+
+        var 
+            col: Color
+            exp: float32
+            pcg = newPCG(rs)
+            ray = newRay(ORIGIN3D, eX)
+
+        let
+            emiRad = pcg.rand
+            refl = pcg.rand * 0.9
+
+            sphere  = newUnitarySphere(
+                    ORIGIN3D,
+                    newDIffuseBRDF(newUniformPigment(WHITE * refl)),
+                    newUniformPigment(WHITE * emiRad)
+                )
+
+            scene = newScene(BLACK, @[sphere], tkBinary, 1, newRandomSetUp(pcg.random, pcg.random))
+        
+        pcg = newPCG(newRandomSetUp(pcg.random, pcg.random))
+        col = camera.sampleRay(scene, ray, pcg)
+        exp = emiRad/(1 - refl)
+
+        check areClose(exp, col.r, eps = 1e-3)
+        check areClose(exp, col.g, eps = 1e-3)
+        check areClose(exp, col.b, eps = 1e-3)
+
