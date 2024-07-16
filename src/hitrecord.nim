@@ -30,14 +30,6 @@ proc splitted[T](inSeq: seq[T], condition: proc(t: T): bool): (seq[T], seq[T]) =
 
 
 proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
-    result = HitPayload(info: (nil, Inf.float32), pt: worldRay.origin, rayDir: worldRay.dir)
-
-    let tRootHit = worldRay.getBoxHit(tree.root.aabb)
-    if tRootHit == Inf: return result
-
-    var nodesHitStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int)
-    nodesHitStack.add (tree.root, tRootHit) 
-
 
     proc updateClosestHit(tCurrentHit: float32, handler: ObjectHandler, worldRay: Ray): HitPayload =
         let invRay = worldRay.transform(handler.transformation.inverse) 
@@ -45,17 +37,26 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
         case handler.kind
         of hkShape: 
             let tShapeHit = invRay.getShapeHit(handler.shape)
-            return if tShapeHit >= tCurrentHit: nil else: newHitPayload(handler, invRay, tShapeHit)
+            if tShapeHit >= tCurrentHit: return nil 
+            result = newHitPayload(handler, invRay, tShapeHit)
             
         of hkMesh:
             let meshHit = handler.mesh.getClosestHit(invRay)
             if meshHit.info.hit.isNil or meshHit.info.t >= tCurrentHit: return nil
-            result = meshHit; result.pt = apply(handler.transformation, meshHit.pt)
+            result = meshHit
+            result.pt = apply(handler.transformation, meshHit.pt)
 
 
-    while nodesHitStack.len > 0:
-        var handlersHitStack = newSeqOfCap[HitInfo[ObjectHandler]](tree.mspl)
-    
+    result = HitPayload(info: (hit: nil, t: Inf.float32), pt: worldRay.origin, rayDir: worldRay.dir)
+
+    let tRootHit = worldRay.getBoxHit(tree.root.aabb)
+    if tRootHit == Inf: return result
+
+    var nodesHitStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int)
+    nodesHitStack.add (tree.root, tRootHit) 
+
+    while nodesHitStack.len > 0:    
+
         let currentNodeHitInfo = nodesHitStack.pop    
         case currentNodeHitInfo.hit.kind
         of nkLeaf:
@@ -64,50 +65,45 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
                 .mapIt(newHitInfo(tree.handlers[it], worldRay))
                 .splitted(proc(info: HitInfo[ObjectHandler]): bool = info.hit.aabb.contains(worldRay.origin))
 
-            handlersHitStack.add secondHandlersToVisit.filterIt(it.t < result.info.t).sorted(SortOrder.Descending)
-            handlersHitStack.add firstHandlersToVisit.sorted(SortOrder.Descending)
+            var handlersHitStack = newSeqOfCap[HitInfo[ObjectHandler]](tree.mspl)
+            handlersHitStack = concat(
+                secondHandlersToVisit.filterIt(it.t < result.info.t).sorted(SortOrder.Descending),
+                firstHandlersToVisit.sorted(SortOrder.Descending)
+            )
 
             while handlersHitStack.len > 0:
-                let 
-                    currentHandlerInfo = handlersHitStack.pop  
-                    updatedHit = updateClosestHit(result.info.t, currentHandlerInfo.hit, worldRay)
-                
-                if not updatedHit.isNil: 
-                    result = updatedHit
-                    handlersHitStack.keepItIf(it.t < result.info.t)
+                let updatedHit = updateClosestHit(result.info.t, handlersHitStack.pop.hit, worldRay)
+                if updatedHit.isNil: continue 
+
+                result = updatedHit
+                handlersHitStack.keepItIf(it.t < result.info.t)
 
         of nkBranch: 
 
             let (firstNodesToVisit, secondNodesToVisit) = currentNodeHitInfo.hit.children
-                .filterIt(not it.isNil)
                 .mapIt(newHitInfo(it, worldRay))
                 .splitted(proc(info: HitInfo[BVHNode]): bool = info.hit.aabb.contains(worldRay.origin))
 
             if firstNodesToVisit.len > 0:
-                let (leafsToVisit, branchesToVisit) = 
-                    firstNodesToVisit.splitted(proc(node: HitInfo[BVHNode]): bool = node.hit.kind == nkLeaf)
+                let (leafsToVisit, branchesToVisit) = firstNodesToVisit
+                    .splitted(proc(node: HitInfo[BVHNode]): bool = node.hit.kind == nkLeaf)
                 
-                handlersHitStack.add leafsToVisit
-                    .mapIt(it.hit.indexes).concat
+                var handlersHitStack = concat(leafsToVisit.mapIt(it.hit.indexes))
                     .mapIt(newHitInfo(tree.handlers[it], worldRay))
                     .filterIt(it.t < result.info.t)
+                    .sorted(SortOrder.Descending)
 
-                handlersHitStack.sort(SortOrder.Descending)
                 while handlersHitStack.len > 0:
-                    let 
-                        currentHandlerInfo = handlersHitStack.pop
-                        updatedHit = updateClosestHit(result.info.t, currentHandlerInfo.hit, worldRay)
+                    let updatedHit = updateClosestHit(result.info.t, handlersHitStack.pop.hit, worldRay)
+                    if updatedHit.isNil: continue 
                     
-                    if not updatedHit.isNil: 
-                        result = updatedHit
-                        handlersHitStack.keepItIf(it.t < result.info.t)
+                    result = updatedHit
+                    handlersHitStack.keepItIf(it.t < result.info.t)
 
                 nodesHitStack.add branchesToVisit
                     .sorted(SortOrder.Descending)
                     .mapIt((hit: it.hit, t: -1.0.float32))
 
             nodesHitStack.add secondNodesToVisit.filterIt(it.t < result.info.t)
-
-
-        nodesHitStack.keepItIf(it.t < result.info.t)
+            
         nodesHitStack.sort(SortOrder.Descending)

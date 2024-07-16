@@ -24,8 +24,8 @@ type
 
     Transformation* = object
         case kind*: TransformationKind
-        of tkComposition: transformations*: seq[Transformation]
         of tkIdentity: discard
+        of tkComposition: transformations*: seq[Transformation]
         of tkUniformScaling: factor*, invFactor*: float32
         of tkGenericScaling: factors*, invFactors*: tuple[a, b, c: float32]
         of tkTranslation: offset*: Vec3

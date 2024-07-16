@@ -1,6 +1,6 @@
 import pcg, geometry, color, pigment, brdf
 
-from std/sequtils import newSeqWith, toSeq, mapIt
+from std/sequtils import newSeqWith, toSeq, mapIt, keepItIf
 
 
 type    
@@ -130,16 +130,18 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
     for handlerIdx, clusterIdx in kMeans(handlersAABBs.mapIt(it.getCentroid), kClusters, rg).pairs: 
         clusters[clusterIdx].add handlerIdx
 
-    var childNodes = newSeq[BVHNode](kClusters)
-    for i in 0..<kClusters:         
-        childNodes[i] = 
-            if clusters[i].len == 0: nil
-            else: newBVHNode(clusters[i].mapIt(handlers[it]), kClusters, maxShapesPerLeaf, newRandomSetUp(rg.random, rg.random))
-
+    clusters.keepItIf(it.len > 0)
+    
     BVHNode(
         kind: nkBranch, 
         aabb: handlersAABBs.getTotalAABB,
-        children: childNodes
+        children: clusters.mapIt(
+            newBVHNode(
+                it.mapIt(handlers[it]), 
+                kClusters, maxShapesPerLeaf, 
+                newRandomSetUp(rg.random, rg.random)
+            )
+        )      
     )
 
 
