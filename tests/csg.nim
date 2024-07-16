@@ -23,7 +23,7 @@ suite "CSGUnion":
                     newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1))
                 )
             
-            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1), newDiffuseBRDF(newUniformPigment(newColor(1, 1, 1))), newUniformPigment(newColor(1, 1, 1)))
+            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1))
 
     teardown:
         discard sh1
@@ -36,10 +36,6 @@ suite "CSGUnion":
         # Procedure to check newCSGUnion implementation
 
         check csgUnion.kind == hkCSG
-        
-        check csgUnion.brdf.kind == DiffuseBRDF 
-        check csgUnion.emittedRadiance.kind == pkUniform
-
         check csgUnion.transformation.kind == tkIdentity
 
         check areClose(csgUnion.aabb.max, newPoint3D( 3, 4, 5))
@@ -52,3 +48,4 @@ suite "CSGUnion":
         check areClose(csgUnion.csg.tree.root.aabb.max, newPoint3D( 3, 4, 5))
         check areClose(csgUnion.csg.tree.root.aabb.min, newPoint3D(-7,-2,-2))
         check csgUnion.csg.tree.handlers.len == 3
+        

@@ -24,14 +24,14 @@ suite "Ray":
         check ray1.depth == 0.int
         check ray1.tSpan.max == Inf
         check areClose(ray1.tSpan.min, 1e-5)
-        check areClose(ray1.dir, newVec3f(1, 0, 0))
+        check areClose(ray1.dir, newVec3(1, 0, 0))
         check areClose(ray1.origin, newPoint3D(1, 2, 3))
 
         # Second ray check
         check ray2.depth == 0.int
         check ray2.tSpan.max == Inf
         check areClose(ray2.tSpan.min, 1e-5)
-        check areClose(ray2.dir, newVec3f(1, 0, 0))
+        check areClose(ray2.dir, newVec3(1, 0, 0))
         check areClose(ray2.origin, newPoint3D(1, 2, 0))
     
 
@@ -144,10 +144,10 @@ suite "Camera":
         check areClose(ray4.dir, eX)
 
         # Testing arrive point
-        check areClose(ray1.at(1.0), apply(trans, newPoint3D(0, 1.2, -1)))
-        check areClose(ray2.at(1.0), apply(trans, newPoint3D(0, -1.2, -1)))
-        check areClose(ray3.at(1.0), apply(trans, newPoint3D(0, 1.2, 1)))
-        check areClose(ray4.at(1.0), apply(trans, newPoint3D(0, -1.2, 1)))
+        check areClose(ray1.at(1.0), apply(trans, newPoint3D(0.0, 1.2,-1.0)))
+        check areClose(ray2.at(1.0), apply(trans, newPoint3D(0.0,-1.2,-1.0)))
+        check areClose(ray3.at(1.0), apply(trans, newPoint3D(0.0, 1.2, 1.0)))
+        check areClose(ray4.at(1.0), apply(trans, newPoint3D(0.0,-1.2, 1.0)))
     
 
     test "Perspective fireRay proc":
@@ -164,16 +164,16 @@ suite "Camera":
         check areClose(ray1.origin, ray4.origin)
         
         # Checking directions
-        check areClose(ray1.dir, apply(trans, newVec3(5,  1.2, -1)), eps =1e-6)
-        check areClose(ray2.dir, apply(trans, newVec3(5, -1.2, -1)), eps =1e-6)
-        check areClose(ray3.dir, apply(trans, newVec3(5,  1.2,  1)), eps =1e-6)
-        check areClose(ray4.dir, apply(trans, newVec3(5, -1.2,  1)), eps =1e-6)
+        check areClose(ray1.dir, apply(trans, newVec3(5.0,  1.2, -1.0)), eps =1e-6)
+        check areClose(ray2.dir, apply(trans, newVec3(5.0, -1.2, -1.0)), eps =1e-6)
+        check areClose(ray3.dir, apply(trans, newVec3(5.0,  1.2,  1.0)), eps =1e-6)
+        check areClose(ray4.dir, apply(trans, newVec3(5.0, -1.2,  1.0)), eps =1e-6)
 
         # Testing arrive point
-        check areClose(ray1.at(1.0), apply(trans, newPoint3D(0, 1.2, -1)))
-        check areClose(ray2.at(1.0), apply(trans, newPoint3D(0, -1.2, -1)))
-        check areClose(ray3.at(1.0), apply(trans, newPoint3D(0, 1.2, 1)))
-        check areClose(ray4.at(1.0), apply(trans, newPoint3D(0, -1.2, 1)))
+        check areClose(ray1.at(1.0), apply(trans, newPoint3D(0.0, 1.2,-1.0)))
+        check areClose(ray2.at(1.0), apply(trans, newPoint3D(0.0,-1.2,-1.0)))
+        check areClose(ray3.at(1.0), apply(trans, newPoint3D(0.0, 1.2, 1.0)))
+        check areClose(ray4.at(1.0), apply(trans, newPoint3D(0.0,-1.2, 1.0)))
 
 
 

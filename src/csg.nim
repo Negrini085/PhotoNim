@@ -6,14 +6,12 @@ from std/strformat import fmt
 from std/sequtils import toSeq, mapIt
 
 
-proc newCSGUnion*(localHandlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler =    
-    
-    let root = newBVHNode(localHandlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp)
+proc newCSGUnion*(localHandlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp, transformation = Transformation.id): ObjectHandler  =    
+    let tree = newBVHTree(localHandlers, treeKind, maxShapesPerLeaf, rgSetUp)
 
     ObjectHandler(
         kind: hkCSG, 
-        brdf: brdf, emittedRadiance: emittedRadiance,
+        aabb: newAABB tree.root.aabb.getVertices.mapIt(apply(transformation, it)),
         transformation: transformation,
-        aabb: newAABB root.aabb.getVertices.mapIt(apply(transformation, it)),
-        csg: CSG(kind: csgkUnion, tree: (treeKind, maxShapesPerLeaf, root, localHandlers))
+        csg: CSG(kind: csgkUnion, tree: tree)
     )

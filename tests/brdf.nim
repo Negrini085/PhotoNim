@@ -34,8 +34,8 @@ suite "BRDF":
 #        # Checking brdf evaluation
 #        var
 #            norm = newNormal(1, 0, 0)
-#            inDir = newVec3f(1, 2, -1)
-#            outDir = newVec3f(1, 2, 1)
+#            inDir = newVec3(1, 2, -1)
+#            outDir = newVec3(1, 2, 1)
 #            appo: Color
 #        
 #        appo = dif.eval(norm, inDir, outDir)
@@ -57,8 +57,8 @@ suite "BRDF":
             rs = newRandomSetUp(42, 54)
 
             norm = newNormal(0, 0, 1)
-            inDir = newVec3f(1, 2,-1)
+            inDir = newVec3(1, 2,-1)
         
         var rg = newPCG(rs)
         
-        check areClose(spe.scatterDir(norm, inDir, rg), newVec3f(1, 2, 1))
+        check areClose(spe.scatterDir(norm, inDir, rg), newVec3(1, 2, 1))
