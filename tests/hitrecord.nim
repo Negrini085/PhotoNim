@@ -462,7 +462,7 @@ suite "Tree traverse":
 
 
             handlSeq = newSeq[ObjectHandler](500)
-    
+   
 
     test "hits (in shape - random testing)":
         # Checking if tree traversing algorithm gives correct result
@@ -538,3 +538,70 @@ suite "Tree traverse":
 
             handlSeq = newSeq[ObjectHandler](500)
 
+
+    test "CSGUnion":
+        # Checking getClosestHit for a ray-csgUnion intersection.
+        # Here we need to assure that time computation is indeed correct.
+
+        let
+            sh1 = newSphere(
+                    newPoint3D(1, 2, 3), 2,
+                    newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), newUniformPigment(newColor(1, 0, 0))
+                )
+            
+            sh2 = newSphere(
+                    newPoint3D(-5, 0, 0), 2,
+                    newSpecularBRDF(newUniformPigment(newColor(0, 1, 0))), newUniformPigment(newColor(0, 1, 0))
+                )
+            
+            sh3 = newUnitarySphere(
+                    newPoint3D(0, 0, 3),
+                    newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1))
+                )
+            
+            csgUnion = newCSGUnion(
+                    @[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1),
+                    newDiffuseBRDF(newUniformPigment(newColor(1, 1, 1))), newUniformPigment(newColor(1, 1, 1))
+                )
+        
+        var
+            ray1 = newRay(newPoint3D(1, 2, 2),-eZ)
+            ray2 = newRay(newPoint3D(4, 0, 0),-eX)
+            ray3 = newRay(newPoint3D(0, 0, 0), eZ)
+            ray4 = newRay(newPoint3D(5, 5, 5), eZ)
+        
+        scene = newScene(BLACK, @[csgUnion], tkBinary, 1, rs)
+
+        # First ray --> Origin: (1, 2, 2), Dir: (0, 0,-1)
+        # In world, we should get intersection in (1, 2, 1)
+        hitPayload = scene.tree.getClosestHit(ray1)
+        check hitPayload.info.hit.shape.kind == skSphere
+        check areClose(hitPayload.info.hit.aabb.min, newPoint3D(-1, 0, 1))
+        check areClose(hitPayload.info.hit.aabb.max, newPoint3D( 3, 4, 5))
+        check areClose(hitPayload.info.t, 1)
+        check areClose(hitPayload.pt, newPoint3D(0, 0,-2))
+        check areClose(hitPayload.rayDir, -eZ)
+
+        # Second ray --> Origin: (4, 0, 0), Dir: (-1, 0, 0)
+        # In world, we should get intersection in (-3, 0, 0)
+        hitPayload = scene.tree.getClosestHit(ray2)
+        check hitPayload.info.hit.shape.kind == skSphere
+        check areClose(hitPayload.info.hit.aabb.min, newPoint3D(-7,-2,-2))
+        check areClose(hitPayload.info.hit.aabb.max, newPoint3D(-3, 2, 2))
+        check areClose(hitPayload.info.t, 7)
+        check areClose(hitPayload.pt, newPoint3D(2, 0, 0))
+        check areClose(hitPayload.rayDir, -eX)
+
+        # Third ray --> Origin: (0, 0, 0), Dir: ( 0, 0, 1)
+        # In world, we should get intersection in (0, 0, 2)
+        hitPayload = scene.tree.getClosestHit(ray3)
+        check hitPayload.info.hit.shape.kind == skSphere
+        check areClose(hitPayload.info.hit.aabb.min, newPoint3D(-1,-1, 2))
+        check areClose(hitPayload.info.hit.aabb.max, newPoint3D( 1, 1, 4))
+        check areClose(hitPayload.info.t, 2)
+        check areClose(hitPayload.pt, newPoint3D(0, 0,-1))
+        check areClose(hitPayload.rayDir, eZ)
+
+        # Fourth ray --> Origin: (0, 0, 0), Dir: ( 0, 0, 1)
+        # In world, we should get no intersections at all
+        check scene.tree.getClosestHit(ray4).info.hit.isNil
