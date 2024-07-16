@@ -1133,14 +1133,14 @@ suite "Parse":
 
         check csgUnionSH.shape.shTrans.tPrimary.kind == tkTranslation
         check csgUnionSH.shape.shTrans.tSecondary.kind == tkTranslation
-        check areClose(csgUnionSH.shape.shTrans.tPrimary.offset, newVec3f(1, 2, 3))
-        check areClose(csgUnionSH.shape.shTrans.tSecondary.offset, newVec3f(1, 2, 3))
+        check areClose(csgUnionSH.shape.shTrans.tPrimary.offset, newVec3(1, 2, 3))
+        check areClose(csgUnionSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
 
         check csgUnionSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
         check csgUnionSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
 
         check csgUnionSH.transformation.kind == tkTranslation
-        check areClose(csgUnionSH.transformation.offset, newVec3f(1, 2, 3))
+        check areClose(csgUnionSH.transformation.offset, newVec3(1, 2, 3))
 
 
     test "parseCSGIntSH proc":
@@ -1169,14 +1169,14 @@ suite "Parse":
 
         check csgIntSH.shape.shTrans.tPrimary.kind == tkTranslation
         check csgIntSH.shape.shTrans.tSecondary.kind == tkTranslation
-        check areClose(csgIntSH.shape.shTrans.tPrimary.offset, newVec3f(0.1, 0.2, 0.3))
-        check areClose(csgIntSH.shape.shTrans.tSecondary.offset, newVec3f(1, 2, 3))
+        check areClose(csgIntSH.shape.shTrans.tPrimary.offset, newVec3(0.1, 0.2, 0.3))
+        check areClose(csgIntSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
 
         check csgIntSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
         check csgIntSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
 
         check csgIntSH.transformation.kind == tkTranslation
-        check areClose(csgIntSH.transformation.offset, newVec3f(1, 2, 3))
+        check areClose(csgIntSH.transformation.offset, newVec3(1, 2, 3))
 
 
     test "parseCSGDiffSH proc":
@@ -1206,14 +1206,14 @@ suite "Parse":
 
         check csgDiffSH.shape.shTrans.tPrimary.kind == tkTranslation
         check csgDiffSH.shape.shTrans.tSecondary.kind == tkTranslation
-        check areClose(csgDiffSH.shape.shTrans.tPrimary.offset, newVec3f(0.1, 0.2, 0.3))
-        check areClose(csgDiffSH.shape.shTrans.tSecondary.offset, newVec3f(1, 2, 3))
+        check areClose(csgDiffSH.shape.shTrans.tPrimary.offset, newVec3(0.1, 0.2, 0.3))
+        check areClose(csgDiffSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
 
         check csgDiffSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
         check csgDiffSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
 
         check csgDiffSH.transformation.kind == tkTranslation
-        check areClose(csgDiffSH.transformation.offset, newVec3f(1, 2, 3))
+        check areClose(csgDiffSH.transformation.offset, newVec3(1, 2, 3))
 
 
     test "parseCamera proc":

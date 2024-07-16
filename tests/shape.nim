@@ -54,12 +54,12 @@ suite "AABox & AABB":
     test "getNormal proc":
         # Checking getNormal proc
         var 
-            pt1 = newPoint3D(0, 0.5, 0.5)
-            pt2 = newPoint3D(1, 0.5, 0.5)
-            pt3 = newPoint3D(0.5, 0, 0.5)
-            pt4 = newPoint3D(0.5, 2, 0.5)
-            pt5 = newPoint3D(0.5, 0.5, 0)
-            pt6 = newPoint3D(0.5, 0.5, 3)
+            pt1 = newPoint3D(0.0, 0.5, 0.5)
+            pt2 = newPoint3D(1.0, 0.5, 0.5)
+            pt3 = newPoint3D(0.5, 0.0, 0.5)
+            pt4 = newPoint3D(0.5, 2.0, 0.5)
+            pt5 = newPoint3D(0.5, 0.5, 0.0)
+            pt6 = newPoint3D(0.5, 0.5, 3.0)
         
         # box1 --> default constructor
         check areClose(box1.shape.getNormal(pt1, newVec3( 1, 0, 0)), newNormal(-1, 0, 0))
@@ -223,11 +223,11 @@ suite "Sphere":
             pt2 = newPoint3D(cos(PI/3), sin(PI/3), 0)
 
         # Unitary sphere
-        check areClose(usphere.shape.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(usphere.shape.getUV(pt1), newPoint2D(0.0, 0.5))
         check areClose(usphere.shape.getUV(pt2), newPoint2D(1/6, 0.5))
 
         # Sphere with arbitrary radius
-        check areClose(sphere.shape.getUV((3.float32*pt1.Vec3).Point3D), newPoint2D(0, 0.5))
+        check areClose(sphere.shape.getUV((3.float32*pt1.Vec3).Point3D), newPoint2D(0.0, 0.5))
         check areClose(sphere.shape.getUV((3.float32*pt2.Vec3).Point3D), newPoint2D(1/6, 0.5))
 
 
@@ -353,8 +353,8 @@ suite "Triangle":
         # Checking getUV proc
         let pt = newPoint3D(0.2, 0.2, 0.6)
 
-        check areClose(tri1.shape.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
-        check areClose(tri2.shape.getUV(pt).Vec2f, newVec2f(0.2, 0.6))
+        check areClose(tri1.shape.getUV(pt), newPoint2D(0.2, 0.6))
+        check areClose(tri2.shape.getUV(pt), newPoint2D(0.2, 0.6))
 
 
     test "getAABB (Local) proc":
@@ -467,8 +467,8 @@ suite "Cylinder":
     test "getNormal proc":
         # Checking getNormal proc
         var
-            pt1 = newPoint3D(1, 0, 0.5)
-            pt2 = newPoint3D(2, 0, 0.5)
+            pt1 = newPoint3D(1.0, 0.0, 0.5)
+            pt2 = newPoint3D(2.0, 0.0, 0.5)
         
         check areClose(cyl1.shape.getNormal(pt1, newVec3(0, 0, -1)).Vec3, newVec3(1, 0, 0))
         check areClose(cyl2.shape.getNormal(pt2, newVec3(0, 0, -1)).Vec3, newVec3(1, 0, 0))
@@ -478,15 +478,15 @@ suite "Cylinder":
         # Checking getUV proc
         var
             pt1 = newPoint3D(cos(PI/3), sin(PI/3), 0.5)
-            pt2 = newPoint3D(1, 0, 0.3)
+            pt2 = newPoint3D(1.0, 0.0, 0.3)
         
         # First cylinder: default constructor
-        check areClose(cyl1.shape.getUV(pt1).Vec2f, newVec2f(1/6, 0.5))
-        check areClose(cyl1.shape.getUV(pt2).Vec2f, newVec2f(0.0, 0.3))
+        check areClose(cyl1.shape.getUV(pt1), newPoint2D(1/6, 0.5))
+        check areClose(cyl1.shape.getUV(pt2), newPoint2D(0.0, 0.3))
 
         # Second cylinder: specific build
-        check areClose(cyl2.shape.getUV(newPoint3D(2 * cos(PI/3), 2 * sin(PI/3), 0.5)).Vec2f, newVec2f(1/6, 0.5))
-        check areClose(cyl2.shape.getUV(newPoint3D(2, 0, 0.3)).Vec2f, newVec2f(0.0, 0.3))
+        check areClose(cyl2.shape.getUV(newPoint3D(2 * cos(PI/3), 2 * sin(PI/3), 0.5)), newPoint2D(1/6, 0.5))
+        check areClose(cyl2.shape.getUV(newPoint3D(2.0, 0.0, 0.3)), newPoint2D(0.0, 0.3))
 
 
     test "getAABB (Local) proc":
@@ -608,24 +608,24 @@ suite "Ellipsoid":
     test "getNormal proc":
         # Checking ellipsoid normal computation method
         var
-            dir: Vec3f
+            dir: Vec3
             pt: Point3D
         
         # First ellipsoid
-        dir = newVec3f(-1, 0, 0)
+        dir = newVec3(-1, 0, 0)
         pt = newPoint3D(ell1.shape.axis.a, 0, 0)
         check areClose(ell1.shape.getNormal(pt, dir), newNormal(1, 0, 0))
 
-        dir = newVec3f(0, -1, 0)
+        dir = newVec3(0, -1, 0)
         pt = newPoint3D(ell1.shape.axis.a * cos(PI/3), ell1.shape.axis.b * sin(PI/3), 0)
         check areClose(ell1.shape.getNormal(pt, dir), newNormal(1/2, sqrt(3.0)/4, 0), eps = 1e-6)
     
         # First ellipsoid
-        dir = newVec3f(-1, 0, 0)
+        dir = newVec3(-1, 0, 0)
         pt = newPoint3D(ell2.shape.axis.a, 0, 0)
         check areClose(ell2.shape.getNormal(pt, dir), newNormal(1, 0, 0))
 
-        dir = newVec3f(0, -1, 0)
+        dir = newVec3(0, -1, 0)
         pt = newPoint3D(ell2.shape.axis.a * cos(PI/3), ell2.shape.axis.b * sin(PI/3), 0)
         check areClose(ell2.shape.getNormal(pt, dir), newNormal(1/6, sqrt(3.0)/4, 0), eps = 1e-6)
 
@@ -637,13 +637,13 @@ suite "Ellipsoid":
         # Unitary sphere
         pt1 = newPoint3D(ell1.shape.axis.a, 0, 0)
         pt2 = newPoint3D(ell1.shape.axis.a * cos(PI/3), ell1.shape.axis.b * sin(PI/3), 0)
-        check areClose(ell1.shape.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(ell1.shape.getUV(pt1), newPoint2D(0.0, 0.5))
         check areClose(ell1.shape.getUV(pt2), newPoint2D(1/6, 0.5))
 
         # Sphere with arbitrary radius
         pt1 = newPoint3D(ell2.shape.axis.a, 0, 0)
         pt2 = newPoint3D(ell2.shape.axis.a * cos(PI/3), ell2.shape.axis.b * sin(PI/3), 0)
-        check areClose(ell2.shape.getUV(pt1), newPoint2D(0, 0.5))
+        check areClose(ell2.shape.getUV(pt1), newPoint2D(0.0, 0.5))
         check areClose(ell2.shape.getUV(pt2), newPoint2D(1/6, 0.5))
 
 
@@ -703,5 +703,5 @@ suite "Ellipsoid":
         check areClose(aabb1.max, newPoint3D(1, 2, 4))
 
         # Second ellipsoid
-        check areClose(aabb2.min, newPoint3D(-3, -sqrt(2.0), -sqrt(2.0)), eps = 1e-6)
-        check areClose(aabb2.max, newPoint3D(3, 2 * sqrt(2.0), 2 * sqrt(2.0)), eps = 1e-6)
+        check areClose(aabb2.min, newPoint3D(-3.0, -sqrt(2.0), -sqrt(2.0)), eps = 1e-6)
+        check areClose(aabb2.max, newPoint3D(3.0, 2 * sqrt(2.0), 2 * sqrt(2.0)), eps = 1e-6)

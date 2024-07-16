@@ -118,7 +118,7 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3): Normal {.inline.} =
 
     of skCylinder: return newNormal(pt.x, pt.y, 0.0)
 
-    of skPlane: return newNormal(0, 0, sgn(-dir[2]).float32)
+    of skPlane: return newNormal(0, 0, sgn(-dir[2]))
 
     of skEllipsoid: 
         let 

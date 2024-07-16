@@ -12,7 +12,7 @@ type Ray* = ref object
 
 
 proc newRay*(origin: Point3D, direction: Vec3, depth: int = 0): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: depth)  
+    Ray(origin: origin, dir: direction, tSpan: (float32 1e-5, float32 Inf), depth: depth)  
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
     areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
@@ -148,4 +148,4 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
         let scal = newScaling(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c)
         var t: float32
         
-        return getLocalIntersection(Shape(kind: skSphere, radius: 1), worldInvRay.transform(scal))
+        return getShapeHit(worldInvRay.transform(scal), Shape(kind: skSphere, radius: 1))

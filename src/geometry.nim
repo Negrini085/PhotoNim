@@ -54,7 +54,7 @@ proc newPoint2D*(u: SomeNumber, v: SomeNumber): Point2D {.inline.} =
         when v is float32: v else: v.float32
     ]
 
-proc newPoint3D*(x: SomeNumber, y: SomeNumber, z: SomeNumber): Point3D {.inline.} = 
+proc newPoint3D*(x, y, z: SomeNumber): Point3D {.inline.} = 
     Point3D [
         when x is float32: x else: x.float32, 
         when y is float32: y else: y.float32, 
@@ -267,11 +267,11 @@ proc getVertices*(aabb: AABB): seq[Point3D] {.inline.} =
     result = newSeqOfCap[Point3D](8)
     result.add aabb.min; result.add aabb.max
     result.add newPoint3D(aabb.min.x, aabb.min.y, aabb.max.z)
-    result.add newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z)
-    result.add newPoint3D(aabb.max.x, aabb.min.y, aabb.max.z)
     result.add newPoint3D(aabb.min.x, aabb.max.y, aabb.min.z)
     result.add newPoint3D(aabb.min.x, aabb.max.y, aabb.max.z)
     result.add newPoint3D(aabb.max.x, aabb.min.y, aabb.min.z)
+    result.add newPoint3D(aabb.max.x, aabb.min.y, aabb.max.z)
+    result.add newPoint3D(aabb.max.x, aabb.max.y, aabb.min.z)
 
 
 proc id*(_: typedesc[Transformation]): Transformation {.inline.} = Transformation(kind: tkIdentity)
