@@ -1,6 +1,6 @@
 import std/unittest
 
-import PhotoNim
+import ../src/[geometry, scene, shape, csg, ray, material, pigment, color, brdf, pcg, hitrecord]
 
 from std/sequtils import toSeq
 
@@ -13,7 +13,9 @@ suite "HitPayload":
 
     setup:
         let 
-            sph = newSphere(newPoint3D(1, 2, 3), 3, newDiffuseBRDF(newUniformPigment(WHITE)))
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+            sph = newSphere(newPoint3D(1, 2, 3), 3, mat)
+
             ray1 = newRay(ORIGIN3D, eX)
             ray2 = newRay(newPoint3D(0,-4,-1), eY)
 
@@ -27,6 +29,7 @@ suite "HitPayload":
     teardown:
         discard rs
         discard sph
+        discard mat
         discard ray1
         discard ray2
         discard node
@@ -106,25 +109,12 @@ suite "Tree traverse":
         # if the hit handler is the correct one
 
         let
-            shsp1 = newSphere(
-                    ORIGIN3D, 2,
-                    newDiffuseBRDF(newUniformPigment(WHITE))
-                )
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
 
-            shsp2 = newSphere(
-                    newPoint3D(5, 0, 0), 2, 
-                    newDiffuseBRDF(newUniformPigment(WHITE))
-                )
-
-            shsp3 = newUnitarySphere(
-                    newPoint3D(5, 5, 5),
-                    newDiffuseBRDF(newUniformPigment(WHITE))
-                )
-
-            box = newBox(
-                    (newPoint3D(-6, -6, -6), newPoint3D(-4, -4, -4)),
-                    newDiffuseBRDF(newUniformPigment(WHITE))
-                )
+            shsp1 = newSphere(ORIGIN3D, 2, mat)
+            shsp2 = newSphere(newPoint3D(5, 0, 0), 2, mat)
+            shsp3 = newUnitarySphere(newPoint3D(5, 5, 5), mat)
+            box = newBox((newPoint3D(-6, -6, -6), newPoint3D(-4, -4, -4)), mat)
         
             ray1 = newRay(newPoint3D(-3, 0, 0), eX)
             ray2 = newRay(newPoint3D(-5,-5,-8), eZ)
@@ -162,6 +152,7 @@ suite "Tree traverse":
         let ray = newRay(newPoint3D(30, 30, 30), eX)
 
         var 
+            mat: Material
             rg = newPCG(rs)
             rsSeq = newSeq[RandomSetUp](5)
             handlSeq = newSeq[ObjectHandler](500)
@@ -173,10 +164,8 @@ suite "Tree traverse":
             rsSeq[i] = newRandomSetUp(rg.random, rg.random)
 
             for j in 0..<500:
-                handlSeq[j] = newSphere(
-                    newPoint3D(rg.rand(0, 15), rg.rand(0, 15), rg.rand(0, 15)), rg.rand(0, 10),
-                    newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
-                )
+                mat = newMaterial(newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand))))
+                handlSeq[j] = newSphere(newPoint3D(rg.rand(0, 15), rg.rand(0, 15), rg.rand(0, 15)), rg.rand(0, 10), mat)
 
             scene = newScene(BLACK, handlSeq, tkBinary, 2, rsSeq[i])
 
@@ -198,6 +187,7 @@ suite "Tree traverse":
             ray3 = newRay(newPoint3D(30, 30, 30), eX)
 
         var 
+            mat: Material
             rg = newPCG(rs)
             rsSeq = newSeq[RandomSetUp](5)
             handlSeq = newSeq[ObjectHandler](500)
@@ -209,15 +199,10 @@ suite "Tree traverse":
             rsSeq[i] = newRandomSetUp(rg.random, rg.random)
 
             for j in 0..<499:
-                handlSeq[j] = newSphere(
-                    newPoint3D(rg.rand(0, 15), rg.rand(0, 15), rg.rand(0, 15)), rg.rand(0, 10),
-                    newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
-                )
+                mat = newMaterial(newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand))))
+                handlSeq[j] = newSphere(newPoint3D(rg.rand(0, 15), rg.rand(0, 15), rg.rand(0, 15)), rg.rand(0, 10), mat)
 
-            handlSeq[499] = newSphere(
-                newPoint3D(35, 0, 0), 2,
-                newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
-            )
+            handlSeq[499] = newSphere(newPoint3D(35, 0, 0), 2, mat)
 
             scene = newScene(BLACK, handlSeq, tkBinary, 2, rsSeq[i])
 
@@ -261,6 +246,7 @@ suite "Tree traverse":
             ray3 = newRay(newPoint3D( 0, 0,-1), eZ)
 
         var 
+            mat: Material
             sign: float32
             rg = newPCG(rs)
             rsSeq = newSeq[RandomSetUp](5)
@@ -273,19 +259,14 @@ suite "Tree traverse":
             rsSeq[i] = newRandomSetUp(rg.random, rg.random)
 
             for j in 0..<499:
+                mat = newMaterial(newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand))))
 
                 if rg.rand >= 0.5: sign = 1
                 else: sign = -1
 
-                handlSeq[j] = newSphere(
-                    newPoint3D(sign * rg.rand(8, 20), rg.rand(8, 20), rg.rand(8, 20)), rg.rand(0, 5),
-                    newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
-                )
+                handlSeq[j] = newSphere(newPoint3D(sign * rg.rand(8, 20), rg.rand(8, 20), rg.rand(8, 20)), rg.rand(0, 5), mat)
 
-            handlSeq[499] = newSphere(
-                newPoint3D(0, 0, 0), 2,
-                newDiffuseBRDF(newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
-            )
+            handlSeq[499] = newSphere(newPoint3D(0, 0, 0), 2, mat)
 
             scene = newScene(BLACK, handlSeq, tkBinary, 2, rsSeq[i])
 
@@ -331,20 +312,13 @@ suite "Tree traverse":
         # Here we need to assure that time computation is indeed correct.
 
         let
-            sh1 = newSphere(
-                    newPoint3D(1, 2, 3), 2,
-                    newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), newUniformPigment(newColor(1, 0, 0))
-                )
-            
-            sh2 = newSphere(
-                    newPoint3D(-5, 0, 0), 2,
-                    newSpecularBRDF(newUniformPigment(newColor(0, 1, 0))), newUniformPigment(newColor(0, 1, 0))
-                )
-            
-            sh3 = newUnitarySphere(
-                    newPoint3D(0, 0, 3),
-                    newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1))
-                )
+            mat1 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), newUniformPigment(newColor(1, 0, 0)))
+            mat2 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 1, 0))), newUniformPigment(newColor(0, 1, 0)))
+            mat3 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1)))
+
+            sh1 = newSphere(newPoint3D(1, 2, 3), 2, mat1)
+            sh2 = newSphere(newPoint3D(-5, 0, 0), 2, mat2)
+            sh3 = newUnitarySphere(newPoint3D(0, 0, 3), mat3)
             
             csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1))
         

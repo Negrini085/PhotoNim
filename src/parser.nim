@@ -1,105 +1,105 @@
-import std/[streams, tables, options, sets]
-import geometry, hdrimage, scene, shape, camera, lexer
-
-from std/sequtils import mapIt
-from std/strformat import fmt
-from std/strutils import isDigit, parseFloat, isAlphaNumeric, join
-
-
-##----------------------------------------------------------------#
-##       DefScene type: everything needed to define a scene       #
-##----------------------------------------------------------------#
-#type DefScene* = object
-#    scene*: seq[ObjectHandler]
-#    materials*: Table[string, material.Material]
-#    camera*: Option[camera.Camera]
-#    numVariables*: Table[string, float32]
-#    overriddenVariables*: HashSet[string]
+#import std/[streams, tables, options, sets]
+#import geometry, hdrimage, scene, shape, camera, lexer
+#
+#from std/sequtils import mapIt
+#from std/strformat import fmt
+#from std/strutils import isDigit, parseFloat, isAlphaNumeric, join
 #
 #
-#proc newDefScene*(sc: seq[ObjectHandler], mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
-#    # Procedure to initialize a new DefScene variable, needed at the end of the parsing proc
-#    DefScene(scene: sc, materials: mat, camera: cam, numVariables: numV, overriddenVariables: ovV)
+###----------------------------------------------------------------#
+###       DefScene type: everything needed to define a scene       #
+###----------------------------------------------------------------#
+##type DefScene* = object
+##    scene*: seq[ObjectHandler]
+##    materials*: Table[string, material.Material]
+##    camera*: Option[camera.Camera]
+##    numVariables*: Table[string, float32]
+##    overriddenVariables*: HashSet[string]
+##
+##
+##proc newDefScene*(sc: seq[ObjectHandler], mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
+##    # Procedure to initialize a new DefScene variable, needed at the end of the parsing proc
+##    DefScene(scene: sc, materials: mat, camera: cam, numVariables: numV, overriddenVariables: ovV)
+##
+##
+##
+##---------------------------------------------------------------#
+##                        Expect procedures                      #
+##---------------------------------------------------------------#
+#proc expectSymbol*(inStr: var InputStream, sym: char) =
+#    # Read a token and checks wether is a Symbol or not
+#    let tok = inStr.readToken()
+#    if (tok.kind != SymbolToken) or (tok.symbol != $sym):
+#        let e_msg = fmt"Error: got {tok.symbol} instead of " & sym & ". Error in: " & $inStr.location
+#        raise newException(GrammarError, e_msg)
+#
+#
+#proc expectKeywords*(inStr: var InputStream, keys: seq[KeywordKind]): KeywordKind =
+#    # Read a token and checks wether there is in the key kind list 
+#    var tok: Token
+#
+#    tok = inStr.readToken()
+#    if tok.kind != KeywordToken:
+#        let msg = fmt"Expected a KeywordToken instead of {tok.kind}. Error in: " & $inStr.location
+#        raise newException(GrammarError, msg)
+#    
+#    if not (tok.keyword in keys):
+#        let msg = fmt"Keywords expected where: [" & join(keys.mapIt(it), ", ") &  "] instead of {tok.keyword}"
+#        raise newException(GrammarError, msg)
+#
+#    return tok.keyword
+#
+#
+#proc expectNumber*(inStr: var InputStream, dSc: var DefScene): float32 =
+#    # Procedure to read a LiteralNumberToken and check if is a literal number or a variable
+#    var 
+#        tok: Token
+#        varName: string
+#    
+#    tok = inStr.readToken()
+#    # If it's a literal number token i want to return its value
+#    if tok.kind == LiteralNumberToken:
+#        return tok.value
+#
+#    # If it's an IdentifierToken, we just have to check if it's a variable name
+#    elif tok.kind == IdentifierToken:
+#        varName = tok.identifier
+#        if not (varName in dSc.numVariables):
+#            let msg = fmt"Unknown variable {varName}. Error in " & $inStr.location
+#            raise newException(GrammarError, msg) 
+#        return dSc.numVariables[varName]
+#
+#    let msg = fmt"Got {tok.kind} instead of LiteralNumberToken or IdentifierToken. Error in: " & $inStr.location
+#    raise newException(GrammarError, msg)
+#
+#
+#proc expectString*(inStr: var InputStream): string = 
+#    # Procedure to read a LiteralStringToken
+#    var tok: Token
+#
+#    tok = inStr.readToken()
+#    # Error condition is just token kind, here we just accept a LiteralStringToken
+#    if tok.kind != LiteralStringToken:
+#        let msg = fmt"Got {tok.kind} instead of LiteralStringToken. Error in: " & $inStr.location
+#        raise newException(GrammarError, msg)
+#    
+#    return tok.str
+#
+#
+#proc expectIdentifier*(inStr: var InputStream): string = 
+#    # Procedure to read an IdentifierToken
+#    var tok: Token
+#
+#    tok = inStr.readToken()
+#    # Error condition is just token kind, here we just accept an IdentifierToken
+#    if tok.kind != IdentifierToken:
+#        let msg = fmt"Got {tok.kind} instead of IdentifierToken. Error in: " & $inStr.location
+#        raise newException(GrammarError, msg)
+#    
+#    return tok.identifier
 #
 #
 #
-#---------------------------------------------------------------#
-#                        Expect procedures                      #
-#---------------------------------------------------------------#
-proc expectSymbol*(inStr: var InputStream, sym: char) =
-    # Read a token and checks wether is a Symbol or not
-    let tok = inStr.readToken()
-    if (tok.kind != SymbolToken) or (tok.symbol != $sym):
-        let e_msg = fmt"Error: got {tok.symbol} instead of " & sym & ". Error in: " & $inStr.location
-        raise newException(GrammarError, e_msg)
-
-
-proc expectKeywords*(inStr: var InputStream, keys: seq[KeywordKind]): KeywordKind =
-    # Read a token and checks wether there is in the key kind list 
-    var tok: Token
-
-    tok = inStr.readToken()
-    if tok.kind != KeywordToken:
-        let msg = fmt"Expected a KeywordToken instead of {tok.kind}. Error in: " & $inStr.location
-        raise newException(GrammarError, msg)
-    
-    if not (tok.keyword in keys):
-        let msg = fmt"Keywords expected where: [" & join(keys.mapIt(it), ", ") &  "] instead of {tok.keyword}"
-        raise newException(GrammarError, msg)
-
-    return tok.keyword
-
-
-proc expectNumber*(inStr: var InputStream, dSc: var DefScene): float32 =
-    # Procedure to read a LiteralNumberToken and check if is a literal number or a variable
-    var 
-        tok: Token
-        varName: string
-    
-    tok = inStr.readToken()
-    # If it's a literal number token i want to return its value
-    if tok.kind == LiteralNumberToken:
-        return tok.value
-
-    # If it's an IdentifierToken, we just have to check if it's a variable name
-    elif tok.kind == IdentifierToken:
-        varName = tok.identifier
-        if not (varName in dSc.numVariables):
-            let msg = fmt"Unknown variable {varName}. Error in " & $inStr.location
-            raise newException(GrammarError, msg) 
-        return dSc.numVariables[varName]
-
-    let msg = fmt"Got {tok.kind} instead of LiteralNumberToken or IdentifierToken. Error in: " & $inStr.location
-    raise newException(GrammarError, msg)
-
-
-proc expectString*(inStr: var InputStream): string = 
-    # Procedure to read a LiteralStringToken
-    var tok: Token
-
-    tok = inStr.readToken()
-    # Error condition is just token kind, here we just accept a LiteralStringToken
-    if tok.kind != LiteralStringToken:
-        let msg = fmt"Got {tok.kind} instead of LiteralStringToken. Error in: " & $inStr.location
-        raise newException(GrammarError, msg)
-    
-    return tok.str
-
-
-proc expectIdentifier*(inStr: var InputStream): string = 
-    # Procedure to read an IdentifierToken
-    var tok: Token
-
-    tok = inStr.readToken()
-    # Error condition is just token kind, here we just accept an IdentifierToken
-    if tok.kind != IdentifierToken:
-        let msg = fmt"Got {tok.kind} instead of IdentifierToken. Error in: " & $inStr.location
-        raise newException(GrammarError, msg)
-    
-    return tok.identifier
-
-
-
 #------------------------------------------------------------------#
 #                           Parse procs                            #
 #------------------------------------------------------------------#

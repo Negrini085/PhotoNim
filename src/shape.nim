@@ -1,4 +1,4 @@
-import geometry, color, pigment, brdf, scene
+import geometry, material, scene
 
 from std/math import sgn, floor, arccos, arctan2, PI, pow, sqrt
 from std/sequtils import mapIt, concat
@@ -19,34 +19,34 @@ proc getVertices(shape: Shape): seq[Point3D] {.inline.} =
     of skTriangle: shape.vertices
     else: shape.getAABB.getVertices
 
-proc newShapeHandler*(shape: Shape, brdf: BRDF, emittedRadiance: Pigment, transformation: Transformation): ObjectHandler {.inline.} =
+proc newShapeHandler*(shape: Shape, material: Material, transformation: Transformation): ObjectHandler {.inline.} =
     ObjectHandler(
         kind: hkShape, 
         aabb: newAABB shape.getVertices.mapIt(apply(transformation, it)),
         transformation: transformation, 
         shape: shape, 
-        material: (brdf, emittedRadiance)
+        material: material
     )
 
-proc newSphere*(center: Point3D, radius: float32; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK)): ObjectHandler {.inline.} =   
-    newShapeHandler(Shape(kind: skSphere, radius: radius), brdf, emittedRadiance, if not areClose(center, ORIGIN3D): newTranslation(center) else: Transformation.id)
+proc newSphere*(center: Point3D, radius: float32; material: Material): ObjectHandler {.inline.} =   
+    newShapeHandler(Shape(kind: skSphere, radius: radius), material, if not areClose(center, ORIGIN3D): newTranslation(center) else: Transformation.id)
 
-proc newUnitarySphere*(center: Point3D; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK)): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skSphere, radius: 1.0), brdf, emittedRadiance, if not areClose(center, ORIGIN3D): newTranslation(center) else: Transformation.id)
+proc newUnitarySphere*(center: Point3D; material: Material): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skSphere, radius: 1.0), material, if not areClose(center, ORIGIN3D): newTranslation(center) else: Transformation.id)
 
-proc newPlane*(brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skPlane), brdf, emittedRadiance, transformation)
+proc newPlane*(material: Material, transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skPlane), material, transformation)
 
-proc newBox*(aabb: Interval[Point3D], brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} =
-    newShapeHandler(Shape(kind: skAABox, aabb: aabb), brdf, emittedRadiance, transformation)
+proc newBox*(aabb: Interval[Point3D], material: Material, transformation = Transformation.id): ObjectHandler {.inline.} =
+    newShapeHandler(Shape(kind: skAABox, aabb: aabb), material, transformation)
 
-proc newTriangle*(vertices: array[3, Point3D]; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} = 
-    newShapeHandler(Shape(kind: skTriangle, vertices: @vertices), brdf, emittedRadiance, transformation)
+proc newTriangle*(vertices: array[3, Point3D]; material: Material, transformation = Transformation.id): ObjectHandler {.inline.} = 
+    newShapeHandler(Shape(kind: skTriangle, vertices: @vertices), material, transformation)
 
-proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} =
-    newShapeHandler(Shape(kind: skCylinder, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), brdf, emittedRadiance, transformation)
+proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; material: Material, transformation = Transformation.id): ObjectHandler {.inline.} =
+    newShapeHandler(Shape(kind: skCylinder, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), material, transformation)
 
-proc newEllipsoid*(a, b, c: SomeNumber, brdf: BRDF, emittedRadiance = newUniformPigment(BLACK),transformation = Transformation.id): ObjectHandler = 
+proc newEllipsoid*(a, b, c: SomeNumber, material: Material,transformation = Transformation.id): ObjectHandler = 
     newShapeHandler(
         Shape(
             kind: skEllipsoid, axis:(
@@ -55,7 +55,7 @@ proc newEllipsoid*(a, b, c: SomeNumber, brdf: BRDF, emittedRadiance = newUniform
                     c: when c is float32: c else: c.float32
                 )
             ),
-        brdf, emittedRadiance, transformation
+        material, transformation
     )
 
 proc getUV*(shape: Shape; pt: Point3D): Point2D = 

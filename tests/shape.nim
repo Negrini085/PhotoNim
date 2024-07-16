@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[shape, scene, geometry, brdf, pigment, color]
+import ../src/[shape, scene, geometry, brdf, pigment, color, material]
 
 from math import sin, cos, PI, sqrt
 
@@ -16,19 +16,23 @@ suite "AABox & AABB":
             p3 = newPoint3D(-2, 2, -8)
             p4 = newPoint3D(-1, 4, 2)
             tr = newTranslation(eX)
+
+            mat1 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.3, 0.7, 1))), newUniformPigment(newColor(0.3, 0.7, 1)))
+            mat2 = newEmissiveMaterial(newSpecularBRDF(newUniformPigment(newColor(1, 223/255, 0))), newUniformPigment(newColor(1, 223/255, 0)))
             
-            box1 = newBox((p1, p2), newDiffuseBRDF(newUniformPigment(newColor(0.3, 0.7, 1))), newUniformPigment(newColor(0.3, 0.7, 1)))
-            box2 = newBox((p3, p4), newSpecularBRDF(newUniformPigment(newColor(1, 223/255, 0))), newUniformPigment(newColor(1, 223/255, 0)), tr)
+            box1 = newBox((p1, p2), mat1)
+            box2 = newBox((p3, p4), mat2, tr)
 
     teardown:
-        discard box1
-        discard box2
-        
         discard tr
         discard p1
         discard p2
         discard p3
         discard p4
+        discard mat1
+        discard mat2
+        discard box1
+        discard box2
     
 
     test "newBox proc":
@@ -37,6 +41,7 @@ suite "AABox & AABB":
         # box1 --> No transformation given
         check areClose(box1.shape.aabb.min, ORIGIN3D)
         check areClose(box1.shape.aabb.max, newPoint3D(1, 2, 3))
+        check box1.material.kind == mkEmissive
         check box1.material.brdf.kind == DiffuseBRDF
         check box1.material.eRadiance.kind == pkUniform
 
@@ -46,6 +51,7 @@ suite "AABox & AABB":
         # box2 --> giving min and max as input
         check areClose(box2.shape.aabb.min, newPoint3D(-2, 2,-8))
         check areClose(box2.shape.aabb.max, newPoint3D(-1, 4, 2))
+        check box1.material.kind == mkEmissive
         check box2.material.brdf.kind == SpecularBRDF
         check box2.material.eRadiance.kind == pkUniform
 
@@ -169,12 +175,17 @@ suite "Sphere":
 
     setup:
         let
-            sphere = newSphere(ORIGIN3D, 3.0, newSpecularBRDF(newUniformPigment(WHITE)))
-            usphere = newUnitarySphere(eX.Point3D, newSpecularBRDF(newCheckeredPigment(BLACK, WHITE, 2, 2)), newCheckeredPigment(BLACK, WHITE, 2, 2))
+            mat1 = newMaterial(newSpecularBRDF(newUniformPigment(WHITE)))
+            mat2 = newEmissiveMaterial(newSpecularBRDF(newCheckeredPigment(BLACK, WHITE, 2, 2)), newCheckeredPigment(BLACK, WHITE, 2, 2))
+
+            sphere = newSphere(ORIGIN3D, 3.0, mat1)
+            usphere = newUnitarySphere(eX.Point3D, mat2)
 
     teardown: 
-        discard usphere
+        discard mat1
+        discard mat2
         discard sphere
+        discard usphere
 
 
     test "newUnitarySphere proc":
@@ -196,9 +207,8 @@ suite "Sphere":
         check sphere.shape.radius == 3.0
         check sphere.transformation.kind == tkIdentity
 
+        check sphere.material.kind == mkNonEmissive
         check sphere.material.brdf.kind == SpecularBRDF
-        check sphere.material.eRadiance.kind == pkUniform
-        check areClose(sphere.material.eRadiance.color, BLACK)
 
     
     test "getNormal proc":
@@ -300,21 +310,18 @@ suite "Triangle":
     
     setup:
         let 
-            tri1 =  newTriangle(
-                [eX.Point3D, eY.Point3D, eZ.Point3D],
-                newSpecularBRDF(newCheckeredPigment(WHITE, BLACK, 3, 3)), newCheckeredPigment(WHITE, BLACK, 3, 3)
-                )
-        
-            tri2 =  newTriangle(
-                [eX.Point3D, eY.Point3D, eZ.Point3D],
-                newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE),
-                newTranslation(newVec3(1, 2, 3))
-                )
+            mat1 = newEmissiveMaterial(newSpecularBRDF(newCheckeredPigment(WHITE, BLACK, 3, 3)), newCheckeredPigment(WHITE, BLACK, 3, 3))
+            mat2 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE))
+
+            tri1 =  newTriangle([eX.Point3D, eY.Point3D, eZ.Point3D], mat1)
+            tri2 =  newTriangle([eX.Point3D, eY.Point3D, eZ.Point3D], mat2, newTranslation(newVec3(1, 2, 3)))
     
     teardown:
         discard tri1
         discard tri2
-    
+        discard mat1
+        discard mat2
+
     
     test "newTriangle proc":
         # Checking newTriangle proc
@@ -422,18 +429,21 @@ suite "Cylinder":
         let 
             tr = newTranslation(eZ)
 
-            cyl1 = newCylinder(brdf = newDiffuseBRDF(newUniformPigment(WHITE)))
-            cyl2 = newCylinder(
-                R = 2.0, 
-                brdf = newSpecularBRDF(newCheckeredPigment(WHITE, BLACK, 2, 2)),
-                emittedRadiance = newCheckeredPigment(WHITE, BLACK, 2, 2), 
-                transformation = tr
-            )
+            mat1 = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+            mat2 = newEmissiveMaterial(
+                    newSpecularBRDF(newCheckeredPigment(WHITE, BLACK, 2, 2)),
+                    newCheckeredPigment(WHITE, BLACK, 2, 2)
+                )
+
+            cyl1 = newCylinder(material = mat1)
+            cyl2 = newCylinder(R = 2.0, material = mat2, transformation = tr)
     
     teardown:
         discard tr
         discard cyl1
         discard cyl2
+        discard mat1
+        discard mat2
     
     
     test "newCylinder proc":
@@ -444,12 +454,9 @@ suite "Cylinder":
         check areClose(cyl1.shape.phiMax, 2*PI)
         check cyl1.shape.zSpan.min == 0.0 and cyl1.shape.zSpan.max == 1.0
 
+        check cyl1.material.kind == mkNonEmissive
         check cyl1.material.brdf.kind == DiffuseBRDF
-        check cyl1.material.eRadiance.kind == pkUniform
-        # check areClose(cyl1.material.eRadiance.color, WHITE)
-
         check cyl1.transformation.kind == tkIdentity
-    
 
         # Second cylinder: specific build
         check cyl2.shape.R == 2.0
@@ -563,18 +570,14 @@ suite "Ellipsoid":
             tr = newTranslation(eZ)
             comp = newComposition(newRotation(45, axisX), newTranslation(eY))
 
-            ell1 = newEllipsoid(
-                    1, 2, 3, newDiffuseBRDF(newUniformPigment(WHITE)), 
-                    newUniformPigment(WHITE), tr
-                )
+            mat = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE))
 
-            ell2 = newEllipsoid(
-                    3.0, 2.0, 1.0, newDiffuseBRDF(newUniformPigment(WHITE)), 
-                    newUniformPigment(WHITE), comp
-                )
+            ell1 = newEllipsoid(1, 2, 3, mat, tr)
+            ell2 = newEllipsoid(3.0, 2.0, 1.0, mat, comp)
     
     teardown:
         discard tr
+        discard mat
         discard comp
         discard ell1
         discard ell2

@@ -1,4 +1,4 @@
-import pcg, geometry, color, hdrimage, brdf, pigment, scene, shape, ray, hitrecord
+import pcg, geometry, color, hdrimage, scene, ray, renderer
 
 from std/strutils import repeat
 from std/terminal import fgWhite, fgRed, fgYellow, fgGreen, eraseLine, styledWrite, resetAttributes
@@ -11,19 +11,6 @@ from std/threadpool import spawn, spawnX, sync
 
 
 type
-    RendererKind* = enum
-        rkOnOff, rkFlat, rkPathTracer
-
-    Renderer* = object
-        case kind*: RendererKind
-        of rkFlat: discard
-
-        of rkOnOff: hitColor*: Color
-
-        of rkPathTracer:
-            nRays*, depthLimit*, rouletteLimit*: int
-
-
     CameraKind* = enum ckOrthogonal, ckPerspective
     Camera* = object
         renderer*: Renderer
@@ -36,13 +23,6 @@ type
         of ckPerspective: 
             distance*: float32 
 
-
-
-proc newFlatRenderer*(): Renderer {.inline.} = Renderer(kind: rkFlat)
-proc newOnOffRenderer*(hitColor = WHITE): Renderer {.inline.} = Renderer(kind: rkOnOff, hitColor: hitColor)
-
-proc newPathTracer*(nRays, depthLimit, rouletteLimit: SomeInteger): Renderer {.inline.} =
-    Renderer(kind: rkPathTracer, nRays: nRays, depthLimit: depthLimit, rouletteLimit: rouletteLimit)
 
 proc newOrthogonalCamera*(renderer: Renderer, viewport: tuple[width, height: int], transformation = Transformation.id): Camera {.inline.} = 
     Camera(kind: ckOrthogonal, renderer: renderer, viewport: viewport, transformation: transformation)
@@ -75,53 +55,6 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleRay*(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color =
-    
-    case camera.renderer.kind
-    of rkOnOff: 
-        let closestHit = scene.tree.getClosestHit(worldRay)
-        if closestHit.info.hit.isNil: return scene.bgColor
-        else: return camera.renderer.hitColor
-
-    of rkFlat: 
-        let closestHit = scene.tree.getClosestHit(worldRay)
-        if closestHit.info.hit.isNil: return scene.bgColor
-        return closestHit.info.hit.material.brdf.pigment.getColor(closestHit.info.hit.shape.getUV(closestHit.pt))
-
-    of rkPathTracer: 
-        if (worldRay.depth > camera.renderer.depthLimit): return BLACK
-
-        let closestHit = scene.tree.getClosestHit(worldRay)
-        if closestHit.info.hit.isNil: return scene.bgColor
-        
-        let 
-            hitNormal = closestHit.info.hit.shape.getNormal(closestHit.pt, closestHit.rayDir)
-            hitSurfacePt = closestHit.info.hit.shape.getUV(closestHit.pt)
-            worldHitPt = apply(closestHit.info.hit.transformation, closestHit.pt)
-
-        result = closestHit.info.hit.material.eRadiance.getColor(hitSurfacePt)
-
-        var hitColor = closestHit.info.hit.material.brdf.pigment.getColor(hitSurfacePt)
-        if areClose(hitColor.luminosity, 0.0): return result
-        
-        if worldRay.depth >= camera.renderer.rouletteLimit:
-            let q = max(0.05, 1 - hitColor.luminosity)
-            if rg.rand > q: hitColor /= (1.0 - q)
-            else: return result
-
-        let nRaysInv = 1 / camera.renderer.nRays.float32
-        for _ in 0..<camera.renderer.nRays:
-            let 
-                outDir = closestHit.info.hit.material.brdf.scatterDir(hitNormal, closestHit.rayDir, rg).normalize
-                scatteredRay = Ray(
-                    origin: worldHitPt, 
-                    dir: apply(closestHit.info.hit.transformation, outDir),
-                    depth: worldRay.depth + 1
-                )
-
-            result += nRaysInv * hitColor * camera.sampleRay(scene, scatteredRay, rg)
-
-
 proc samplePixel(x, y: int, camera: Camera, scene: Scene, rgSetUp: RandomSetUp, aaSamples: int): Color =
     let aaFactor = 1 / aaSamples.float32
 
@@ -135,7 +68,7 @@ proc samplePixel(x, y: int, camera: Camera, scene: Scene, rgSetUp: RandomSetUp, 
                 )
             )
 
-            result += camera.sampleRay(scene, ray, rg)
+            result += camera.renderer.sampleRay(scene, ray, rg)
     
     result *= pow(aaFactor, 2)
 
@@ -156,18 +89,17 @@ proc sample*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, aaSamples: int 
 
 
 proc samples*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, nSamples: int = 1, aaSamples: int = 1, displayProgress = true): HDRImage =
+
+    if nSamples == 1: 
+        return camera.sample(scene, rgSetUp, aaSamples, displayProgress = true)
+
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
-
-    if nSamples > 1:
-
-        var rg = newPCG(rgSetUp)
-        for _ in countup(0, nSamples): 
-            spawnX stack(
-                addr result, 
-                camera.sample(scene, newRandomSetUp(rg.random, rg.random), aaSamples, displayProgress = false)
-            )
-        
-        sync()
-        result.pixels.applyIt(it / nSamples.float32)
-
-    else: result = camera.sample(scene, rgSetUp, aaSamples, displayProgress = true)
+    var rg = newPCG(rgSetUp)
+    for _ in countup(0, nSamples): 
+        spawnX stack(
+            addr result, 
+            camera.sample(scene, newRandomSetUp(rg.random, rg.random), aaSamples, displayProgress = false)
+        )
+    
+    sync()
+    result.pixels.applyIt(it / nSamples.float32)

@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[geometry, scene, ray, shape, brdf, pigment, color]
+import ../src/[geometry, scene, ray, shape, brdf, pigment, color, material]
 
 from std/math import PI
 
@@ -106,14 +106,10 @@ suite "ShapeHit":
         # Here we need to assure that time computation is indeed correct.
         
         let 
-            usphere = newUnitarySphere(
-                    ORIGIN3D, 
-                    newDiffuseBRDF(newUniformPigment(WHITE))
-                )
-            sphere = newSphere(
-                    newPoint3D(0, 1, 0), 3.0, 
-                    newDiffuseBRDF(newUniformPigment(WHITE))
-                )
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+
+            usphere = newUnitarySphere(ORIGIN3D, mat)
+            sphere = newSphere(newPoint3D(0, 1, 0), 3.0, mat)
 
         var
             ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
@@ -150,7 +146,9 @@ suite "ShapeHit":
         # Checking getShapeHit for a ray-plane intersection.
         # Here we need to assure that time computation is indeed correct.
 
-        let plane = newPlane(newDiffuseBRDF(newUniformPigment(WHITE)))
+        let 
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+            plane = newPlane(mat)
 
         var
             ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
@@ -172,10 +170,9 @@ suite "ShapeHit":
         # Checking getShapeHit for a ray-box intersection.
         # Here we need to assure that time computation is indeed correct.
 
-        let box = newBox(
-            (newPoint3D(-1, 0, 1), newPoint3D(3, 2, 5)),
-            newDiffuseBRDF(newUniformPigment(BLACK))
-            )
+        let 
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+            box = newBox((newPoint3D(-1, 0, 1), newPoint3D(3, 2, 5)), mat)
 
         var
             ray1 = newRay(newPoint3D(-5, 1, 2), eX)
@@ -197,10 +194,9 @@ suite "ShapeHit":
         # Checking getShapeHit for a ray-triangle intersection.
         # Here we need to assure that time computation is indeed correct.
 
-        let triangle = newTriangle(
-                [newPoint3D(3, 0, 0), newPoint3D(-2, 0, 0), newPoint3D(0.5, 2, 0)],
-                newDiffuseBRDF(newUniformPigment(WHITE))
-            )
+        let 
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+            triangle = newTriangle([newPoint3D(3, 0, 0), newPoint3D(-2, 0, 0), newPoint3D(0.5, 2, 0)], mat)
 
         var
             ray1 = newRay(newPoint3D(0, 1, -2), eZ)
@@ -217,10 +213,9 @@ suite "ShapeHit":
         # Checking getShapeHit for a ray-cylinder intersection.
         # Here we need to assure that time computation is indeed correct.
 
-        let cylinder = newCylinder(
-                2, -2, 2, 2 * PI,
-                newDiffuseBRDF(newUniformPigment(WHITE))
-            )
+        let 
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+            cylinder = newCylinder(2, -2, 2, 2 * PI, mat)
 
         var
             ray1 = newRay(ORIGIN3D, eX)
@@ -245,8 +240,9 @@ suite "ShapeHit":
         # Checking getShapeHit for a ray-ellipsoid intersection.
         # Here we need to assure that time computation is indeed correct.
         let 
-            ell1 = newEllipsoid(1, 2, 3, newDiffuseBRDF(newUniformPigment(WHITE)))
-            ell2 = newEllipsoid(3, 2, 1, newDiffuseBRDF(newUniformPigment(WHITE)))
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+            ell1 = newEllipsoid(1, 2, 3, mat)
+            ell2 = newEllipsoid(3, 2, 1, mat)
 
         var
             ray1 = newRay(newPoint3D(0, 0, 2), -eZ)

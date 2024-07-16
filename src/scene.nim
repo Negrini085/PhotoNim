@@ -1,4 +1,4 @@
-import pcg, geometry, color, pigment, brdf
+import pcg, geometry, color, material
 
 from std/sequtils import newSeqWith, toSeq, mapIt, keepItIf
 
@@ -36,7 +36,7 @@ type
         case kind*: HandlerKind
         of hkShape: 
             shape*: Shape 
-            material*: tuple[brdf: BRDF, eRadiance: Pigment]
+            material*: Material
 
         of hkMesh: mesh*: BVHTree
         of hkCSG: csg*: CSG
