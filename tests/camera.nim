@@ -183,8 +183,9 @@ suite "Camera":
 suite "Renderer":
 
     setup:
-        let 
-            rs = newRandomSetUp(42, 54)
+        let rs = newRandomSetUp(42, 54)
+        
+        var 
             rend = newPathTracer(1, 100, 101)
             camera = newPerspectiveCamera(rend, (1600, 900), 2)
         
@@ -192,7 +193,39 @@ suite "Renderer":
         discard rs
         discard rend
         discard camera
+
+
+    test "OnOffRenderer test":
+        # Here we want to check if the OnOffRenderer algorithm we
+        # implemented is actually working or not 
+
+        var pcg = newPCG(rs)
+
+        let
+            sph = newSphere(ORIGIN3D, 0.2,
+                newDIffuseBRDF(newUniformPigment(WHITE))
+            )
+
+            scene = newScene(BLACK, @[sph], tkBinary, 1, newRandomSetUp(pcg.random, pcg.random))
+        
+        rend = newOnOffRenderer()
+        camera.renderer = rend
+        camera.viewport = (3, 3)
+
+        let image = camera.sample(scene, newRandomSetUp(pcg.random, pcg.random))
+
+        check areClose(image.getPixel(0, 0), BLACK)
+        check areClose(image.getPixel(1, 0), BLACK)
+        check areClose(image.getPixel(2, 0), BLACK)
     
+        check areClose(image.getPixel(0, 1), BLACK)
+        check areClose(image.getPixel(1, 1), WHITE)
+        check areClose(image.getPixel(1, 2), BLACK)
+
+        check areClose(image.getPixel(0, 2), BLACK)
+        check areClose(image.getPixel(1, 2), BLACK)
+        check areClose(image.getPixel(2, 2), BLACK)
+
 
     test "Furnace test":
         # Here we want to check if the path tracing algorithm we
