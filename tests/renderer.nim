@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[camera, geometry, pcg, shape, scene, ray, brdf, pigment, color, hdrimage, renderer, material]
+import ../src/[camera, geometry, pcg, shape, scene, ray, color, hdrimage, renderer, material]
 
 
 #-------------------------------------#

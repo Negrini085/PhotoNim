@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[geometry, scene, ray, shape, brdf, pigment, color, material]
+import ../src/[geometry, scene, ray, shape, color, material]
 
 from std/math import PI
 

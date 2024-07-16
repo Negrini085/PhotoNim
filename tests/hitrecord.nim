@@ -1,6 +1,6 @@
 import std/unittest
 
-import ../src/[geometry, scene, shape, csg, ray, material, pigment, color, brdf, pcg, hitrecord]
+import ../src/[geometry, scene, shape, csg, ray, material, color, pcg, hitrecord]
 
 from std/sequtils import toSeq
 

@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[shape, scene, geometry, brdf, pigment, color, material]
+import ../src/[shape, scene, geometry, color, material]
 
 from math import sin, cos, PI, sqrt
 
