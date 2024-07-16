@@ -28,7 +28,7 @@ type
         of nkLeaf: indexes*: seq[int]
 
 
-    HandlerKind* = enum hkShape, hkMesh
+    HandlerKind* = enum hkShape, hkMesh, hkCSG
     ObjectHandler* = ref object
         aabb*: Interval[Point3D] 
         transformation*: Transformation
@@ -39,11 +39,9 @@ type
             material*: tuple[brdf: BRDF, eRadiance: Pigment]
 
         of hkMesh: mesh*: BVHTree
-
-
-    ShapeKind* = enum 
-        skPlane, skSphere, skAABox, skTriangle, skCylinder
-
+        of hkCSG: csg*: CSG
+    
+    ShapeKind* = enum skPlane, skSphere, skAABox, skTriangle, skCylinder, skEllipsoid
     Shape* = object
         case kind*: ShapeKind 
         of skPlane: discard
@@ -53,6 +51,14 @@ type
         of skCylinder:
             R*, phiMax*: float32
             zSpan*: Interval[float32]
+
+        of skEllipsoid: axis*: tuple[a, b, c: float32]
+
+    CSGKind* = enum csgkUnion
+    CSG* = object
+        case kind*: CSGKind
+        of csgkUnion:
+            tree*: BVHTree
 
 
 proc nearestCentroid(point: Point3D, clusterCentroids: seq[Point3D]): tuple[index: int, dist2: float32] =   

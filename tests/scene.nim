@@ -50,8 +50,8 @@ suite "AABB":
         # Checking getCentroid proc, needed in order to 
         # divide aabb into clusters
 
-        check areClose(aabb1.getCentroid(), newVec3(0.5, 0.5, 4))
-        check areClose(aabb2.getCentroid(), newVec3(2.5, 2.5, 2.5))
+        check areClose(aabb1.getCentroid(), newPoint3D(0.5, 0.5, 4.0))
+        check areClose(aabb2.getCentroid(), newPoint3D(2.5, 2.5, 2.5))
 
 
     test "getVertices proc":

@@ -1,41 +1,13 @@
 import std/unittest
 from math import sqrt, cos, sin, PI
-from std/sequtils import toSeq
 import PhotoNim
 
 
-  
-suite "Vec unittest":
-    echo "Testing the `Vec` type and its procedures."
 
-    test "newVec proc":
-        let a = newVec([3.0, 3.0])
-        check a.N == 2 and a.V is float
-
-        let b = newVec([float32 3.0, 3.0])
-        check b.N == 2 and b.V is float32
-
-        let c = newVec([1, 2, 5, -30])
-        check c.N == 4 and c.V is int
-
-        let d = newVec2(1.0, 2.0)
-        check d.N == 2 and d.V is float
-
-        let e = newVec3(1.0, 2.0, 3.0)
-        check e.N == 3 and e.V is float32
-
-        let f = newVec4(-1, -4, 5, 2)
-        check f.N == 4 and f.V is int
-
-        let g = newVec2f(1, 2)
-        check areClose(g, newVec2f(1, 2))
-
-        let h = newVec3(1, 2, 3)
-        check areClose(h, newVec3(1, 2, 3))
-
-        let i = newVec4f(1, 2, 3, 4)
-        check areClose(i, newVec4f(1, 2, 3, 4))
-
+#------------------------------------------#
+#              Vec test suite              #
+#------------------------------------------# 
+suite "Vec":
 
     setup:
         let 
@@ -45,6 +17,14 @@ suite "Vec unittest":
     teardown:
         discard x; discard y
     
+
+    test "newVec proc":
+        let d = newVec2(1.0, 2.0)
+        check d.N == 2 and d[0] is float32
+
+        let e = newVec3(1.0, 2.0, 3.0)
+        check e.N == 3 and e[0] is float32
+
     test "`[]` access proc":
         check x[0] == 1.0 and x[1] == 2.0 and y[1] == 4.0
 
@@ -118,8 +98,11 @@ suite "Vec unittest":
         check y.norm == 5.0 
 
     test "dist proc":
-        let b = newVec2(4.0, 6.0)
-        check dist2(x, b) == 25.0
+        let 
+            a = newPoint3D(1, 2, 0)
+            b = newPoint3D(4.0, 6.0, 0.0)
+        
+        check areClose(dist2(a, b), 25.0)
 
     test "normalize proc":
         let a = normalize(y)
@@ -128,8 +111,10 @@ suite "Vec unittest":
     
 
 
-suite "Points unittest":
-    echo "Testing the `Point2D` and `Point3D` type and its procedures."
+#---------------------------------------#
+#           Point test suite            #
+#---------------------------------------#
+suite "Point":
 
     setup:
         let 
@@ -141,109 +126,9 @@ suite "Points unittest":
 
     test "xyz access proc":
         check p2.u == 1.0 and p2.v == 20.0
-        
-    test "toPoint3D proc":
-        check p3.Vec3 is Vec3
-        check newVec3(0.01, 0.02, 0.03).toPoint3D is Point3D
-
-    test "`$` proc":
-        check $p2 == "(1.0, 20.0)"
-    
-
-#---------------------------------#
-#        Matrix types test        #
-#---------------------------------#
-suite "Mat unittest":
-    echo "Testing the `Mat` type and its procedures."
-
-    test "newMat proc":
-        let a = newMat([[1.0, 20.0, 3.0], [1.02, 30.0, -1.0]])
-        check a.M == 2 and a.N == 3 and a.V is float
-
-        let b = newMat2([1, 2], [3, 4])
-        check b.M == b.N and b.N == 2 and b.V is int
-
-        let c = newMat3([1, 2, 3], [4, 5, 6], [7, 8, 9])
-        check c.M == c.N and c.N == 3 and c.V is int
-
-        let d = newMat4([float32 1, 2, 3, 4], [float32 5, 6, 7, 8], [float32 9, 10, 11, 12], [float32 13, 14, 15, 16])
-        check d.M == d.N and d.N == 4 and d.V is float32
-
-    setup:
-        let
-            x = newMat2([1.0, 2.0], [3.0, 4.0])
-            y = newMat2([5.0, 6.0], [7.0, 8.0])
-
-    teardown:
-        discard x; discard y
 
 
-    test "`[]` access proc":
-        check x[0][0] == 1.0 and x[1][0] == 3.0 and y[1][1] == 8.0
-        check x[0] == [1.0, 2.0]
-
-    test "`[]=` assign proc": 
-        var a = x
-        a[0][0] = -1.0
-        check a[0][0] == -1.0 and a[0][1] == 2.0
-
-    test "`+` binary proc":
-        let result = x + y
-        check result[0][0] == 6.0 and result[1][1] == 12.0 
-
-    test "`-` binary proc":
-        let result = x - y
-        check result[0][0] == -4.0 and result[1][1] == -4.0 
-
-    test "`-` unary proc":
-        let result = -x
-        check result[0][1] == -2.0 and result[1][0] == -3.0 
-
-    test "`*` binary proc":
-        let a = 2.0 * x
-        let b = x * 2.0
-        check a == b and a[0][1] == 4.0 and b[1][1] == 8.0
-
-    test "`/` binary proc":
-        let result = y / 2.0
-        check result[1][1] == 4.0 and result[0][1] == 3.0
-
-    test "`+=` incr proc":
-        var result = x
-        result += y
-        check result[0][0] == 6.0 and result[1][1] == 12.0 
-
-    test "`-=` incr proc":
-        var result = x
-        result -= y
-        check result[0][0] == -4.0 and result[1][1] == -4.0 
-
-    test "`*=` incr proc":
-        var result = x
-        result *= 2.0
-        check result[0][1] == 4.0 and result[1][1] == 8.0
-
-
-    test "`/=` incr proc":
-        var result = y
-        result /= 4.0
-        check result[1][1] == 2.0 and result[0][1] == 1.5
-
-
-    test "T proc":
-        var mat: Mat3f = newMat3([float32 1, 2, 3], [float32 4, 5, 6], [float32 7, 8, 9])
-
-        check [[float32 1.0, 2.0, 3.0]].Tv is Vec3
-        check [float32 1.0, 2.0, 3.0].T is Mat[1, 3, float32]
-
-        mat = mat.T
-        check areClose(mat[0], newVec3(1, 4, 7))
-        check areClose(mat[1], newVec3(2, 5, 8))
-        check areClose(mat[2], newVec3(3, 6, 9))
-    
-
-
-suite "transformations":
+suite "Transformations":
 
     setup:
         var
@@ -255,8 +140,8 @@ suite "transformations":
         discard t1
         discard t2
         discard t3
-
-
+    
+    
     test "Scaling of Point3D":
 
         var p = newPoint3D(0, 3, 1)
@@ -283,7 +168,7 @@ suite "transformations":
         check areClose(apply(t1, p), newNormal(0, 3, 1))
 
         # Checking arbitrary scaling
-        check areClose(apply(t2, p), newNormal(0, 3/2, 1/3).normalize)
+        check areClose(apply(t2, p), newNormal(0.0, 3/2, 1/3).normalize)
 
 
     test "Translation of Vec3":
@@ -319,9 +204,9 @@ suite "transformations":
             tz = newRotation(180, axisZ) 
             p = newPoint3D(1, 2, 3)
         
-        check areClose(apply(tx, p), newPoint3D(1.0, -2.0, -3.0), 1e-6)
-        check areClose(apply(ty, p), newPoint3D(-1.0, 2.0, -3.0), 1e-6)
-        check areClose(apply(tz, p), newPoint3D(-1.0, -2.0, 3.0), 1e-6)
+        check areClose(apply(tx, p), newPoint3D( 1.0,-2.0,-3.0), 1e-6)
+        check areClose(apply(ty, p), newPoint3D(-1.0, 2.0,-3.0), 1e-6)
+        check areClose(apply(tz, p), newPoint3D(-1.0,-2.0, 3.0), 1e-6)
 
 
     test "Rotation of Vec3":
@@ -331,9 +216,9 @@ suite "transformations":
             tz = newRotation(180, axisZ) 
             vec = newVec3(1, 2, 3)
         
-        check areClose(apply(tx, vec), newVec3(1.0, -2.0, -3.0), 1e-6)
-        check areClose(apply(ty, vec), newVec3(-1.0, 2.0, -3.0), 1e-6)
-        check areClose(apply(tz, vec), newVec3(-1.0, -2.0, 3.0), 1e-6)
+        check areClose(apply(tx, vec), newVec3( 1.0,-2.0,-3.0), 1e-6)
+        check areClose(apply(ty, vec), newVec3(-1.0, 2.0,-3.0), 1e-6)
+        check areClose(apply(tz, vec), newVec3(-1.0,-2.0, 3.0), 1e-6)
 
 
     test "Rotation of Normal":
@@ -425,7 +310,7 @@ suite "transformations":
     test "Composition on Normal":
 
         var
-            sc = newScaling(1, 1/2, 1/3)
+            sc = newScaling(1.0, 1/2, 1/3)
             rotx = newRotation(90, axisX)
             rotz = newRotation(90, axisZ)
             
@@ -440,6 +325,8 @@ suite "transformations":
 
         comp = rotz @ rotx
         check areClose(apply(comp, norm), newNormal(3, 1, 2),eps = 1e-6)
+
+
 
 
 #-------------------------------------------#

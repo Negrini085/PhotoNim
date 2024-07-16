@@ -1111,6 +1111,111 @@ suite "Parse":
     #     check areClose(meshSH.transformation.mat, newTranslation(newVec3(1, 2, 3)).mat)
 
 
+    test "parseCSGUnionSH proc":
+        # Cheking parseCSGUnionSH procedure, returns a shapeHandler of a CSGUnion shape
+        var
+            csgUnionSH: ShapeHandler
+            keys = @[KeywordKind.PLANE, KeywordKind.CSGUNION, KeywordKind.SPHERE]
+        
+        fname = "files/Parse/Handlers/csgUnionSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+    
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.CSGUNION
+        
+        csgUnionSH = inStr.parseCSGUnionSH(dSc)
+        check csgUnionSH.shape.kind == skCSGUnion
+
+        check csgUnionSH.shape.shapes.primary.kind == skSphere
+        check csgUnionSH.shape.shapes.secondary.kind == skTriangle
+
+        check csgUnionSH.shape.shTrans.tPrimary.kind == tkTranslation
+        check csgUnionSH.shape.shTrans.tSecondary.kind == tkTranslation
+        check areClose(csgUnionSH.shape.shTrans.tPrimary.offset, newVec3(1, 2, 3))
+        check areClose(csgUnionSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
+
+        check csgUnionSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
+        check csgUnionSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
+
+        check csgUnionSH.transformation.kind == tkTranslation
+        check areClose(csgUnionSH.transformation.offset, newVec3(1, 2, 3))
+
+
+    test "parseCSGIntSH proc":
+        # Cheking parseCSGIntSH procedure, returns a shapeHandler of a CSGInt shape
+        var
+            csgIntSH: ShapeHandler
+            keys = @[KeywordKind.PLANE, KeywordKind.CSGINT, KeywordKind.SPHERE]
+        
+        fname = "files/Parse/Handlers/csgIntSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+    
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.CSGINT
+        
+        csgIntSH = inStr.parseCSGIntSH(dSc)
+        check csgIntSH.shape.kind == skCSGInt
+
+        check csgIntSH.shape.shapes.primary.kind == skPlane
+        check csgIntSH.shape.shapes.secondary.kind == skCylinder
+        check areClose(csgIntSH.shape.shapes.secondary.R, 2)
+        check areClose(csgIntSH.shape.shapes.secondary.phiMax, 1)
+        check areClose(csgIntSH.shape.shapes.secondary.zSpan.min, 0)
+        check areClose(csgIntSH.shape.shapes.secondary.zSpan.max, 4)
+
+        check csgIntSH.shape.shTrans.tPrimary.kind == tkTranslation
+        check csgIntSH.shape.shTrans.tSecondary.kind == tkTranslation
+        check areClose(csgIntSH.shape.shTrans.tPrimary.offset, newVec3(0.1, 0.2, 0.3))
+        check areClose(csgIntSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
+
+        check csgIntSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
+        check csgIntSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
+
+        check csgIntSH.transformation.kind == tkTranslation
+        check areClose(csgIntSH.transformation.offset, newVec3(1, 2, 3))
+
+
+    test "parseCSGDiffSH proc":
+        # Cheking parseCSGDiffSH procedure, returns a shapeHandler of a CSGDiff shape
+        var
+            csgDiffSH: ShapeHandler
+            keys = @[KeywordKind.PLANE, KeywordKind.CSGDIFF, KeywordKind.SPHERE]
+        
+        fname = "files/Parse/Handlers/csgDiffSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+    
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.CSGDIFF
+        
+        csgDiffSH = inStr.parseCSGDiffSH(dSc)
+        check csgDiffSH.shape.kind == skCSGDiff
+
+        check csgDiffSH.shape.shapes.primary.kind == skSphere
+        check areClose(csgDiffSH.shape.shapes.primary.radius, 2)
+        check csgDiffSH.shape.shapes.secondary.kind == skCylinder
+        check areClose(csgDiffSH.shape.shapes.secondary.R, 2)
+        check areClose(csgDiffSH.shape.shapes.secondary.phiMax, 1)
+        check areClose(csgDiffSH.shape.shapes.secondary.zSpan.min, 0)
+        check areClose(csgDiffSH.shape.shapes.secondary.zSpan.max, 4)
+
+        check csgDiffSH.shape.shTrans.tPrimary.kind == tkTranslation
+        check csgDiffSH.shape.shTrans.tSecondary.kind == tkTranslation
+        check areClose(csgDiffSH.shape.shTrans.tPrimary.offset, newVec3(0.1, 0.2, 0.3))
+        check areClose(csgDiffSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
+
+        check csgDiffSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
+        check csgDiffSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
+
+        check csgDiffSH.transformation.kind == tkTranslation
+        check areClose(csgDiffSH.transformation.offset, newVec3(1, 2, 3))
+
+
     test "parseCamera proc":
         # Checking parseCamera procedure
         var 

@@ -1,7 +1,7 @@
 import geometry, color, pigment, brdf, scene
 
-from std/math import sgn, floor, arccos, arctan2, PI
-from std/sequtils import mapIt
+from std/math import sgn, floor, arccos, arctan2, PI, pow, sqrt
+from std/sequtils import mapIt, concat
 
 
 proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
@@ -11,13 +11,13 @@ proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
     of skSphere: (newPoint3D(-shape.radius, -shape.radius, -shape.radius), newPoint3D(shape.radius, shape.radius, shape.radius))
     of skCylinder: (newPoint3D(-shape.R, -shape.R, shape.zSpan.min), newPoint3D(shape.R, shape.R, shape.zSpan.max))
     of skPlane: (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, 0))
+    of skEllipsoid: (newPoint3D(-shape.axis.a,-shape.axis.b,-shape.axis.c), newPoint3D(shape.axis.a, shape.axis.b, shape.axis.c))
     
 proc getVertices(shape: Shape): seq[Point3D] {.inline.} = 
     case shape.kind
     of skAABox: shape.aabb.getVertices
     of skTriangle: shape.vertices
     else: shape.getAABB.getVertices
-
 
 proc newShapeHandler*(shape: Shape, brdf: BRDF, emittedRadiance: Pigment, transformation: Transformation): ObjectHandler {.inline.} =
     ObjectHandler(
@@ -27,7 +27,6 @@ proc newShapeHandler*(shape: Shape, brdf: BRDF, emittedRadiance: Pigment, transf
         shape: shape, 
         material: (brdf, emittedRadiance)
     )
-
 
 proc newSphere*(center: Point3D, radius: float32; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK)): ObjectHandler {.inline.} =   
     newShapeHandler(Shape(kind: skSphere, radius: radius), brdf, emittedRadiance, if not areClose(center, ORIGIN3D): newTranslation(center) else: Transformation.id)
@@ -47,6 +46,17 @@ proc newTriangle*(vertices: array[3, Point3D]; brdf: BRDF, emittedRadiance = new
 proc newCylinder*(R = 1.0, zMin = 0.0, zMax = 1.0, phiMax = 2.0 * PI; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} =
     newShapeHandler(Shape(kind: skCylinder, R: R, zSpan: (zMin.float32, zMax.float32), phiMax: phiMax), brdf, emittedRadiance, transformation)
 
+proc newEllipsoid*(a, b, c: SomeNumber, brdf: BRDF, emittedRadiance = newUniformPigment(BLACK),transformation = Transformation.id): ObjectHandler = 
+    newShapeHandler(
+        Shape(
+            kind: skEllipsoid, axis:(
+                    a: when a is float32: a else: a.float32, 
+                    b: when b is float32: b else: b.float32, 
+                    c: when c is float32: c else: c.float32
+                )
+            ),
+        brdf, emittedRadiance, transformation
+    )
 
 proc getUV*(shape: Shape; pt: Point3D): Point2D = 
     case shape.kind
@@ -86,6 +96,10 @@ proc getUV*(shape: Shape; pt: Point3D): Point2D =
 
     of skPlane: return newPoint2D(pt.x - floor(pt.x), pt.y - floor(pt.y))
 
+    of skEllipsoid: 
+        let scal = newScaling(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c)
+        return getUV(Shape(kind: skSphere, radius: 1), apply(scal, pt))
+
 
 proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3): Normal {.inline.} =
     case shape.kind
@@ -104,4 +118,11 @@ proc getNormal*(shape: Shape; pt: Point3D, dir: Vec3): Normal {.inline.} =
 
     of skCylinder: return newNormal(pt.x, pt.y, 0.0)
 
-    of skPlane: return Normal(sgn(-dir[2]) * eZ)
+    of skPlane: return newNormal(0, 0, sgn(-dir[2]))
+
+    of skEllipsoid: 
+        let 
+            scal = newScaling(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c)
+            nSp = getNormal(Shape(kind: skSphere, radius: 1), apply(scal, pt), apply(scal, dir).normalize)
+
+        return apply(scal.inverse, nSp).normalize

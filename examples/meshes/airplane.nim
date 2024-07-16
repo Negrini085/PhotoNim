@@ -8,8 +8,8 @@ from std/osproc import execCmd
 let 
     nSamples: int = 1
     aaSamples: int = 1
-    nRays: int = 3
-    depthLimit: int = 3
+    nRays: int = 1
+    depthLimit: int = 1
     rrLimit: int = 5
     rgSetUp = newRandomSetUp(7, 4)
     outFile = "assets/images/examples/meshes/airplane.png"
@@ -28,19 +28,16 @@ let
     uwall = newBox(
         (newPoint3D(-2, -2, 2), newPoint3D(2, 2, 2)), 
         brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
-        # emittedRadiance = newUniformPigment(BLUE)
     ) 
 
     dwall = newBox(
         (newPoint3D(-2, -2, -2), newPoint3D(2, 2, -2)), 
         brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
-        # emittedRadiance = newUniformPigment(GREEN)
     ) 
 
     fwall = newBox(
         (newPoint3D(2, -2, -2), newPoint3D(2, 2, 2)), 
         brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
-        # emittedRadiance = newUniformPigment(BLUE)
     ) 
 
     lwall = newBox(

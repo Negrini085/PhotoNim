@@ -75,7 +75,7 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color =
+proc sampleRay*(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color =
     
     case camera.renderer.kind
     of rkOnOff: 
