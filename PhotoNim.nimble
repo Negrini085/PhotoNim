@@ -78,4 +78,4 @@ task test, "Run the `PhotoNim` tests":
     exec "nim c -d:release --hints:off -r brdf.nim"
     exec "nim c -d:release --hints:off -r pigment.nim"
     exec "nim c -d:release --hints:off -r camera.nim"
-    exec "rm pcg geometry hdrimage scene shape csg ray hitrecord brdf pigment camera"
+    exec "rm pcg geometry color hdrimage scene shape csg ray hitrecord brdf pigment camera"

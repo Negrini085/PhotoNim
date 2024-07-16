@@ -1,16 +1,15 @@
-import PhotoNim
 import std/unittest
 
-from std/sequtils import toSeq
-from std/math import PI
+import PhotoNim
 
+from std/sequtils import toSeq
 
 #----------------------------------#
 #       HitPayload test suite      #
 #----------------------------------#
-
-
 suite "HitPayload":
+    # Here we just want to check that HitPayload creation isNil
+    # working as we espect
 
     setup:
         let 

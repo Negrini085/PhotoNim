@@ -1,5 +1,5 @@
 import std/[unittest, streams, math, sequtils]
-import PhotoNim
+import ../src/[hdrimage, color, geometry]
 
 #-------------------------------------#
 #      HdrImage type test suite       #
