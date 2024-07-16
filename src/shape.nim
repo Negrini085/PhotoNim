@@ -1,4 +1,4 @@
-import geometry, color, pigment, brdf, scene
+import geometry, color, pigment, brdf, material, scene
 
 from std/math import sgn, floor, arccos, arctan2, PI, pow, sqrt
 from std/sequtils import mapIt, concat
@@ -25,7 +25,7 @@ proc newShapeHandler*(shape: Shape, brdf: BRDF, emittedRadiance: Pigment, transf
         aabb: newAABB shape.getVertices.mapIt(apply(transformation, it)),
         transformation: transformation, 
         shape: shape, 
-        material: (brdf, emittedRadiance)
+        material: if areClose(emittedRadiance.color, BLACK): newMaterial(brdf) else: newEmissiveMaterial(brdf, emittedRadiance)
     )
 
 proc newSphere*(center: Point3D, radius: float32; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK)): ObjectHandler {.inline.} =   
