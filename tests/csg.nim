@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[csg, scene, shape, geometry, brdf, pigment, color, ray, pcg]
+import ../src/[csg, scene, shape, geometry, brdf, pigment, color, pcg]
 
 #---------------------------------#
 #       CSGUnion test suite       #
