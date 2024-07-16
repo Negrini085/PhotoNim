@@ -36,8 +36,7 @@ type
         case kind*: HandlerKind
         of hkShape: 
             shape*: Shape 
-            brdf*: BRDF
-            emittedRadiance*: Pigment
+            material*: tuple[brdf: BRDF, eRadiance: Pigment]
 
         of hkMesh: mesh*: BVHTree
 

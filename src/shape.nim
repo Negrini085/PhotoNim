@@ -25,7 +25,7 @@ proc newShapeHandler*(shape: Shape, brdf: BRDF, emittedRadiance: Pigment, transf
         aabb: newAABB shape.getVertices.mapIt(apply(transformation, it)),
         transformation: transformation, 
         shape: shape, 
-        brdf: brdf, emittedRadiance: emittedRadiance
+        material: (brdf, emittedRadiance)
     )
 
 

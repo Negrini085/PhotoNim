@@ -12,7 +12,7 @@ type Ray* = ref object
 
 
 proc newRay*(origin: Point3D, direction: Vec3, depth: int = 0): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, tSpan: (float32 1.0, float32 Inf), depth: depth)  
+    Ray(origin: origin, dir: direction, depth: depth)  
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
     areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
@@ -33,7 +33,7 @@ proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
         Ray(
             origin: apply(transformation, ray.origin), 
             dir: apply(transformation, ray.dir), 
-            tSpan: ray.tSpan, depth: ray.depth
+            depth: ray.depth
         )
 
 
@@ -54,7 +54,7 @@ proc getBoxHit*(worldRay: Ray; aabb: Interval[Point3D]): float32 {.inline.} =
     if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
                 
     result = if aabb.contains(worldRay.origin): hitSpan.max else: hitSpan.min
-    if not worldRay.tspan.contains(result): return Inf
+    if result < 1e-6: return Inf
 
 
 proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
@@ -76,7 +76,7 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
         if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
 
         result = if shape.aabb.contains(worldInvRay.origin): hitSpan.max else: hitSpan.min
-        if not worldInvRay.tspan.contains(result): return Inf
+        if result < 1e-6: return Inf
 
     of skTriangle:
         let 
@@ -88,8 +88,7 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
             vec = [worldInvRay.origin.x - shape.vertices[0].x, worldInvRay.origin.y - shape.vertices[0].y, worldInvRay.origin.z - shape.vertices[0].z]
 
         let sol = try: solve(mat, vec) except ValueError: return Inf
-        if not worldInvRay.tspan.contains(sol[2]): return Inf
-        if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0: return Inf
+        if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0 or sol[2] < 1e-6: return Inf
 
         result = sol[2]
 
@@ -102,15 +101,12 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
 
         let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
         
-        result = 
-            if worldInvRay.tspan.contains(t_l): t_l 
-            elif worldInvRay.tspan.contains(t_r): t_r 
-            else: Inf
+        result = if t_l < 1e-6: t_l elif t_r < 1e-6: t_r else: Inf
 
     of skPlane:
         if abs(worldInvRay.dir[2]) < epsilon(float32): return Inf
         result = -worldInvRay.origin.z / worldInvRay.dir[2]
-        if not worldInvRay.tspan.contains(result): return Inf
+        if result < 1e-6: return Inf
 
     of skCylinder:
         let
@@ -122,11 +118,11 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
         if delta < 0.0: return Inf
 
         var tspan = newInterval((-b - sqrt(delta)) / (2 * a), (-b + sqrt(delta)) / (2 * a))
-        if tspan.min > worldInvRay.tspan.max or tspan.max < worldInvRay.tspan.min: return Inf
+        if tspan.min >= Inf or tspan.max < 1e-6: return Inf
 
         result = tspan.min
-        if result < worldInvRay.tspan.min:
-            if tspan.max > worldInvRay.tspan.max: return Inf
+        if result < 1e-6:
+            if tspan.max >= Inf: return Inf
             result = tspan.max
 
         var 
@@ -137,7 +133,7 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
         if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax:
             if result == tspan.max: return Inf
             result = tspan.max
-            if result > worldInvRay.tspan.max: return Inf
+            if result >= Inf: return Inf
             
             hitPt = worldInvRay.at(result)
             phi = arctan2(hitPt.y, hitPt.x)

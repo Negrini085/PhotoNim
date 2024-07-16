@@ -1,14 +1,14 @@
 import pcg, geometry, color, hdrimage, brdf, pigment, scene, shape, ray, hitrecord
 
-from std/fenv import epsilon
 from std/strutils import repeat
 from std/terminal import fgWhite, fgRed, fgYellow, fgGreen, eraseLine, styledWrite, resetAttributes
 from std/strformat import fmt
 from std/math import pow
 from std/sequtils import applyIt, filterIt
 
-from std/threadpool import parallel, spawn, spawnX, sync
+from std/threadpool import spawn, spawnX, sync
 {.experimental.}
+
 
 type
     RendererKind* = enum
@@ -59,7 +59,7 @@ proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} =
         of ckOrthogonal: (newPoint3D(-1.0, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
         of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
     
-    Ray(origin: origin, dir: dir, tSpan: (epsilon(float32), float32 Inf), depth: 0).transform(camera.transformation)
+    Ray(origin: origin, dir: dir, depth: 0).transform(camera.transformation)
 
 
 
@@ -86,10 +86,7 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
     of rkFlat: 
         let closestHit = scene.tree.getClosestHit(worldRay)
         if closestHit.info.hit.isNil: return scene.bgColor
-        elif closestHit.info.hit.brdf.isNil: 
-            return closestHit.info.hit.emittedRadiance.getColor(closestHit.info.hit.shape.getUV(closestHit.pt))
-        else: 
-            return closestHit.info.hit.brdf.pigment.getColor(closestHit.info.hit.shape.getUV(closestHit.pt))
+        return closestHit.info.hit.material.brdf.pigment.getColor(closestHit.info.hit.shape.getUV(closestHit.pt))
 
     of rkPathTracer: 
         if (worldRay.depth > camera.renderer.depthLimit): return BLACK
@@ -102,12 +99,10 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
             hitSurfacePt = closestHit.info.hit.shape.getUV(closestHit.pt)
             worldHitPt = apply(closestHit.info.hit.transformation, closestHit.pt)
 
-        result = closestHit.info.hit.emittedRadiance.getColor(hitSurfacePt)
+        result = closestHit.info.hit.material.eRadiance.getColor(hitSurfacePt)
 
-        if closestHit.info.hit.brdf.isNil: return result
-
-        var hitColor = closestHit.info.hit.brdf.pigment.getColor(hitSurfacePt)
-        if areClose(hitColor.luminosity, 0): return result
+        var hitColor = closestHit.info.hit.material.brdf.pigment.getColor(hitSurfacePt)
+        if areClose(hitColor.luminosity, 0.0): return result
         
         if worldRay.depth >= camera.renderer.rouletteLimit:
             let q = max(0.05, 1 - hitColor.luminosity)
@@ -117,11 +112,10 @@ proc sampleRay(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color 
         let nRaysInv = 1 / camera.renderer.nRays.float32
         for _ in 0..<camera.renderer.nRays:
             let 
-                outDir = closestHit.info.hit.brdf.scatterDir(hitNormal, closestHit.rayDir, rg).normalize
+                outDir = closestHit.info.hit.material.brdf.scatterDir(hitNormal, closestHit.rayDir, rg).normalize
                 scatteredRay = Ray(
                     origin: worldHitPt, 
                     dir: apply(closestHit.info.hit.transformation, outDir),
-                    tSpan: (1e-5.float32, Inf.float32),
                     depth: worldRay.depth + 1
                 )
 
