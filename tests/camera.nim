@@ -1,72 +1,6 @@
 import std/unittest
 from math import sqrt, degToRad, PI
-import PhotoNim
-
-#---------------------------#
-#    Ray type test suite    #
-#---------------------------#
-suite "Ray":
-
-    setup:
-        var 
-            ray1 = newRay(newPoint3D(1, 2, 3), newVec3(1, 0, 0))
-            ray2 = newRay(newPoint3D(1, 2, 0), newVec3(1, 0, 0))
-    
-    teardown:
-        discard ray1
-        discard ray2
-
-
-    test "newRay proc":
-        #Checking newRay proc
-
-        # First ray check
-        check ray1.depth == 0.int
-        check areClose(ray1.dir, newVec3(1, 0, 0))
-        check areClose(ray1.origin, newPoint3D(1, 2, 3))
-
-        # Second ray check
-        check ray2.depth == 0.int
-        check areClose(ray2.dir, newVec3(1, 0, 0))
-        check areClose(ray2.origin, newPoint3D(1, 2, 0))
-    
-
-    test "at proc":
-        # Checkin at proc, gives ray position at a certain time
-
-        # First ray check
-        check areClose(ray1.at(0), ray1.origin)
-        check areClose(ray1.at(1.0), newPoint3D(2, 2, 3))
-        check areClose(ray1.at(2.0), newPoint3D(3, 2, 3))
-
-        # Second ray check
-        check areClose(ray2.at(0), ray2.origin)
-        check areClose(ray2.at(1.0), newPoint3D(2, 2, 0))
-        check areClose(ray2.at(2.0), newPoint3D(3, 2, 0))
-
-
-    test "areClose proc":
-        # Checking areClose proc, which states wether two rays are similar or not
-
-        check areClose(ray1, ray1)
-        check not areClose(ray1, ray2)
-
-
-    test "transform proc":
-        # Checking transform proc, which transform ray in a specific frame of reference
-        var 
-            T1 = newTranslation(newVec3(1, 2, 3))
-            T2 = newRotation(180.0, axisY)
-
-        # First ray
-        check areClose(ray1.transform(T1), newRay(newPoint3D(2, 4, 6), newVec3(1, 0, 0)))
-        check areClose(ray1.transform(T2), newRay(newPoint3D(-1, 2, -3), newVec3(-1, 0, 0)), 1e-6)
-
-        # Second ray
-        check areClose(ray2.transform(T1), newRay(newPoint3D(2, 4, 3), newVec3(1, 0, 0)))
-        check areClose(ray2.transform(T2), newRay(newPoint3D(-1, 2, 0), newVec3(-1, 0, 0)), 1e-6)
-
-
+import ../src/[camera, geometry, pcg, shape, scene, ray, brdf, pigment, color, hdrimage]
 
 suite "Camera":
 
@@ -87,7 +21,7 @@ suite "Camera":
         discard pCam
 
 
-    test "newCamera procs":
+    test "newOrthogonalCamera proc":
         # Checking Camera vaiables constructor
 
         # OrthogonalCamera
@@ -100,7 +34,7 @@ suite "Camera":
         check ocam.transformation.kind == tkTranslation 
         check areClose(ocam.transformation.offset, newVec3(-4, 0, 0)) 
     
-
+    test "newPerspectiveCamera proc":
         # Perspective Camera
         check pcam.kind == ckPerspective
         check pcam.renderer.kind == rkFlat
@@ -173,10 +107,52 @@ suite "Camera":
 
 
 
-#------------------------------------------#
-#           Renderer test suite            #
-#------------------------------------------#
+#-------------------------------------#
+#      Renderer type test suite       #
+#-------------------------------------#
 suite "Renderer":
+    # Here we just want to make sure that we are 
+    # creating renderer variables as we want
+
+    setup:
+        let
+            onOff = newOnOffRenderer(BLACK)
+            flat = newFlatRenderer()
+            path = newPathTracer(10, 5, 3)
+        
+    teardown:
+        discard flat
+        discard path
+        discard onOff
+
+    
+    test "newOnOffRenderer proc":
+        # Checking newOnOffRenderer procedure
+
+        check onOff.kind == rkOnOff
+        check areClose(onOff.hitColor, BLACK)
+    
+
+    test "newFlatRenderer proc":
+        # Checking newFlatRenderer procedure
+
+        check flat.kind == rkFlat
+
+
+    test "newPathTracer proc":
+        # Checking newPathTracer procedure
+
+        check path.kind == rkPathTracer
+        check path.nRays == 10 
+        check path.depthLimit == 5 
+        check path.rouletteLimit == 3 
+
+
+
+#-------------------------------------#
+#   Rendering algorithms test suite   #
+#-------------------------------------#
+suite "Rendering algorithms":
 
     setup:
         let rs = newRandomSetUp(42, 54)

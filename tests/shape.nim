@@ -1,5 +1,6 @@
 import std/unittest
-import PhotoNim
+import ../src/[shape, scene, geometry, brdf, pigment, color]
+
 from math import sin, cos, PI, sqrt
 
 

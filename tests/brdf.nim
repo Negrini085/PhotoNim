@@ -1,5 +1,6 @@
 import std/unittest
-import PhotoNim
+import ../src/[brdf, pigment, geometry, color, pcg]
+
 
 #-----------------------------------#
 #          BRDF test suite          #
