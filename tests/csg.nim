@@ -1,5 +1,5 @@
 import std/unittest
-import PhotoNim
+import ../src/[csg, scene, shape, geometry, brdf, pigment, color, ray, pcg]
 
 #---------------------------------#
 #       CSGUnion test suite       #

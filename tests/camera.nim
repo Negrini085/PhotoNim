@@ -1,6 +1,6 @@
 import std/unittest
 from math import sqrt, degToRad, PI
-import PhotoNim
+import ../src/[camera, geometry, pcg, shape, scene, ray, brdf, pigment, color, hdrimage]
 
 suite "Camera":
 
@@ -21,7 +21,7 @@ suite "Camera":
         discard pCam
 
 
-    test "newCamera procs":
+    test "newOrthogonalCamera proc":
         # Checking Camera vaiables constructor
 
         # OrthogonalCamera
@@ -34,7 +34,7 @@ suite "Camera":
         check ocam.transformation.kind == tkTranslation 
         check areClose(ocam.transformation.offset, newVec3(-4, 0, 0)) 
     
-
+    test "newPerspectiveCamera proc":
         # Perspective Camera
         check pcam.kind == ckPerspective
         check pcam.renderer.kind == rkFlat
@@ -107,10 +107,52 @@ suite "Camera":
 
 
 
-#------------------------------------------#
-#           Renderer test suite            #
-#------------------------------------------#
+#-------------------------------------#
+#      Renderer type test suite       #
+#-------------------------------------#
 suite "Renderer":
+    # Here we just want to make sure that we are 
+    # creating renderer variables as we want
+
+    setup:
+        let
+            onOff = newOnOffRenderer(BLACK)
+            flat = newFlatRenderer()
+            path = newPathTracer(10, 5, 3)
+        
+    teardown:
+        discard flat
+        discard path
+        discard onOff
+
+    
+    test "newOnOffRenderer proc":
+        # Checking newOnOffRenderer procedure
+
+        check onOff.kind == rkOnOff
+        check areClose(onOff.hitColor, BLACK)
+    
+
+    test "newFlatRenderer proc":
+        # Checking newFlatRenderer procedure
+
+        check flat.kind == rkFlat
+
+
+    test "newPathTracer proc":
+        # Checking newPathTracer procedure
+
+        check path.kind == rkPathTracer
+        check path.nRays == 10 
+        check path.depthLimit == 5 
+        check path.rouletteLimit == 3 
+
+
+
+#-------------------------------------#
+#   Rendering algorithms test suite   #
+#-------------------------------------#
+suite "Rendering algorithms":
 
     setup:
         let rs = newRandomSetUp(42, 54)
