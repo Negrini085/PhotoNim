@@ -1,4 +1,4 @@
-import pcg, geometry, color, hdrimage, brdf, pigment, scene, shape, hitrecord
+import pcg, geometry, color, hdrimage, brdf, pigment, scene, shape, ray, hitrecord
 
 from std/fenv import epsilon
 from std/strutils import repeat
@@ -7,8 +7,8 @@ from std/strformat import fmt
 from std/math import pow
 from std/sequtils import applyIt, filterIt
 
-from std/threadpool import spawn, spawnX, sync
-
+from std/threadpool import parallel, spawn, spawnX, sync
+{.experimental.}
 
 type
     RendererKind* = enum
@@ -56,8 +56,8 @@ proc aspectRatio*(camera: Camera): float32 {.inline.} = camera.viewport.width.fl
 proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} = 
     let (origin, dir) = 
         case camera.kind
-        of ckOrthogonal: (newPoint3D(-1, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
-        of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3f(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
+        of ckOrthogonal: (newPoint3D(-1.0, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
+        of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
     
     Ray(origin: origin, dir: dir, tSpan: (epsilon(float32), float32 Inf), depth: 0).transform(camera.transformation)
 
@@ -128,7 +128,7 @@ proc sampleRay*(camera: Camera; scene: Scene, worldRay: Ray, rg: var PCG): Color
             result += nRaysInv * hitColor * camera.sampleRay(scene, scatteredRay, rg)
 
 
-proc samplePixel(x, y: int, rgSetUp: RandomSetUp, aaSamples: int; camera: Camera, scene: Scene): Color =
+proc samplePixel(x, y: int, camera: Camera, scene: Scene, rgSetUp: RandomSetUp, aaSamples: int): Color =
     let aaFactor = 1 / aaSamples.float32
 
     var rg = newPCG(rgSetUp)
@@ -152,8 +152,11 @@ proc sample*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, aaSamples: int 
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
     for y in 0..<camera.viewport.height:
         if displayProgress: displayProgress(y, camera.viewport.height - 1)
-        for x in 0..<camera.viewport.width:
-            result.setPixel(x, y, samplePixel(x, y, newRandomSetUp(rg.random, rg.random), aaSamples, camera, scene))
+        for x in 0..<camera.viewport.width: 
+            result.setPixel(
+                x, y,
+                samplePixel(x, y, camera, scene, newRandomSetUp(rg.random, rg.random), aaSamples)
+            )
 
     if displayProgress: stdout.eraseLine; stdout.resetAttributes
 
@@ -162,9 +165,10 @@ proc samples*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, nSamples: int 
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
 
     if nSamples > 1:
+
         var rg = newPCG(rgSetUp)
         for _ in countup(0, nSamples): 
-            spawn stack(
+            spawnX stack(
                 addr result, 
                 camera.sample(scene, newRandomSetUp(rg.random, rg.random), aaSamples, displayProgress = false)
             )

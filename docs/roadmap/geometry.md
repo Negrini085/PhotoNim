@@ -28,7 +28,7 @@ type
     Vec3*[V] = Vec[3, V]
     Vec4*[V] = Vec[4, V]
     Vec2f* = Vec2[float32]
-    Vec3f* = Vec3[float32]
+    Vec3* = Vec3[float32]
     Vec4f* = Vec4[float32]
 ```
 
@@ -38,7 +38,7 @@ It is possible to initialize a new variable of type ```Vec_``` (where the suffix
 proc newVec*[N: static[int], V](data: array[N, V]): Vec[N, V] {.inline.} = result = data
 
 proc newVec2f*(x, y: float32): Vec2f {.inline.} = newVec([x, y])
-proc newVec3f*(x, y, z: float32): Vec3f {.inline.} = newVec([x, y, z])
+proc newVec3*(x, y, z: float32): Vec3 {.inline.} = newVec([x, y, z])
 proc newVec4f*(x, y, z, w: float32): Vec4f {.inline.} = newVec([x, y, z, w])
 ```
 
@@ -99,7 +99,7 @@ var
     # Here we show three different initialization proc
     v1 = newVec[3, int]([1, 2, 3])      # Initializes a Vec[3, int]
     v2 = newVec3[float32](1, 2, 3)      # Initializes a Vec3[float32]
-    v3 = newVec3f(4, 5, 6)              # Initializes a Vec3f
+    v3 = newVec3(4, 5, 6)              # Initializes a Vec3
 
 echo ' '
 echo "Vector sum: ", v2 + v3    # You should see (5, 7, 9)
@@ -111,7 +111,7 @@ echo "Cross product", cross(v2, v3)  # You should see (-3, 6, -3)
 
 echo ' '
 echo "areClose(v2, v3): ", areClose(v2, v3)                   # You should see false
-echo "areClose(v2, v2)", areClose(v2, newVec3f(1, 2, 3))    # You should see true
+echo "areClose(v2, v2)", areClose(v2, newVec3(1, 2, 3))    # You should see true
 
 echo ' '
 echo "v1 norm: ", v1.norm2   # You should see 14
@@ -128,8 +128,8 @@ In order to deal with a complex scenario, vectors alone aren't adequate: we must
 ```nim
 type
     Point2D* {.borrow: `.`.} = distinct Vec2f
-    Point3D* {.borrow: `.`.} = distinct Vec3f
-    Normal* {.borrow: `.`.} = distinct Vec3f
+    Point3D* {.borrow: `.`.} = distinct Vec3
+    Normal* {.borrow: `.`.} = distinct Vec3
 
 # Constructor procs
 proc newPoint2D*(u, v: float32): Point2D {.inline.} = Point2D([u, v]) 
@@ -139,12 +139,12 @@ proc newPoint3D*(x, y, z: float32): Point3D {.inline.} = Point3D([x, y, z])
 proc newNormal*(x, y, z: float32): Normal {.inline.} = Normal([x, y, z].normalize)
 ```
 
-You can access point coordinates using ```u, v``` procs for a Point2D variable or ```x, y, z``` for a Point3D. Cosidering that Point2D, Point3D and Normal are distinct types of Vec2f and Vec3f respectively, we borrow procedures implemented for Vector types. We have added procedures for addition and subtraction between points and vectors such as following, as it does not make geometric sense to add two points.
+You can access point coordinates using ```u, v``` procs for a Point2D variable or ```x, y, z``` for a Point3D. Cosidering that Point2D, Point3D and Normal are distinct types of Vec2f and Vec3 respectively, we borrow procedures implemented for Vector types. We have added procedures for addition and subtraction between points and vectors such as following, as it does not make geometric sense to add two points.
 
 ```nim
 proc `+`*(a: Point2D, b: Vec2f): Point2D {.inline.} = newPoint2D(a.u + b[0], a.v + b[1])
 
-proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
+proc `+`*(a: Point3D, b: Vec3): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y + b[1], a.z + b[2])
 ```
 
 <div style="height: 25px;"></div>
@@ -156,7 +156,7 @@ proc `+`*(a: Point3D, b: Vec3f): Point3D {.inline.} = newPoint3D(a.x + b[0], a.y
 ```nim
 
 var
-    vec = newVec3f(4, 5, 6)         # Initializes a three-dimensional vector
+    vec = newVec3(4, 5, 6)         # Initializes a three-dimensional vector
     p_3d = newPoint3D(1, 2, 3)      # New three-dimensional point
     p_2d = newPoint2D(1.0, 0.5)     # New two dimensional point
     normal = newNormal(1, 0, 0)     # New normal
@@ -175,7 +175,7 @@ echo "First Normal component: ", normal.x            # You should get 1
 
 
 echo ' '
-echo "Scalar product: ", dot(normal.Vec3f, vec)               # You should get 4
+echo "Scalar product: ", dot(normal.Vec3, vec)               # You should get 4
 echo "AreClose test: ", areClose(p_3d, newPoint3D(2, 3, 4))   # You should get false
 ```
 
@@ -305,14 +305,14 @@ To establish the most comprehensive framework wherein transformations are determ
 ```nim
 proc toVec4*(a: Point3D): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 1.0)
 proc toVec4*(a: Normal): Vec4f {.inline.} = newVec4(a.x, a.y, a.z, 0.0)
-proc toVec4*(a: Vec3f): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
+proc toVec4*(a: Vec3): Vec4f {.inline.} = newVec4(a[0], a[1], a[2], 0.0)
 ```
 
 Since we aim to describe various types of transformations, constructor procedures vary significantly from one another. Below, we outline the different constructor procedures:
 
-- ```proc newTranslation*(v: Vec3f): Transformation``` enables the user to define a translation procedure providing as input a Vec3f, which will be the vector through which the points will be translated.
+- ```proc newTranslation*(v: Vec3): Transformation``` enables the user to define a translation procedure providing as input a Vec3, which will be the vector through which the points will be translated.
 
-- ```proc newScaling*[T](x: T): Transformation``` which initializes a translation variable of kind ```tkScaling``` to uniform scaling if a scalar is given as input, otherwise a non-isotropic scaling if a ```Vec3f``` is provided.
+- ```proc newScaling*[T](x: T): Transformation``` which initializes a translation variable of kind ```tkScaling``` to uniform scaling if a scalar is given as input, otherwise a non-isotropic scaling if a ```Vec3``` is provided.
 
 - ```proc newRotX*(angle: SomeNumber): Transformation``` defines a rotation around the x-axis. The angle of rotation is given in degrees.
 
@@ -345,7 +345,7 @@ proc apply*[T](transf: Transformation, x: T): T =
     of tkTranslation: 
         when T is Vec4f:
              return newVec4(x[0] + transf.mat[0][3] * x[3], x[1] + transf.mat[1][3] * x[3], x[2] + transf.mat[2][3] * x[3], x[3])
-        elif T is Vec3f:
+        elif T is Vec3:
             return newVec3(x[0], x[1], x[2])
         elif T is Point3D: 
             return newPoint3D(x.x + transf.mat[0][3], x.y + transf.mat[1][3], x.z + transf.mat[2][3])
@@ -355,7 +355,7 @@ proc apply*[T](transf: Transformation, x: T): T =
     of tkScaling:
         when T is Vec4f:
             return newVec4(x[0] * transf.mat[0][0], x[1] * transf.mat[1][1], x[2] * transf.mat[2][2], x[3])
-        elif T is Vec3f:
+        elif T is Vec3:
             return newVec3(x[0] * transf.mat[0][0], x[1] * transf.mat[1][1], x[2] * transf.mat[2][2])
         elif T is Point3D: 
             return newPoint3D(x.x * transf.mat[0][0], x.y * transf.mat[1][1], x.z * transf.mat[2][2])
@@ -384,11 +384,11 @@ To make the application of a composition of transformations as efficient as poss
 var
     t1 = newScaling(2.0)                        # Uniform scaling
     t2 = newRotX(90)                            # Rotation of PI/2
-    t3 = newTranslation(newVec3f(1, 2, 3))      # Translation of (1, 2, 3)
+    t3 = newTranslation(newVec3(1, 2, 3))      # Translation of (1, 2, 3)
     comp: Transformation
     inv: Transformation
 
-    v = newVec3f(3, 2, 1)
+    v = newVec3(3, 2, 1)
     p = newPoint3D(3, 2, 1)
 
 
@@ -427,7 +427,7 @@ The first tool we need to develop is indeed a type that allows us to uniquely ch
 ```nim
 type Ray* = ref object
     origin*: Point3D
-    dir*: Vec3f
+    dir*: Vec3
     tSpan*: Interval[float32]
     depth*: int
 ```
@@ -466,12 +466,12 @@ If you want to evaluate ray position at a certain time t, you just have to use `
 
 ```nim
 let
-    trans = newTranslation(newVec3f(2, 0, 0))
+    trans = newTranslation(newVec3(2, 0, 0))
     rotY = newRotY(90)
 
 var 
     origin = ORIGIN3D        # Ray starting point
-    dir = newVec3f(1, 0, 0)     # Ray direction (along x-axis)
+    dir = newVec3(1, 0, 0)     # Ray direction (along x-axis)
     ray = newRay(origin, dir)           # tSpan and depth have default values
 
 # Printing ray variable content
@@ -515,9 +515,9 @@ proc newONB*(normal: Normal): Mat3f =
         b = a * normal.x * normal.y
         
     [
-        newVec3f(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
-        newVec3f(b, sign + a * normal.y * normal.y, -normal.y),
-        normal.Vec3f
+        newVec3(1.0 + sign * a * normal.x * normal.x, sign * b, -sign * normal.x),
+        newVec3(b, sign + a * normal.y * normal.y, -normal.y),
+        normal.Vec3
     ]
 ```
 
@@ -537,7 +537,7 @@ This procedure is tested by means of a method known as random testing: what we a
             normal = newNormal(pcg.rand, pcg.rand, pcg.rand).normalize
             onb = newONB(normal)
 
-            check areClose(onb[2], normal.Vec3f)
+            check areClose(onb[2], normal.Vec3)
 
             check areClose(dot(onb[0], onb[1]), 0, eps = 1e-6)
             check areClose(dot(onb[1], onb[2]), 0, eps = 1e-6)

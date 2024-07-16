@@ -49,13 +49,12 @@ proc newMesh*(source: string, treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp
             brdf, emittedRadiance, 
             Transformation.id
         )
-    
-    let root = newBVHNode(shapes.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp)
 
+    let tree = newBVHTree(shapes, treeKind, maxShapesPerLeaf, rgSetUp)
+    
     ObjectHandler(
         kind: hkMesh, 
-        brdf: brdf, emittedRadiance: emittedRadiance,
         transformation: transformation,
-        aabb: newAABB root.aabb.getVertices.mapIt(apply(transformation, it)),
-        mesh: (treeKind, maxShapesPerLeaf, root, shapes)
+        aabb: newAABB tree.root.aabb.getVertices.mapIt(apply(transformation, it)),
+        mesh: tree
     )

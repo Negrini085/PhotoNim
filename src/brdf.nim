@@ -37,25 +37,25 @@ proc newCookTorranceBRDF*(diffuseCoeff: float32 = 0.3, specularCoeff: float32 = 
     )
 
 
-proc BeckmannDistribution(normal, midDir: Vec3f, roughness: float32): float32 =
+proc BeckmannDistribution(normal, midDir: Vec3, roughness: float32): float32 =
     let (roughness2, cos2) = (pow(roughness, 2), pow(dot(normal, midDir), 2))
     exp((cos2 - 1) / (roughness2 * cos2)) / (PI * roughness2 * pow(cos2, 2))
     
 
-proc GGXDistribution(normal, midDir: Vec3f, roughness: float32): float32 =
+proc GGXDistribution(normal, midDir: Vec3, roughness: float32): float32 =
     let roughness2 = pow(roughness, 2)
     return roughness2 / (PI * pow(pow(dot(normal, midDir), 2) * (roughness2 - 1) + 1, 2))
     
 
-proc FresnelSchlick(normal, midDir: Vec3f, refractionIndex: float32): float32 = 
+proc FresnelSchlick(normal, midDir: Vec3, refractionIndex: float32): float32 = 
     let F0 = pow((refractionIndex - 1) / (refractionIndex + 1), 2)
     return F0 + (1 - F0) * pow(1.0 - dot(normal, midDir), 5.0)
 
-proc GeometricAttenuation(normal, inDir, outDir, midDir: Vec3f): float32 {.inline.} =
+proc GeometricAttenuation(normal, inDir, outDir, midDir: Vec3): float32 {.inline.} =
     min(1, 2 * dot(normal, midDir) * min(dot(normal, inDir), dot(normal, outDir)) / dot(inDir, midDir))
 
 
-proc eval*(brdf: BRDF; normal, inDir, outDir: Vec3f): float32 {.inline.} =
+proc eval*(brdf: BRDF; normal, inDir, outDir: Vec3): float32 {.inline.} =
     case brdf.kind: 
     of DiffuseBRDF: return brdf.reflectance # / PI
 
@@ -74,7 +74,7 @@ proc eval*(brdf: BRDF; normal, inDir, outDir: Vec3f): float32 {.inline.} =
         return brdf.diffuseCoeff / PI + 0.25 * brdf.specularCoeff * D * F * G / (dot(normal, inDir) * dot(normal, outDir))
 
 
-proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec3f =
+proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3, rg: var PCG): Vec3 =
     case brdf.kind
     of DiffuseBRDF:
         let 
@@ -84,7 +84,7 @@ proc scatterDir*(brdf: BRDF, hitNormal: Normal, hitDir: Vec3f, rg: var PCG): Vec
         
         return cos * cos(phi) * base[0] + cos * sin(phi) * base[1] + sqrt(1 - cos2) * base[2]
 
-    of SpecularBRDF: return hitDir - 2 * dot(hitNormal.Vec3f, hitDir) * hitNormal.Vec3f
+    of SpecularBRDF: return hitDir - 2 * dot(hitNormal.Vec3, hitDir) * hitNormal.Vec3
 
     of CookTorranceBRDF:
         let

@@ -8,10 +8,10 @@ from std/osproc import execCmd
 let 
     nSamples: int = 1
     aaSamples: int = 1
-    nRays: int = 1
-    depthLimit: int = 1
-    rrLimit: int = 1
-    rgSetUp = newRandomSetUp(67, 4)
+    nRays: int = 3
+    depthLimit: int = 3
+    rrLimit: int = 5
+    rgSetUp = newRandomSetUp(7, 4)
     outFile = "assets/images/examples/meshes/airplane.png"
 
 var 

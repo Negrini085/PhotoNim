@@ -9,8 +9,8 @@ suite "Ray":
 
     setup:
         var 
-            ray1 = newRay(newPoint3D(1, 2, 3), newVec3f(1, 0, 0))
-            ray2 = newRay(newPoint3D(1, 2, 0), newVec3f(1, 0, 0))
+            ray1 = newRay(newPoint3D(1, 2, 3), newVec3(1, 0, 0))
+            ray2 = newRay(newPoint3D(1, 2, 0), newVec3(1, 0, 0))
     
     teardown:
         discard ray1
@@ -59,16 +59,16 @@ suite "Ray":
     test "transform proc":
         # Checking transform proc, which transform ray in a specific frame of reference
         var 
-            T1 = newTranslation(newVec3f(1, 2, 3))
+            T1 = newTranslation(newVec3(1, 2, 3))
             T2 = newRotation(180.0, axisY)
 
         # First ray
-        check areClose(ray1.transform(T1), newRay(newPoint3D(2, 4, 6), newVec3f(1, 0, 0)))
-        check areClose(ray1.transform(T2), newRay(newPoint3D(-1, 2, -3), newVec3f(-1, 0, 0)), 1e-6)
+        check areClose(ray1.transform(T1), newRay(newPoint3D(2, 4, 6), newVec3(1, 0, 0)))
+        check areClose(ray1.transform(T2), newRay(newPoint3D(-1, 2, -3), newVec3(-1, 0, 0)), 1e-6)
 
         # Second ray
-        check areClose(ray2.transform(T1), newRay(newPoint3D(2, 4, 3), newVec3f(1, 0, 0)))
-        check areClose(ray2.transform(T2), newRay(newPoint3D(-1, 2, 0), newVec3f(-1, 0, 0)), 1e-6)
+        check areClose(ray2.transform(T1), newRay(newPoint3D(2, 4, 3), newVec3(1, 0, 0)))
+        check areClose(ray2.transform(T2), newRay(newPoint3D(-1, 2, 0), newVec3(-1, 0, 0)), 1e-6)
 
 
 
@@ -78,12 +78,12 @@ suite "Camera":
         var 
             oCam = newOrthogonalCamera(
                 newFlatRenderer(),
-                viewport = (12, 10), newTranslation(newVec3f(-4, 0, 0))
+                viewport = (12, 10), newTranslation(newVec3(-4, 0, 0))
             )
             pCam = newPerspectiveCamera(
                 newFlatRenderer(),
                 viewport = (12, 10), distance = 5, 
-                newComposition(newRotation(45, axisX), newTranslation(newVec3f(-1, 0, 0)))
+                newComposition(newRotation(45, axisX), newTranslation(newVec3(-1, 0, 0)))
             )
 
     teardown:
@@ -102,7 +102,7 @@ suite "Camera":
         check areClose(oCam.aspect_ratio, 1.2)
 
         check ocam.transformation.kind == tkTranslation 
-        check areClose(ocam.transformation.offset, newVec3f(-4, 0, 0)) 
+        check areClose(ocam.transformation.offset, newVec3(-4, 0, 0)) 
     
 
         # Perspective Camera
@@ -118,14 +118,14 @@ suite "Camera":
         check areClose(pcam.transformation.transformations[0].cos, newRotation(45, axisX).cos) 
         check areClose(pcam.transformation.transformations[0].sin, newRotation(45, axisX).sin) 
         check pcam.transformation.transformations[1].kind == tkTranslation 
-        check areClose(pcam.transformation.transformations[1].offset, newVec3f(-1, 0, 0)) 
+        check areClose(pcam.transformation.transformations[1].offset, newVec3(-1, 0, 0)) 
 
 
     
 
     test "Orthogonal fireRay proc":
         # Checkin Orthogonal fireRay proc
-        let trans = newTranslation(newVec3f(-4, 0, 0))
+        let trans = newTranslation(newVec3(-4, 0, 0))
         var 
             ray1 = oCam.fireRay(newPoint2D(0, 0))
             ray2 = oCam.fireRay(newPoint2D(1, 0))
@@ -151,7 +151,7 @@ suite "Camera":
     
 
     test "Perspective fireRay proc":
-        let trans = newComposition(newRotation(45, axisX), newTranslation(newVec3f(-1, 0, 0)))
+        let trans = newComposition(newRotation(45, axisX), newTranslation(newVec3(-1, 0, 0)))
         var 
             ray1 = pCam.fireRay(newPoint2D(0, 0))
             ray2 = pCam.fireRay(newPoint2D(1, 0))
@@ -164,10 +164,10 @@ suite "Camera":
         check areClose(ray1.origin, ray4.origin)
         
         # Checking directions
-        check areClose(ray1.dir, apply(trans, newVec3f(5,  1.2, -1)), eps =1e-6)
-        check areClose(ray2.dir, apply(trans, newVec3f(5, -1.2, -1)), eps =1e-6)
-        check areClose(ray3.dir, apply(trans, newVec3f(5,  1.2,  1)), eps =1e-6)
-        check areClose(ray4.dir, apply(trans, newVec3f(5, -1.2,  1)), eps =1e-6)
+        check areClose(ray1.dir, apply(trans, newVec3(5,  1.2, -1)), eps =1e-6)
+        check areClose(ray2.dir, apply(trans, newVec3(5, -1.2, -1)), eps =1e-6)
+        check areClose(ray3.dir, apply(trans, newVec3(5,  1.2,  1)), eps =1e-6)
+        check areClose(ray4.dir, apply(trans, newVec3(5, -1.2,  1)), eps =1e-6)
 
         # Testing arrive point
         check areClose(ray1.at(1.0), apply(trans, newPoint3D(0, 1.2, -1)))

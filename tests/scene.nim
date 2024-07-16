@@ -50,8 +50,8 @@ suite "AABB":
         # Checking getCentroid proc, needed in order to 
         # divide aabb into clusters
 
-        check areClose(aabb1.getCentroid(), newVec3f(0.5, 0.5, 4))
-        check areClose(aabb2.getCentroid(), newVec3f(2.5, 2.5, 2.5))
+        check areClose(aabb1.getCentroid(), newVec3(0.5, 0.5, 4))
+        check areClose(aabb2.getCentroid(), newVec3(2.5, 2.5, 2.5))
 
 
     test "getVertices proc":
@@ -99,7 +99,7 @@ suite "Scene":
 
             tri2 = newTriangle(
                 [newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0)], 
-                brdf = newDiffuseBRDF(newUniformPigment(WHITE)), transformation = newTranslation(newVec3f(1, 1, -2))
+                brdf = newDiffuseBRDF(newUniformPigment(WHITE)), transformation = newTranslation(newVec3(1, 1, -2))
                 )
 
             sc1 = newScene(BLACK, @[tri1, tri2], tkBinary, 1, rs)

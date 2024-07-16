@@ -12,11 +12,11 @@ let
     filename = "assets/images/examples/cylinder"
 
 var 
-    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3f(-2, 0, 0)))
+    cam = newPerspectiveCamera(width / height, 1.0, newTranslation(newVec3(-2, 0, 0)))
     tracer = newImageTracer(width, height, cam, samplesPerSide = 2)
     scenery = newWorld()
 
-scenery.shapes.add newCylinder(transform = newTranslation(newVec3f(0.0, 0.0, 1.5)))
+scenery.shapes.add newCylinder(transform = newTranslation(newVec3(0.0, 0.0, 1.5)))
 scenery.shapes.add newUnitarySphere(newPoint3D(0.0, 0.0, 0.0))
 
 tracer.fireAllRays(scenery, proc(ray: Ray): Color = newColor(1.0, 0.0, 1.0))
