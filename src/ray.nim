@@ -4,10 +4,9 @@ from std/fenv import epsilon
 from std/math import pow, sqrt, arctan2, PI
 
 
-type Ray* = ref object
+type Ray* = object
     origin*: Point3D
     dir*: Vec3
-    tSpan*: Interval[float32]
     depth*: int
 
 
@@ -27,7 +26,7 @@ proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
         Ray(
             origin: apply(transformation, ray.origin), 
             dir: ray.dir, 
-            tSpan: ray.tSpan, depth: ray.depth
+            depth: ray.depth
         )
     else: 
         Ray(
