@@ -66,14 +66,15 @@ task examples, "Run the `PhotoNim` examples":
 
 task test, "Run the `PhotoNim` tests":
   withDir "tests":   
-    exec "nim c -d:release --hints:off -r geometry.nim"    
+    exec "nim c -d:release --hints:off -r pcg.nim"
+    exec "nim c -d:release --hints:off -r geometry.nim" 
     exec "nim c -d:release --hints:off -r hdrimage.nim"    
-    exec "nim c -d:release --hints:off -r camera.nim"
     exec "nim c -d:release --hints:off -r scene.nim"
     exec "nim c -d:release --hints:off -r shape.nim"
     exec "nim c -d:release --hints:off -r csg.nim"
-    exec "nim c -d:release --hints:off -r pcg.nim"
+    exec "nim c -d:release --hints:off -r ray.nim"
+    exec "nim c -d:release --hints:off -r hitrecord.nim"
     exec "nim c -d:release --hints:off -r brdf.nim"
     exec "nim c -d:release --hints:off -r pigment.nim"
-    exec "nim c -d:release --hints:off -r hitrecord.nim"
+    exec "nim c -d:release --hints:off -r camera.nim"
     exec "rm geometry hdrimage camera scene shape csg pcg brdf pigment hitrecord"
