@@ -203,7 +203,7 @@ suite "Renderer":
 
         let
             sph = newSphere(ORIGIN3D, 0.2,
-                newDIffuseBRDF(newUniformPigment(WHITE))
+                newDiffuseBRDF(newUniformPigment(WHITE))
             )
 
             scene = newScene(BLACK, @[sph], tkBinary, 1, newRandomSetUp(pcg.random, pcg.random))
@@ -220,6 +220,39 @@ suite "Renderer":
     
         check areClose(image.getPixel(0, 1), BLACK)
         check areClose(image.getPixel(1, 1), WHITE)
+        check areClose(image.getPixel(1, 2), BLACK)
+
+        check areClose(image.getPixel(0, 2), BLACK)
+        check areClose(image.getPixel(1, 2), BLACK)
+        check areClose(image.getPixel(2, 2), BLACK)
+
+
+    test "FlatRenderer test":
+        # Here we want to check if the FlatRenderer algorithm we
+        # implemented is actually working or not 
+
+        var pcg = newPCG(rs)
+
+        let
+            sph = newSphere(ORIGIN3D, 0.2,
+                newDiffuseBRDF(newUniformPigment(newColor(0.2, 0.3, 0.5))),
+                newUniformPigment(newColor(0.2, 0.3, 0.5)) 
+            )
+
+            scene = newScene(BLACK, @[sph], tkBinary, 1, newRandomSetUp(pcg.random, pcg.random))
+        
+        rend = newFlatRenderer()
+        camera.renderer = rend
+        camera.viewport = (3, 3)
+
+        let image = camera.sample(scene, newRandomSetUp(pcg.random, pcg.random))
+
+        check areClose(image.getPixel(0, 0), BLACK)
+        check areClose(image.getPixel(1, 0), BLACK)
+        check areClose(image.getPixel(2, 0), BLACK)
+    
+        check areClose(image.getPixel(0, 1), BLACK)
+        check areClose(image.getPixel(1, 1), newColor(0.2, 0.3, 0.5))
         check areClose(image.getPixel(1, 2), BLACK)
 
         check areClose(image.getPixel(0, 2), BLACK)
