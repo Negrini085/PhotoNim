@@ -36,19 +36,19 @@ suite "HitPayload":
         discard hitInfoHandler
 
 
-    test "getIntersection proc":
-        # Checking getIntersection procedure, to compute hit time
+    test "getBoxHit proc":
+        # Checking getBoxHit procedure, to compute hit time
         # with aabb in world frame reference system
 
         let
             aabb1 = (newPoint3D(-1,-3,-2), newPoint3D( 1, 5, 2))
             aabb2 = (newPoint3D(-2,-1,-2), newPoint3D( 1, 3, 0))
 
-        check areClose(aabb1.getIntersection(ray1), 1)
-        check areClose(aabb2.getIntersection(ray1), 1)
+        check areClose(ray1.getBoxHit(aabb1), 1)
+        check areClose(ray1.getBoxHit(aabb2), 1)
 
-        check areClose(aabb1.getIntersection(ray2), 1)
-        check areClose(aabb2.getIntersection(ray2), 3)
+        check areClose(ray2.getBoxHit(aabb1), 1)
+        check areClose(ray2.getBoxHit(aabb2), 3)
 
 
     test "newHitInfo (ObjectHandler) proc":
@@ -56,7 +56,7 @@ suite "HitPayload":
 
         check hitInfoHandler.hit.kind == hkShape
         check hitInfoHandler.hit.transformation.kind == tkTranslation
-        check areClose(hitInfoHandler.hit.transformation.offset, newVec3f(1, 2, 3))
+        check areClose(hitInfoHandler.hit.transformation.offset, newVec3(1, 2, 3))
         check areClose(hitInfoHandler.hit.aabb.min, newPoint3D(-2,-1, 0))
         check areClose(hitInfoHandler.hit.aabb.max, newPoint3D( 4, 5, 6))
 
@@ -81,7 +81,7 @@ suite "HitPayload":
         # Checking HitPayload.info
         check hitPayload.info.hit.kind == hkShape
         check hitPayload.info.hit.transformation.kind == tkTranslation
-        check areClose(hitPayload.info.hit.transformation.offset, newVec3f(1, 2, 3))
+        check areClose(hitPayload.info.hit.transformation.offset, newVec3(1, 2, 3))
         check areClose(hitPayload.info.hit.aabb.min, newPoint3D(-2,-1, 0))
         check areClose(hitPayload.info.hit.aabb.max, newPoint3D( 4, 5, 6))
 
@@ -98,11 +98,11 @@ suite "HitPayload":
 
 
 
-#--------------------------------------#
-#     LocalIntersection test suite     #
-#--------------------------------------#
-suite "LocalIntersection":
-    # LocalIntersection test suite, here we want to make sure that
+#-----------------------------#
+#     ShapeHit test suite     #
+#-----------------------------#
+suite "ShapeHit":
+    # ShapeHit test suite, here we want to make sure that
     # everything is good in intersection evaluation between a ray and a shape
 
     setup:
@@ -114,7 +114,7 @@ suite "LocalIntersection":
 
 
     test "Sphere":
-        # Checking getLocalIntersection for a ray-sphere intersection.
+        # Checking getShapeHit for a ray-sphere intersection.
         # Here we need to assure that time computation is indeed correct.
         
         let 
@@ -134,13 +134,13 @@ suite "LocalIntersection":
 
         
         # Unitary sphere
-        t = usphere.shape.getLocalIntersection(ray1.transform(usphere.transformation.inverse))
+        t = ray1.transform(usphere.transformation.inverse).getShapeHit(usphere.shape)
         check areClose(t, 1)
 
-        t = usphere.shape.getLocalIntersection(ray2.transform(usphere.transformation.inverse))
+        t = ray2.transform(usphere.transformation.inverse).getShapeHit(usphere.shape)
         check areClose(t, 2)
 
-        t = usphere.shape.getLocalIntersection(ray3.transform(usphere.transformation.inverse))
+        t = ray3.transform(usphere.transformation.inverse).getShapeHit(usphere.shape)
         check areClose(t, 1)    
 
         # Generic sphere
@@ -148,40 +148,40 @@ suite "LocalIntersection":
         ray2.origin = newPoint3D(4, 1, 0)
         ray3.origin = newPoint3D(1, 1, 0)
 
-        t = sphere.shape.getLocalIntersection(ray1.transform(sphere.transformation.inverse))
+        t = ray1.transform(sphere.transformation.inverse).getShapeHit(sphere.shape)
         check areClose(t, 2)
 
-        t = sphere.shape.getLocalIntersection(ray2.transform(sphere.transformation.inverse))
+        t = ray2.transform(sphere.transformation.inverse).getShapeHit(sphere.shape)
         check areClose(t, 1)
 
-        t = sphere.shape.getLocalIntersection(ray3.transform(sphere.transformation.inverse))
+        t = ray3.transform(sphere.transformation.inverse).getShapeHit(sphere.shape)
         check areClose(t, 2)    
 
 
     test "Plane":
-        # Checking getLocalIntersection for a ray-plane intersection.
+        # Checking getShapeHit for a ray-plane intersection.
         # Here we need to assure that time computation is indeed correct.
 
         let plane = newPlane(newDiffuseBRDF(newUniformPigment(WHITE)))
 
         var
             ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
-            ray2 = newRay(newPoint3D(1,-2,-3), newVec3f(0, 4/5, 3/5))
+            ray2 = newRay(newPoint3D(1,-2,-3), newVec3(0.0, 4/5, 3/5))
             ray3 = newRay(newPoint3D(3, 0, 0), -eX)
 
         
-        t = plane.shape.getLocalIntersection(ray1.transform(plane.transformation.inverse))
+        t = ray1.transform(plane.transformation.inverse).getShapeHit(plane.shape)
         check areClose(t, 2)
 
-        t = plane.shape.getLocalIntersection(ray2.transform(plane.transformation.inverse))
+        t = ray2.transform(plane.transformation.inverse).getShapeHit(plane.shape)
         check areClose(t, 5)
 
-        t = plane.shape.getLocalIntersection(ray3.transform(plane.transformation.inverse))
+        t = ray3.transform(plane.transformation.inverse).getShapeHit(plane.shape)
         check t == Inf
 
 
     test "Box":
-        # Checking getLocalIntersection for a ray-box intersection.
+        # Checking getShapeHit for a ray-box intersection.
         # Here we need to assure that time computation is indeed correct.
 
         let box = newBox(
@@ -192,21 +192,21 @@ suite "LocalIntersection":
         var
             ray1 = newRay(newPoint3D(-5, 1, 2), eX)
             ray2 = newRay(newPoint3D(1, -2, 3), eY)
-            ray3 = newRay(newPoint3D(4, 1, 0), newVec3f(-1, 0, 0))
+            ray3 = newRay(newPoint3D(4, 1, 0), newVec3(-1, 0, 0))
 
           
-        t = box.shape.getLocalIntersection(ray1.transform(box.transformation.inverse))
+        t = ray1.transform(box.transformation.inverse).getShapeHit(box.shape)
         check areClose(t, 4)
 
-        t = box.shape.getLocalIntersection(ray2.transform(box.transformation.inverse))
+        t = ray2.transform(box.transformation.inverse).getShapeHit(box.shape)
         check areClose(t, 2)
 
-        t = box.shape.getLocalIntersection(ray3.transform(box.transformation.inverse)) 
+        t = ray3.transform(box.transformation.inverse).getShapeHit(box.shape) 
         check t == Inf
 
 
     test "Triangle":
-        # Checking getLocalIntersection for a ray-triangle intersection.
+        # Checking getShapeHit for a ray-triangle intersection.
         # Here we need to assure that time computation is indeed correct.
 
         let triangle = newTriangle(
@@ -218,15 +218,15 @@ suite "LocalIntersection":
             ray1 = newRay(newPoint3D(0, 1, -2), eZ)
             ray2 = newRay(newPoint3D(0, 1, -2), eX)
 
-        t = triangle.shape.getLocalIntersection(ray1.transform(triangle.transformation.inverse))
+        t = ray1.transform(triangle.transformation.inverse).getShapeHit(triangle.shape)
         check areClose(t, 2)
 
-        t = triangle.shape.getLocalIntersection(ray2.transform(triangle.transformation.inverse))
+        t = ray2.transform(triangle.transformation.inverse).getShapeHit(triangle.shape)
         check t == Inf
 
 
     test "Cylinder":
-        # Checking getLocalIntersection for a ray-cylinder intersection.
+        # Checking getShapeHit for a ray-cylinder intersection.
         # Here we need to assure that time computation is indeed correct.
 
         let cylinder = newCylinder(
@@ -240,21 +240,21 @@ suite "LocalIntersection":
             ray3 = newRay(newPoint3D(0, 0, -4), eZ)
             ray4 = newRay(newPoint3D(2, 3, 1), eY)
 
-        t = cylinder.shape.getLocalIntersection(ray1.transform(cylinder.transformation.inverse))
+        t = ray1.transform(cylinder.transformation.inverse).getShapeHit(cylinder.shape)
         check areClose(t, 2)
 
-        t = cylinder.shape.getLocalIntersection(ray2.transform(cylinder.transformation.inverse))
+        t = ray2.transform(cylinder.transformation.inverse).getShapeHit(cylinder.shape)
         check areClose(t, 2)
         
-        t = cylinder.shape.getLocalIntersection(ray3.transform(cylinder.transformation.inverse))
+        t = ray3.transform(cylinder.transformation.inverse).getShapeHit(cylinder.shape)
         # check areClose(t, 2)                   
 
-        t = cylinder.shape.getLocalIntersection(ray4.transform(cylinder.transformation.inverse))
+        t = ray4.transform(cylinder.transformation.inverse).getShapeHit(cylinder.shape)
         check t == Inf
 
 
     test "Ellipsoid":
-        # Checking getLocalIntersection for a ray-ellipsoid intersection.
+        # Checking getShapeHit for a ray-ellipsoid intersection.
         # Here we need to assure that time computation is indeed correct.
         let 
             ell1 = newEllipsoid(1, 2, 3, newDiffuseBRDF(newUniformPigment(WHITE)))
@@ -268,30 +268,30 @@ suite "LocalIntersection":
 
         
         # First ellipsoid
-        t = ell1.shape.getLocalIntersection(ray1)
+        t = ray1.getShapeHit(ell1.shape)
         check areClose(t, 5)
 
-        t = ell1.shape.getLocalIntersection(ray2)
+        t = ray2.getShapeHit(ell1.shape)
         check areClose(t, 3)
 
-        t = ell1.shape.getLocalIntersection(ray3)
+        t = ray3.getShapeHit(ell1.shape)
         check areClose(t, 1)
 
-        t = ell1.shape.getLocalIntersection(ray4)
+        t = ray4.getShapeHit(ell1.shape)
         check t == Inf
 
     
         # Second elipsoid
-        t = ell2.shape.getLocalIntersection(ray1)
+        t = ray1.getShapeHit(ell2.shape)
         check areClose(t, 1)
 
-        t = ell2.shape.getLocalIntersection(ray2)
+        t = ray2.getShapeHit(ell2.shape)
         check areClose(t, 1, eps = 1e-6)
 
-        t = ell2.shape.getLocalIntersection(ray3)
+        t = ray3.getShapeHit(ell2.shape)
         check areClose(t, 3, eps = 1e-6)
 
-        t = ell2.shape.getLocalIntersection(ray4)
+        t = ray4.getShapeHit(ell2.shape)
         check t == Inf
 
 
@@ -559,10 +559,7 @@ suite "Tree traverse":
                     newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1))
                 )
             
-            csgUnion = newCSGUnion(
-                    @[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1),
-                    newDiffuseBRDF(newUniformPigment(newColor(1, 1, 1))), newUniformPigment(newColor(1, 1, 1))
-                )
+            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1))
         
         var
             ray1 = newRay(newPoint3D(1, 2, 2),-eZ)

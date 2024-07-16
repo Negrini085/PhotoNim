@@ -13,13 +13,13 @@ type
         rayDir*: Vec3
 
 
-proc newHitInfo(hit: BVHNode, ray: Ray): HitInfo[BVHNode] {.inline.} = (hit, ray.getBoxHit(hit.aabb))
-proc newHitInfo(hit: ObjectHandler, ray: Ray): HitInfo[ObjectHandler] {.inline.} = (hit, ray.getBoxHit(hit.aabb))
+proc newHitInfo*(hit: BVHNode, ray: Ray): HitInfo[BVHNode] {.inline.} = (hit, ray.getBoxHit(hit.aabb))
+proc newHitInfo*(hit: ObjectHandler, ray: Ray): HitInfo[ObjectHandler] {.inline.} = (hit, ray.getBoxHit(hit.aabb))
 
 proc `<`[T](a, b: HitInfo[T]): bool {.inline.} = a.t < b.t
 
 
-proc newHitPayload(hit: ObjectHandler, ray: Ray, t: float32): HitPayload {.inline.} =
+proc newHitPayload*(hit: ObjectHandler, ray: Ray, t: float32): HitPayload {.inline.} =
     HitPayload(info: (hit, t), pt: ray.at(t), rayDir: ray.dir)
 
 proc splitted[T](inSeq: seq[T], condition: proc(t: T): bool): (seq[T], seq[T]) =
