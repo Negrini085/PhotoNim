@@ -13,7 +13,7 @@ type
         of pkCheckered: grid*: tuple[c1, c2: Color, nRows, nCols: int]
 
     BRDFKind* = enum DiffuseBRDF, SpecularBRDF
-    BRDF* = ref object
+    BRDF* = object
         pigment*: Pigment
         case kind*: BRDFKind
         of DiffuseBRDF: reflectance*: float32
