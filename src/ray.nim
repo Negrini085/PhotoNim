@@ -5,7 +5,7 @@ from std/math import pow, sqrt, arctan2, PI
 
 
 type Ray* = object
-    ## The `Ray` type is an object that enables us to interact with a `Scene` and its `ObjectHandler`s
+    ## `Ray` is an object that enables us to interact with a `Scene` and its `ObjectHandler`s
     ## in order to extract some information to render the desired `HDRImage` from a specific `Camera`.
     ## 
     ## It is possible to create an instance of `Ray` only in two distinct situations:
@@ -33,18 +33,8 @@ proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
     
     case transformation.kind: 
     of tkIdentity: ray
-    of tkTranslation: 
-        Ray(
-            origin: apply(transformation, ray.origin), 
-            dir: ray.dir, 
-            depth: ray.depth
-        )
-    else: 
-        Ray(
-            origin: apply(transformation, ray.origin), 
-            dir: apply(transformation, ray.dir), 
-            depth: ray.depth
-        )
+    of tkTranslation: Ray(origin: apply(transformation, ray.origin), dir: ray.dir, depth: ray.depth)
+    else: Ray(origin: apply(transformation, ray.origin), dir: apply(transformation, ray.dir), depth: ray.depth)
 
 
 proc getBoxHit*(worldRay: Ray; aabb: AABB): float32 {.inline.} =
@@ -109,7 +99,6 @@ proc getShapeHit*(localInvRay: Ray; shape: Shape): float32 =
 
         let sol = try: solve(mat, vec) except ValueError: return Inf
         if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0 or sol[2] < 1e-5: return Inf
-
         result = sol[2]
 
     of skSphere:
@@ -118,13 +107,8 @@ proc getShapeHit*(localInvRay: Ray; shape: Shape): float32 =
             delta_4 = b * b - a * c
         
         if delta_4 < 0: return Inf
-
-        let (t_l, t_r) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
-
-        result = 
-            if t_l > 1e-5: t_l
-            elif t_r > 1e-5: t_r
-            else: Inf
+        let (tL, tR) = ((-b - sqrt(delta_4)) / a, (-b + sqrt(delta_4)) / a)
+        result = if tL > 1e-5: tL elif tR > 1e-5: tR else: Inf
 
     of skPlane:
         if abs(localInvRay.dir[2]) < epsilon(float32): return Inf

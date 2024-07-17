@@ -1,12 +1,10 @@
-## The `PCG` type represents the state of a Permuted Congruential Generator (PCG), 
-## a family of simple fast space-efficient statistically good algorithms for random number generation.
-
 type 
-    PCG* = tuple[state, incr: uint64]
+    PCG* = tuple[state, incr: uint64] ##\
+    ## The `PCG` type represents the state of a Permuted Congruential Generator (PCG), 
+    ## a family of simple fast space-efficient statistically good algorithms for random number generation.
     
     RandomSetUp* = tuple[inState, inSeq: uint64] ##\
     ## The `RandomSetUp` type is used to initialize a `PCG` generator.
-
 
 
 proc random*(gen: var PCG): uint64 =

@@ -117,7 +117,7 @@ Options:
     elif args["rend"]:
         let fileIn = $args["<sceneFile>"]
         var 
-            pcg = newPCG(newRandomSetup(42, 1))
+            pcg = newPCG((42.uint64, 1.uint64))
             img: HDRImage
             dSc: DefScene
             rLim: int = 3        
@@ -179,7 +179,7 @@ Options:
         dSc.camera.get.renderer = rend
         
         # Actual rendering proc
-        img = dSc.camera.get.sample(scene = newScene(BLACK, dSc.scene, tkBinary, mShapes, newRandomSetup(pcg.random, pcg.random)), newRandomSetup(pcg.random, pcg.random), nSamp)
+        img = dSc.camera.get.sample(scene = newScene(BLACK, dSc.scene, tkBinary, mShapes, newRandomSetup(pcg)), newRandomSetup(pcg), nSamp)
 
         img.savePFM(pfmOut)
         img.savePNG(pngOut, 0.18, 1.0, 0.1)

@@ -5,44 +5,64 @@ from std/sequtils import newSeqWith, toSeq, mapIt, keepItIf
 
 type    
     Scene* = object 
-        bgColor*: Color
-        tree*: BVHTree
+        ## `Scene` is an object that 
+        bgColor*: Color ## Color of the background.
+        tree*: BVHTree ## The BVH tree. 
 
 
     TreeKind* = enum 
         tkBinary = 2, tkTernary = 3, tkQuaternary = 4, tkOctonary = 8
 
     BVHTree* = object 
-        kind*: TreeKind 
-        mspl*: int 
-        root*: BVHNode 
-        handlers*: seq[ObjectHandler]
+        ## `BVHTree` is an object that represents the Bounding Volume Hierarchy as a tree
+
+        kind*: TreeKind ## The capacity of a branch `BVHNode`.
+        mspl*: int ## The capacity of a leaf `BVHNode`.
+        root*: BVHNode ## The root `BVHNode`.
+        handlers*: seq[ObjectHandler] ## The `ObjectHandler`s contained in the tree.
 
 
     NodeKind* = enum nkBranch, nkLeaf
     BVHNode* = ref object
-        aabb*: AABB
+        ## `BVHNode` is a ref object that
+
+        aabb*: AABB ## `AABB` expressed in the `BVHTree` reference system.
         
         case kind*: NodeKind
-        of nkBranch: children*: seq[BVHNode]
-        of nkLeaf: indexes*: seq[int]
+        of nkBranch: children*: seq[BVHNode] ## `BVHNode` children of the branch. 
+        of nkLeaf: indexes*: seq[int] ## Indexes of the `ObjectHandler`s inside `BVHTree`.
 
 
     HandlerKind* = enum hkShape, hkMesh, hkCSG
     ObjectHandler* = ref object
-        aabb*: AABB 
-        transformation*: Transformation
+        ## `ObjectHandler` is a ref object that enable us to place a local figure, or more, into some other reference system based on the `Transformation` range.
+        ## Every `ObjectHandler` stores information about its bounding box, in order to facilitate the procedure of building and traversing the `BVHTree`,
+        ## but only the kind `hkShape` stores also an information about the `Material`: this is due to the fact that at base of any intersection with an `ObjectHandler`
+        ## there is a local intersection between the `Shape` and the inverted `Ray`. 
+        
+        aabb*: AABB ## `AABB` expressed in the `BVHTree` reference system.
+        transformation*: Transformation ## Map from local to `BVHTree` reference system.
 
         case kind*: HandlerKind
         of hkShape: 
             shape*: Shape 
-            material*: Material
+            material*: Material ## The `material` of the shape.
 
-        of hkMesh: mesh*: BVHTree
-        of hkCSG: csg*: CSG
+        of hkMesh: 
+            mesh*: BVHTree ## A mesh as a local `BVHTree`.
+
+        of hkCSG: 
+            csg*: CSG ## A CSG local type.
+    
     
     ShapeKind* = enum skPlane, skSphere, skAABox, skTriangle, skCylinder, skEllipsoid
     Shape* = object
+        ## `Shape` is an object that represents the most basic surfaces in 3D space and 
+        ## it is the building block on which the intersection between a `Ray` and an `ObjectHandler` of any kind is based.
+        ## In a `Scene` filled with `ObjectHandler` of any kind, all the `ObjectHandler` hit by a `Ray` are of kind `hkShape`: 
+        ## in fact, to intersect an handler of kinds `hkMesh` or `hkCSG` we progressively advance with the search in their relative structure,
+        ## which, at least at the very base, is build upon an `ObjectHandler` of kind `hkShape`.
+
         case kind*: ShapeKind 
         of skPlane: discard
         of skSphere: radius*: float32
@@ -121,6 +141,20 @@ proc kMeans(data: seq[Point3D], k: int, rg: var PCG): seq[int] =
 
 
 proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): BVHNode =
+    ## Creates a new BVHNode for organizing a sequence of `ObjectHandler`s.
+    ##
+    ## Parameters:
+    ## - `handlers`: `seq[tuple[key: int, val: ObjectHandler]]` -> A sequence of tuples containing indices and `ObjectHandler`s to be organized.
+    ## - `kClusters`: `int` -> The number of clusters to use for splitting the handlers.
+    ## - `maxShapesPerLeaf`: `int` -> The maximum number of shapes allowed in a leaf node.
+    ## - `rgSetUp`: `RandomSetUp` -> Random setup parameters for initializing the node creation.
+    ##
+    ## Returns:
+    ## - `BVHNode`: 
+    ##      a `BVHNode` of kind `nkLeaf` is returned if the lenght of the `handlers` sequence is less than the `maxShapesPerLeaf`,
+    ##      otherwise a `BVHNode` of kind `nkBranch`.
+    ##      If the sequence is empty then a `nil` reference is returned. 
+
     if handlers.len == 0: return nil
 
     let handlersAABBs = handlers.mapIt(it.val.aabb)
@@ -151,6 +185,14 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
 
 
 proc newBVHTree*(handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): BVHTree {.inline.} =
+    ## Creates a new Bounding Volume Hierarchy (BVH) Tree for organizing `ObjectHandler`s inside a `Scene`.
+    ##
+    ## Parameters:
+    ## - `handlers`: `seq[ObjectHandler]` -> A sequence of `ObjectHandler`s to be organized in the BVH tree.
+    ## - `treeKind`: `TreeKind` -> The type of tree structure (binary, ternary, quaternary, or octonary).
+    ## - `maxShapesPerLeaf`: `int` -> The maximum number of shapes allowed in a leaf node.
+    ## - `rgSetUp`: `RandomSetUp` -> Random setup parameters for initializing the BVH tree using kmeans clustering.
+
     BVHTree(
         kind: treeKind, 
         mspl: maxShapesPerLeaf, 
@@ -158,6 +200,20 @@ proc newBVHTree*(handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerL
         handlers: handlers
     )
 
+
 proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): Scene {.inline.} =
-    assert handlers.len > 0, "Error! Cannot create a Scene from an empty sequence of ObjectHandlers."
+    ## Creates a new `Scene` object with a specified background color, a sequence of `ObjectHandler`s, 
+    ## and a BVH tree for efficient spatial organization.
+    ##
+    ## Parameters:
+    ## - `bgColor`: `Color` -> The color of the scene's background.
+    ## - `handlers`: `seq[ObjectHandler]` -> A sequence of `ObjectHandler`s to be included in the scene.
+    ## - `treeKind`: `TreeKind` -> The type of tree structure (binary, ternary, quaternary, or octonary).
+    ## - `maxShapesPerLeaf`: `int` -> The maximum number of shapes allowed in a leaf node of the BVH tree.
+    ## - `rgSetUp`: `RandomSetUp` -> Random setup parameters for initializing the BVH tree.
+    ##
+    ## Raises:
+    ## - `AssertionError` if the `handlers` sequence is empty.
+
+    doAssert handlers.len > 0, "Error! Cannot create a Scene from an empty sequence of ObjectHandlers."
     Scene(bgColor: bgColor, tree: newBVHTree(handlers, treeKind, maxShapesPerLeaf, rgSetUp))
