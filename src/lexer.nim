@@ -47,17 +47,18 @@ type KeywordKind* = enum
     AABOX = 14,
     TRIANGLE = 15,
     CYLINDER = 16,
-    TRIANGULARMESH = 17, 
-    MATERIAL = 18,
-    DIFFUSE = 19,
-    SPECULAR = 20,
-    UNIFORM = 21,
-    CHECKERED = 22,
-    TEXTURE = 23,
-    FLOAT = 24,
-    IMAGE = 25,
-    BOX = 26,
-    CSGUNION = 27
+    ELLIPSOID = 17,
+    TRIANGULARMESH = 18, 
+    MATERIAL = 19,
+    DIFFUSE = 20,
+    SPECULAR = 21,
+    UNIFORM = 22,
+    CHECKERED = 23,
+    TEXTURE = 24,
+    FLOAT = 25,
+    IMAGE = 26,
+    BOX = 27,
+    CSGUNION = 28
 
 
 const KEYWORDS* = {
@@ -77,6 +78,7 @@ const KEYWORDS* = {
     "aabox": KeywordKind.AABOX,
     "triangle": KeywordKind.TRIANGLE,
     "cylinder": KeywordKind.CYLINDER,
+    "ellipsoid": KeywordKind.ELLIPSOID,
     "triangularMesh": KeywordKind.TRIANGULARMESH,
     "material": KeywordKind.MATERIAL,
     "diffuse": KeywordKind.DIFFUSE,
