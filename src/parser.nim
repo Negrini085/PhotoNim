@@ -576,6 +576,27 @@ proc parseHandlerSeq*(filename: string): seq[ObjectHandler] =
     # We get here only when file ends
     return dSc.scene
 
+
+proc parseCSGUnionSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
+    # Procedure to parse CSGUnion shape handler
+    var 
+        trans: Transformation
+        handlers: seq[ObjectHandler]
+        fname: string
+
+    # Parsing CSGUnion variables
+    inStr.expectSymbol('(')
+    fname = inStr.expectString()
+    handlers = parseHandlerSeq(fname)
+    inStr.expectSymbol(',')
+
+    # Parsing transformation
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    return newCSGUnion(handlers, tkBinary, 10, (42.uint64, 2.uint64), trans)
+
+
 proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse mesh shape handler
     var 
@@ -712,9 +733,9 @@ proc parseDefScene*(inStr: var InputStream): DefScene =
         elif tryTok.keyword == KeywordKind.TRIANGULARMESH:
             dSc.scene.add(inStr.parseMeshSH(dSc))
 
-#        # What if we have a csgunion?
-#        elif tryTok.keyword == KeywordKind.CSGUNION:
-#            dSc.scene.add(inStr.parseCSGUnionSH(dSc))
+        # What if we have a csgunion?
+        elif tryTok.keyword == KeywordKind.CSGUNION:
+            dSc.scene.add(inStr.parseCSGUnionSH(dSc))
         
         # What if we have a camera
         elif tryTok.keyword == KeywordKind.CAMERA:
