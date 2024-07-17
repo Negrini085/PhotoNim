@@ -77,4 +77,6 @@ task test, "Run the `PhotoNim` tests":
     exec "nim c -d:release --hints:off -r hitrecord.nim"
     exec "nim c -d:release --hints:off -r renderer.nim"
     exec "nim c -d:release --hints:off -r camera.nim"
-    exec "rm pcg geometry color hdrimage scene shape csg ray hitrecord renderer camera"
+    exec "nim c -d:release --hints:off -r lexer.nim"
+    exec "nim c -d:release --hints:off -r parser.nim"
+    exec "rm pcg geometry color hdrimage scene shape csg ray hitrecord renderer camera lexer parser"
