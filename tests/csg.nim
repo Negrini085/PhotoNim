@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[csg, scene, shape, geometry, color, pcg, material]
+import ../src/[csg, scene, shape, geometry, color, material]
 
 #---------------------------------#
 #       CSGUnion test suite       #
@@ -16,7 +16,7 @@ suite "CSGUnion":
             sh2 = newSphere(newPoint3D(-5, 0, 0), 2, mat2)
             sh3 = newUnitarySphere(newPoint3D(0, 0, 3), mat3)
 
-            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1))
+            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, (42.uint64, 1.uint64))
 
     teardown:
         discard sh1

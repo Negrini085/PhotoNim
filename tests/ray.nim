@@ -10,27 +10,13 @@ suite "Ray":
 
     setup:
         var 
-            ray1 = newRay(newPoint3D(1, 2, 3), newVec3(1, 0, 0))
-            ray2 = newRay(newPoint3D(1, 2, 0), newVec3(1, 0, 0))
+            ray1 = Ray(origin: newPoint3D(1, 2, 3), dir: newVec3(1, 0, 0), depth: 0)
+            ray2 = Ray(origin: newPoint3D(1, 2, 0), dir: newVec3(1, 0, 0), depth: 0)
     
     teardown:
         discard ray1
-        discard ray2
+        discard ray2    
 
-
-    test "newRay proc":
-        #Checking newRay proc
-
-        # First ray check
-        check ray1.depth == 0.int
-        check areClose(ray1.dir, newVec3(1, 0, 0))
-        check areClose(ray1.origin, newPoint3D(1, 2, 3))
-
-        # Second ray check
-        check ray2.depth == 0.int
-        check areClose(ray2.dir, newVec3(1, 0, 0))
-        check areClose(ray2.origin, newPoint3D(1, 2, 0))
-    
 
     test "at proc":
         # Checkin at proc, gives ray position at a certain time
@@ -60,12 +46,12 @@ suite "Ray":
             T2 = newRotation(180.0, axisY)
 
         # First ray
-        check areClose(ray1.transform(T1), newRay(newPoint3D(2, 4, 6), newVec3(1, 0, 0)))
-        check areClose(ray1.transform(T2), newRay(newPoint3D(-1, 2, -3), newVec3(-1, 0, 0)), 1e-6)
+        check areClose(ray1.transform(T1), Ray(origin: newPoint3D( 2, 4, 6), dir: newVec3( 1, 0, 0), depth: 0))
+        check areClose(ray1.transform(T2), Ray(origin: newPoint3D(-1, 2,-3), dir: newVec3(-1, 0, 0), depth: 0), 1e-6)
 
         # Second ray
-        check areClose(ray2.transform(T1), newRay(newPoint3D(2, 4, 3), newVec3(1, 0, 0)))
-        check areClose(ray2.transform(T2), newRay(newPoint3D(-1, 2, 0), newVec3(-1, 0, 0)), 1e-6)
+        check areClose(ray2.transform(T1), Ray(origin: newPoint3D( 2, 4, 3), dir: newVec3( 1, 0, 0), depth: 0))
+        check areClose(ray2.transform(T2), Ray(origin: newPoint3D(-1, 2, 0), dir: newVec3(-1, 0, 0), depth: 0), 1e-6)
 
 
     test "getBoxHit proc":
@@ -75,8 +61,8 @@ suite "Ray":
             aabb1 = (newPoint3D(-1,-3,-2), newPoint3D( 1, 5, 2))
             aabb2 = (newPoint3D(-2,-1,-2), newPoint3D( 1, 3, 0))
 
-        ray1 = newRay(ORIGIN3D, eX)
-        ray2 = newRay(newPoint3D(0,-4,-1), eY)
+        ray1 = Ray(origin: ORIGIN3D, dir: eX, depth: 0)
+        ray2 = Ray(origin: newPoint3D(0,-4,-1), dir: eY, depth: 0)
 
         check areClose(ray1.getBoxHit(aabb1), 1)
         check areClose(ray1.getBoxHit(aabb2), 1)
@@ -112,9 +98,9 @@ suite "ShapeHit":
             sphere = newSphere(newPoint3D(0, 1, 0), 3.0, mat)
 
         var
-            ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
-            ray2 = newRay(newPoint3D(3, 0, 0), -eX)
-            ray3 = newRay(ORIGIN3D, eX)
+            ray1 = Ray(origin: newPoint3D(0, 0, 2), dir: -eZ, depth: 0)
+            ray2 = Ray(origin: newPoint3D(3, 0, 0), dir: -eX, depth: 0)
+            ray3 = Ray(origin: ORIGIN3D, dir: eX, depth: 0)
 
         
         # Unitary sphere
@@ -151,9 +137,9 @@ suite "ShapeHit":
             plane = newPlane(mat)
 
         var
-            ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
-            ray2 = newRay(newPoint3D(1,-2,-3), newVec3(0.0, 4/5, 3/5))
-            ray3 = newRay(newPoint3D(3, 0, 0), -eX)
+            ray1 = Ray(origin: newPoint3D(0, 0, 2), dir: -eZ, depth: 0)
+            ray2 = Ray(origin: newPoint3D(1,-2,-3), dir: newVec3(0.0, 4/5, 3/5), depth: 0)
+            ray3 = Ray(origin: newPoint3D(3, 0, 0), dir: -eX, depth: 0)
 
         
         t = ray1.transform(plane.transformation.inverse).getShapeHit(plane.shape)
@@ -175,9 +161,9 @@ suite "ShapeHit":
             box = newBox((newPoint3D(-1, 0, 1), newPoint3D(3, 2, 5)), mat)
 
         var
-            ray1 = newRay(newPoint3D(-5, 1, 2), eX)
-            ray2 = newRay(newPoint3D(1, -2, 3), eY)
-            ray3 = newRay(newPoint3D(4, 1, 0), newVec3(-1, 0, 0))
+            ray1 = Ray(origin: newPoint3D(-5, 1, 2),dir:  eX, depth: 0)
+            ray2 = Ray(origin: newPoint3D( 1,-2, 3),dir:  eY, depth: 0)
+            ray3 = Ray(origin: newPoint3D( 4, 1, 0), dir: newVec3(-1, 0, 0), depth: 0)
 
           
         t = ray1.transform(box.transformation.inverse).getShapeHit(box.shape)
@@ -199,8 +185,8 @@ suite "ShapeHit":
             triangle = newTriangle([newPoint3D(3, 0, 0), newPoint3D(-2, 0, 0), newPoint3D(0.5, 2, 0)], mat)
 
         var
-            ray1 = newRay(newPoint3D(0, 1, -2), eZ)
-            ray2 = newRay(newPoint3D(0, 1, -2), eX)
+            ray1 = Ray(origin: newPoint3D(0, 1, -2), dir: eZ, depth: 0)
+            ray2 = Ray(origin: newPoint3D(0, 1, -2), dir: eX, depth: 0)
 
         t = ray1.transform(triangle.transformation.inverse).getShapeHit(triangle.shape)
         check areClose(t, 2)
@@ -218,10 +204,10 @@ suite "ShapeHit":
             cylinder = newCylinder(2, -2, 2, 2 * PI, mat)
 
         var
-            ray1 = newRay(ORIGIN3D, eX)
-            ray2 = newRay(newPoint3D(4, 0, 0), -eX)
-            ray3 = newRay(newPoint3D(0, 0, -4), eZ)
-            ray4 = newRay(newPoint3D(2, 3, 1), eY)
+            ray1 = Ray(origin: ORIGIN3D, dir: eX, depth: 0)
+            ray2 = Ray(origin: newPoint3D(4, 0, 0), dir: -eX, depth: 0)
+            ray3 = Ray(origin: newPoint3D(0, 0,-4), dir: eZ, depth: 0)
+            ray4 = Ray(origin: newPoint3D(2, 3, 1), dir: eY, depth: 0)
 
         t = ray1.transform(cylinder.transformation.inverse).getShapeHit(cylinder.shape)
         check areClose(t, 2)
@@ -245,10 +231,10 @@ suite "ShapeHit":
             ell2 = newEllipsoid(3, 2, 1, mat)
 
         var
-            ray1 = newRay(newPoint3D(0, 0, 2), -eZ)
-            ray2 = newRay(newPoint3D(4, 0, 0), -eX)
-            ray3 = newRay(ORIGIN3D, eX)
-            ray4 = newRay(newPoint3D(5, 5, 5), eX)
+            ray1 = Ray(origin: newPoint3D(0, 0, 2), dir: -eZ, depth: 0)
+            ray2 = Ray(origin: newPoint3D(4, 0, 0), dir: -eX, depth: 0)
+            ray3 = Ray(origin: ORIGIN3D, dir: eX, depth: 0)
+            ray4 = Ray(origin: newPoint3D(5, 5, 5), dir: eX, depth: 0)
 
         
         # First ellipsoid

@@ -96,7 +96,7 @@ suite "BRDF":
         # a shape actually react to ray intersection
 
         let
-            rs = newRandomSetUp(42, 54)
+            rs: RandomSetUp = (42.uint64, 54.uint64)
 
             norm = newNormal(0, 0, 1)
             inDir = newVec3(1, 2,-1)

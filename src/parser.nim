@@ -1,5 +1,5 @@
 import std/[streams, tables, options, sets]
-import geometry, hdrimage, color, scene, shape, material, csg, mesh, camera, lexer, pcg, renderer
+import geometry, hdrimage, color, scene, shape, material, csg, mesh, camera, lexer, renderer
 
 from std/sequtils import mapIt
 from std/strformat import fmt

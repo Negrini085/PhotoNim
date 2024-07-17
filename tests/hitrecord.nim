@@ -16,10 +16,10 @@ suite "HitPayload":
             mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
             sph = newSphere(newPoint3D(1, 2, 3), 3, mat)
 
-            ray1 = newRay(ORIGIN3D, eX)
-            ray2 = newRay(newPoint3D(0,-4,-1), eY)
+            ray1 = Ray(origin: ORIGIN3D, dir: eX, depth: 0)
+            ray2 = Ray(origin: newPoint3D(0,-4,-1), dir: eY, depth: 0)
 
-            rs = newRandomSetUp(42, 1)
+            rs: RandomSetUp = (42.uint64, 1.uint64)
             node = newBVHNode(@[sph].pairs.toSeq, 2, 1, rs)
 
             hitInfoNode = newHitInfo(node, ray1)
@@ -96,7 +96,7 @@ suite "Tree traverse":
         var 
             scene: Scene
             hitPayload: HitPayload
-            rs = newRandomSetUp(42, 54)
+            rs: RandomSetUp = (42.uint64, 54.uint64)
 
     teardown:
         discard rs
@@ -116,9 +116,9 @@ suite "Tree traverse":
             shsp3 = newUnitarySphere(newPoint3D(5, 5, 5), mat)
             box = newBox((newPoint3D(-6, -6, -6), newPoint3D(-4, -4, -4)), mat)
         
-            ray1 = newRay(newPoint3D(-3, 0, 0), eX)
-            ray2 = newRay(newPoint3D(-5,-5,-8), eZ)
-            ray3 = newRay(newPoint3D(-9, 0, 0),-eX)
+            ray1 = Ray(origin: newPoint3D(-3, 0, 0), dir:  eX, depth: 0)
+            ray2 = Ray(origin: newPoint3D(-5,-5,-8), dir:  eZ, depth: 0)
+            ray3 = Ray(origin: newPoint3D(-9, 0, 0), dir: -eX, depth: 0)
 
         scene = newScene(BLACK, @[shsp1, shsp2, shsp3, box], tkBinary, 1, rs)
 
@@ -149,7 +149,7 @@ suite "Tree traverse":
         # Checking getClosestHit by means of random testing, 
         # we don't want to have an hit
 
-        let ray = newRay(newPoint3D(30, 30, 30), eX)
+        let ray = Ray(origin: newPoint3D(30, 30, 30), dir: eX, depth: 0)
 
         var 
             mat: Material
@@ -182,9 +182,9 @@ suite "Tree traverse":
         # we are creating a bunch of shape and then one we are sure of hitting
 
         let 
-            ray1 = newRay(newPoint3D(35, 0, 0), -eX)
-            ray2 = newRay(newPoint3D(35, 5, 0),-eY)
-            ray3 = newRay(newPoint3D(30, 30, 30), eX)
+            ray1 = Ray(origin: newPoint3D(35, 0, 0),  dir: -eX, depth: 0)
+            ray2 = Ray(origin: newPoint3D(35, 5, 0),  dir: -eY, depth: 0)
+            ray3 = Ray(origin: newPoint3D(30, 30, 30),dir:  eX, depth: 0)
 
         var 
             mat: Material
@@ -241,9 +241,9 @@ suite "Tree traverse":
         # when we are actually being inside of a shape
 
         let 
-            ray1 = newRay(newPoint3D( 0, 0, 0),-eX)
-            ray2 = newRay(newPoint3D( 0, 1, 0),-eY)
-            ray3 = newRay(newPoint3D( 0, 0,-1), eZ)
+            ray1 = Ray(origin: newPoint3D( 0, 0, 0), dir: -eX, depth: 0)
+            ray2 = Ray(origin: newPoint3D( 0, 1, 0), dir: -eY, depth: 0)
+            ray3 = Ray(origin: newPoint3D( 0, 0,-1), dir:  eZ, depth: 0)
 
         var 
             mat: Material
@@ -320,13 +320,13 @@ suite "Tree traverse":
             sh2 = newSphere(newPoint3D(-5, 0, 0), 2, mat2)
             sh3 = newUnitarySphere(newPoint3D(0, 0, 3), mat3)
             
-            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, (42, 1))
+            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, (42.uint64, 1.uint64))
         
         var
-            ray1 = newRay(newPoint3D(1, 2, 2),-eZ)
-            ray2 = newRay(newPoint3D(4, 0, 0),-eX)
-            ray3 = newRay(newPoint3D(0, 0, 0), eZ)
-            ray4 = newRay(newPoint3D(5, 5, 5), eZ)
+            ray1 = Ray(origin: newPoint3D(1, 2, 2), dir: -eZ, depth: 0)
+            ray2 = Ray(origin: newPoint3D(4, 0, 0), dir: -eX, depth: 0)
+            ray3 = Ray(origin: newPoint3D(0, 0, 0), dir:  eZ, depth: 0)
+            ray4 = Ray(origin: newPoint3D(5, 5, 5), dir:  eZ, depth: 0)
         
         scene = newScene(BLACK, @[csgUnion], tkBinary, 1, rs)
 

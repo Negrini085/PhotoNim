@@ -10,7 +10,7 @@ suite "Scene":
 
     setup:
         let
-            rs = newRandomSetUp(42, 54) 
+            rs: RandomSetup = (42.uint64, 54.uint64) 
             mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
 
             tri1 = newTriangle(

@@ -445,7 +445,7 @@ suite "OrthoNormal Basis":
         # Checking Duff et al. algorithm
         # We are gonna random test it, so we will check random normals as input
         var 
-            randSet = newRandomSetUp(42, 1)
+            randSet = (42.uint64, 1.uint64)
             pcg = newPCG(randSet)
             normal: Normal  
 

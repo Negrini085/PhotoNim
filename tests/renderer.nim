@@ -50,16 +50,10 @@ suite "Renderer":
 suite "Rendering algorithms":
 
     setup:
-        let rs = newRandomSetUp(42, 54)
-        
-        var 
-            rend = newPathTracer(1, 100, 101)
-            camera = newPerspectiveCamera(rend, (1600, 900), 2)
+        let rs: RandomSetup = (42.uint64, 54.uint64)
         
     teardown:
         discard rs
-        discard rend
-        discard camera
 
 
     test "OnOffRenderer test":
@@ -72,13 +66,11 @@ suite "Rendering algorithms":
             mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
             sph = newSphere(ORIGIN3D, 0.2, mat)
 
-            scene = newScene(BLACK, @[sph], tkBinary, 1, newRandomSetUp(pcg.random, pcg.random))
-        
-        rend = newOnOffRenderer()
-        camera.renderer = rend
-        camera.viewport = (3, 3)
+            scene = newScene(BLACK, @[sph], tkBinary, 1, (pcg.random, pcg.random))
+            rend = newOnOffRenderer()
 
-        let image = camera.sample(scene, newRandomSetUp(pcg.random, pcg.random))
+        var camera = newPerspectiveCamera(rend, (3, 3), 2)
+        let image = camera.sample(scene, (pcg.random, pcg.random))
 
         check areClose(image.getPixel(0, 0), BLACK)
         check areClose(image.getPixel(1, 0), BLACK)
@@ -106,13 +98,12 @@ suite "Rendering algorithms":
             )
 
             sph = newSphere(ORIGIN3D, 0.2, mat)
-            scene = newScene(BLACK, @[sph], tkBinary, 1, newRandomSetUp(pcg.random, pcg.random))
+            scene = newScene(BLACK, @[sph], tkBinary, 1, (pcg.random, pcg.random))
         
-        rend = newFlatRenderer()
-        camera.renderer = rend
-        camera.viewport = (3, 3)
+            rend = newFlatRenderer()
 
-        let image = camera.sample(scene, newRandomSetUp(pcg.random, pcg.random))
+        var camera = newPerspectiveCamera(rend, (3, 3), 2)
+        let image = camera.sample(scene, (pcg.random, pcg.random))
 
         check areClose(image.getPixel(0, 0), BLACK)
         check areClose(image.getPixel(1, 0), BLACK)
@@ -135,7 +126,11 @@ suite "Rendering algorithms":
             col: Color
             exp: float32
             pcg = newPCG(rs)
-            ray = newRay(ORIGIN3D, eX)
+            ray = Ray(origin: ORIGIN3D, dir: eX, depth: 0)
+        
+        var 
+            rend = newPathTracer(1, 100, 101)
+            camera = newPerspectiveCamera(rend, (3, 3), 2)
 
         for _ in 0..500:
                 
@@ -146,9 +141,9 @@ suite "Rendering algorithms":
                 mat = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(WHITE * refl)), newUniformPigment(WHITE * emiRad))
                 sphere = newUnitarySphere(ORIGIN3D, mat)
 
-                scene = newScene(BLACK, @[sphere], tkBinary, 1, newRandomSetUp(pcg.random, pcg.random))
+                scene = newScene(BLACK, @[sphere], tkBinary, 1, (pcg.random, pcg.random))
             
-            pcg = newPCG(newRandomSetUp(pcg.random, pcg.random))
+            pcg = newPCG((pcg.random, pcg.random))
             col = rend.sampleRay(scene, ray, pcg)
             exp = emiRad/(1 - refl)
 
