@@ -4,60 +4,28 @@ from std/times import cpuTime
 from std/strformat import fmt
 from std/osproc import execCmd
 
+var pcg = newPCG((42.uint64, 2.uint64))
 
 let 
-    nSamples: int = 1
-    aaSamples: int = 1
-    directSamples: int = 1
-    indirectSamples: int = 1
-    depthLimit: int = 1
-    rgSetUp = newRandomSetUp(67, 4)
-    outFile = "assets/images/examples/meshes/dragon.png"
-
-var 
-    rg = newPCG(rgSetUp)
-    handlers: seq[ObjectHandler]
-
-var timeStart = cpuTime()
-
-let dragon = newMesh(
-    source = "assets/meshes/dragon.obj", 
-    transformation = newTranslation(newPoint3D(20, 20, 20)) @ newScaling(0.05), 
-    brdf = newDiffuseBRDF(),
-    pigment = newUniformPigment(RED),
-    treeKind = tkOctonary, 
-    maxShapesPerLeaf = 4, 
-    newRandomSetUp(rg)
-)
-
-echo fmt"Successfully loaded mesh in {cpuTime() - timeStart} seconds"
-echo fmt"Dragon AABB: {dragon.mesh.tree.root.aabb}"
-
-
-timeStart = cpuTime()
-
-handlers.add dragon
-
-let
-    scene = newScene(
-        bgColor = BLUE, 
-        handlers, 
-        newRandomSetUp(rg), 
-        treeKind = tkBinary, 
-        maxShapesPerLeaf = 1
-    )
-
+    timeStart = cpuTime()
+    outFile = "assets/images/examples/meshes/dragon"
     camera = newPerspectiveCamera(
-        renderer = newOnOffRenderer(RED), # newPathTracer(directSamples, indirectSamples, depthLimit), 
-        viewport = (600, 600), 
-        distance = -1.0, 
-        transformation = Transformation.id
+        newPathTracer(1, 1, 1), 
+        viewport = (1600, 900), distance = 3.0, 
+        newComposition(newRotation(-90, axisX), newTranslation(newPoint3D(-5.0, 1.5, 0.5)))
     )
 
-    image = camera.samples(scene, newRandomSetUp(rg), nSamples, aaSamples)
+    comp = newScaling(0.05)
+    mat = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE))
+    dragon = newMesh("assets/meshes/dragon.obj", tkBinary, 10, (pcg.random, pcg.random), mat, comp)
+    
+    scene = newScene(BLACK, @[dragon], tkBinary, 1, (pcg.random, pcg.random))
+    image = camera.sample(scene, (pcg.random, pcg.random))
 
-echo fmt"Image luminosity {image.avLuminosity}"
-echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."   
 
-image.savePNG(outFile, 0.18, 1.0, 0.1)
-discard execCmd fmt"open {outFile}"
+echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
+
+image.savePFM(outFile & ".pfm")
+image.savePNG(outFile & ".png", 0.18, 1.0)
+
+discard execCmd fmt"open {outFile}.png"

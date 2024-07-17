@@ -1,61 +1,31 @@
 import PhotoNim
 
-
 from std/times import cpuTime
 from std/strformat import fmt
 from std/osproc import execCmd
 
+var pcg = newPCG((38.uint64, 21.uint64))
 
 let 
-    nSamples: int = 1
-    aaSamples: int = 1
-    directSamples: int = 1
-    indirectSamples: int = 1
-    depthLimit: int = 1
-    rgSetUp = newRandomSetUp(67, 4)
-    outFile = "assets/images/examples/meshes/minicooper.png"
-
-var 
-    rg = newPCG(rgSetUp)
     timeStart = cpuTime()
-
-let
-    minicooper = newMesh(
-        source = "assets/meshes/minicooper.obj", 
-        transformation = Transformation.id,
-        brdf = newDiffuseBRDF(),
-        pigment = newUniformPigment(newColor(0.8, 0.6, 0.2)),
-        treeKind = tkOctonary, maxShapesPerLeaf = 4, 
-        newRandomSetUp(rg)
-    )
-
-    light = newPointLight(WHITE, newPoint3D(0, 0, 80))
-
-echo minicooper.mesh.tree.root.aabb
-echo fmt"Successfully loaded mesh in {cpuTime() - timeStart} seconds."   
-timeStart = cpuTime()
-
-let
-    scene = newScene(
-        bgColor = BLACK, 
-        @[minicooper, light], 
-        newRandomSetUp(rg), 
-        treeKind = tkBinary, 
-        maxShapesPerLeaf = 2
-    )
-
+    outFile = "assets/images/examples/meshes/mini"
     camera = newPerspectiveCamera(
-        renderer = newPathTracer(directSamples, indirectSamples, depthLimit), 
-        viewport = (600, 600), 
-        distance = 10.0, 
-        transformation = newTranslation(newPoint3D(-40, 0, 0))
+        newPathTracer(1, 1, 1), 
+        viewport = (1600, 900), distance = 3.0, 
+        newTranslation(newPoint3D(-10, 0, 0))
     )
 
-    image = camera.samples(scene, newRandomSetUp(rg), nSamples, aaSamples)
+    comp = newComposition(newScaling(0.05), newRotation(-45, axisZ))
+    mat = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE))
+    mini = newMesh("assets/meshes/minicooper.obj", tkBinary, 10, (pcg.random, pcg.random), mat, comp)
+    scene = newScene(BLACK, @[mini], tkBinary, 1, (pcg.random, pcg.random))
+
+    image = camera.sample(scene, (pcg.random, pcg.random))
 
 
-echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."   
+echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
-image.savePNG(outFile, 0.18, 1.0, 0.1)
+image.savePFM(outFile & ".pfm")
+image.savePNG(outFile & ".png", 0.18, 1.0)
 
-discard execCmd fmt"open {outFile}"
+discard execCmd fmt"open {outFile}.png"

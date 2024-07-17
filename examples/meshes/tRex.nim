@@ -5,22 +5,24 @@ from std/times import cpuTime
 from std/strformat import fmt
 from std/osproc import execCmd
 
+var pcg = newPCG((27.uint64, 12.uint64))
 
 let 
     timeStart = cpuTime()
     outFile = "assets/images/examples/meshes/tRex"
     camera = newPerspectiveCamera(
-        newPathTracer(numRays = 1, maxDepth = 1), 
+        newPathTracer(1, 1, 1), 
         viewport = (1600, 900), distance = 3.0, 
-        newComposition(newRotY(-90), newRotX(-90), newTranslation(newPoint3D(-5, 0, 1.0)))
+        newComposition(newRotation(-90, axisY), newRotation(-90, axisX), newTranslation(newPoint3D(-5, 0, 1)))
     )
 
     comp2 = newScaling(0.01)
 
-    tRex = newMesh("assets/meshes/tRex.obj", transformation = comp2, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
-    scene = newScene(@[tRex])
-
-    image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
+    mat = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE))
+    tRex = newMesh("assets/meshes/tRex.obj", tkBinary, 10, (pcg.random, pcg.random), mat, comp2)
+    
+    scene = newScene(BLACK, @[tRex], tkBinary, 1, (pcg.random, pcg.random))
+    image = camera.sample(scene, (pcg.random, pcg.random))
 
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
