@@ -21,48 +21,54 @@ var
 let 
     lamp = newBox(
         (newPoint3D(0.5, -0.5, 1.9), newPoint3D(1.5, 0.5, 1.999)), 
-        brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
-        emittedRadiance = newUniformPigment(5 * WHITE)
+        newEmissiveMaterial(
+            newDiffuseBRDF(newUniformPigment(WHITE)),
+            emittedRadiance = newUniformPigment(5 * WHITE)
+        )
     ) 
 
     uwall = newBox(
         (newPoint3D(-2, -2, 2), newPoint3D(2, 2, 2)), 
-        brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
+        newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
     ) 
 
     dwall = newBox(
         (newPoint3D(-2, -2, -2), newPoint3D(2, 2, -2)), 
-        brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
+        newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
     ) 
 
     fwall = newBox(
         (newPoint3D(2, -2, -2), newPoint3D(2, 2, 2)), 
-        brdf = newDiffuseBRDF(newUniformPigment(WHITE)),
+        newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
     ) 
 
     lwall = newBox(
         (newPoint3D(-2, 2, -2), newPoint3D(2, 2, 2)), 
-        brdf = newDiffuseBRDF(newUniformPigment(GREEN)),
-        emittedRadiance = newUniformPigment(0.2.float32 * GREEN)
+        newEmissiveMaterial(
+            newDiffuseBRDF(newUniformPigment(GREEN)),
+            emittedRadiance = newUniformPigment(0.2.float32 * GREEN)
+        )
     ) 
 
     rwall = newBox(
         (newPoint3D(-2, -2, -2), newPoint3D(2, -2, 2)), 
-        brdf = newDiffuseBRDF(newUniformPigment(RED)),
-        emittedRadiance = newUniformPigment(0.2.float32 * RED)
+        newEmissiveMaterial(
+            newDiffuseBRDF(newUniformPigment(RED)),
+            emittedRadiance = newUniformPigment(0.2.float32 * RED)
+        )
     ) 
 
 
     box1 = newBox(
         (newPoint3D(-0.5, -1.0, -2), newPoint3D(0.5, -0.3, 0.7)), 
-        transformation = newComposition(newTranslation(0.5.float32 * eX), newRotation(40, axisZ)),
-        brdf = newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5))),
+        newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5)))),
+        transformation = newComposition(newTranslation(0.5.float32 * eX), newRotation(40, axisZ))
     )
 
     box2 = newBox(
         (newPoint3D(-0.5, 0.9, -2), newPoint3D(0.5, 1.5, 0.4)), 
-        transformation = newRotation(-40, axisZ),
-        brdf = newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5))),
+        newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5)))),
+        transformation = newRotation(-40, axisZ)
     )
 
 
@@ -72,8 +78,10 @@ let airplane = newMesh(
     treeKind = tkOctonary, 
     maxShapesPerLeaf = 4, 
     newRandomSetUp(rg),
-    brdf = newDiffuseBRDF(newUniformPigment(newColor(0.8, 0.6, 0.2))),
-    emittedRadiance = newUniformPigment(0.2 * newColor(0.8, 0.6, 0.2)),
+    newEmissiveMaterial(
+        newDiffuseBRDF(newUniformPigment(newColor(0.8, 0.6, 0.2))),
+        newUniformPigment(0.2 * newColor(0.8, 0.6, 0.2))
+    ),
     transformation = newComposition(
         newTranslation(-0.3.float32 * eX - eY - 0.3.float32 * eZ), 
         newRotation(30, axisZ), newRotation(20, axisY), newRotation(10, axisX), 

@@ -500,7 +500,7 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler =
     trans = inStr.parseTransformation(dSc)
     inStr.expectSymbol(')')
 
-    return newMesh(fName, tkBinary, 10, newRandomSetup(42, 1), dSc.materials[matName], trans)
+    return newMesh(fName, tkBinary, 10, (42.uint64, 1.uint64), dSc.materials[matName], trans)
 
 
 #proc parseCSGUnionSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
