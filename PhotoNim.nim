@@ -62,9 +62,9 @@ Options:
     OnOff | Flat | Path         Choosing renderer: OnOff (only shows hit), Flat (flat renderer) or Path (path tracer)
     <sceneFile>                 File necessary for scene definition
     <output>                    Path for rendering result [default: "input_dir/" & "input_name" & "_a_g" & ".png"]
-    --nR=<numRays>              Ray number for path tracer [default: 10]
-    --mD=<maxDepth>             Depth for path tracer scattered rays [default: 5]
-    --rL=<rouletteLimit>        Roulette limit for path tracer scattere rays [default: 3]
+    --nR=<numRays>              Ray number for path tracer [default: 3]
+    --mD=<maxDepth>             Depth for path tracer scattered rays [default: 2]
+    --rL=<rouletteLimit>        Roulette limit for path tracer scattere rays [default: 1]
     --s=<sampleSide>            Number of samplesPerSide used in order to reduce aliasing
     --mS=<maxShapesPerLeaf>     Number of max shapes per leaf 
 """
@@ -117,23 +117,20 @@ Options:
     elif args["rend"]:
         let fileIn = $args["<sceneFile>"]
         var 
-            pcg = newPCG(newRandomSetup(42, 1))
+            pcg = newPCG((42.uint64, 1.uint64))
             img: HDRImage
             dSc: DefScene
-            rLim: int = 3        
+            rLim: int = 1        
             rend: Renderer
             nSamp: int = 2
             pfmOut: string
             pngOut: string
-            nRays: int = 10
-            mDepth: int = 5
+            nRays: int = 3
+            mDepth: int = 2
             mShapes: int = 2
             fStr: FileStream
             inStr: InputStream
 
-        if args["OnOff"]: rend = newOnOffRenderer()
-        elif args["Flat"]: rend = newFlatRenderer()
-        elif args["Path"]: rend = newPathTracer(nRays, mDepth, rLim)
 
         if args["--nR"]: 
             try: nRays = parseInt($args["--nR"]) 
@@ -155,14 +152,18 @@ Options:
             try: mShapes = parseInt($args["--mS"]) 
             except: echo fmt"Warning: max shapes per leaf must be an integer. Default value: <{mShapes}> is used."
 
-        if args["<output>"]: pngOut = $args["<output>"]
+        if args["<output>"]: 
+            pngOut = $args["<output>"] & ".png"
+            pfmOut = $args["<output>"] & ".pfm"
         else: 
             let (dir, name, _) = splitFile(fileIn)
             pngOut = dir & '/' & name & fmt"_{rend.kind}.png"
+            pfmOut = dir & '/' & name & fmt"_{rend.kind}.pfm"
         
-        let (dir, name, _) = splitFile(fileIn)
-        pfmOut = dir & '/' & name & fmt"_{rend.kind}.pfm"
-
+        if args["OnOff"]: rend = newOnOffRenderer()
+        elif args["Flat"]: rend = newFlatRenderer()
+        elif args["Path"]: rend = newPathTracer(nRays, mDepth, rLim)
+        
         try:
             fStr = newFileStream(fileIn, fmRead)
         except:
@@ -179,9 +180,10 @@ Options:
         dSc.camera.get.renderer = rend
         
         # Actual rendering proc
-        img = dSc.camera.get.sample(scene = newScene(BLACK, dSc.scene, tkBinary, mShapes, newRandomSetup(pcg.random, pcg.random)), newRandomSetup(pcg.random, pcg.random), nSamp)
+        img = dSc.camera.get.sample(scene = newScene(BLACK, dSc.scene, tkBinary, mShapes, (pcg.random, pcg.random)), (pcg.random, pcg.random), nSamp)
 
         img.savePFM(pfmOut)
         img.savePNG(pngOut, 0.18, 1.0, 0.1)
-
+        
+        let (dir, name, _) = splitFile(fileIn)
         echo "You can find both .pfm and .png images at: " & dir & '/'

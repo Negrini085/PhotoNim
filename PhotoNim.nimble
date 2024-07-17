@@ -39,7 +39,8 @@ task demo, """Run the `PhotoNim` demo
 
       elif i == (commands.find("demo") + 1):
         demoCommand.add(" " & paramStr(i))
-        demoCommand.add(" " & "examples/sceneFiles/demo.txt")
+        demoCommand.add(" " & "examples/demo/demo.txt")
+        demoCommand.add(" " & "examples/demo/images/demo" & paramStr(i))
 
       else:
         demoCommand.add(" " & paramStr(i))
