@@ -67,10 +67,8 @@ suite "Rendering algorithms":
             sph = newSphere(ORIGIN3D, 0.2, mat)
 
             scene = newScene(BLACK, @[sph], tkBinary, 1, (pcg.random, pcg.random))
-            rend = newOnOffRenderer()
-
-        var camera = newPerspectiveCamera(rend, (3, 3), 2)
-        let image = camera.sample(scene, (pcg.random, pcg.random))
+            camera = newPerspectiveCamera(newOnOffRenderer(), (3, 3), 2)
+            image = camera.sample(scene, (pcg.random, pcg.random))
 
         check areClose(image.getPixel(0, 0), BLACK)
         check areClose(image.getPixel(1, 0), BLACK)
@@ -100,10 +98,8 @@ suite "Rendering algorithms":
             sph = newSphere(ORIGIN3D, 0.2, mat)
             scene = newScene(BLACK, @[sph], tkBinary, 1, (pcg.random, pcg.random))
         
-            rend = newFlatRenderer()
-
-        var camera = newPerspectiveCamera(rend, (3, 3), 2)
-        let image = camera.sample(scene, (pcg.random, pcg.random))
+            camera = newPerspectiveCamera(newFlatRenderer(), (3, 3), 2)
+            image = camera.sample(scene, (pcg.random, pcg.random))
 
         check areClose(image.getPixel(0, 0), BLACK)
         check areClose(image.getPixel(1, 0), BLACK)
