@@ -4,73 +4,97 @@ from std/times import cpuTime
 from std/strformat import fmt
 from std/strutils import parseInt, parseUint
 from std/cmdline import commandLineParams
-from std/osproc import execCmd
+
+
+var rg = newPCG((42.uint64, 1.uint64))
 
 
 let 
     timeStart = cpuTime()
     args = commandLineParams()
 
-var
-    nRays, maxDepth, rouLimit: int
-    rgState, rgSeq: uint64
-
-try:
     nRays = parseInt(args[0])
     maxDepth = parseInt(args[1])
-    rouLimit = parseInt(args[2])
-    rgState = parseUint(args[3])
-    rgSeq = parseUint(args[4])
-except:
-    let msg = "Correct usage: executable <nRays> <maxDepth> <rouLimit> <rgState> <rgSeq>"
-    raise newException(CatchableError, msg)
 
-var pcg = newPCG((rgState, rgSeq))
-let
-    filename = fmt"examples/cornell/frames/singlesample_{nRays}_{maxDepth}"
+    filename = fmt"examples/cornell/frames/singlesample_{nRays * nRays}_{maxDepth}"
 
-    renderer = newPathTracer(nRays, maxDepth, rouLimit)
-    camera = newPerspectiveCamera(renderer, viewport = (600, 600), distance = 1.0, newTranslation(newPoint3D(-0.75, 0, 0)))
-
-
-    room = newBox(
-        (newPoint3D(-2, -2, -2), newPoint3D(2, 2, 2)), 
-        newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
-    )    
+    camera = newPerspectiveCamera(
+        renderer = newPathTracer(nRays * nRays, maxDepth, maxDepth + 1), 
+        viewport = (600, 600), distance = 1.0, 
+        transformation = newTranslation(newPoint3D(-1, 0, 0))
+    )
 
     lamp = newBox(
-        (newPoint3D(0.5, -0.5, 1.8), newPoint3D(1.5, 0.5, 2)), 
-        newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5))), newUniformPigment(WHITE))
+        (newPoint3D(0.5, -0.5, 1.9), newPoint3D(1.5, 0.5, 1.999)), 
+        newEmissiveMaterial(
+            newDiffuseBRDF(newUniformPigment(WHITE)),
+            emittedRadiance = newUniformPigment(10 * WHITE)
+        )
+    ) 
+
+    uwall = newBox(
+        (newPoint3D(-2, -2, 2), newPoint3D(2, 2, 2)), 
+        newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+    ) 
+
+    dwall = newBox(
+        (newPoint3D(-2, -2, -2), newPoint3D(2, 2, -2)), 
+        newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
+    ) 
+
+    fwall = newBox(
+        (newPoint3D(2, -2, -2), newPoint3D(2, 2, 2)), 
+        newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
     ) 
 
     lwall = newBox(
-        (newPoint3D(-2.0, 1.9, -2.0), newPoint3D(2, 2, 2)), 
-        newMaterial(newDiffuseBRDF(newUniformPigment(GREEN)))
+        (newPoint3D(-2, 2, -2), newPoint3D(2, 2, 2)), 
+        newEmissiveMaterial(
+            newDiffuseBRDF(newUniformPigment(GREEN)),
+            emittedRadiance = newUniformPigment(0.2 * GREEN)
+        )
     ) 
+
     rwall = newBox(
-        (newPoint3D(-2, -2, -2), newPoint3D(2.0, -1.9, 2.0)), 
-        newMaterial(newDiffuseBRDF(newUniformPigment(RED)))
+        (newPoint3D(-2, -2, -2), newPoint3D(2, -2, 2)), 
+        newEmissiveMaterial(
+            newDiffuseBRDF(newUniformPigment(RED)),
+            emittedRadiance = newUniformPigment(0.2 * RED)
+        )
     ) 
 
-    box1 = newBox(
-        (newPoint3D(-0.5, -1.5, -2), newPoint3D(0.5, -0.9, 0.2)), 
-        newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5)))), 
-        newRotation( 40, axisZ)
+    sphere = newSphere(
+        newPoint3D(0.0, 0.5, -1.0), 0.5,
+        newMaterial(newSpecularBRDF(newUniformPigment(WHITE)))
     )
 
-    box2 = newBox(
-        (newPoint3D(-0.5, 0.9, -2.0), newPoint3D(0.5, 1.5, 0.2)), 
-        newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.5, 0.5, 0.5)))), 
-        newRotation(-40, axisZ)
+    airplane = newMesh(
+        source = "assets/meshes/airplane.obj", 
+        treeKind = tkOctonary, 
+        maxShapesPerLeaf = 4, 
+        newRandomSetUp(rg),
+        newEmissiveMaterial(
+            newDiffuseBRDF(newUniformPigment(newColor(0.8, 0.6, 0.2))),
+            newUniformPigment(0.2 * newColor(0.8, 0.6, 0.2))
+        ),
+        transformation = newComposition(
+            newTranslation(- 0.3 * eX - 0.5 * eY - 0.3 * eZ), 
+            newRotation(30, axisZ), newRotation(20, axisY), newRotation(10, axisX), 
+            newScaling(0.5e-3)
+        )
     )
 
-    scene = newScene(BLACK, @[room, lamp, lwall, rwall, box1, box2], tkBinary, 1, (pcg.random, pcg.random))
-    image = camera.sample(scene, (pcg.random, pcg.random))
+    scene = newScene(
+        bgColor = BLACK, 
+        handlers = @[fwall, lwall, rwall, uwall, dwall, lamp, sphere, airplane], 
+        treeKind = tkQuaternary, 
+        maxShapesPerLeaf = 2,
+        newRandomSetUp(rg)
+    )
+
+    image = camera.sample(scene, newRandomSetUp(rg), aaSamples = 1)
 
 
-echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
+echo fmt"Successfully rendered image with {nRays} rays of depth {maxDepth} in {cpuTime() - timeStart} seconds."
 
-image.savePFM(fmt"{filename}.pfm")
 image.savePNG(fmt"{filename}.png", 0.18, 1.0)
-
-discard execCmd fmt"open {filename}.png"
