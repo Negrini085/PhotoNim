@@ -616,6 +616,45 @@ suite "Parse":
         check areClose(objSeq[2].transformation.offset, eZ)
 
 
+    test "parseCSGUnionSH proc":
+        # Check procedure to parse a CSGUnion
+        var 
+            csgUnionSH: ObjectHandler
+            keys  = @[KeywordKind.CSGUNION, KeywordKind.TRIANGULARMESH, KeywordKind.BOX]
+        
+        fname = "files/Parse/Handlers/csgUnionSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.CSGUNION  
+
+        csgUnionSH = inStr.parseCSGUnionSH(dSc)
+        check csgUnionSH.kind == hkCSG
+
+        # Checking shapes 
+        check csgUnionSH.csg.tree.handlers.len == 3
+
+        check csgUnionSH.csg.tree.handlers[0].shape.kind == skPlane
+        check csgUnionSH.csg.tree.handlers[0].transformation.kind == tkComposition
+        check csgUnionSH.csg.tree.handlers[0].transformation.transformations.len == 2
+        check csgUnionSH.csg.tree.handlers[0].transformation.transformations[0].kind == tkTranslation
+        check csgUnionSH.csg.tree.handlers[0].transformation.transformations[1].kind == tkRotation
+        check areClose(csgUnionSH.csg.tree.handlers[0].transformation.transformations[0].offset, newVec3(0, 0, 100))
+        check csgUnionSH.csg.tree.handlers[0].transformation.transformations[1].axis == axisY
+        check areClose(csgUnionSH.csg.tree.handlers[0].transformation.transformations[1].cos, newRotation(150, axisY).cos, eps = 1e-6)
+        check areClose(csgUnionSH.csg.tree.handlers[0].transformation.transformations[1].sin, newRotation(150, axisY).sin, eps = 1e-6)
+
+        check csgUnionSH.csg.tree.handlers[1].shape.kind == skPlane
+        check csgUnionSH.csg.tree.handlers[1].transformation.kind == tkIdentity
+
+        check csgUnionSH.csg.tree.handlers[2].shape.kind == skSphere
+        check csgUnionSH.csg.tree.handlers[2].transformation.kind == tkTranslation
+        check areClose(csgUnionSH.csg.tree.handlers[2].transformation.offset, eZ)
+
+
+
     test "parseMeshSH proc":
         # Checking parseMeshSH procedure, returns a ObjectHandler of a mesh
         var 

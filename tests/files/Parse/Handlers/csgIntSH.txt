@@ -1,2 +1,0 @@
-a
-csgInt(plane(try, translation([0.1, 0.2, 0.3])), cylinder(2, 0, 4, 1, me, translation([1, 2, 3])), translation([1, 2, 3]))
