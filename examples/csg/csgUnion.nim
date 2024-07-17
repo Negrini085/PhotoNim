@@ -7,7 +7,7 @@ from std/osproc import execCmd
 
 let 
     timeStart = cpuTime()
-    rs = newRandomSetUp(42, 1)
+    rs: RandomSetUp = (42, 1)
     outFile = "assets/images/examples/csg/csgUnion"
     camera = newPerspectiveCamera(
         newPathTracer(1, 1, 1), 

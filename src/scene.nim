@@ -144,7 +144,7 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
             newBVHNode(
                 it.mapIt(handlers[it]), 
                 kClusters, maxShapesPerLeaf, 
-                newRandomSetUp(rg.random, rg.random)
+                newRandomSetUp(rg)
             )
         )      
     )

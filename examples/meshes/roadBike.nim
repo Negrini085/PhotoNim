@@ -25,7 +25,7 @@ let
         material = newMaterial(newDiffuseBRDF(newUniformPigment(newColor(0.8, 0.6, 0.2))), newUniformPigment(WHITE)),
         transformation = newComposition(newRotation(90, axisX), newScaling(4.0)), 
         treeKind = tkOctonary, maxShapesPerLeaf = 10, 
-        newRandomSetUp(rg.random, rg.random)
+        newRandomSetUp(rg)
     )
 
 echo fmt"Successfully loaded mesh in {cpuTime() - timeStart} seconds."   
@@ -35,7 +35,7 @@ let
     scene = newScene(
         bgColor = BLACK, 
         @[roadBike], 
-        newRandomSetUp(rg.random, rg.random), 
+        newRandomSetUp(rg), 
         treeKind = tkBinary, 
         maxShapesPerLeaf = 1
     )
@@ -47,7 +47,7 @@ let
         transformation = newTranslation(newPoint3D(-10, 0, 0))
     )
 
-    image = camera.samples(scene, newRandomSetUp(rg.random, rg.random), nSamples, aaSamples)
+    image = camera.samples(scene, newRandomSetUp(rg), nSamples, aaSamples)
 
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."   

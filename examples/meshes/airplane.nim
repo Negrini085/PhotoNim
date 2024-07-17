@@ -11,7 +11,7 @@ let
     nRays: int = 1
     depthLimit: int = 1
     rrLimit: int = 5
-    rgSetUp = newRandomSetUp(7, 4)
+    rgSetUp: RandomSetUp = (7, 4)
     outFile = "assets/images/examples/meshes/airplane.png"
 
 var 
@@ -71,7 +71,7 @@ let airplane = newMesh(
     source = "assets/meshes/airplane.obj", 
     treeKind = tkOctonary, 
     maxShapesPerLeaf = 4, 
-    newRandomSetUp(rg.random, rg.random),
+    newRandomSetUp(rg),
     brdf = newDiffuseBRDF(newUniformPigment(newColor(0.8, 0.6, 0.2))),
     emittedRadiance = newUniformPigment(0.2 * newColor(0.8, 0.6, 0.2)),
     transformation = newComposition(
@@ -101,7 +101,7 @@ let
         handlers = handlers, 
         treeKind = tkQuaternary, 
         maxShapesPerLeaf = 2,
-        newRandomSetUp(rg.random, rg.random)
+        newRandomSetUp(rg)
     )
 
     camera = newPerspectiveCamera(
@@ -111,7 +111,7 @@ let
         transformation = newTranslation(newPoint3D(-1.0, 0, 0))
     )
 
-    image = camera.samples(scene, newRandomSetUp(rg.random, rg.random), nSamples, aaSamples)
+    image = camera.samples(scene, newRandomSetUp(rg), nSamples, aaSamples)
 
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."   

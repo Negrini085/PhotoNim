@@ -32,8 +32,8 @@ for i in 0..<nSpheres:
     )
 
 let
-    scene = newScene(BLACK, shapes, newRandomSetUp(rg.random, rg.random), treeKind = tkOctonary, maxShapesPerLeaf = 8)
-    image = camera.sample(scene, newRandomSetUp(rg.random, rg.random), samplesPerSide)
+    scene = newScene(BLACK, shapes, newRandomSetUp(rg), treeKind = tkOctonary, maxShapesPerLeaf = 8)
+    image = camera.sample(scene, newRandomSetUp(rg), samplesPerSide)
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 

@@ -170,7 +170,7 @@ suite "Tree traverse":
         # I'm gonna test it five times
         for i in 0..<5:
 
-            rsSeq[i] = newRandomSetUp(rg.random, rg.random)
+            rsSeq[i] = newRandomSetUp(rg)
 
             for j in 0..<500:
                 handlSeq[j] = newSphere(
@@ -206,7 +206,7 @@ suite "Tree traverse":
         # I'm gonna test it five times
         for i in 0..<5:
 
-            rsSeq[i] = newRandomSetUp(rg.random, rg.random)
+            rsSeq[i] = newRandomSetUp(rg)
 
             for j in 0..<499:
                 handlSeq[j] = newSphere(
@@ -270,7 +270,7 @@ suite "Tree traverse":
         # I'm gonna test it five times
         for i in 0..<5:
 
-            rsSeq[i] = newRandomSetUp(rg.random, rg.random)
+            rsSeq[i] = newRandomSetUp(rg)
 
             for j in 0..<499:
 
@@ -346,7 +346,7 @@ suite "Tree traverse":
                     newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1))
                 )
             
-            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1))
+            csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, (42, 1))
         
         var
             ray1 = newRay(newPoint3D(1, 2, 2),-eZ)

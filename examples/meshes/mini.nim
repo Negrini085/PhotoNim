@@ -26,7 +26,7 @@ let
         brdf = newDiffuseBRDF(),
         pigment = newUniformPigment(newColor(0.8, 0.6, 0.2)),
         treeKind = tkOctonary, maxShapesPerLeaf = 4, 
-        newRandomSetUp(rg.random, rg.random)
+        newRandomSetUp(rg)
     )
 
     light = newPointLight(WHITE, newPoint3D(0, 0, 80))
@@ -39,7 +39,7 @@ let
     scene = newScene(
         bgColor = BLACK, 
         @[minicooper, light], 
-        newRandomSetUp(rg.random, rg.random), 
+        newRandomSetUp(rg), 
         treeKind = tkBinary, 
         maxShapesPerLeaf = 2
     )
@@ -51,7 +51,7 @@ let
         transformation = newTranslation(newPoint3D(-40, 0, 0))
     )
 
-    image = camera.samples(scene, newRandomSetUp(rg.random, rg.random), nSamples, aaSamples)
+    image = camera.samples(scene, newRandomSetUp(rg), nSamples, aaSamples)
 
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."   

@@ -82,7 +82,7 @@ proc sample*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, aaSamples: int 
         for x in 0..<camera.viewport.width: 
             result.setPixel(
                 x, y,
-                samplePixel(x, y, camera, scene, newRandomSetUp(rg.random, rg.random), aaSamples)
+                samplePixel(x, y, camera, scene, newRandomSetUp(rg), aaSamples)
             )
 
     if displayProgress: stdout.eraseLine; stdout.resetAttributes
@@ -98,7 +98,7 @@ proc samples*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, nSamples: int 
     for _ in countup(0, nSamples): 
         spawnX stack(
             addr result, 
-            camera.sample(scene, newRandomSetUp(rg.random, rg.random), aaSamples, displayProgress = false)
+            camera.sample(scene, newRandomSetUp(rg), aaSamples, displayProgress = false)
         )
     
     sync()
