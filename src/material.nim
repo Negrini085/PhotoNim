@@ -34,9 +34,10 @@ proc newTexturePigment*(texture: HDRImage): Pigment {.inline.} = Pigment(kind: p
 proc newTexturePigment*(fname: string): Pigment = 
     var stream =
         try: newFileStream(fname, fmRead)
-        except: quit "Error: something happend while trying to read a texture. " & getCurrentExceptionMsg()
-
-    Pigment(kind: pkTexture, texture: stream.readPFM.img)  
+        except: quit "Error: Something happend while trying to read a texture. " & getCurrentExceptionMsg()
+    
+    let img = stream.readPFM.img
+    return Pigment(kind: pkTexture, texture: img)  
 
 proc newCheckeredPigment*(color1, color2: Color, nRows, nCols: int): Pigment {.inline.} = Pigment(kind: pkCheckered, grid: (color1, color2, nRows, nCols))
 

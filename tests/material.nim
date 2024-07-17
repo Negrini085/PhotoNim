@@ -41,7 +41,7 @@ suite "Pigment":
         check areClose(pigment.getColor(newPoint2D(1.0, 1.0)), color1)
     
 
-    test "newTexturePigment proc":
+    test "newTexturePigment (HDRImage) proc":
         # Checking newTexturePigment proc
         var image = newHDRImage(2, 2)
         image.setPixel(0, 0, color1); image.setPixel(1, 0, color2)
@@ -52,6 +52,16 @@ suite "Pigment":
         check areClose(pigment.getColor(newPoint2D(1.0, 0.0)), newColor(2.0, 3.0, 1.0))
         check areClose(pigment.getColor(newPoint2D(0.0, 1.0)), newColor(2.0, 1.0, 3.0))
         check areClose(pigment.getColor(newPoint2D(1.0, 1.0)), newColor(3.0, 2.0, 1.0))
+
+
+    test "newTexturePigment (filename) proc":
+        # Checking newTexturePigment proc
+
+        let pigment = newTexturePigment("files/wpPFM.txt")
+        check areClose(pigment.getColor(newPoint2D(0.0, 0.0)), newColor(0, 0, 0))
+        check areClose(pigment.getColor(newPoint2D(1.0, 0.0)), newColor(0, 0, 0))
+        check areClose(pigment.getColor(newPoint2D(0.0, 1.0)), newColor(0, 0, 0))
+        check areClose(pigment.getColor(newPoint2D(1.0, 1.0)), newColor(0, 0, 0))
     
 
     test "newCheckeredPigment proc":
