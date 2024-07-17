@@ -47,25 +47,25 @@ type
         tkIdentity, tkTranslation, tkUniformScaling, tkGenericScaling, tkRotation, tkComposition
 
     Transformation* = object
-    ## Transformations are what allow us to place objects in arbitrary positions in space. 
-    ## In particular, translations, scaling and rotations around each of the axes of the standard 
-    ## reference system are available. 
+        ## Transformations are what allow us to place objects in arbitrary positions in space. 
+        ## In particular, translations, scaling and rotations around each of the axes of the standard 
+        ## reference system are available. 
         case kind*: TransformationKind
         of tkIdentity: discard
         of tkComposition: transformations*: seq[Transformation]
-        ## Composition kind, has a sequence of transformation as field
+            ## Composition kind, has a sequence of transformation as field
         
         of tkUniformScaling: factor*, invFactor*: float32
-        ## Uniform scaling, used when you want to rescale uniformly along the three axis
+            ## Uniform scaling, used when you want to rescale uniformly along the three axis
         
         of tkGenericScaling: factors*, invFactors*: tuple[a, b, c: float32]
-        ## Generic scaling, it stores direct and inverse transformation factors: a --> x, b --> y, c --> z
+            ## Generic scaling, it stores direct and inverse transformation factors: a --> x, b --> y, c --> z
         
         of tkTranslation: offset*: Vec3
-        ## Translation, it only stores offset vector 
+            ## Translation, it only stores offset vector 
         
         of tkRotation: 
-        ## Rotation: rotation axis is stored, as well as sine and cosine (which are the only non zero elements in rotation matrix)
+            ## Rotation: rotation axis is stored, as well as sine and cosine (which are the only non zero elements in rotation matrix)
             axis*: AxisKind
             sin*, cos*: float32
 
