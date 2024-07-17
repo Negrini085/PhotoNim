@@ -1,5 +1,5 @@
 import std/[streams, tables, options, sets]
-import geometry, hdrimage, color, scene, shape, material, csg, mesh, camera, lexer, pcg
+import geometry, hdrimage, color, scene, shape, material, csg, mesh, camera, lexer, pcg, renderer
 
 from std/sequtils import mapIt
 from std/strformat import fmt
@@ -548,127 +548,127 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler =
 #    return newCSGUnion(sh[0], sh[1], trans)
 
 
-#proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera = 
-#    # Procedure to parse a camera
-#    let
-#        allowedK = @[
-#            KeywordKind.PERSPECTIVE,
-#            KeywordKind.ORTHOGONAL 
-#            ]
-#        rend = newOnOffRenderer()   # As right now, giving an OnOff renderer as defalt renderer
-#    
-#    var 
-#        dist: float32
-#        key: KeywordKind
-#        width, height: int
-#        trans: Transformation
-#
-#    # Parsing kind and image dimensions
-#    inStr.expectSymbol('(')
-#    key = inStr.expectKeywords(allowedK)
-#    inStr.expectSymbol(',')
-#    width = inStr.expectNumber(dSc).int
-#    inStr.expectSymbol(',')
-#    height = inStr.expectNumber(dSc).int
-#    inStr.expectSymbol(',')
-#
-#    # Parsing distance (only for persepctive camera)
-#    if key == KeywordKind.PERSPECTIVE:
-#        dist = inStr.expectNumber(dSc)
-#
-#        # Checking wether it's a positive value or not
-#        if dist <= 0:
-#            let msg = "Be careful, camera distance must be a positive floating-point number. Error in: " & $inStr.location
-#            raise newException(GrammarError, msg)
-#        
-#        inStr.expectSymbol(',')
-#
-#    # Parsing transformation
-#    trans = inStr.parseTransformation(dSc)
-#    inStr.expectSymbol(')')
-#
-#    if key == KeywordKind.PERSPECTIVE:
-#        result = newPerspectiveCamera(rend, (width, height), dist, trans)
-#    elif key == KeywordKind.ORTHOGONAL:
-#        result = newOrthogonalCamera(rend, (width, height), trans)
-#    
-#    return result
-#
-#
-#proc parseDefScene*(inStr: var InputStream): DefScene = 
-#    # Procedure to parse the whole file and to create the DefScene variable 
-#    # that will be the starting point of the rendering process
-#    var 
-#        dSc: DefScene
-#        tryTok: Token
-#        mat: MATERIAL
-#        varName: string
-#        varVal: float32
-#
-#    while true:
-#        tryTok = inStr.readToken()
-#        
-#        # What if we are in Eof condition?
-#        if tryTok.kind == StopToken:
-#            break
-#        
-#        # The only thing that is left is reading Keywords
-#        if tryTok.kind != KeywordToken:
-#            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
-#            raise newException(GrammarError, msg)
-#        
-#        # Just in case we are defining a float variable
-#        if tryTok.keyword == KeywordKind.FLOAT:
-#
-#            varName = inStr.expectIdentifier()
-#            inStr.expectSymbol('(')
-#            varVal = inStr.expectNumber(dSc)
-#            inStr.expectSymbol(')')
-#
-#            dSc.numVariables[varName] = varVal
-#        
-#        # What if we have a sphere
-#        elif tryTok.keyword == KeywordKind.SPHERE:
-#            dSc.scene.add(inStr.parseSphereSH(dSc))
-#
-#        # What if we have a plane
-#        elif tryTok.keyword == KeywordKind.PLANE:
-#            dSc.scene.add(inStr.parsePlaneSH(dSc))
-#
-#        # What if we have a Box
-#        elif tryTok.keyword == KeywordKind.BOX:
-#            dSc.scene.add(inStr.parseBoxSH(dSc))
-#
-#        # What if we have a triangle
-#        elif tryTok.keyword == KeywordKind.TRIANGLE:
-#            dSc.scene.add(inStr.parseTriangleSH(dSc))
-#
-#        # What if we have a cylinder
-#        elif tryTok.keyword == KeywordKind.CYLINDER:
-#            dSc.scene.add(inStr.parseCylinderSH(dSc))
-#
-#        # What if we have a triangular mesh
-#        elif tryTok.keyword == KeywordKind.TRIANGULARMESH:
-#            dSc.scene.add(inStr.parseMeshSH(dSc))
-#
+proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera = 
+    # Procedure to parse a camera
+    let
+        allowedK = @[
+            KeywordKind.PERSPECTIVE,
+            KeywordKind.ORTHOGONAL 
+            ]
+        rend = newOnOffRenderer()   # As right now, giving an OnOff renderer as defalt renderer
+    
+    var 
+        dist: float32
+        key: KeywordKind
+        width, height: int
+        trans: Transformation
+
+    # Parsing kind and image dimensions
+    inStr.expectSymbol('(')
+    key = inStr.expectKeywords(allowedK)
+    inStr.expectSymbol(',')
+    width = inStr.expectNumber(dSc).int
+    inStr.expectSymbol(',')
+    height = inStr.expectNumber(dSc).int
+    inStr.expectSymbol(',')
+
+    # Parsing distance (only for persepctive camera)
+    if key == KeywordKind.PERSPECTIVE:
+        dist = inStr.expectNumber(dSc)
+
+        # Checking wether it's a positive value or not
+        if dist <= 0:
+            let msg = "Be careful, camera distance must be a positive floating-point number. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+        
+        inStr.expectSymbol(',')
+
+    # Parsing transformation
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    if key == KeywordKind.PERSPECTIVE:
+        result = newPerspectiveCamera(rend, (width, height), dist, trans)
+    elif key == KeywordKind.ORTHOGONAL:
+        result = newOrthogonalCamera(rend, (width, height), trans)
+    
+    return result
+
+
+proc parseDefScene*(inStr: var InputStream): DefScene = 
+    # Procedure to parse the whole file and to create the DefScene variable 
+    # that will be the starting point of the rendering process
+    var 
+        dSc: DefScene
+        tryTok: Token
+        mat: MATERIAL
+        varName: string
+        varVal: float32
+
+    while true:
+        tryTok = inStr.readToken()
+        
+        # What if we are in Eof condition?
+        if tryTok.kind == StopToken:
+            break
+        
+        # The only thing that is left is reading Keywords
+        if tryTok.kind != KeywordToken:
+            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+        
+        # Just in case we are defining a float variable
+        if tryTok.keyword == KeywordKind.FLOAT:
+
+            varName = inStr.expectIdentifier()
+            inStr.expectSymbol('(')
+            varVal = inStr.expectNumber(dSc)
+            inStr.expectSymbol(')')
+
+            dSc.numVariables[varName] = varVal
+        
+        # What if we have a sphere
+        elif tryTok.keyword == KeywordKind.SPHERE:
+            dSc.scene.add(inStr.parseSphereSH(dSc))
+
+        # What if we have a plane
+        elif tryTok.keyword == KeywordKind.PLANE:
+            dSc.scene.add(inStr.parsePlaneSH(dSc))
+
+        # What if we have a Box
+        elif tryTok.keyword == KeywordKind.BOX:
+            dSc.scene.add(inStr.parseBoxSH(dSc))
+
+        # What if we have a triangle
+        elif tryTok.keyword == KeywordKind.TRIANGLE:
+            dSc.scene.add(inStr.parseTriangleSH(dSc))
+
+        # What if we have a cylinder
+        elif tryTok.keyword == KeywordKind.CYLINDER:
+            dSc.scene.add(inStr.parseCylinderSH(dSc))
+
+        # What if we have a triangular mesh
+        elif tryTok.keyword == KeywordKind.TRIANGULARMESH:
+            dSc.scene.add(inStr.parseMeshSH(dSc))
+
 #        # What if we have a csgunion?
 #        elif tryTok.keyword == KeywordKind.CSGUNION:
 #            dSc.scene.add(inStr.parseCSGUnionSH(dSc))
-#        
-#        # What if we have a camera
-#        elif tryTok.keyword == KeywordKind.CAMERA:
-#
-#            # I want to have a limit in camera number
-#            if dSc.camera.isSome:
-#                let msg = "You can't define more than one camera. Error in: " & $inStr.location
-#                raise newException(GrammarError, msg)
-#            
-#            dSc.camera = some inStr.parseCamera(dSc)
-#        
-#        # What if we have a material
-#        elif tryTok.keyword == KeywordKind.MATERIAL:
-#            (varName, mat) = inStr.parseMaterial(dSc)
-#            dSc.materials[varName] = mat
-#
-#    # We get here only when file ends
-#    return dSc
+        
+        # What if we have a camera
+        elif tryTok.keyword == KeywordKind.CAMERA:
+
+            # I want to have a limit in camera number
+            if dSc.camera.isSome:
+                let msg = "You can't define more than one camera. Error in: " & $inStr.location
+                raise newException(GrammarError, msg)
+            
+            dSc.camera = some inStr.parseCamera(dSc)
+        
+        # What if we have a material
+        elif tryTok.keyword == KeywordKind.MATERIAL:
+            (varName, mat) = inStr.parseMaterial(dSc)
+            dSc.materials[varName] = mat
+
+    # We get here only when file ends
+    return dSc

@@ -616,114 +616,116 @@ suite "Parse":
 #        check csgUnionSH.transformation.kind == tkTranslation
 #        check areClose(csgUnionSH.transformation.offset, newVec3(1, 2, 3))
 #
-#
-#    test "parseCamera proc":
-#        # Checking parseCamera procedure
-#        var 
-#            camP: Camera
-#            keys  = @[KeywordKind.CAMERA, KeywordKind.NEW]
-#
-#        fname = "files/Parse/camera.txt"
-#        fstr = newFileStream(fname, fmRead)
-#        inStr = newInputStream(fstr, fname, 4)
-#
-#        check not fstr.isNil
-#        check inStr.readChar() == 'a'
-#        check inStr.expectKeywords(keys) == KeywordKind.CAMERA
-#
-#        camP = inStr.parseCamera(dSc)
-#        check camP.kind == ckPerspective
-#        check camP.viewport.width == 5
-#        check camP.viewport.height == 6
-#        check areClose(camP.distance, 1.2)
-#        check camP.transformation.kind == tkRotation
-#        check areClose(camP.transformation.mat, newRotation(45, axisX).mat, eps = 1e-6)
-#
-#        check inStr.expectKeywords(keys) == KeywordKind.CAMERA
-#
-#        camP = inStr.parseCamera(dSc)
-#        check camP.kind == ckOrthogonal
-#        check camP.viewport.width == 1
-#        check camP.viewport.height == 4
-#        check camP.transformation.kind == tkTranslation
-#        check areClose(camP.transformation.mat, newTranslation(newVec3(1, 2, 4.3)).mat)
-#
-#
-#    test "parseDefScene proc":
-#        # Check parseDefScene proc
-#        var 
-#            matP: Material
-#            camP: Camera
-#
-#        fname = "files/Parse/scene.txt"
-#        fstr = newFileStream(fname, fmRead)
-#        inStr = newInputStream(fstr, fname, 4)    
-#        dSc = inStr.parseDefScene()
-#
-#        # Checking numVariables
-#        check dSc.numVariables.len() == 1
-#        check "clock" in dSc.numVariables
-#        check areClose(dSc.numVariables["clock"], 150.0)
-#
-#        # Checking materials
-#        check dSc.materials.len == 3
-#        check "sphereMaterial" in dSc.materials
-#        check "skyMaterial" in dSc.materials
-#        check "groundMaterial" in dSc.materials
-#
-#        matP = dSc.materials["sphereMaterial"]
-#        check matP.brdf.kind == SpecularBRDF
-#        check matP.brdf.pigment.kind == pkUniform
-#        check areClose(matP.brdf.pigment.color, newColor(0.5, 0.5, 0.5))
-#        check matP.eRadiance.kind == pkUniform
-#        check areClose(matP.eRadiance.color, BLACK)
-#
-#        matP = dSc.materials["skyMaterial"]
-#        check matP.brdf.kind == DiffuseBRDF
-#        check matP.brdf.pigment.kind == pkUniform
-#        check areClose(matP.brdf.pigment.color, BLACK)
-#        check matP.eRadiance.kind == pkUniform
-#        check areClose(matP.eRadiance.color, newColor(0.7, 0.5, 1.0))
-#
-#        matP = dSc.materials["groundMaterial"]
-#        check matP.brdf.kind == DiffuseBRDF
-#        check matP.brdf.pigment.kind == pkCheckered
-#        check areClose(matP.brdf.pigment.grid.c1, newColor(0.3, 0.5, 0.1))
-#        check areClose(matP.brdf.pigment.grid.c2, newColor(0.1, 0.2, 0.5))
-#        check matP.brdf.pigment.grid.nRows == 2
-#        check matP.brdf.pigment.grid.nCols == 2
-#        check matP.eRadiance.kind == pkUniform
-#        check areClose(matP.eRadiance.color, BLACK)
-#
-#        # Checking shapes 
-#        check dSc.scene.len == 3
-#
-#        check dSc.scene[0].shape.kind == skPlane
-#        check dSc.scene[0].transformation.kind == tkComposition
-#        check dSc.scene[0].transformation.transformations.len == 2
-#        check dSc.scene[0].transformation.transformations[0].kind == tkTranslation
-#        check dSc.scene[0].transformation.transformations[1].kind == tkRotation
-#        check areClose(dSc.scene[0].transformation.transformations[0].mat, newTranslation(newVec3(0, 0, 100)).mat)
-#        check areClose(dSc.scene[0].transformation.transformations[1].mat, newRotY(150).mat, eps = 1e-6)
-#
-#        check dSc.scene[1].shape.kind == skPlane
-#        check dSc.scene[1].transformation.kind == tkIdentity
-#
-#        check dSc.scene[2].shape.kind == skSphere
-#        check dSc.scene[2].transformation.kind == tkTranslation
-#        check areClose(dSc.scene[2].transformation.mat, newTranslation(eZ).mat)
-#
-#        # Checking camera
-#        check dSc.camera.isSome
-#        camP = dSc.camera.get
-#
-#        check camP.kind == ckPerspective
-#        check camP.transformation.kind == tkComposition
-#        check camP.transformation.transformations.len == 2
-#        check camP.transformation.transformations[0].kind == tkRotation
-#        check camP.transformation.transformations[1].kind == tkTranslation
-#        check areClose(camP.transformation.transformations[0].mat, newRotZ(30).mat, eps = 1e-6) 
-#        check areClose(camP.transformation.transformations[1].mat, newTranslation(newVec3(-4, 0, 1)).mat)
-#        check areClose(camP.distance, 2)
-#        check camP.viewport.width == 100
-#        check camP.viewport.height == 100
+
+    test "parseCamera proc":
+        # Checking parseCamera procedure
+        var 
+            camP: Camera
+            keys  = @[KeywordKind.CAMERA, KeywordKind.NEW]
+
+        fname = "files/Parse/camera.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.CAMERA
+
+        camP = inStr.parseCamera(dSc)
+        check camP.kind == ckPerspective
+        check camP.viewport.width == 5
+        check camP.viewport.height == 6
+        check areClose(camP.distance, 1.2)
+        check camP.transformation.kind == tkRotation
+        check camP.transformation.axis == axisX
+        check areClose(camP.transformation.cos, newRotation(45, axisX).cos, eps = 1e-6)
+        check areClose(camP.transformation.sin, newRotation(45, axisX).sin, eps = 1e-6)
+
+        check inStr.expectKeywords(keys) == KeywordKind.CAMERA
+
+        camP = inStr.parseCamera(dSc)
+        check camP.kind == ckOrthogonal
+        check camP.viewport.width == 1
+        check camP.viewport.height == 4
+        check camP.transformation.kind == tkTranslation
+        check areClose(camP.transformation.offset, newVec3(1.0, 2.0, 4.3))
+
+
+    test "parseDefScene proc":
+        # Check parseDefScene proc
+        var 
+            matP: Material
+            camP: Camera
+
+        fname = "files/Parse/scene.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)    
+        dSc = inStr.parseDefScene()
+
+        # Checking numVariables
+        check dSc.numVariables.len() == 1
+        check "clock" in dSc.numVariables
+        check areClose(dSc.numVariables["clock"], 150.0)
+
+        # Checking materials
+        check dSc.materials.len == 3
+        check "sphereMaterial" in dSc.materials
+        check "skyMaterial" in dSc.materials
+        check "groundMaterial" in dSc.materials
+
+        matP = dSc.materials["sphereMaterial"]
+        check matP.brdf.kind == SpecularBRDF
+        check matP.brdf.pigment.kind == pkUniform
+        check areClose(matP.brdf.pigment.color, newColor(0.5, 0.5, 0.5))
+
+        matP = dSc.materials["skyMaterial"]
+        check matP.brdf.kind == DiffuseBRDF
+        check matP.brdf.pigment.kind == pkUniform
+        check areClose(matP.brdf.pigment.color, BLACK)
+        check matP.eRadiance.kind == pkUniform
+        check areClose(matP.eRadiance.color, newColor(0.7, 0.5, 1.0))
+
+        matP = dSc.materials["groundMaterial"]
+        check matP.brdf.kind == DiffuseBRDF
+        check matP.brdf.pigment.kind == pkCheckered
+        check areClose(matP.brdf.pigment.grid.c1, newColor(0.3, 0.5, 0.1))
+        check areClose(matP.brdf.pigment.grid.c2, newColor(0.1, 0.2, 0.5))
+        check matP.brdf.pigment.grid.nRows == 2
+        check matP.brdf.pigment.grid.nCols == 2
+
+        # Checking shapes 
+        check dSc.scene.len == 3
+
+        check dSc.scene[0].shape.kind == skPlane
+        check dSc.scene[0].transformation.kind == tkComposition
+        check dSc.scene[0].transformation.transformations.len == 2
+        check dSc.scene[0].transformation.transformations[0].kind == tkTranslation
+        check dSc.scene[0].transformation.transformations[1].kind == tkRotation
+        check areClose(dSc.scene[0].transformation.transformations[0].offset, newVec3(0, 0, 100))
+        check dSc.scene[0].transformation.transformations[1].axis == axisY
+        check areClose(dSc.scene[0].transformation.transformations[1].cos, newRotation(150, axisY).cos, eps = 1e-6)
+        check areClose(dSc.scene[0].transformation.transformations[1].sin, newRotation(150, axisY).sin, eps = 1e-6)
+
+        check dSc.scene[1].shape.kind == skPlane
+        check dSc.scene[1].transformation.kind == tkIdentity
+
+        check dSc.scene[2].shape.kind == skSphere
+        check dSc.scene[2].transformation.kind == tkTranslation
+        check areClose(dSc.scene[2].transformation.offset, eZ)
+
+        # Checking camera
+        check dSc.camera.isSome
+        camP = dSc.camera.get
+
+        check camP.kind == ckPerspective
+        check camP.transformation.kind == tkComposition
+        check camP.transformation.transformations.len == 2
+        check camP.transformation.transformations[0].kind == tkRotation
+        check camP.transformation.transformations[1].kind == tkTranslation
+        check camP.transformation.transformations[0].axis == axisZ
+        check areClose(camP.transformation.transformations[0].cos, newRotation(30, axisZ).cos, eps = 1e-6) 
+        check areClose(camP.transformation.transformations[0].sin, newRotation(30, axisZ).sin, eps = 1e-6) 
+        check areClose(camP.transformation.transformations[1].offset, newVec3(-4, 0, 1))
+        check areClose(camP.distance, 2)
+        check camP.viewport.width == 100
+        check camP.viewport.height == 100

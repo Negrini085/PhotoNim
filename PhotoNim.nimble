@@ -53,7 +53,6 @@ task demo, """Run the `PhotoNim` demo
       return
 
     exec demoCommand
-    exec "open examples/sceneFiles/demo**.png"
 
 
 task examples, "Run the `PhotoNim` examples":
