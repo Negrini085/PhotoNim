@@ -1,4 +1,6 @@
-let PhotoNimVersion* = "PhotoNim 0.3.1"
+## PhotoNim: a CPU Monte Carlo path tracer based on Bounding Volume Hierarchy with kmeans clustering.
+
+const PhotoNimVersion* = "PhotoNim 0.3.1"
 
 import src/[pcg, geometry, color, hdrimage, pigment, brdf, material, scene, shape, mesh, csg, ray, hitrecord, renderer, camera]
 export pcg, geometry, color, hdrimage, pigment, brdf, material, scene, shape, mesh, csg, ray, hitrecord, renderer, camera
@@ -7,7 +9,7 @@ export pcg, geometry, color, hdrimage, pigment, brdf, material, scene, shape, me
 from std/streams import newFileStream, close, FileStream
 from std/strformat import fmt
 
-let pfm2pngDoc* = """
+const pfm2pngDoc = """
 PhotoNim CLI `pfm2png` command:
 
 Usage: 
