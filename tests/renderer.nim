@@ -66,11 +66,9 @@ suite "Rendering algorithms":
             mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
             sph = newSphere(ORIGIN3D, 0.2, mat)
 
-            scene = newScene(BLACK, @[sph], tkBinary, 1, (pcg.random, pcg.random))
-            rend = newOnOffRenderer()
-
-        var camera = newPerspectiveCamera(rend, (3, 3), 2)
-        let image = camera.sample(scene, (pcg.random, pcg.random))
+            scene = newScene(BLACK, @[sph], tkBinary, 1, newRandomSetUp(pcg))
+            camera = newPerspectiveCamera(newOnOffRenderer(WHITE), (3, 3), 2)
+            image = camera.sample(scene, newRandomSetUp(pcg))
 
         check areClose(image.getPixel(0, 0), BLACK)
         check areClose(image.getPixel(1, 0), BLACK)
@@ -90,7 +88,6 @@ suite "Rendering algorithms":
         # implemented is actually working or not 
 
         var pcg = newPCG(rs)
-
         let 
             mat = newEmissiveMaterial(
                 newDiffuseBRDF(newUniformPigment(newColor(0.2, 0.3, 0.5))),
@@ -98,12 +95,10 @@ suite "Rendering algorithms":
             )
 
             sph = newSphere(ORIGIN3D, 0.2, mat)
-            scene = newScene(BLACK, @[sph], tkBinary, 1, (pcg.random, pcg.random))
+            scene = newScene(BLACK, @[sph], tkBinary, 1, newRandomSetUp(pcg))
         
-            rend = newFlatRenderer()
-
-        var camera = newPerspectiveCamera(rend, (3, 3), 2)
-        let image = camera.sample(scene, (pcg.random, pcg.random))
+            camera = newPerspectiveCamera(newFlatRenderer(), (3, 3), 2)
+            image = camera.sample(scene, newRandomSetUp(pcg))
 
         check areClose(image.getPixel(0, 0), BLACK)
         check areClose(image.getPixel(1, 0), BLACK)
