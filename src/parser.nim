@@ -505,6 +505,77 @@ proc parseEllipsoidSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler
     return newEllipsoid(a, b, c, material = dSc.materials[matName], transformation = trans)
 
 
+proc parseHandlerSeq*(filename: string): seq[ObjectHandler] = 
+    # Procedure to parse the a whole file in order to have a sequence of
+    # object handlers of kind shape, necessary to fill CSGUnion handlers
+    var 
+        dSc: DefScene
+        tryTok: Token
+        mat: MATERIAL
+        varName: string
+        varVal: float32
+        stream = newFileStream(filename)
+        inStr = newInputStream(stream, filename)
+
+    while true:
+        tryTok = inStr.readToken()
+        
+        # What if we are in Eof condition?
+        if tryTok.kind == StopToken:
+            break
+        
+        # The only thing that is left is reading Keywords
+        if tryTok.kind != KeywordToken:
+            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+        
+        # Just in case we are defining a float variable
+        if tryTok.keyword == KeywordKind.FLOAT:
+
+            varName = inStr.expectIdentifier()
+            inStr.expectSymbol('(')
+            varVal = inStr.expectNumber(dSc)
+            inStr.expectSymbol(')')
+
+            dSc.numVariables[varName] = varVal
+        
+        # What if we have a sphere
+        elif tryTok.keyword == KeywordKind.SPHERE:
+            dSc.scene.add(inStr.parseSphereSH(dSc))
+
+        # What if we have a plane
+        elif tryTok.keyword == KeywordKind.PLANE:
+            dSc.scene.add(inStr.parsePlaneSH(dSc))
+
+        # What if we have a Box
+        elif tryTok.keyword == KeywordKind.BOX:
+            dSc.scene.add(inStr.parseBoxSH(dSc))
+
+        # What if we have a triangle
+        elif tryTok.keyword == KeywordKind.TRIANGLE:
+            dSc.scene.add(inStr.parseTriangleSH(dSc))
+
+        # What if we have a cylinder
+        elif tryTok.keyword == KeywordKind.CYLINDER:
+            dSc.scene.add(inStr.parseCylinderSH(dSc))
+
+        # What if we have an ellipsoid
+        elif tryTok.keyword == KeywordKind.ELLIPSOID:
+            dSc.scene.add(inStr.parseEllipsoidSH(dSc))
+        
+        # What if we have a material
+        elif tryTok.keyword == KeywordKind.MATERIAL:
+            (varName, mat) = inStr.parseMaterial(dSc)
+            dSc.materials[varName] = mat
+
+        # What if we have other instances? We should not get there
+        else:
+            let msg = fmt"We just need to define shapes in order to have a sequence, necessary to create CSGTree. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+
+    # We get here only when file ends
+    return dSc.scene
+
 proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse mesh shape handler
     var 
