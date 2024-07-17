@@ -1,3 +1,7 @@
+# In this geometry module are defined all the tools needed in order to implement a raytracer. 
+# The content of this module spans from points, normals and vectors to linear geometry transformations
+# and the implementation of bounding boxes.
+
 from std/math import copySign, sqrt, sin, cos, degToRad, PI
 from std/fenv import epsilon
 from std/algorithm import reversed
@@ -8,28 +12,60 @@ type
     Vec*[N: static[int]] = array[N, float32]
     Vec2* = Vec[2]
     Vec3* = Vec[3]
+    ## Vec3 type is what it's used to represent a vector in PhotoNim
+    ## It's a vector of three floating point numbers which represent components
+    ## along directions x, y, and z. You can access vector elements by means of x, y, z procs, 
+    ## you can sum them and multiply them by scalars and also compute cross and dot product, 
+    ## evaluate norms and normalize them.
 
     AxisKind* = enum
         axisX = 0, axisY = 1, axisZ = 2
 
     Point2D* = distinct Vec2
     Point3D* = distinct Vec3
+    ## Point3D type is what you have to use if you want to define a position in 3D space in PhotoNim
+    ## It's just a distinct type of Vec3 so we will borrow procedures.
+    
     Normal* = distinct Vec3
+    ## Normals are a distinct type of Vec3, their usage is necessary when you want to study ray scattering.
+    ## Their are used to create orthonormal basis, which give which provide the frame of work for studying 
+    ## the physical phenomena of reflection and refraction
+
 
     Interval*[T] = tuple[min, max: T]
     AABB* = Interval[Point3D]
+    ## Axis-Aligned Bounding Box Aabb is a necessary tool for implementing the bounding volume hierarchy. 
+    ## In PhotoNim they are implemented as a tuple containing vertices with minimum and maximum coordinates.
+    ## To evaluate AABB in the world reference system (necessary for the BVH), one must take into account 
+    ## the possible transformations applied to them and to the objects they contain. For this reason, there are 
+    ## procedures for creating bounding boxes from a sequence of points: once the transformation has been applied, 
+    ## the vertices of the box, previously evaluated using `getVertices`, are mapped into the scene reference system,
+    ## and their maximum and minimum are taken again.
+
 
     TransformationKind* = enum
         tkIdentity, tkTranslation, tkUniformScaling, tkGenericScaling, tkRotation, tkComposition
 
     Transformation* = object
+        ## Transformations are what allow us to place objects in arbitrary positions in space. 
+        ## In particular, translations, scaling and rotations around each of the axes of the standard 
+        ## reference system are available. 
         case kind*: TransformationKind
         of tkIdentity: discard
         of tkComposition: transformations*: seq[Transformation]
+            ## Composition kind, has a sequence of transformation as field
+        
         of tkUniformScaling: factor*, invFactor*: float32
+            ## Uniform scaling, used when you want to rescale uniformly along the three axis
+        
         of tkGenericScaling: factors*, invFactors*: tuple[a, b, c: float32]
+            ## Generic scaling, it stores direct and inverse transformation factors: a --> x, b --> y, c --> z
+        
         of tkTranslation: offset*: Vec3
+            ## Translation, it only stores offset vector 
+        
         of tkRotation: 
+            ## Rotation: rotation axis is stored, as well as sine and cosine (which are the only non zero elements in rotation matrix)
             axis*: AxisKind
             sin*, cos*: float32
 
@@ -72,6 +108,7 @@ const
 
 
 proc areClose*(x, y: float32; eps: float32 = epsilon(float32)): bool {.inline.} = abs(x - y) < eps
+## `areClose` proc is used to check equivalence in floating point numbers, it's fundamental for testing
 proc areClose*[N: static[int]](a, b: Vec[N]; eps: float32 = epsilon(float32)): bool = 
     for i in 0..<N: 
         if not areClose(a[i], b[i], eps): return false
@@ -183,6 +220,7 @@ proc newNormal*(x: SomeNumber, y: SomeNumber, z: SomeNumber): Normal {.inline.} 
 proc newNormal*(v: Vec3): Normal {.inline.} = Normal(v.normalize)
 
 proc newONB*(normal: Normal): array[3, Vec3] {.inline.} = 
+    ## Procedure to crate an orthonormal base when a normal is give. Normal will be the third component of the base.
     let
         sign = copySign(1.0, normal.z)
         a = -1.0 / (sign + normal.z)
@@ -205,6 +243,7 @@ proc determinant(m: array[3, Vec3]): float32 {.inline.} = (
 )
 
 proc solve*(mat: array[3, Vec3], vec: Vec3): Vec3 {.raises: ValueError.} =
+    ## `solve` procedure is used to find ray-triangle intersection by using cramer method
 
     let det = mat.determinant
     if areClose(det, 0.0): raise newException(ValueError, "Matrix is not invertible.")
@@ -238,6 +277,7 @@ proc contains*[T](interval: Interval[T], value: T): bool {.inline.} =
 
 
 proc newAABB*(points: seq[Point3D]): AABB =
+    ## `newAABB` proc is needed in order to compute an AABB starting from a sequence of points
     if points.len == 1: return (points[0], points[0])
 
     let 
@@ -249,6 +289,8 @@ proc newAABB*(points: seq[Point3D]): AABB =
 
 
 proc getTotalAABB*(boxes: seq[AABB]): AABB =
+    ## Procedure to get a box containing all those provided as input
+    ## This is necessary for a BVH algorithm, which is based on AABB encaplused in one another
     if boxes.len == 0: return (newPoint3D(Inf, Inf, Inf), newPoint3D(-Inf, -Inf, -Inf))
     elif boxes.len == 1: return boxes[0]
 
@@ -261,9 +303,11 @@ proc getTotalAABB*(boxes: seq[AABB]): AABB =
 
 
 proc getCentroid*(aabb: AABB): Point3D {.inline.} =
+    ## Procedure to get the centroid of an AABB, this is used to split handlers into children nodes using kmeans 
     newPoint3D((aabb.min.x + aabb.max.x) / 2.0, (aabb.min.y + aabb.max.y) / 2.0, (aabb.min.z + aabb.max.z) / 2.0)
 
 proc getVertices*(aabb: AABB): seq[Point3D] {.inline.} =
+    ## Procedure to get AABB vertices
     result = newSeqOfCap[Point3D](8)
     result.add aabb.min; result.add aabb.max
     result.add newPoint3D(aabb.min.x, aabb.min.y, aabb.max.z)
@@ -296,6 +340,7 @@ proc newRotation*(angle: SomeNumber, axis: AxisKind): Transformation {.inline.} 
     Transformation(kind: tkRotation, axis: axis, cos: cos(theta), sin: sin(theta))
 
 proc `@`*(a, b: Transformation): Transformation =
+    ## Compose operator, used to create more complex transformations
     if a.kind == tkIdentity: return b
     if b.kind == tkIdentity: return a
 
@@ -316,6 +361,8 @@ proc `@`*(a, b: Transformation): Transformation =
     Transformation(kind: tkComposition, transformations: transforms)
 
 proc newComposition*(transformations: varargs[Transformation]): Transformation =
+    ## `newComposition` procedure to create a composed transformation
+    ## Transformation will be applied from right to left
     if transformations.len == 1: return transformations[0]
     elif transformations.len == 2: return transformations[0] @ transformations[1]
     var transforms = newSeq[Transformation]()
@@ -340,6 +387,9 @@ proc inverse*(t: Transformation): Transformation =
     
 
 proc apply*(t: Transformation, vec: Vec3): Vec3 =
+    ## `apply` on a Vec3f. A vector cannot be translated, other transformations are applied explicitly
+    ## in order to have a faster code and avoid useless computations
+
     case t.kind
     of tkIdentity, tkTranslation: return vec
     of tkComposition:
@@ -358,6 +408,9 @@ proc apply*(t: Transformation, vec: Vec3): Vec3 =
 
 
 proc apply*(t: Transformation, pt: Point3D): Point3D =
+    ## `apply` procedure on a point, transformations are applied explicitly
+    ## in order to have a faster code and avoid useless computations
+
     case t.kind
     of tkIdentity: return pt
     of tkComposition:
@@ -378,6 +431,9 @@ proc apply*(t: Transformation, pt: Point3D): Point3D =
 
 
 proc apply*(t: Transformation, norm: Normal): Normal =
+    ## `apply` procedure on a normal. The transformation you have to apply is the transposed of the inverse one:
+    ## also here computations are made explicitly in order to boost code performance 
+    
     case t.kind
     of tkIdentity, tkTranslation, tkUniformScaling: return norm
     of tkComposition:

@@ -474,6 +474,129 @@ proc parseCylinderSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler 
     return newCylinder(r, zMin, zMax, phiMax, dSc.materials[matName], trans)
 
 
+proc parseEllipsoidSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
+    # Procedure to parse ellipsoid shape handler 
+    var 
+        matName: string
+        a, b, c: float32
+        trans: Transformation
+
+    # Parsing ellipsoid axis
+    inStr.expectSymbol('(')
+    a = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+    b = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+    c = inStr.expectNumber(dSc)
+    inStr.expectSymbol(',')
+
+    # Parsing material (we need to check if we already defined it)
+    matName = inStr.expectIdentifier()
+    if not (matName in dSc.materials):
+        # If you get inside of this if condition, it's because 
+        # you are pointing at the end of the wrong identifier
+        let msg = fmt "Unknown material: {matName}"
+        raise newException(GrammarError, msg)
+
+    inStr.expectSymbol(',')
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    return newEllipsoid(a, b, c, material = dSc.materials[matName], transformation = trans)
+
+
+proc parseHandlerSeq*(filename: string): seq[ObjectHandler] = 
+    # Procedure to parse the a whole file in order to have a sequence of
+    # object handlers of kind shape, necessary to fill CSGUnion handlers
+    var 
+        dSc: DefScene
+        tryTok: Token
+        mat: MATERIAL
+        varName: string
+        varVal: float32
+        stream = newFileStream(filename)
+        inStr = newInputStream(stream, filename)
+
+    while true:
+        tryTok = inStr.readToken()
+        
+        # What if we are in Eof condition?
+        if tryTok.kind == StopToken:
+            break
+        
+        # The only thing that is left is reading Keywords
+        if tryTok.kind != KeywordToken:
+            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+        
+        # Just in case we are defining a float variable
+        if tryTok.keyword == KeywordKind.FLOAT:
+
+            varName = inStr.expectIdentifier()
+            inStr.expectSymbol('(')
+            varVal = inStr.expectNumber(dSc)
+            inStr.expectSymbol(')')
+
+            dSc.numVariables[varName] = varVal
+        
+        # What if we have a sphere
+        elif tryTok.keyword == KeywordKind.SPHERE:
+            dSc.scene.add(inStr.parseSphereSH(dSc))
+
+        # What if we have a plane
+        elif tryTok.keyword == KeywordKind.PLANE:
+            dSc.scene.add(inStr.parsePlaneSH(dSc))
+
+        # What if we have a Box
+        elif tryTok.keyword == KeywordKind.BOX:
+            dSc.scene.add(inStr.parseBoxSH(dSc))
+
+        # What if we have a triangle
+        elif tryTok.keyword == KeywordKind.TRIANGLE:
+            dSc.scene.add(inStr.parseTriangleSH(dSc))
+
+        # What if we have a cylinder
+        elif tryTok.keyword == KeywordKind.CYLINDER:
+            dSc.scene.add(inStr.parseCylinderSH(dSc))
+
+        # What if we have an ellipsoid
+        elif tryTok.keyword == KeywordKind.ELLIPSOID:
+            dSc.scene.add(inStr.parseEllipsoidSH(dSc))
+        
+        # What if we have a material
+        elif tryTok.keyword == KeywordKind.MATERIAL:
+            (varName, mat) = inStr.parseMaterial(dSc)
+            dSc.materials[varName] = mat
+
+        # What if we have other instances? We should not get there
+        else:
+            let msg = fmt"We just need to define shapes in order to have a sequence, necessary to create CSGTree. Error in: " & $inStr.location
+            raise newException(GrammarError, msg)
+
+    # We get here only when file ends
+    return dSc.scene
+
+
+proc parseCSGUnionSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
+    # Procedure to parse CSGUnion shape handler
+    var 
+        trans: Transformation
+        handlers: seq[ObjectHandler]
+        fname: string
+
+    # Parsing CSGUnion variables
+    inStr.expectSymbol('(')
+    fname = inStr.expectString()
+    handlers = parseHandlerSeq(fname)
+    inStr.expectSymbol(',')
+
+    # Parsing transformation
+    trans = inStr.parseTransformation(dSc)
+    inStr.expectSymbol(')')
+
+    return newCSGUnion(handlers, tkBinary, 10, (42.uint64, 2.uint64), trans)
+
+
 proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
     # Procedure to parse mesh shape handler
     var 
@@ -501,51 +624,6 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler =
     inStr.expectSymbol(')')
 
     return newMesh(fName, tkBinary, 10, (42.uint64, 1.uint64), dSc.materials[matName], trans)
-
-
-#proc parseCSGUnionSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
-#    # Procedure to parse CSGUnion shape handler
-#    var 
-#        tryTok: Token
-#        trans: Transformation
-#        sh = newSeq[ObjectHandler](2)
-#
-#    # Parsing CSGUnion variables
-#    inStr.expectSymbol('(')
-#
-#    for i in 0..<2:
-#        tryTok = inStr.readToken()
-#        
-#        if tryTok.kind != KeywordToken:
-#            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
-#            raise newException(GrammarError, msg)
-#        
-#        if tryTok.keyword == KeywordKind.SPHERE:
-#            sh[i] = inStr.parseSphereSH(dSc)
-#        
-#        elif tryTok.keyword == KeywordKind.PLANE:
-#            sh[i] = inStr.parsePlaneSH(dSc)
-#
-#        elif tryTok.keyword == KeywordKind.BOX:
-#            sh[i] = inStr.parseBoxSH(dSc)
-#        
-#        elif tryTok.keyword == KeywordKind.TRIANGLE:
-#            sh[i] = inStr.parseTriangleSH(dSc)
-#
-#        elif tryTok.keyword == KeywordKind.CYLINDER:
-#            sh[i] = inStr.parseCylinderSH(dSc)
-#
-#        else:
-#            let msg = fmt"You can't use {tryTok.keyword} in a CSGUnion. Error in: " & $inStr.location
-#            raise newException(CatchableError, msg)
-#
-#        inStr.expectSymbol(',')
-#
-#    # Parsing transformation
-#    trans = inStr.parseTransformation(dSc)
-#    inStr.expectSymbol(')')
-#
-#    return newCSGUnion(sh[0], sh[1], trans)
 
 
 proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera = 
@@ -647,13 +725,17 @@ proc parseDefScene*(inStr: var InputStream): DefScene =
         elif tryTok.keyword == KeywordKind.CYLINDER:
             dSc.scene.add(inStr.parseCylinderSH(dSc))
 
+        # What if we have an ellipsoid
+        elif tryTok.keyword == KeywordKind.ELLIPSOID:
+            dSc.scene.add(inStr.parseEllipsoidSH(dSc))
+
         # What if we have a triangular mesh
         elif tryTok.keyword == KeywordKind.TRIANGULARMESH:
             dSc.scene.add(inStr.parseMeshSH(dSc))
 
-#        # What if we have a csgunion?
-#        elif tryTok.keyword == KeywordKind.CSGUNION:
-#            dSc.scene.add(inStr.parseCSGUnionSH(dSc))
+        # What if we have a csgunion?
+        elif tryTok.keyword == KeywordKind.CSGUNION:
+            dSc.scene.add(inStr.parseCSGUnionSH(dSc))
         
         # What if we have a camera
         elif tryTok.keyword == KeywordKind.CAMERA:

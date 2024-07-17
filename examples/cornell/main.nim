@@ -11,8 +11,13 @@ var rg = newPCG((42.uint64, 1.uint64))
 
 let 
     timeStart = cpuTime()
-    
     args = commandLineParams()
+
+var
+    nRays, maxDepth, rouLimit: int
+    rgState, rgSeq: uint64
+
+try:
     nRays = parseInt(args[0])
     maxDepth = parseInt(args[1])
 
