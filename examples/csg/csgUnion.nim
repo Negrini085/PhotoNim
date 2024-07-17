@@ -16,11 +16,10 @@ let
     )
 
     csgUnion = newCSGUnion(@[
-            newSphere(newPoint3D(0, 1, 0), 1.5, newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), newUniformPigment(newColor(1, 0, 0))),
-            newSphere(newPoint3D(0,-1, 0), 1.5, newDiffuseBRDF(newUniformPigment(newColor(0, 1, 0))), newUniformPigment(newColor(0, 1, 0))),
-            newSphere(newPoint3D(0, 0, 1), 1.5, newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1)))
+            newSphere(newPoint3D(0, 1, 0), 1.5, newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), newUniformPigment(newColor(1, 0, 0)))),
+            newSphere(newPoint3D(0,-1, 0), 1.5, newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 1, 0))), newUniformPigment(newColor(0, 1, 0)))),
+            newSphere(newPoint3D(0, 0, 1), 1.5, newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1))))
         ], tkBinary, 1, rs, 
-        newDiffuseBRDF(newUniformPigment(newColor(0, 0, 0))), newUniformPigment(newColor(1, 0, 0)),
         newRotation(5, axisZ)
     )
     scene = newScene(BLACK, @[csgUnion], tkBinary, 1, rs)
