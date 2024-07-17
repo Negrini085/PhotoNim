@@ -1,4 +1,4 @@
-import pcg, geometry, color, pigment, brdf, material, scene, shape, ray, hitrecord
+import pcg, geometry, color, material, scene, shape, ray, hitrecord
 
 
 type

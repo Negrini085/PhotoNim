@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[scene, shape, geometry, pigment, brdf, color, pcg]
+import ../src/[scene, shape, geometry, color, pcg, material]
 
 from std/sequtils import toSeq
 
@@ -11,30 +11,31 @@ suite "Scene":
     setup:
         let
             rs = newRandomSetUp(42, 54) 
+            mat = newMaterial(newDiffuseBRDF(newUniformPigment(WHITE)))
 
             tri1 = newTriangle(
-                [newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0)],
-                brdf = newDiffuseBRDF(newUniformPigment(WHITE))
+                [newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0)],  mat
                 )
 
             tri2 = newTriangle(
                 [newPoint3D(0, -2, 0), newPoint3D(2, 1, 1), newPoint3D(0, 3, 0)], 
-                brdf = newDiffuseBRDF(newUniformPigment(WHITE)), transformation = newTranslation(newVec3(1, 1, -2))
+                mat, transformation = newTranslation(newVec3(1, 1, -2))
                 )
 
             sc1 = newScene(BLACK, @[tri1, tri2], tkBinary, 1, rs)
             sc2 = newScene( newColor(1, 0.3, 0.7), @[
-                    newSphere(ORIGIN3D, 3, brdf = newDiffuseBRDF(newUniformPigment(WHITE))), 
-                    newUnitarySphere(newPoint3D(4, 4, 4), brdf = newDiffuseBRDF(newUniformPigment(WHITE)))
+                    newSphere(ORIGIN3D, 3, mat), 
+                    newUnitarySphere(newPoint3D(4, 4, 4), mat)
                     ], tkBinary, 1, rs
                 )
 
             sc3 = newScene(BLACK, @[
-                    newUnitarySphere(newPoint3D(3, 3, 3), brdf = newDiffuseBRDF(newUniformPigment(WHITE))), tri1
+                    newUnitarySphere(newPoint3D(3, 3, 3), mat), tri1
                 ], tkBinary, 1, rs)
     
     teardown:
         discard rs
+        discard mat
         discard sc1
         discard sc2
         discard sc3
@@ -82,8 +83,8 @@ suite "Scene":
 
         # Second scene, only spheres
         sceneTree = newBVHNode(@[
-                newSphere(ORIGIN3D, 3, newDiffuseBRDF(newUniformPigment(WHITE))), 
-                newUnitarySphere(newPoint3D(4, 4, 4), newDiffuseBRDF(newUniformPigment(WHITE)))
+                newSphere(ORIGIN3D, 3, mat), 
+                newUnitarySphere(newPoint3D(4, 4, 4), mat)
                 ].pairs.toSeq,
             2, 1, rs
         )
@@ -93,7 +94,7 @@ suite "Scene":
 
         # Third scene, one sphere and one triangle
         sceneTree = newBVHNode(
-            @[newUnitarySphere(newPoint3D(3, 3, 3), newDiffuseBRDF(newUniformPigment(WHITE))), tri1].pairs.toSeq
+            @[newUnitarySphere(newPoint3D(3, 3, 3), mat), tri1].pairs.toSeq
             , 2, 1, rs
         )
         check areClose(sceneTree.aabb.min, newPoint3D(0, -2, 0))

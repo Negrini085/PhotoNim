@@ -1,4 +1,4 @@
-import pcg, geometry, color, pigment, brdf, scene, shape
+import pcg, geometry, material, scene, shape
 
 from std/streams import newFileStream, atEnd, readLine
 from std/strutils import parseInt, parseFloat, isEmptyOrWhitespace, splitWhitespace, rsplit
@@ -39,15 +39,14 @@ proc loadMesh*(source: string): tuple[nodes: seq[Point3D], edges: seq[int]] =
 
 
 
-proc newMesh*(source: string, treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler =    
+proc newMesh*(source: string, treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp; material: Material, transformation = Transformation.id): ObjectHandler =    
     let (nodes, edges) = loadMesh(source)
     var shapes = newSeq[ObjectHandler](edges.len div 3)
 
     for i in 0..<edges.len div 3: 
         shapes[i] = newTriangle(
             vertices = [nodes[edges[i * 3]], nodes[edges[i * 3 + 1]], nodes[edges[i * 3 + 2]]], 
-            brdf, emittedRadiance, 
-            Transformation.id
+            material, Transformation.id
         )
 
     let tree = newBVHTree(shapes, treeKind, maxShapesPerLeaf, rgSetUp)

@@ -1,9 +1,6 @@
 import pcg, geometry, scene
 
-# from std/streams import newFileStream, atEnd, readLine
-# from std/strutils import parseInt, parseFloat, isEmptyOrWhitespace, splitWhitespace, rsplit
-# from std/strformat import fmt
-from std/sequtils import toSeq, mapIt
+from std/sequtils import mapIt
 
 
 proc newCSGUnion*(localHandlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp, transformation = Transformation.id): ObjectHandler  =    

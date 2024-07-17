@@ -53,7 +53,6 @@ task demo, """Run the `PhotoNim` demo
       return
 
     exec demoCommand
-    exec "open examples/sceneFiles/demo**.png"
 
 
 task examples, "Run the `PhotoNim` examples":
@@ -75,7 +74,8 @@ task test, "Run the `PhotoNim` tests":
     exec "nim c -d:release --hints:off -r csg.nim"
     exec "nim c -d:release --hints:off -r ray.nim"
     exec "nim c -d:release --hints:off -r hitrecord.nim"
-    exec "nim c -d:release --hints:off -r brdf.nim"
-    exec "nim c -d:release --hints:off -r pigment.nim"
+    exec "nim c -d:release --hints:off -r renderer.nim"
     exec "nim c -d:release --hints:off -r camera.nim"
-    exec "rm pcg geometry color hdrimage scene shape csg ray hitrecord brdf pigment camera"
+    exec "nim c -d:release --hints:off -r lexer.nim"
+    exec "nim c -d:release --hints:off -r parser.nim"
+    exec "rm pcg geometry color hdrimage scene shape csg ray hitrecord renderer camera lexer parser"

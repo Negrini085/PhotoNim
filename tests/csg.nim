@@ -1,5 +1,5 @@
 import std/unittest
-import ../src/[csg, scene, shape, geometry, brdf, pigment, color, pcg]
+import ../src/[csg, scene, shape, geometry, color, pcg, material]
 
 #---------------------------------#
 #       CSGUnion test suite       #
@@ -8,27 +8,23 @@ suite "CSGUnion":
 
     setup:
         let
-            sh1 = newSphere(
-                    newPoint3D(1, 2, 3), 2,
-                    newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), newUniformPigment(newColor(1, 0, 0))
-                )
-            
-            sh2 = newSphere(
-                    newPoint3D(-5, 0, 0), 2,
-                    newSpecularBRDF(newUniformPigment(newColor(0, 1, 0))), newUniformPigment(newColor(0, 1, 0))
-                )
-            
-            sh3 = newUnitarySphere(
-                    newPoint3D(0, 0, 3),
-                    newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1))
-                )
-            
+            mat1 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), newUniformPigment(newColor(1, 0, 0)))
+            mat2 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 1, 0))), newUniformPigment(newColor(0, 1, 0)))
+            mat3 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1)))
+
+            sh1 = newSphere(newPoint3D(1, 2, 3), 2, mat1)
+            sh2 = newSphere(newPoint3D(-5, 0, 0), 2, mat2)
+            sh3 = newUnitarySphere(newPoint3D(0, 0, 3), mat3)
+
             csgUnion = newCSGUnion(@[sh1, sh2, sh3], tkBinary, 1, newRandomSetUp(42, 1))
 
     teardown:
         discard sh1
         discard sh2
         discard sh3
+        discard mat1
+        discard mat2
+        discard mat3
         discard csgUnion
     
 

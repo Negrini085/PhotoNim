@@ -1,23 +1,22 @@
 import std/[streams, tables, options, sets]
-import geometry, hdrimage, material, scene, shape, camera, lexer
+import geometry, hdrimage, color, scene, shape, material, csg, mesh, camera, lexer, pcg, renderer
 
 from std/sequtils import mapIt
 from std/strformat import fmt
 from std/strutils import isDigit, parseFloat, isAlphaNumeric, join
-
 
 #----------------------------------------------------------------#
 #       DefScene type: everything needed to define a scene       #
 #----------------------------------------------------------------#
 type DefScene* = object
     scene*: seq[ObjectHandler]
-    materials*: Table[string, material.Material]
-    camera*: Option[camera.Camera]
+    materials*: Table[string, material.MATERIAL]
+    camera*: Option[camera.CAMERA]
     numVariables*: Table[string, float32]
     overriddenVariables*: HashSet[string]
 
 
-proc newDefScene*(sc: seq[ObjectHandler], mat: Table[string, material.Material], cam: Option[camera.Camera], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
+proc newDefScene*(sc: seq[ObjectHandler], mat: Table[string, material.MATERIAL], cam: Option[camera.CAMERA], numV: Table[string, float32], ovV: HashSet[string]): DefScene {.inline.} = 
     # Procedure to initialize a new DefScene variable, needed at the end of the parsing proc
     DefScene(scene: sc, materials: mat, camera: cam, numVariables: numV, overriddenVariables: ovV)
 
@@ -195,15 +194,15 @@ proc parseBRDF*(inStr: var InputStream, dSc: var DefScene): BRDF =
     # Selecting desired BRDF kind
     if key == KeywordKind.DIFFUSE:
         # Diffusive BRDF kind
-        return newLambertianBRDF(pig)
+        return newDiffuseBRDF(pig)
     elif key == KeywordKind.SPECULAR:
         # Specular BRDF kind
-        return newFresnelMetalBRDF(pig)
+        return newSpecularBRDF(pig)
     
     assert false, "Something went wrong in parseBRDF, this line should be unreachable"
 
 
-proc parseMaterial*(inStr: var InputStream, dSc: var DefScene): tuple[name: string, mat: Material] = 
+proc parseMaterial*(inStr: var InputStream, dSc: var DefScene): tuple[name: string, mat: MATERIAL] = 
     # Procedure to parse a material
     var
         brdf: BRDF
@@ -216,7 +215,10 @@ proc parseMaterial*(inStr: var InputStream, dSc: var DefScene): tuple[name: stri
     emRad = inStr.parsePigment(dSc)
     inStr.expectSymbol(')')
 
-    return (varName, newMaterial(brdf, emRad))
+    if emRad.kind == pkUniform and areClose(emRad.getColor(newPoint2D(0, 0)), BLACK):
+        return (varName, newMaterial(brdf))
+
+    return (varName, newEmissiveMaterial(brdf, emRad))
 
 
 proc parseTransformation*(inStr: var InputStream, dSc: var DefScene): Transformation = 
@@ -266,19 +268,19 @@ proc parseTransformation*(inStr: var InputStream, dSc: var DefScene): Transforma
 
             if count == 0:
                 if key == KeywordKind.ROTATION_X:
-                    result = newRotX(inStr.expectNumber(dSc))
+                    result = newRotation(inStr.expectNumber(dSc), axisX)
                 elif key == KeywordKind.ROTATION_Y:
-                    result = newRotY(inStr.expectNumber(dSc))
+                    result = newRotation(inStr.expectNumber(dSc), axisY)
                 elif key == KeywordKind.ROTATION_Z:
-                    result = newRotZ(inStr.expectNumber(dSc))
+                    result = newRotation(inStr.expectNumber(dSc), axisZ)
 
             else:
                 if key == KeywordKind.ROTATION_X:
-                    result = result @ newRotX(inStr.expectNumber(dSc))
+                    result = result @ newRotation(inStr.expectNumber(dSc), axisX)
                 elif key == KeywordKind.ROTATION_Y:
-                    result = result @ newRotY(inStr.expectNumber(dSc))
+                    result = result @ newRotation(inStr.expectNumber(dSc), axisY)
                 elif key == KeywordKind.ROTATION_Z:
-                    result = result @ newRotZ(inStr.expectNumber(dSc))
+                    result = result @ newRotation(inStr.expectNumber(dSc), axisZ)
 
             count += 1  
             inStr.expectSymbol(')')
@@ -286,11 +288,20 @@ proc parseTransformation*(inStr: var InputStream, dSc: var DefScene): Transforma
         elif key == KeywordKind.SCALING:
             # Scaling, also here we have to check for count value
             inStr.expectSymbol('(')
+
+            let factVec = inStr.parseVec(dSc)
             
             if count == 0: 
-                result = newScaling(inStr.parseVec(dSc))
+                if factVec[0] == factVec[1] and factVec[1] == factVec[2]:
+                    result = newScaling(factVec[0])
+                else:
+                    result = newScaling(factVec[0], factVec[1], factVec[2])
+
             else: 
-                result = result @ newScaling(inStr.parseVec(dSc))
+                if factVec[0] == factVec[1] and factVec[1] == factVec[2]:
+                    result = result @ newScaling(factVec[0])                
+                else:
+                    result = result @ newScaling(factVec[0], factVec[1], factVec[2])
             
             count += 1
             inStr.expectSymbol(')') 
@@ -467,6 +478,7 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler =
     # Procedure to parse mesh shape handler
     var 
         fName: string
+        matName: string
         trans: Transformation
 
     # Parsing .obj filename
@@ -474,56 +486,66 @@ proc parseMeshSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler =
     fname = inStr.expectString()
     inStr.expectSymbol(',')
 
-    # Parsing transformation
-    trans = inStr.parseTransformation(dSc)
-    inStr.expectSymbol(')')
+    # Parsing material (we need to check if we already defined it)
+    matName = inStr.expectIdentifier()
+    if not (matName in dSc.materials):
+        # If you get inside of this if condition, it's because 
+        # you are pointing at the end of the wrong identifier
+        let msg = fmt "Unknown material: {matName}."
+        raise newException(GrammarError, msg)
 
-    # return newMesh(fName, trans, tkBinary, 3, 42, 1)
-
-
-proc parseCSGUnionSH*(inStr: var InputStream, dSc: var DefScene): ShapeHandler = 
-    # Procedure to parse CSGUnion shape handler
-    var 
-        tryTok: Token
-        trans: Transformation
-        sh = newSeq[ShapeHandler](2)
-
-    # Parsing CSGUnion variables
-    inStr.expectSymbol('(')
-
-    for i in 0..<2:
-        tryTok = inStr.readToken()
-        
-        if tryTok.kind != KeywordToken:
-            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
-            raise newException(GrammarError, msg)
-        
-        if tryTok.keyword == KeywordKind.SPHERE:
-            sh[i] = inStr.parseSphereSH(dSc)
-        
-        elif tryTok.keyword == KeywordKind.PLANE:
-            sh[i] = inStr.parsePlaneSH(dSc)
-
-        elif tryTok.keyword == KeywordKind.BOX:
-            sh[i] = inStr.parseBoxSH(dSc)
-        
-        elif tryTok.keyword == KeywordKind.TRIANGLE:
-            sh[i] = inStr.parseTriangleSH(dSc)
-
-        elif tryTok.keyword == KeywordKind.CYLINDER:
-            sh[i] = inStr.parseCylinderSH(dSc)
-
-        else:
-            let msg = fmt"You can't use {tryTok.keyword} in a CSGUnion. Error in: " & $inStr.location
-            raise newException(CatchableError, msg)
-
-        inStr.expectSymbol(',')
+    inStr.expectSymbol(',')
 
     # Parsing transformation
     trans = inStr.parseTransformation(dSc)
     inStr.expectSymbol(')')
 
-    return newCSGUnion(sh[0], sh[1], trans)
+    return newMesh(fName, tkBinary, 10, newRandomSetup(42, 1), dSc.materials[matName], trans)
+
+
+#proc parseCSGUnionSH*(inStr: var InputStream, dSc: var DefScene): ObjectHandler = 
+#    # Procedure to parse CSGUnion shape handler
+#    var 
+#        tryTok: Token
+#        trans: Transformation
+#        sh = newSeq[ObjectHandler](2)
+#
+#    # Parsing CSGUnion variables
+#    inStr.expectSymbol('(')
+#
+#    for i in 0..<2:
+#        tryTok = inStr.readToken()
+#        
+#        if tryTok.kind != KeywordToken:
+#            let msg = fmt"Expected a keyword instead of {tryTok.kind}. Error in: " & $inStr.location
+#            raise newException(GrammarError, msg)
+#        
+#        if tryTok.keyword == KeywordKind.SPHERE:
+#            sh[i] = inStr.parseSphereSH(dSc)
+#        
+#        elif tryTok.keyword == KeywordKind.PLANE:
+#            sh[i] = inStr.parsePlaneSH(dSc)
+#
+#        elif tryTok.keyword == KeywordKind.BOX:
+#            sh[i] = inStr.parseBoxSH(dSc)
+#        
+#        elif tryTok.keyword == KeywordKind.TRIANGLE:
+#            sh[i] = inStr.parseTriangleSH(dSc)
+#
+#        elif tryTok.keyword == KeywordKind.CYLINDER:
+#            sh[i] = inStr.parseCylinderSH(dSc)
+#
+#        else:
+#            let msg = fmt"You can't use {tryTok.keyword} in a CSGUnion. Error in: " & $inStr.location
+#            raise newException(CatchableError, msg)
+#
+#        inStr.expectSymbol(',')
+#
+#    # Parsing transformation
+#    trans = inStr.parseTransformation(dSc)
+#    inStr.expectSymbol(')')
+#
+#    return newCSGUnion(sh[0], sh[1], trans)
 
 
 proc parseCamera*(inStr: var InputStream, dSc: var DefScene): Camera = 
@@ -579,7 +601,7 @@ proc parseDefScene*(inStr: var InputStream): DefScene =
     var 
         dSc: DefScene
         tryTok: Token
-        mat: Material
+        mat: MATERIAL
         varName: string
         varVal: float32
 
@@ -629,14 +651,10 @@ proc parseDefScene*(inStr: var InputStream): DefScene =
         elif tryTok.keyword == KeywordKind.TRIANGULARMESH:
             dSc.scene.add(inStr.parseMeshSH(dSc))
 
-        # What if we have a csgunion?
-        elif tryTok.keyword == KeywordKind.CSGUNION:
-            dSc.scene.add(inStr.parseCSGUnionSH(dSc))
-
-        # What if we have a csgint?
-        elif tryTok.keyword == KeywordKind.CSGINT:
-            dSc.scene.add(inStr.parseCSGIntSH(dSc))
-
+#        # What if we have a csgunion?
+#        elif tryTok.keyword == KeywordKind.CSGUNION:
+#            dSc.scene.add(inStr.parseCSGUnionSH(dSc))
+        
         # What if we have a camera
         elif tryTok.keyword == KeywordKind.CAMERA:
 

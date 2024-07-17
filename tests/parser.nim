@@ -1,7 +1,6 @@
 import std/[unittest, tables, options, streams, sets]
 import PhotoNim
 
-
 #--------------------------------------#
 #         DefScene test suite          #
 #--------------------------------------#
@@ -12,12 +11,17 @@ suite "DefScene":
             col1 = newColor(0.3, 0.8, 1)
             col2 = newColor(0.3, 1, 0.3)
 
-            sc = @[newSphere(newPoint3D(1, 2, 3), 2)]
+            sc = @[newSphere(
+                    newPoint3D(1, 2, 3), 2, 
+                    newEmissiveMaterial(newSpecularBRDF(newUniformPigment(col1)), newUniformPigment(col1))
+                )]
+
             mat = {
-                "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
-                "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
+                "try":  newEmissiveMaterial(newSpecularBRDF(newUniformPigment(col1)), newUniformPigment(col1)),
+                "me": newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(col2)), newCheckeredPigment(col1, col2, 2, 2)) 
             }.toTable
-            rend = newPathTracer()
+
+            rend = newPathTracer(5, 5, 3)
             cam = some newPerspectiveCamera(rend, (width:10, height: 12), 2.0)
             numV = {
                 "pippo": 4.3.float32,
@@ -48,7 +52,8 @@ suite "DefScene":
 
         check dSc.scene[0].shape.kind == skSphere
         check dSc.scene[0].shape.radius == 2
-        check areClose(dSc.scene[0].transformation.mat, newTranslation(newPoint3D(1, 2, 3)).mat)
+        check dSc.scene[0].transformation.kind == tkTranslation
+        check areClose(dSc.scene[0].transformation.offset, newVec3(1, 2, 3))
 
         check dSc.camera.isSome
         check dSc.camera.get.kind == ckPerspective
@@ -56,15 +61,15 @@ suite "DefScene":
         check dSc.camera.get.transformation.kind == tkIdentity
 
         check dSc.materials["try"].brdf.kind == SpecularBRDF
-        check dSc.materials["try"].radiance.kind == pkUniform
-        check areClose(dSc.materials["try"].radiance.color, col1)
+        check dSc.materials["try"].eRadiance.kind == pkUniform
+        check areClose(dSc.materials["try"].eRadiance.color, col1)
 
         check dSc.materials["me"].brdf.kind == DiffuseBRDF
-        check dSc.materials["me"].radiance.kind == pkCheckered
-        check dSc.materials["me"].radiance.grid.nRows == 2.int
-        check dSc.materials["me"].radiance.grid.nCols == 2.int
-        check areClose(dSc.materials["me"].radiance.grid.c1, col1)
-        check areClose(dSc.materials["me"].radiance.grid.c2, col2)
+        check dSc.materials["me"].eRadiance.kind == pkCheckered
+        check dSc.materials["me"].eRadiance.grid.nRows == 2.int
+        check dSc.materials["me"].eRadiance.grid.nCols == 2.int
+        check areClose(dSc.materials["me"].eRadiance.grid.c1, col1)
+        check areClose(dSc.materials["me"].eRadiance.grid.c2, col2)
 
         check areClose(dSc.numVariables["pippo"], 4.3.float32)
         check areClose(dSc.numVariables["pluto"], 1.2.float32)
@@ -137,12 +142,14 @@ suite "Expect":
             col1 = newColor(0.3, 0.8, 1)
             col2 = newColor(0.3, 1, 0.3)
 
-            sc = @[newSphere(newPoint3D(1, 2, 3), 2)]
+            mat1 = newEmissiveMaterial(newSpecularBRDF(newUniformPigment(col1)), newUniformPigment(col1))
+
+            sc = @[newSphere(newPoint3D(1, 2, 3), 2, mat1)]
             mat = {
-                "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
-                "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
+                "try":  newEmissiveMaterial(newSpecularBRDF(newUniformPigment(col1)), newUniformPigment(col1)),
+                "me": newEmissiveMaterial(newDiffuseBRDF(newCheckeredPigment(col1, col2, 2, 2)), newCheckeredPigment(col1, col2, 2, 2)) 
             }.toTable
-            rend = newPathTracer()
+            rend = newPathTracer(5, 5, 3)
             cam = some newPerspectiveCamera(rend, (width:10, height: 12), 2.0)
             numV = {
                 "prova": 4.3.float32,
@@ -206,17 +213,16 @@ suite "Parse":
             col1 = newColor(0.3, 0.8, 1)
             col2 = newColor(0.3, 1, 0.3)
 
-            sc = @[newSphere(newPoint3D(1, 2, 3), 2)]
-            mat = {
-                "try":  newMaterial(newSpecularBRDF(), newUniformPigment(col1)),
-                "me": newMaterial(newDiffuseBRDF(), newCheckeredPigment(col1, col2, 2, 2)) 
-            }.toTable
-            rend = newPathTracer()
+            mat1 = newEmissiveMaterial(newSpecularBRDF(newUniformPigment(col1)), newUniformPigment(col1))
+            mat2 = newEmissiveMaterial(newDiffuseBRDF(newCheckeredPigment(col1, col2, 2, 2)), newCheckeredPigment(col1, col2, 2, 2))
+
+            sc = @[newSphere(newPoint3D(1, 2, 3), 2, mat1)]
+            mat = {"try": mat1, "me": mat2 }.toTable
+
+            rend = newPathTracer(5, 5, 3)
             cam = some newPerspectiveCamera(rend, (width:10, height: 12), 2.0)
-            numV = {
-                "prova": 4.3.float32,
-                "pluto": 1.2.float32
-            }.toTable
+
+            numV = {"prova": 4.3.float32, "pluto": 1.2.float32}.toTable
 
         var
             fname = "files/Parse/vec_col.txt"
@@ -231,6 +237,8 @@ suite "Parse":
         discard mat
         discard cam
         discard ovV
+        discard mat1
+        discard mat2
         discard col1
         discard col2
         discard fstr
@@ -322,17 +330,17 @@ suite "Parse":
         appo = inStr.parseMaterial(dSc)
         check appo.name == "daje"
         check appo.mat.brdf.kind == DiffuseBRDF
-        check appo.mat.radiance.kind == pkUniform
+        check appo.mat.eRadiance.kind == pkUniform
         check appo.mat.brdf.pigment.kind == pkUniform
-        check areClose(appo.mat.radiance.color, newColor(0.1, 0.2, 0.3)) 
+        check areClose(appo.mat.eRadiance.color, newColor(0.1, 0.2, 0.3)) 
         check areClose(appo.mat.brdf.pigment.color, newColor(0.1, 0.2, 0.3)) 
 
         appo = inStr.parseMaterial(dSc)
         check appo.name == "sium"
         check appo.mat.brdf.kind == SpecularBRDF
-        check appo.mat.radiance.kind == pkUniform
+        check appo.mat.eRadiance.kind == pkUniform
         check appo.mat.brdf.pigment.kind == pkCheckered
-        check areClose(appo.mat.radiance.color, newColor(0.1, 0.2, 0.3)) 
+        check areClose(appo.mat.eRadiance.color, newColor(0.1, 0.2, 0.3)) 
         check areClose(appo.mat.brdf.pigment.grid.c1, newColor(0.1, 0.2, 0.3)) 
         check areClose(appo.mat.brdf.pigment.grid.c2, newColor(4.3, 0.1, 0.2)) 
         check appo.mat.brdf.pigment.grid.nRows == 2 
@@ -352,23 +360,31 @@ suite "Parse":
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkTranslation
-        check areClose(trans.mat, newTranslation(newVec3(1, 2, 3)).mat)
+        check areClose(trans.offset, newVec3(1, 2, 3))
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkRotation
-        check areClose(trans.mat, newRotX(45).mat, eps = 1e-6)
+        check trans.axis == axisX
+        check areClose(trans.cos, newRotation(45, axisX).cos, eps = 1e-6)
+        check areClose(trans.sin, newRotation(45, axisX).sin, eps = 1e-6)
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkRotation
-        check areClose(trans.mat, newRotY(21.2).mat, eps = 1e-6)
+        check trans.axis == axisY
+        check areClose(trans.cos, newRotation(21.2, axisY).cos, eps = 1e-6)
+        check areClose(trans.sin, newRotation(21.2, axisY).sin, eps = 1e-6)
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkRotation
-        check areClose(trans.mat, newRotZ(12).mat, eps = 1e-6)
+        check trans.axis == axisZ
+        check areClose(trans.cos, newRotation(12, axisZ).cos, eps = 1e-6)
+        check areClose(trans.sin, newRotation(12, axisZ).sin, eps = 1e-6)
 
         trans = inStr.parseTransformation(dSc)
-        check trans.kind == tkScaling
-        check areClose(trans.mat, newScaling(newVec3(4.3, 0.3, 1.2)).mat)
+        check trans.kind == tkGenericScaling
+        check areClose(trans.factors.a, 4.3)
+        check areClose(trans.factors.b, 0.3)
+        check areClose(trans.factors.c, 1.2)
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkIdentity
@@ -376,15 +392,23 @@ suite "Parse":
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkComposition
         check trans.transformations.len == 2
-        check areClose(trans.transformations[0].mat, newTranslation(newVec3(4, 5, 6)).mat)
-        check areClose(trans.transformations[1].mat, newRotX(33).mat, eps = 1e-6)
+        check trans.transformations[0].kind == tkTranslation
+        check trans.transformations[1].kind == tkRotation
+        check areClose(trans.transformations[0].offset, newVec3(4, 5, 6))
+        check trans.transformations[1].axis == axisX
+        check areClose(trans.transformations[1].cos, newRotation(33, axisX).cos, eps = 1e-6)
+        check areClose(trans.transformations[1].sin, newRotation(33, axisX).sin, eps = 1e-6)
 
         trans = inStr.parseTransformation(dSc)
         check trans.kind == tkComposition
         check trans.transformations.len == 3
-        check areClose(trans.transformations[0].mat, newTranslation(newVec3(7, 8, 9)).mat)
-        check areClose(trans.transformations[1].mat, newScaling(newVec3(1, 2, 3)).mat)
-        check areClose(trans.transformations[2].mat, newRotY(90).mat, eps = 1e-6)
+        check areClose(trans.transformations[0].offset, newVec3(7, 8, 9))
+        check areClose(trans.transformations[1].factors.a, 1)
+        check areClose(trans.transformations[1].factors.b, 2)
+        check areClose(trans.transformations[1].factors.c, 3)
+        check trans.transformations[2].axis == axisY
+        check areClose(trans.transformations[2].cos, newRotation(90, axisY).cos, eps = 1e-6)
+        check areClose(trans.transformations[2].sin, newRotation(90, axisY).sin, eps = 1e-6)
     
 
     test "parseSphereSH proc":
@@ -405,10 +429,10 @@ suite "Parse":
         check sphereSH.shape.kind == skSphere
         check areClose(sphereSH.shape.radius, 2)
         check sphereSH.transformation.kind == tkTranslation
-        check sphereSH.shape.material.brdf.kind == SpecularBRDF
-        check sphereSH.shape.material.radiance.kind == pkUniform
-        check areClose(sphereSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
-        check areClose(sphereSH.transformation.mat, newTranslation(newPoint3D(1, 2, 3)).mat)
+        check sphereSH.material.brdf.kind == SpecularBRDF
+        check sphereSH.material.eRadiance.kind == pkUniform
+        check areClose(sphereSH.material.eRadiance.color, newColor(0.3, 0.8, 1))
+        check areClose(sphereSH.transformation.offset, newVec3(1, 2, 3))
 
 
     test "parsePlaneSH proc":
@@ -430,15 +454,17 @@ suite "Parse":
         check planeSH.transformation.kind == tkComposition
 
         check planeSH.transformation.transformations.len == 2
-        check areClose(planeSH.transformation.transformations[0].mat, newTranslation(newVec3(1, 2, 3)).mat)
-        check areClose(planeSH.transformation.transformations[1].mat, newScaling(newVec3(0.1, 0.2, 0.3)).mat)
+        check areClose(planeSH.transformation.transformations[0].offset, newVec3(1, 2, 3))
+        check areClose(planeSH.transformation.transformations[1].factors.a, 0.1)
+        check areClose(planeSH.transformation.transformations[1].factors.b, 0.2)
+        check areClose(planeSH.transformation.transformations[1].factors.c, 0.3)
 
-        check planeSH.shape.material.brdf.kind == DiffuseBRDF
-        check planeSH.shape.material.radiance.kind == pkCheckered
-        check areClose(planeSH.shape.material.radiance.grid.c1, col1)
-        check areClose(planeSH.shape.material.radiance.grid.c2, col2)
-        check planeSH.shape.material.radiance.grid.nRows == 2
-        check planeSH.shape.material.radiance.grid.nCols == 2
+        check planeSH.material.brdf.kind == DiffuseBRDF
+        check planeSH.material.eRadiance.kind == pkCheckered
+        check areClose(planeSH.material.eRadiance.grid.c1, col1)
+        check areClose(planeSH.material.eRadiance.grid.c2, col2)
+        check planeSH.material.eRadiance.grid.nRows == 2
+        check planeSH.material.eRadiance.grid.nCols == 2
 
 
     test "parseBoxSH proc":
@@ -460,12 +486,16 @@ suite "Parse":
         check boxSH.transformation.kind == tkComposition
 
         check boxSH.transformation.transformations.len == 2
-        check areClose(boxSH.transformation.transformations[0].mat, newRotX(45).mat, eps = 1e-6)
-        check areClose(boxSH.transformation.transformations[1].mat, newScaling(newVec3(0.1, 0.2, 0.3)).mat)
+        check boxSH.transformation.transformations[0].axis == axisX
+        check areClose(boxSH.transformation.transformations[0].cos, newRotation(45, axisX).cos, eps = 1e-6)
+        check areClose(boxSH.transformation.transformations[0].sin, newRotation(45, axisX).sin, eps = 1e-6)
+        check areClose(boxSH.transformation.transformations[1].factors.a, 0.1)
+        check areClose(boxSH.transformation.transformations[1].factors.b, 0.2)
+        check areClose(boxSH.transformation.transformations[1].factors.c, 0.3)
 
-        check boxSH.shape.material.brdf.kind == SpecularBRDF
-        check boxSH.shape.material.radiance.kind == pkUniform
-        check areClose(boxSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
+        check boxSH.material.brdf.kind == SpecularBRDF
+        check boxSH.material.eRadiance.kind == pkUniform
+        check areClose(boxSH.material.eRadiance.color, newColor(0.3, 0.8, 1))
 
 
     test "parseTriangleSH proc":
@@ -488,15 +518,15 @@ suite "Parse":
         check areClose(triangleSH.shape.vertices[1], newPoint3D(4, 5, 6))
         check areClose(triangleSH.shape.vertices[2], newPoint3D(7, 8, 9))
 
-        check triangleSH.shape.material.brdf.kind == DiffuseBRDF
-        check triangleSH.shape.material.radiance.kind == pkCheckered
-        check areClose(triangleSH.shape.material.radiance.grid.c1, col1)
-        check areClose(triangleSH.shape.material.radiance.grid.c2, col2)
-        check triangleSH.shape.material.radiance.grid.nRows == 2
-        check triangleSH.shape.material.radiance.grid.nCols == 2
+        check triangleSH.material.brdf.kind == DiffuseBRDF
+        check triangleSH.material.eRadiance.kind == pkCheckered
+        check areClose(triangleSH.material.eRadiance.grid.c1, col1)
+        check areClose(triangleSH.material.eRadiance.grid.c2, col2)
+        check triangleSH.material.eRadiance.grid.nRows == 2
+        check triangleSH.material.eRadiance.grid.nCols == 2
 
         check triangleSH.transformation.kind == tkTranslation
-        check areClose(triangleSH.transformation.mat, newTranslation(newVec3(9, 8, 7)).mat)
+        check areClose(triangleSH.transformation.offset, newVec3(9, 8, 7))
 
 
     test "parseCylinderSH proc":
@@ -520,66 +550,72 @@ suite "Parse":
         check areClose(cylinderSH.shape.zSpan.max, 1.0)
         check areClose(cylinderSH.shape.phiMax, 4.0)
 
-        check cylinderSH.shape.material.brdf.kind == SpecularBRDF
-        check cylinderSH.shape.material.radiance.kind == pkUniform
-        check areClose(cylinderSH.shape.material.radiance.color, newColor(0.3, 0.8, 1))
+        check cylinderSH.material.brdf.kind == SpecularBRDF
+        check cylinderSH.material.eRadiance.kind == pkUniform
+        check areClose(cylinderSH.material.eRadiance.color, newColor(0.3, 0.8, 1))
 
-        check cylinderSH.transformation.kind == tkScaling
-        check areClose(cylinderSH.transformation.mat, newScaling(newVec3(1, 2, 3)).mat)
-
-
-    # test "parseMeshSH proc":
-    #     # Checking parseMeshSH procedure, returns a ObjectHandler of a mesh
-    #     var 
-    #         meshSH: ObjectHandler
-    #         keys  = @[KeywordKind.TRIANGLE, KeywordKind.TRIANGULARMESH, KeywordKind.BOX]
-
-    #     fname = "files/Parse/Handlers/meshSH.txt"
-    #     fstr = newFileStream(fname, fmRead)
-    #     inStr = newInputStream(fstr, fname, 4)
-
-    #     check not fstr.isNil
-    #     check inStr.readChar() == 'a'
-    #     check inStr.expectKeywords(keys) == KeywordKind.TRIANGULARMESH
-
-    #     meshSH = inStr.parseMeshSH(dSc)
-    #     check meshSH.shape.kind == skTriangularMesh
-
-    #     check meshSH.transformation.kind == tkTranslation
-    #     check areClose(meshSH.transformation.mat, newTranslation(newVec3(1, 2, 3)).mat)
+        check cylinderSH.transformation.kind == tkGenericScaling
+        check areClose(cylinderSH.transformation.factors.a, 1)
+        check areClose(cylinderSH.transformation.factors.b, 2)
+        check areClose(cylinderSH.transformation.factors.c, 3)
 
 
-    test "parseCSGUnionSH proc":
-        # Cheking parseCSGUnionSH procedure, returns a shapeHandler of a CSGUnion shape
-        var
-            csgUnionSH: ShapeHandler
-            keys = @[KeywordKind.PLANE, KeywordKind.CSGUNION, KeywordKind.SPHERE]
-        
-        fname = "files/Parse/Handlers/csgUnionSH.txt"
+    test "parseMeshSH proc":
+        # Checking parseMeshSH procedure, returns a ObjectHandler of a mesh
+        var 
+            meshSH: ObjectHandler
+            keys  = @[KeywordKind.TRIANGLE, KeywordKind.TRIANGULARMESH, KeywordKind.BOX]
+
+        fname = "files/Parse/Handlers/meshSH.txt"
         fstr = newFileStream(fname, fmRead)
         inStr = newInputStream(fstr, fname, 4)
-    
+
         check not fstr.isNil
         check inStr.readChar() == 'a'
-        check inStr.expectKeywords(keys) == KeywordKind.CSGUNION
-        
-        csgUnionSH = inStr.parseCSGUnionSH(dSc)
-        check csgUnionSH.shape.kind == skCSGUnion
+        check inStr.expectKeywords(keys) == KeywordKind.TRIANGULARMESH
 
-        check csgUnionSH.shape.shapes.primary.kind == skSphere
-        check csgUnionSH.shape.shapes.secondary.kind == skTriangle
+        meshSH = inStr.parseMeshSH(dSc)
+        check meshSH.kind == hkMesh
 
-        check csgUnionSH.shape.shTrans.tPrimary.kind == tkTranslation
-        check csgUnionSH.shape.shTrans.tSecondary.kind == tkTranslation
-        check areClose(csgUnionSH.shape.shTrans.tPrimary.offset, newVec3(1, 2, 3))
-        check areClose(csgUnionSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
+        check meshSH.mesh.handlers[0].material.kind == mkEmissive
+        check meshSH.mesh.handlers[0].material.brdf.kind == SpecularBRDF
+        check areClose(meshSH.mesh.handlers[0].material.brdf.pigment.getColor(newPoint2D(0, 0)), newColor(0.3, 0.8, 1))
 
-        check csgUnionSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
-        check csgUnionSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
+        check meshSH.transformation.kind == tkTranslation
+        check areClose(meshSH.transformation.offset, newVec3(1, 2, 3))
 
-        check csgUnionSH.transformation.kind == tkTranslation
-        check areClose(csgUnionSH.transformation.offset, newVec3(1, 2, 3))
 
+#    test "parseCSGUnionSH proc":
+#        # Cheking parseCSGUnionSH procedure, returns a shapeHandler of a CSGUnion shape
+#        var
+#            csgUnionSH: ShapeHandler
+#            keys = @[KeywordKind.PLANE, KeywordKind.CSGUNION, KeywordKind.SPHERE]
+#        
+#        fname = "files/Parse/Handlers/csgUnionSH.txt"
+#        fstr = newFileStream(fname, fmRead)
+#        inStr = newInputStream(fstr, fname, 4)
+#    
+#        check not fstr.isNil
+#        check inStr.readChar() == 'a'
+#        check inStr.expectKeywords(keys) == KeywordKind.CSGUNION
+#        
+#        csgUnionSH = inStr.parseCSGUnionSH(dSc)
+#        check csgUnionSH.shape.kind == skCSGUnion
+#
+#        check csgUnionSH.shape.shapes.primary.kind == skSphere
+#        check csgUnionSH.shape.shapes.secondary.kind == skTriangle
+#
+#        check csgUnionSH.shape.shTrans.tPrimary.kind == tkTranslation
+#        check csgUnionSH.shape.shTrans.tSecondary.kind == tkTranslation
+#        check areClose(csgUnionSH.shape.shTrans.tPrimary.offset, newVec3(1, 2, 3))
+#        check areClose(csgUnionSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
+#
+#        check csgUnionSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
+#        check csgUnionSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
+#
+#        check csgUnionSH.transformation.kind == tkTranslation
+#        check areClose(csgUnionSH.transformation.offset, newVec3(1, 2, 3))
+#
 
     test "parseCamera proc":
         # Checking parseCamera procedure
@@ -601,7 +637,9 @@ suite "Parse":
         check camP.viewport.height == 6
         check areClose(camP.distance, 1.2)
         check camP.transformation.kind == tkRotation
-        check areClose(camP.transformation.mat, newRotX(45).mat, eps = 1e-6)
+        check camP.transformation.axis == axisX
+        check areClose(camP.transformation.cos, newRotation(45, axisX).cos, eps = 1e-6)
+        check areClose(camP.transformation.sin, newRotation(45, axisX).sin, eps = 1e-6)
 
         check inStr.expectKeywords(keys) == KeywordKind.CAMERA
 
@@ -610,7 +648,7 @@ suite "Parse":
         check camP.viewport.width == 1
         check camP.viewport.height == 4
         check camP.transformation.kind == tkTranslation
-        check areClose(camP.transformation.mat, newTranslation(newVec3(1, 2, 4.3)).mat)
+        check areClose(camP.transformation.offset, newVec3(1.0, 2.0, 4.3))
 
 
     test "parseDefScene proc":
@@ -639,15 +677,13 @@ suite "Parse":
         check matP.brdf.kind == SpecularBRDF
         check matP.brdf.pigment.kind == pkUniform
         check areClose(matP.brdf.pigment.color, newColor(0.5, 0.5, 0.5))
-        check matP.radiance.kind == pkUniform
-        check areClose(matP.radiance.color, BLACK)
 
         matP = dSc.materials["skyMaterial"]
         check matP.brdf.kind == DiffuseBRDF
         check matP.brdf.pigment.kind == pkUniform
         check areClose(matP.brdf.pigment.color, BLACK)
-        check matP.radiance.kind == pkUniform
-        check areClose(matP.radiance.color, newColor(0.7, 0.5, 1.0))
+        check matP.eRadiance.kind == pkUniform
+        check areClose(matP.eRadiance.color, newColor(0.7, 0.5, 1.0))
 
         matP = dSc.materials["groundMaterial"]
         check matP.brdf.kind == DiffuseBRDF
@@ -656,8 +692,6 @@ suite "Parse":
         check areClose(matP.brdf.pigment.grid.c2, newColor(0.1, 0.2, 0.5))
         check matP.brdf.pigment.grid.nRows == 2
         check matP.brdf.pigment.grid.nCols == 2
-        check matP.radiance.kind == pkUniform
-        check areClose(matP.radiance.color, BLACK)
 
         # Checking shapes 
         check dSc.scene.len == 3
@@ -667,15 +701,17 @@ suite "Parse":
         check dSc.scene[0].transformation.transformations.len == 2
         check dSc.scene[0].transformation.transformations[0].kind == tkTranslation
         check dSc.scene[0].transformation.transformations[1].kind == tkRotation
-        check areClose(dSc.scene[0].transformation.transformations[0].mat, newTranslation(newVec3(0, 0, 100)).mat)
-        check areClose(dSc.scene[0].transformation.transformations[1].mat, newRotY(150).mat, eps = 1e-6)
+        check areClose(dSc.scene[0].transformation.transformations[0].offset, newVec3(0, 0, 100))
+        check dSc.scene[0].transformation.transformations[1].axis == axisY
+        check areClose(dSc.scene[0].transformation.transformations[1].cos, newRotation(150, axisY).cos, eps = 1e-6)
+        check areClose(dSc.scene[0].transformation.transformations[1].sin, newRotation(150, axisY).sin, eps = 1e-6)
 
         check dSc.scene[1].shape.kind == skPlane
         check dSc.scene[1].transformation.kind == tkIdentity
 
         check dSc.scene[2].shape.kind == skSphere
         check dSc.scene[2].transformation.kind == tkTranslation
-        check areClose(dSc.scene[2].transformation.mat, newTranslation(eZ).mat)
+        check areClose(dSc.scene[2].transformation.offset, eZ)
 
         # Checking camera
         check dSc.camera.isSome
@@ -686,8 +722,10 @@ suite "Parse":
         check camP.transformation.transformations.len == 2
         check camP.transformation.transformations[0].kind == tkRotation
         check camP.transformation.transformations[1].kind == tkTranslation
-        check areClose(camP.transformation.transformations[0].mat, newRotZ(30).mat, eps = 1e-6) 
-        check areClose(camP.transformation.transformations[1].mat, newTranslation(newVec3(-4, 0, 1)).mat)
+        check camP.transformation.transformations[0].axis == axisZ
+        check areClose(camP.transformation.transformations[0].cos, newRotation(30, axisZ).cos, eps = 1e-6) 
+        check areClose(camP.transformation.transformations[0].sin, newRotation(30, axisZ).sin, eps = 1e-6) 
+        check areClose(camP.transformation.transformations[1].offset, newVec3(-4, 0, 1))
         check areClose(camP.distance, 2)
         check camP.viewport.width == 100
         check camP.viewport.height == 100
