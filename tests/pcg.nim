@@ -5,7 +5,7 @@ suite "PCG":
 
     setup:
         var 
-            randSet = newRandomSetUp(42, 54)
+            randSet: RandomSetUp = (42.uint64, 54.uint64)
             gen = newPCG(randSet)
 
     test "newPCG proc":
