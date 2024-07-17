@@ -588,6 +588,34 @@ suite "Parse":
         check areClose(ellipsoidSH.material.eRadiance.color, newColor(0.3, 0.8, 1))
 
 
+    test "parseHandlerSeq proc":
+        # Check parseHandlerSeq proc
+        var objSeq: seq[ObjectHandler]
+
+        fname = "files/Parse/Handlers/handlerSeq.txt" 
+        objSeq = parseHandlerSeq(fname)
+
+        # Checking shapes 
+        check objSeq.len == 3
+
+        check objSeq[0].shape.kind == skPlane
+        check objSeq[0].transformation.kind == tkComposition
+        check objSeq[0].transformation.transformations.len == 2
+        check objSeq[0].transformation.transformations[0].kind == tkTranslation
+        check objSeq[0].transformation.transformations[1].kind == tkRotation
+        check areClose(objSeq[0].transformation.transformations[0].offset, newVec3(0, 0, 100))
+        check objSeq[0].transformation.transformations[1].axis == axisY
+        check areClose(objSeq[0].transformation.transformations[1].cos, newRotation(150, axisY).cos, eps = 1e-6)
+        check areClose(objSeq[0].transformation.transformations[1].sin, newRotation(150, axisY).sin, eps = 1e-6)
+
+        check objSeq[1].shape.kind == skPlane
+        check objSeq[1].transformation.kind == tkIdentity
+
+        check objSeq[2].shape.kind == skSphere
+        check objSeq[2].transformation.kind == tkTranslation
+        check areClose(objSeq[2].transformation.offset, eZ)
+
+
     test "parseMeshSH proc":
         # Checking parseMeshSH procedure, returns a ObjectHandler of a mesh
         var 
