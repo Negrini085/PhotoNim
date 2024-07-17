@@ -560,6 +560,34 @@ suite "Parse":
         check areClose(cylinderSH.transformation.factors.c, 3)
 
 
+    test "parseEllipsoidSH proc":
+        # Checking parseEllipsoidSH procedure, returns a ObjectHandler of an ellipsoid
+        var 
+            ellipsoidSH: ObjectHandler
+            keys  = @[KeywordKind.SPHERE, KeywordKind.ELLIPSOID]
+
+        fname = "files/Parse/Handlers/ellipsoidSH.txt"
+        fstr = newFileStream(fname, fmRead)
+        inStr = newInputStream(fstr, fname, 4)
+
+        check not fstr.isNil
+        check inStr.readChar() == 'a'
+        check inStr.expectKeywords(keys) == KeywordKind.ELLIPSOID
+
+        ellipsoidSH = inStr.parseEllipsoidSH(dSc)
+        check ellipsoidSH.shape.kind == skEllipsoid
+        check areClose(ellipsoidSH.shape.axis.a, 1)
+        check areClose(ellipsoidSH.shape.axis.b, 2)
+        check areClose(ellipsoidSH.shape.axis.c, 3)
+
+        check ellipsoidSH.transformation.kind == tkTranslation
+        check areClose(ellipsoidSH.transformation.offset, eX)
+
+        check ellipsoidSH.material.brdf.kind == SpecularBRDF
+        check ellipsoidSH.material.eRadiance.kind == pkUniform
+        check areClose(ellipsoidSH.material.eRadiance.color, newColor(0.3, 0.8, 1))
+
+
     test "parseMeshSH proc":
         # Checking parseMeshSH procedure, returns a ObjectHandler of a mesh
         var 
@@ -584,38 +612,6 @@ suite "Parse":
         check meshSH.transformation.kind == tkTranslation
         check areClose(meshSH.transformation.offset, newVec3(1, 2, 3))
 
-
-#    test "parseCSGUnionSH proc":
-#        # Cheking parseCSGUnionSH procedure, returns a shapeHandler of a CSGUnion shape
-#        var
-#            csgUnionSH: ShapeHandler
-#            keys = @[KeywordKind.PLANE, KeywordKind.CSGUNION, KeywordKind.SPHERE]
-#        
-#        fname = "files/Parse/Handlers/csgUnionSH.txt"
-#        fstr = newFileStream(fname, fmRead)
-#        inStr = newInputStream(fstr, fname, 4)
-#    
-#        check not fstr.isNil
-#        check inStr.readChar() == 'a'
-#        check inStr.expectKeywords(keys) == KeywordKind.CSGUNION
-#        
-#        csgUnionSH = inStr.parseCSGUnionSH(dSc)
-#        check csgUnionSH.shape.kind == skCSGUnion
-#
-#        check csgUnionSH.shape.shapes.primary.kind == skSphere
-#        check csgUnionSH.shape.shapes.secondary.kind == skTriangle
-#
-#        check csgUnionSH.shape.shTrans.tPrimary.kind == tkTranslation
-#        check csgUnionSH.shape.shTrans.tSecondary.kind == tkTranslation
-#        check areClose(csgUnionSH.shape.shTrans.tPrimary.offset, newVec3(1, 2, 3))
-#        check areClose(csgUnionSH.shape.shTrans.tSecondary.offset, newVec3(1, 2, 3))
-#
-#        check csgUnionSH.shape.shapes.primary.material.brdf.kind == SpecularBRDF
-#        check csgUnionSH.shape.shapes.secondary.material.brdf.kind == DiffuseBRDF
-#
-#        check csgUnionSH.transformation.kind == tkTranslation
-#        check areClose(csgUnionSH.transformation.offset, newVec3(1, 2, 3))
-#
 
     test "parseCamera proc":
         # Checking parseCamera procedure
