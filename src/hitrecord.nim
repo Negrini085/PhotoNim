@@ -31,16 +31,16 @@ proc splitted[T](inSeq: seq[T], condition: proc(t: T): bool): (seq[T], seq[T]) =
 proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
 
     proc updateClosestHit(tCurrentHit: float32, handler: ObjectHandler, worldRay: Ray): HitPayload =
-        let invRay = worldRay.transform(handler.transformation.inverse) 
+        let localInvRay = worldRay.transform(handler.transformation.inverse) 
 
         case handler.kind
         of hkShape: 
-            let tShapeHit = invRay.getShapeHit(handler.shape)
+            let tShapeHit = localInvRay.getShapeHit(handler.shape)
             if tShapeHit >= tCurrentHit: return nil 
-            result = newHitPayload(handler, invRay, tShapeHit)
+            result = newHitPayload(handler, localInvRay, tShapeHit)
             
         of hkMesh:
-            let meshHit = handler.mesh.getClosestHit(invRay)
+            let meshHit = handler.mesh.getClosestHit(localInvRay)
             if meshHit.info.hit.isNil or meshHit.info.t >= tCurrentHit: return nil
             result = meshHit
             result.pt = apply(handler.transformation, meshHit.pt)
@@ -48,7 +48,7 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
         of hkCSG:
             case handler.csg.kind
             of csgkUnion:
-                let csgHit = handler.csg.tree.getClosestHit(invRay)
+                let csgHit = handler.csg.tree.getClosestHit(localInvRay)
                 if csgHit.info.hit.isNil or csgHit.info.t >= tCurrentHit: return nil
                 result = csgHit; result.pt = apply(handler.transformation, csgHit.pt)
 

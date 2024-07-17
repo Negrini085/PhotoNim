@@ -4,7 +4,7 @@ from std/math import sgn, floor, arccos, arctan2, PI, pow, sqrt
 from std/sequtils import mapIt, concat
 
 
-proc getAABB*(shape: Shape): Interval[Point3D] {.inline.} =
+proc getAABB*(shape: Shape): AABB {.inline.} =
     case shape.kind
     of skAABox: shape.aabb
     of skTriangle: newAABB(shape.vertices)
@@ -37,7 +37,7 @@ proc newUnitarySphere*(center: Point3D; brdf: BRDF, emittedRadiance = newUniform
 proc newPlane*(brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} = 
     newShapeHandler(Shape(kind: skPlane), brdf, emittedRadiance, transformation)
 
-proc newBox*(aabb: Interval[Point3D], brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} =
+proc newBox*(aabb: AABB, brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} =
     newShapeHandler(Shape(kind: skAABox, aabb: aabb), brdf, emittedRadiance, transformation)
 
 proc newTriangle*(vertices: array[3, Point3D]; brdf: BRDF, emittedRadiance = newUniformPigment(BLACK), transformation = Transformation.id): ObjectHandler {.inline.} = 

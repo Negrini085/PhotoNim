@@ -21,7 +21,7 @@ type
 
     NodeKind* = enum nkBranch, nkLeaf
     BVHNode* = ref object
-        aabb*: Interval[Point3D]
+        aabb*: AABB
         
         case kind*: NodeKind
         of nkBranch: children*: seq[BVHNode]
@@ -30,7 +30,7 @@ type
 
     HandlerKind* = enum hkShape, hkMesh, hkCSG
     ObjectHandler* = ref object
-        aabb*: Interval[Point3D] 
+        aabb*: AABB 
         transformation*: Transformation
 
         case kind*: HandlerKind
@@ -46,7 +46,7 @@ type
         case kind*: ShapeKind 
         of skPlane: discard
         of skSphere: radius*: float32
-        of skAABox: aabb*: Interval[Point3D]
+        of skAABox: aabb*: AABB
         of skTriangle: vertices*: seq[Point3D]
         of skCylinder:
             R*, phiMax*: float32

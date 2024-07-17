@@ -41,20 +41,6 @@ proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} =
     
     Ray(origin: origin, dir: dir, depth: 0).transform(camera.transformation)
 
-
-
-proc displayProgress(current, total: int) =
-    let
-        percentage = int(100 * current / total)
-        progress = 50 * current div total
-        bar = "[" & repeat("#", progress) & repeat("-", 50 - progress) & "]"
-        color = if percentage <= 50: fgYellow else: fgGreen
-
-    stdout.eraseLine
-    stdout.styledWrite(fgWhite, "Rendering progress: ", fgRed, "0% ", fgWhite, bar, color, fmt" {percentage}%")
-    stdout.flushFile
-
-
 proc samplePixel(x, y: int, camera: Camera, scene: Scene, rgSetUp: RandomSetUp, aaSamples: int): Color =
     let aaFactor = 1 / aaSamples.float32
 
@@ -71,6 +57,18 @@ proc samplePixel(x, y: int, camera: Camera, scene: Scene, rgSetUp: RandomSetUp, 
             result += camera.renderer.sampleRay(scene, ray, rg)
     
     result *= pow(aaFactor, 2)
+
+
+proc displayProgress(current, total: int) =
+    let
+        percentage = int(100 * current / total)
+        progress = 50 * current div total
+        bar = "[" & repeat("#", progress) & repeat("-", 50 - progress) & "]"
+        color = if percentage <= 50: fgYellow else: fgGreen
+
+    stdout.eraseLine
+    stdout.styledWrite(fgWhite, "Rendering progress: ", fgRed, "0% ", fgWhite, bar, color, fmt" {percentage}%")
+    stdout.flushFile
 
 
 proc sample*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, aaSamples: int = 1, displayProgress = true): HDRImage =
