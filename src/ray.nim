@@ -5,21 +5,32 @@ from std/math import pow, sqrt, arctan2, PI
 
 
 type Ray* = object
-    origin*: Point3D
-    dir*: Vec3
-    depth*: int
+    ## The `Ray` type is an object that enables us to interact with a `Scene` and its `ObjectHandler`s
+    ## in order to extract some information to render the desired `HDRImage` from a specific `Camera`.
+    ## 
+    ## It is possible to create an instance of `Ray` only in two distinct situations:
+    ## - for every pixel of the `HDRImage` a squared number of `Ray`s, determined by the anti-aliasing strategy in use, 
+    ##   are "fired" from the `Camera` to the `Scene`.
+    ## - when an `ObjectHandler` in `Scene` is hit by a `Ray`, if the `Ray.depth` is lower than some fixed upper bound, 
+    ##   then another `Ray` is "scattered" from the intersection point in a random direction based on the `Material` of the hit. 
 
+    origin*: Point3D ## The point from where the ray is fired.
+    dir*: Vec3 ## The direction where the ray is pointing.
+    depth*: int ## How many rays have been fired before the current.
 
-proc newRay*(origin: Point3D, direction: Vec3, depth: int = 0): Ray {.inline.} = 
-    Ray(origin: origin, dir: direction, depth: depth)  
 
 proc areClose*(a, b: Ray; eps: float32 = epsilon(float32)): bool {.inline.} = 
+    ## Check wheter two `Ray`s have close origins and directions.
     areClose(a.origin, b.origin, eps) and areClose(a.dir, b.dir, eps)
 
 
-proc at*(ray: Ray; time: float32): Point3D {.inline.} = ray.origin + ray.dir * time
+proc at*(ray: Ray; time: float32): Point3D {.inline.} = 
+    ## Get the `Point3D` at a certain distance from the `Ray.origin` in the `Ray.direction`.
+    ray.origin + ray.dir * time
 
 proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
+    ## Get a new `Ray` by apply some `Transformation` to the current `Ray.origin` and `Ray.dir`.
+    
     case transformation.kind: 
     of tkIdentity: ray
     of tkTranslation: 
@@ -36,7 +47,10 @@ proc transform*(ray: Ray; transformation: Transformation): Ray {.inline.} =
         )
 
 
-proc getBoxHit*(worldRay: Ray; aabb: Interval[Point3D]): float32 {.inline.} =
+proc getBoxHit*(worldRay: Ray; aabb: AABB): float32 {.inline.} =
+    ## Get the distance of the intersection between a `Ray` and `AABB` both created in the global reference system.
+    ## If there is not any intersection, then the procudere returns `Inf`.
+
     let
         (min, max) = (aabb.min - worldRay.origin, aabb.max - worldRay.origin)
         txSpan = newInterval(min[0] / worldRay.dir[0], max[0] / worldRay.dir[0])
@@ -56,17 +70,24 @@ proc getBoxHit*(worldRay: Ray; aabb: Interval[Point3D]): float32 {.inline.} =
     if result < 1e-5: return Inf
 
 
-proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
+proc getShapeHit*(localInvRay: Ray; shape: Shape): float32 =
+    ## Get the distance of the intersection between a `Ray` and `Shape`.  
+    ## If there is not any intersection, then the procudere returns `Inf`.
+    ## 
+    ## Keep in mind that a `Ray` fired in the `Scene` global reference system must be trasformed and inverted into the local reference system of the `Shape`.
+    ## Because the distance is an invariant, even if the procedure works in the local reference system of the `Shape`,
+    ## the result of it can still be confronted against any results from a global intersection.
+
     case shape.kind
     of skAABox:
         let
-            (min, max) = (shape.aabb.min - worldInvRay.origin, shape.aabb.max - worldInvRay.origin)
-            txSpan = newInterval(min[0] / worldInvRay.dir[0], max[0] / worldInvRay.dir[0])
-            tySpan = newInterval(min[1] / worldInvRay.dir[1], max[1] / worldInvRay.dir[1])
+            (min, max) = (shape.aabb.min - localInvRay.origin, shape.aabb.max - localInvRay.origin)
+            txSpan = newInterval(min[0] / localInvRay.dir[0], max[0] / localInvRay.dir[0])
+            tySpan = newInterval(min[1] / localInvRay.dir[1], max[1] / localInvRay.dir[1])
 
         if txSpan.min > tySpan.max or tySpan.min > txSpan.max: return Inf
 
-        let tzSpan = newInterval(min[2] / worldInvRay.dir[2], max[2] / worldInvRay.dir[2])
+        let tzSpan = newInterval(min[2] / localInvRay.dir[2], max[2] / localInvRay.dir[2])
         
         var hitSpan = newInterval(max(txSpan.min, tySpan.min), min(txSpan.max, tySpan.max))
         if hitSpan.min > tzSpan.max or tzSpan.min > hitSpan.max: return Inf
@@ -74,17 +95,17 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
         if tzSpan.min > hitSpan.min: hitSpan.min = tzSpan.min
         if tzSpan.max < hitSpan.max: hitSpan.max = tzSpan.max
 
-        result = if shape.aabb.contains(worldInvRay.origin): hitSpan.max else: hitSpan.min
+        result = if shape.aabb.contains(localInvRay.origin): hitSpan.max else: hitSpan.min
         if result < 1e-5: return Inf
 
     of skTriangle:
         let 
             mat = [
-                [shape.vertices[1].x - shape.vertices[0].x, shape.vertices[2].x - shape.vertices[0].x, -worldInvRay.dir[0]], 
-                [shape.vertices[1].y - shape.vertices[0].y, shape.vertices[2].y - shape.vertices[0].y, -worldInvRay.dir[1]], 
-                [shape.vertices[1].z - shape.vertices[0].z, shape.vertices[2].z - shape.vertices[0].z, -worldInvRay.dir[2]]
+                [shape.vertices[1].x - shape.vertices[0].x, shape.vertices[2].x - shape.vertices[0].x, -localInvRay.dir[0]], 
+                [shape.vertices[1].y - shape.vertices[0].y, shape.vertices[2].y - shape.vertices[0].y, -localInvRay.dir[1]], 
+                [shape.vertices[1].z - shape.vertices[0].z, shape.vertices[2].z - shape.vertices[0].z, -localInvRay.dir[2]]
             ]
-            vec = [worldInvRay.origin.x - shape.vertices[0].x, worldInvRay.origin.y - shape.vertices[0].y, worldInvRay.origin.z - shape.vertices[0].z]
+            vec = [localInvRay.origin.x - shape.vertices[0].x, localInvRay.origin.y - shape.vertices[0].y, localInvRay.origin.z - shape.vertices[0].z]
 
         let sol = try: solve(mat, vec) except ValueError: return Inf
         if sol[0] < 0.0 or sol[1] < 0.0 or sol[0] + sol[1] > 1.0 or sol[2] < 1e-5: return Inf
@@ -93,7 +114,7 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
 
     of skSphere:
         let 
-            (a, b, c) = (norm2(worldInvRay.dir), dot(worldInvRay.origin.Vec3, worldInvRay.dir), norm2(worldInvRay.origin.Vec3) - shape.radius * shape.radius)
+            (a, b, c) = (norm2(localInvRay.dir), dot(localInvRay.origin.Vec3, localInvRay.dir), norm2(localInvRay.origin.Vec3) - shape.radius * shape.radius)
             delta_4 = b * b - a * c
         
         if delta_4 < 0: return Inf
@@ -106,15 +127,15 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
             else: Inf
 
     of skPlane:
-        if abs(worldInvRay.dir[2]) < epsilon(float32): return Inf
-        result = -worldInvRay.origin.z / worldInvRay.dir[2]
+        if abs(localInvRay.dir[2]) < epsilon(float32): return Inf
+        result = -localInvRay.origin.z / localInvRay.dir[2]
         if result < 1e-5: return Inf
 
     of skCylinder:
         let
-            a = worldInvRay.dir[0] * worldInvRay.dir[0] + worldInvRay.dir[1] * worldInvRay.dir[1]
-            b = 2 * (worldInvRay.dir[0] * worldInvRay.origin.x + worldInvRay.dir[1] * worldInvRay.origin.y)
-            c = worldInvRay.origin.x * worldInvRay.origin.x + worldInvRay.origin.y * worldInvRay.origin.y - shape.R * shape.R
+            a = localInvRay.dir[0] * localInvRay.dir[0] + localInvRay.dir[1] * localInvRay.dir[1]
+            b = 2 * (localInvRay.dir[0] * localInvRay.origin.x + localInvRay.dir[1] * localInvRay.origin.y)
+            c = localInvRay.origin.x * localInvRay.origin.x + localInvRay.origin.y * localInvRay.origin.y - shape.R * shape.R
             delta = b * b - 4.0 * a * c
 
         if delta < 0.0: return Inf
@@ -128,7 +149,7 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
             result = tspan.max
 
         var 
-            hitPt = worldInvRay.at(result)
+            hitPt = localInvRay.at(result)
             phi = arctan2(hitPt.y, hitPt.x)
         if phi < 0.0: phi += 2.0 * PI
 
@@ -137,12 +158,12 @@ proc getShapeHit*(worldInvRay: Ray; shape: Shape): float32 =
             result = tspan.max
             if result >= Inf: return Inf
             
-            hitPt = worldInvRay.at(result)
+            hitPt = localInvRay.at(result)
             phi = arctan2(hitPt.y, hitPt.x)
             if phi < 0.0: phi += 2.0 * PI
             if hitPt.z < shape.zSpan.min or hitPt.z > shape.zSpan.max or phi > shape.phiMax: return Inf
 
     of skEllipsoid:
-        return worldInvRay
+        return localInvRay
             .transform(newScaling(1/shape.axis.a, 1/shape.axis.b, 1/shape.axis.c))
             .getShapeHit(Shape(kind: skSphere, radius: 1))
