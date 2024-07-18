@@ -57,11 +57,10 @@ task demo, """Run the `PhotoNim` demo
 
 
 task examples, "Run the `PhotoNim` examples":
-  exec "nim c -d:release --hints:off -r examples/shapes/triangle.nim"
-  exec "nim c -d:release --hints:off -r examples/shapes/box.nim"
-  exec "nim c -d:release --hints:off -r examples/shapes/cylinder.nim"
-  exec "nim c -d:release --hints:off -r examples/shapes/bvh.nim"
-  exec "rm examples/shapes/triangle examples/shapes/box examples/shapes/cylinder examples/shapes/bvh"
+  exec "nim c -d:release --hints:off -r examples/shapes/nspheres.nim"
+  exec "nim c -d:release --hints:off -r examples/csg/csgUnion.nim"
+  exec "nim c -d:release --hints:off -r examples/meshes/dragon.nim"
+  exec "rm examples/shapes/nspheres examples/csg/csgUnion examples/meshes/dragon"
 
 
 task test, "Run the `PhotoNim` tests":
