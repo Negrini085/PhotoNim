@@ -8,30 +8,34 @@ let
     viewport = (1600, 900)
     filename = "assets/images/examples/shapes/ellipsoid"
 
-var handlers: seq[ObjectHandler]
-
-handlers.add newEllipsoid(
-        0.3, 0.2, 0.1, newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), 
-        newUniformPigment(newColor(1, 0, 0)), newTranslation(newVec3(0, -0.5, 0.3))
+    mat1 = newEmissiveMaterial(
+        newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))),
+        newUniformPigment(newColor(1, 0, 0)) 
     )
-handlers.add newEllipsoid(
-        0.1, 0.2, 0.3, newDiffuseBRDF(newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 2, 2)), 
-        newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 2, 2), newTranslation(newVec3(0, 0.5, 0))
+    mat2 = newEmissiveMaterial(
+        newDiffuseBRDF(newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 2, 2)), 
+        newCheckeredPigment(newColor(1, 0, 0), newColor(0, 1, 0), 2, 2),
     )
-handlers.add newEllipsoid(
-        0.1, 0.5, 0.1, newSpecularBRDF(newUniformPigment(newColor(1, 0, 1))), newUniformPigment(newColor(1, 0, 1)),
-        newComposition(newRotation(90, axisX), newTranslation(newVec3(0, -0.8, 0)))
+    mat3 = newEmissiveMaterial(
+        newSpecularBRDF(newUniformPigment(newColor(1, 0, 1))), 
+        newUniformPigment(newColor(1, 0, 1))
     )
 
-let
-    rs1 = newRandomSetUp(42, 1)
-    rs2 = newRandomSetUp(42, 2)
-    scene = newScene(BLACK, handlers, tkBinary, 1, rs1)
+var
+    handlers: seq[ObjectHandler]
+    pcg = newPCG((42.uint64, 1.uint64))
 
-    renderer = newPathTracer(1, 1, 1)
-    camera = newPerspectiveCamera(renderer, viewport, 1.0, newTranslation(newVec3(-0.5, 0, 0)))
+handlers.add newEllipsoid(0.3, 0.2, 0.1, mat1, newTranslation(newVec3(0.0, -0.5, 0.3)))
+handlers.add newEllipsoid(0.1, 0.2, 0.3, mat2, newTranslation(newVec3(0.0, 0.5, 0.0)))
+handlers.add newEllipsoid(0.1, 0.5, 0.1, mat3, newComposition(newRotation(90, axisX), newTranslation(newVec3(0.0, -0.8, 0.0))))
 
-    image = camera.sample(scene, rs2, 2)
+let 
+    scene = newScene(BLACK, handlers, tkBinary, 1, (pcg.random, pcg.random))
+
+    rend = newPathTracer(1, 1, 1)
+    camera = newPerspectiveCamera(rend, viewport, 1.0, newTranslation(newVec3(-0.5, 0, 0)))
+
+    image = camera.sample(scene, (pcg.random, pcg.random))
 
 savePFM(image, filename & ".pfm")
 

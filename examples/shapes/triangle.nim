@@ -5,30 +5,28 @@ from std/streams import newFileStream, close
 from std/osproc import execCmd
 
 let 
-    viewport = (900, 600)
-    filename = "assets/images/examples/triangle"
+    viewport = (1600, 900)
+    filename = "assets/images/examples/shapes/triangle"
 
-var handlers: seq[ShapeHandler]
-handlers.add newUnitarySphere(ORIGIN3D - eY * 2)
-handlers.add newUnitarySphere(ORIGIN3D + eY)
-handlers.add newShapeHandler(
-    newTriangle(newPoint3D(0.0, 2.0, 3.0), newPoint3D(0.0, -2.0, 2.0), newPoint3D(0.0, -1.0, -1.0)), 
-    newComposition(newTranslation(eY * 4.0), newRotZ(-10), newRotY(10))
-)
+    mat1 = newEmissiveMaterial(
+        newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))),
+        newUniformPigment(newColor(1, 0, 0)) 
+    )
 
-handlers.add newShapeHandler(newCylinder(), newComposition(newTranslation([float32 0.0, 0.0, 1.5]), newRotY(10)))
-handlers.add newShapeHandler(newAABox(), newComposition(newTranslation([float32 -0.5, -2.5, 2.0]), newRotX(50)))
+    tri = newTriangle([newPoint3D(1, 0, 0), newPoint3D(1.0, 0.5, 0.5), newPoint3D(1.0,-0.5, 0.5)], mat1)
 
-let
-    scene = newScene(handlers)
-    camera = newPerspectiveCamera(viewport, 1.0, newPoint3D(-4, 0, 0))
-    renderer = newFlatRenderer(camera)
+var
+    handlers: seq[ObjectHandler]
+    pcg = newPCG((42.uint64, 1.uint64))
 
-    image = renderer.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 3, maxShapesPerLeaf = 1)
+let 
+    scene = newScene(BLACK, @[tri], tkBinary, 1, (pcg.random, pcg.random))
 
-var stream = newFileStream(filename & ".pfm", fmWrite)
-stream.writePFM image
-stream.close
+    rend = newPathTracer(1, 1, 1)
+    camera = newPerspectiveCamera(rend, viewport, 1.0, newTranslation(newVec3(-0.5, 0.0, 0.0)))
+    image = camera.sample(scene, (pcg.random, pcg.random))
+
+savePFM(image, filename & ".pfm")
 
 pfm2png(filename & ".pfm", filename & ".png", 0.18, 1.0, 0.1)
 discard execCmd fmt"open {filename}.png"
