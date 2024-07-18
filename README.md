@@ -124,15 +124,15 @@ You can use the `help` command to inspect a specific command helper screen:
 ```sh
 PhotoNim CLI `pfm2png` command:
 
-Usage:
-    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avLum>]
+Usage: 
+    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
 
 Options:
-    <input>             Path to the HDRImage to be converted from PFM to PNG.
-    <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "alpha_gamma" & ".png"]
+    <input>             Path to the HDRImage to be converted from PFM to PNG. 
+    <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "_a_g" & ".png"]
     --a=<alpha>         Color renormalization factor. [default: 0.18]
     --g=<gamma>         Gamma correction factor. [default: 1.0]
-    --lum=<avLum>       Average image luminosity.
+    --lum=<avlum>       Average image luminosity. 
 ```
 
 You can also use `help` without passing any command to see displayed the full PhotoNim CLI helper screen
@@ -150,15 +150,11 @@ build     Build the `PhotoNim` executable
 demo      Run the `PhotoNim` demo
 
           Usage: 
-                  nimble demo (persp | ortho) (OnOff | Flat | Path) <angle> [<output>] [<width> <height>]
+                  nimble demo (OnOff|Flat|Path)
+
           Options:
                   persp | ortho          Camera kind: Perspective or Orthogonal
                   OnOff | Flat | Path    Renderer kind: OnOff (only shows hit), Flat (flat renderer), Path (path tracer)
-
-                  <angle>                Rotation angle around z axis. [default: 10]
-                  <output>               Path to the LDRImage output. [default: "examples/demo/demo.png"]
-                  <width>                Image width. [default: 900]
-                  <height>               Image height. [default: 900]
 
 demoAnim  Run the `PhotoNim` demo animation
 examples  Run the `PhotoNim` examples
@@ -197,6 +193,18 @@ earth     Run the Earth animation
     </tr>
   </tbody>
 </table>
+
+
+## PathTracer example
+If you use the `PathTracer` renderer you can tune some parameters to better render your images: 
+```nim
+proc newPathTracer*(nRays, depthLimit, rouletteLimit: SomeInteger): Renderer {.inline.} =
+    Renderer(kind: rkPathTracer, nRays: nRays, depthLimit: depthLimit, rouletteLimit: rouletteLimit)
+```
+
+In the following example there are 16 images produced all with a different number of rays fired per intersection and a certain number of bounces. The images are ordered in this way: on the y axis the numbers of rays fired are [1, 4, 9, 16], while on the x axis the bounces are [1, 2, 3, 4].
+![CornellBox](assets/images/examples/cornell.png)
+
 
 # Contributing
 If you want to contribute to the project, you can open a [pull requests](https://github.com/Negrini085/PhotoNim/pulls) or use the [issue tracker](https://github.com/Negrini085/PhotoNim/issues/) to suggest any code implementations or report bugs.
