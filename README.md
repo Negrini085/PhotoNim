@@ -1,4 +1,4 @@
-# PhotoNim - a CPU RayTracer written in Nim
+# PhotoNim: a CPU raytracer with BVH optimization based on kmeans clustering
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Negrini085/PhotoNim/ci-action.yml)
 ![GitHub License](https://img.shields.io/github/license/Negrini085/PhotoNim)
 ![GitHub Release](https://img.shields.io/github/v/release/Negrini085/PhotoNim)
@@ -116,27 +116,7 @@ By varying the parameters alpha and gamma, you can produce visually different im
 
 
 ### The `help` command
-You can use the `help` command to inspect a specific command helper screen:
-```sh
-./PhotoNim help demo
-```
-
-```sh
-PhotoNim CLI `pfm2png` command:
-
-Usage: 
-    ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
-
-Options:
-    <input>             Path to the HDRImage to be converted from PFM to PNG. 
-    <output>            Path to the LDRImage. [default: "input_dir/" & "input_name" & "_a_g" & ".png"]
-    --a=<alpha>         Color renormalization factor. [default: 0.18]
-    --g=<gamma>         Gamma correction factor. [default: 1.0]
-    --lum=<avlum>       Average image luminosity. 
-```
-
-You can also use `help` without passing any command to see displayed the full PhotoNim CLI helper screen
-(this works in the same ways as passing `(-h | --help)` flags).
+You can use the `help` command to inspect a specific command helper screen and you can also use it without passing any command to see displayed the full PhotoNim CLI helper screen (this works in the same ways as passing `(-h | --help)` flags).
 
 
 ## PhotoNim x Nimble tasks
@@ -205,6 +185,7 @@ proc newPathTracer*(nRays, depthLimit, rouletteLimit: SomeInteger): Renderer {.i
 In the following example there are 16 images produced all with a different number of rays fired per intersection and a certain number of bounces. The images are ordered in this way: on the y axis the numbers of rays fired are [1, 4, 9, 16], while on the x axis the bounces are [1, 2, 3, 4].
 ![CornellBox](assets/images/examples/cornell.png)
 
+You can find many more examples in the `examples` folder.
 
 # Contributing
 If you want to contribute to the project, you can open a [pull requests](https://github.com/Negrini085/PhotoNim/pulls) or use the [issue tracker](https://github.com/Negrini085/PhotoNim/issues/) to suggest any code implementations or report bugs.
