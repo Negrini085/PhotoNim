@@ -9,7 +9,7 @@ export pcg, geometry, color, hdrimage, scene, shape, mesh, csg, material, ray, h
 from std/streams import newFileStream, close, FileStream
 from std/strformat import fmt
 
-const pfm2pngDoc = """
+const pfm2pngDoc* = """
 PhotoNim CLI `pfm2png` command:
 
 Usage: 
@@ -42,12 +42,12 @@ when isMainModule:
     from std/os import splitFile
     from std/options import get, isNone
 
-    let PhotoNimDoc = """PhotoNim: a CPU raytracer written in Nim.
+    let PhotoNimDoc = """PhotoNim: PhotoNim: a CPU raytracer with BVH optimization based on kmeans clustering.
 
 Usage:
     ./PhotoNim help [<command>]
     ./PhotoNim pfm2png <input> [<output>] [--a=<alpha> --g=<gamma> --lum=<avlum>]
-    ./PhotoNim rend  (OnOff|Flat|Path) <sceneFile> [<output>] [--nR=<numRays> --mD=<maxDepth> --rL=<rouletteLimit> --s=<sampleSide> --mS=<maxShapesPerLeaf>]
+    ./PhotoNim rend (OnOff|Flat|Path) <sceneFile> [<output>] [--nR=<numRays> --mD=<maxDepth> --rL=<rouletteLimit> --s=<sampleSide> --mS=<maxShapesPerLeaf>]
 
 Options:
     -h | --help         Display the PhotoNim CLI helper screen.
@@ -69,12 +69,32 @@ Options:
     --mS=<maxShapesPerLeaf>     Number of max shapes per leaf 
 """
 
+    const rendDoc* = """
+PhotoNim CLI `rend` command:
+
+Usage: 
+    ./PhotoNim rend (OnOff|Flat|Path) <sceneFile> [<output>] [--nR=<numRays> --mD=<maxDepth> --rL=<rouletteLimit> --s=<sampleSide> --mS=<maxShapesPerLeaf>]
+
+Options:
+    OnOff | Flat | Path         Choosing renderer: OnOff (only shows hit), Flat (flat renderer) or Path (path tracer)
+    <sceneFile>                 File necessary for scene definition
+    <output>                    Path for rendering result [default: "input_dir/" & "input_name" & "_a_g" & ".png"]
+    --nR=<numRays>              Ray number for path tracer [default: 3]
+    --mD=<maxDepth>             Depth for path tracer scattered rays [default: 2]
+    --rL=<rouletteLimit>        Roulette limit for path tracer scattere rays [default: 1]
+    --s=<sampleSide>            Number of samplesPerSide used in order to reduce aliasing
+    --mS=<maxShapesPerLeaf>     Number of max shapes per leaf 
+"""
+
+
+
     let args = docopt(PhotoNimDoc, argv=commandLineParams(), version=PhotoNimVersion)
 
     if args["help"]:
         if args["<command>"]:
             let command = $args["<command>"]
             if command == "pfm2png": echo pfm2pngDoc
+            elif command == "rend": echo rendDoc
             else: quit fmt"Command `{command}` not found!"
 
         else: echo PhotoNimDoc
