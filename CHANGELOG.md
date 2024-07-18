@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚜 Refactor
+
+- *(PhotoNim)* Correct examples in .nimble file
+
+## [1.0.0] - 2024-07-18
+
 ### 🚀 Features
 
 - *(Parser)* Add parseCSGUnionSH proc
