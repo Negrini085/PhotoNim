@@ -19,11 +19,11 @@ Consequently, it is essential to implement types and functionalities that enable
 </div>
 <div style="height: 40px;"></div>
 
-Within this code, we employ RGB color encoding: Color type is a ```distinct Vec3f``` because we need to store the triplet of numbers that defines the color of a pixel. 
+Within this code, we employ RGB color encoding: Color type is a ```distinct Vec3``` because we need to store the triplet of numbers that defines the color of a pixel. 
 If you want to create a new Color variable, you should specify r, g and b values using the:
 
 ```nim
-type Color* {.borrow: `.`.} = distinct Vec3f
+type Color* {.borrow: `.`.} = distinct Vec3
 
 proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
 ```

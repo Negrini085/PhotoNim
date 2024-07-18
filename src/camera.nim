@@ -1,31 +1,17 @@
-import geometry, pcg, hdrimage, material, scene, hitrecord
+import pcg, geometry, color, hdrimage, scene, ray, renderer
 
-from std/fenv import epsilon
-from std/algorithm import sorted 
 from std/strutils import repeat
-from std/options import isSome, isNone, get
 from std/terminal import fgWhite, fgRed, fgYellow, fgGreen, eraseLine, styledWrite, resetAttributes
 from std/strformat import fmt
+from std/math import pow
+from std/sequtils import applyIt, filterIt
+
+from std/threadpool import spawn, spawnX, sync
+{.experimental.}
 
 
 type
-    RendererKind* = enum
-        rkOnOff, rkFlat, rkPathTracer
-
-    Renderer* = object
-        case kind*: RendererKind
-        of rkFlat: discard
-
-        of rkOnOff:
-            hitCol*: Color
-
-        of rkPathTracer:
-            numRays*, maxDepth*, rouletteLimit*: int
-
-
-    CameraKind* = enum
-        ckOrthogonal, ckPerspective
-
+    CameraKind* = enum ckOrthogonal, ckPerspective
     Camera* = object
         renderer*: Renderer
 
@@ -36,14 +22,6 @@ type
         of ckOrthogonal: discard
         of ckPerspective: 
             distance*: float32 
-
-
-
-proc newFlatRenderer*(): Renderer {.inline.} = Renderer(kind: rkFlat)
-proc newOnOffRenderer*(hitCol = WHITE): Renderer {.inline.} = Renderer(kind: rkOnOff, hitCol: hitCol)
-
-proc newPathTracer*(numRays: SomeInteger = 25, maxDepth: SomeInteger = 10, rouletteLimit: SomeInteger = 3): Renderer {.inline.} =
-    Renderer(kind: rkPathTracer, numRays: numRays, maxDepth: maxDepth, rouletteLimit: rouletteLimit)
 
 
 proc newOrthogonalCamera*(renderer: Renderer, viewport: tuple[width, height: int], transformation = Transformation.id): Camera {.inline.} = 
@@ -58,11 +36,27 @@ proc aspectRatio*(camera: Camera): float32 {.inline.} = camera.viewport.width.fl
 proc fireRay*(camera: Camera; pixel: Point2D): Ray {.inline.} = 
     let (origin, dir) = 
         case camera.kind
-        of ckOrthogonal: (newPoint3D(-1, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
-        of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3f(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
+        of ckOrthogonal: (newPoint3D(-1.0, (1 - 2 * pixel.u) * camera.aspectRatio, 2 * pixel.v - 1), eX)
+        of ckPerspective: (newPoint3D(-camera.distance, 0, 0), newVec3(camera.distance, (1 - 2 * pixel.u ) * camera.aspectRatio, 2 * pixel.v - 1))
     
-    Ray(origin: origin, dir: dir, tSpan: (epsilon(float32), float32 Inf), depth: 0).transform(camera.transformation)
+    Ray(origin: origin, dir: dir, depth: 0).transform(camera.transformation)
 
+proc samplePixel(x, y: int, camera: Camera, scene: Scene, rgSetUp: RandomSetUp, aaSamples: int): Color =
+    let aaFactor = 1 / aaSamples.float32
+
+    var rg = newPCG(rgSetUp)
+    for u in 0..<aaSamples:
+        for v in 0..<aaSamples:
+            let ray = camera.fireRay(
+                newPoint2D(
+                    (x.float32 + (u.float32 + rg.rand) * aaFactor) / camera.viewport.width.float32,
+                    1 - (y.float32 + (v.float32 + rg.rand) * aaFactor) / camera.viewport.height.float32
+                )
+            )
+
+            result += camera.renderer.sampleRay(scene, ray, rg)
+    
+    result *= pow(aaFactor, 2)
 
 
 proc displayProgress(current, total: int) =
@@ -77,94 +71,33 @@ proc displayProgress(current, total: int) =
     stdout.flushFile
 
 
-proc sampleRay(camera: Camera; sceneTree: SceneNode, worldRay: Ray, bgColor: Color, rg: var PCG): Color =
-    result = bgColor
-    
-    let hitLeafNodes = sceneTree.getHitLeafs(worldRay)
-    if hitLeafNodes.isNone: return result
-
-    case camera.renderer.kind
-    of rkOnOff:
-        for node in hitLeafNodes.get:
-            for handler in node.handlers:
-                if handler.getHitPayload(worldRay.transform(handler.transformation.inverse)).isSome: 
-                    result = camera.renderer.hitCol
-                    break
-    of rkFlat:
-        let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
-        if hitRecord.isSome:
-            let
-                hit = hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
-                hitPt = hit.ray.at(hit.t)
-                surfPt = hit.handler.shape.getUV(hitPt)
-
-            return hit.handler.shape.material.brdf.pigment.getColor(surfPt) + hit.handler.shape.material.radiance.getColor(surfPt)
-
-    of rkPathTracer: 
-        if (worldRay.depth > camera.renderer.maxDepth): return BLACK
-
-        let hitRecord = hitLeafNodes.get.getHitRecord(worldRay)
-        if hitRecord.isNone: return result
-
-        let                
-            closestHit = hitRecord.get.sorted(proc(a, b: HitPayload): int = cmp(a.t, b.t))[0]
-
-            shapeLocalHitPt = closestHit.ray.at(closestHit.t)
-            shapeLocalHitNormal = closestHit.handler.shape.getNormal(shapeLocalHitPt, closestHit.ray.dir)
-            
-            surfacePt = closestHit.handler.shape.getUV(shapeLocalHitPt)
-            
-        result = closestHit.handler.shape.material.radiance.getColor(surfacePt)
-
-        var hitCol = closestHit.handler.shape.material.brdf.pigment.getColor(surfacePt)
-        if worldRay.depth >= camera.renderer.rouletteLimit:
-            let q = max(0.05, 1 - hitCol.luminosity)
-            if rg.rand > q: hitCol /= (1.0 - q)
-            else: return result
-
-        if hitCol.luminosity > 0.0:
-            var accumulatedRadiance = BLACK
-            for _ in 0..<camera.renderer.numRays:
-                let 
-                    localOutDir = closestHit.handler.shape.material.brdf.scatterDir(shapeLocalHitNormal, closestHit.ray.dir, rg).normalize
-                    scatteredRay = Ray(
-                        origin: apply(closestHit.handler.transformation, shapeLocalHitPt), 
-                        dir: apply(closestHit.handler.transformation, localOutDir),
-                        tSpan: (1e-5.float32, Inf.float32),
-                        depth: closestHit.ray.depth + 1
-                    )
-
-                # hitCol *= closestHit.handler.shape.material.brdf.eval(surfacePt, shapeLocalHitNormal.Vec3f, closestHit.ray.dir, localOutDir)
-                accumulatedRadiance += hitCol * camera.sampleRay(sceneTree, scatteredRay, bgColor, rg) #* closestHit.handler.shape.material.brdf.reflectance
-
-            result += accumulatedRadiance / camera.renderer.numRays.float32
-
-
-proc sample*(camera: Camera; scene: Scene, rgState, rgSeq: uint64, samplesPerSide: int = 1, treeKind: SceneTreeKind = tkBinary, maxShapesPerLeaf: int = 4, displayProgress = true): HDRImage =
+proc sample*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, aaSamples: int = 1, displayProgress = true): HDRImage =
+    var rg = newPCG(rgSetUp)
 
     result = newHDRImage(camera.viewport.width, camera.viewport.height)
-    var rg = newPCG(rgState, rgSeq)
-
-    let sceneTree = scene.getBVHTree(treeKind, maxShapesPerLeaf, rg)
-
     for y in 0..<camera.viewport.height:
         if displayProgress: displayProgress(y, camera.viewport.height - 1)
+        for x in 0..<camera.viewport.width: 
+            result.setPixel(
+                x, y,
+                samplePixel(x, y, camera, scene, newRandomSetUp(rg), aaSamples)
+            )
 
-        for x in 0..<camera.viewport.width:
-
-            var accumulatedColor = BLACK
-            for u in 0..<samplesPerSide:
-                for v in 0..<samplesPerSide:
-
-                    let ray = camera.fireRay(
-                        newPoint2D(
-                            (x.float32 + (u.float32 + rg.rand) / samplesPerSide.float32) / camera.viewport.width.float32,
-                            1 - (y.float32 + (v.float32 + rg.rand) / samplesPerSide.float32) / camera.viewport.height.float32
-                        )
-                    )
-                    
-                    accumulatedColor += camera.sampleRay(sceneTree, ray, scene.bgCol, rg)
-
-            result.setPixel(x, y, accumulatedColor / (samplesPerSide * samplesPerSide).float32)
-                                    
     if displayProgress: stdout.eraseLine; stdout.resetAttributes
+
+
+proc samples*(camera: Camera; scene: Scene, rgSetUp: RandomSetUp, nSamples: int = 1, aaSamples: int = 1, displayProgress = true): HDRImage =
+
+    if nSamples == 1: 
+        return camera.sample(scene, rgSetUp, aaSamples, displayProgress = true)
+
+    result = newHDRImage(camera.viewport.width, camera.viewport.height)
+    var rg = newPCG(rgSetUp)
+    for _ in countup(0, nSamples): 
+        spawnX stack(
+            addr result, 
+            camera.sample(scene, newRandomSetUp(rg), aaSamples, displayProgress = false)
+        )
+    
+    sync()
+    result.pixels.applyIt(it / nSamples.float32)

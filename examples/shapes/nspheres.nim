@@ -6,31 +6,34 @@ from std/osproc import execCmd
 
 
 let 
-    nSpheres = 512
+    nSpheres = 512  
+    filename = fmt"assets/images/examples/shapes/nSpheres.png"
+
     timeStart = cpuTime()
     camera = newPerspectiveCamera(
-        renderer = newPathTracer(numRays = 1, maxDepth = 1),
+        renderer = newPathTracer(3, 2, 1),
         viewport = (600, 600), 
         distance = 1.0, 
-        transformation = newTranslation(newPoint3D(-6, 0, 0))
+        transformation = newTranslation(newPoint3D(-10, 0, 0))
     )
 
 var 
-    rg = newPCG()
-    shapes = newSeq[ShapeHandler](nSpheres)
+    col: Color
+    pcg = newPCG((92.uint64, 72.uint64))
+    shapes = newSeq[ObjectHandler](nSpheres)
 
 for i in 0..<nSpheres: 
+    col = newColor(pcg.rand, pcg.rand, pcg.rand)
     shapes[i] = newSphere(
-        newPoint3D(rg.rand(-5, 5), rg.rand(-5, 5), rg.rand(-5, 5)), radius = rg.rand(0.1, 1.0), 
-        newMaterial(newFresnelMetalBRDF(), newUniformPigment(newColor(rg.rand, rg.rand, rg.rand)))
+        newPoint3D(pcg.rand(-15, 15), pcg.rand(-15, 15), pcg.rand(-15, 15)), radius = pcg.rand(0.1, 1.0), 
+        newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(col)), newUniformPigment(col))
     )
 
 let
-    scene = newScene(shapes)
-    image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 4)
+    scene = newScene(BLACK, shapes, tkOctonary, 2, (pcg.random, pcg.random))
+    image = camera.sample(scene, (pcg.random, pcg.random))
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."
 
-let filename = fmt"assets/images/examples/old_nspheres_{nSpheres}.png"
-image.savePNG(filename, 0.18, 1.0)
+image.savePNG(filename, 0.18, 1.0, 0.1)
 discard execCmd fmt"open {filename}"

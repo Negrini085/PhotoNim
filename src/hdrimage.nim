@@ -1,53 +1,18 @@
-import geometry
+import color
 
-from std/math import sum, pow, log10
+from std/math import sum, pow, log10, floor
 from std/fenv import epsilon 
 from std/sequtils import applyIt, mapIt
 from std/strutils import split, parseFloat, parseInt
 from std/streams import Stream, FileStream, newFileStream, close, write, writeLine, readLine, readFloat32
 from std/endians import littleEndian32, bigEndian32
-from nimPNG import savePNG24
 from std/strformat import fmt
+from nimPNG import savePNG24
 
 
-type 
-    Color* {.borrow: `.`.} = distinct Vec3f
-
-    HDRImage* = ref object
-        width*, height*: int
-        pixels*: seq[Color]
-
-proc newColor*(r, g, b: float32): Color {.inline.} = Color([r, g, b])
-
-const 
-    WHITE* = newColor(1, 1, 1)
-    BLACK* = newColor(0, 0, 0)
-    RED*   = newColor(1, 0, 0)
-    GREEN* = newColor(0, 1, 0)
-    BLUE*  = newColor(0, 0, 1)
-
-proc r*(a: Color): float32 {.inline.} = a.Vec3f[0]
-proc g*(a: Color): float32 {.inline.} = a.Vec3f[1]
-proc b*(a: Color): float32 {.inline.} = a.Vec3f[2]
-
-proc `==`*(a, b: Color): bool {.borrow.}
-proc areClose*(a, b: Color; epsilon = epsilon(float32)): bool {.borrow.}
-
-proc `+`*(a, b: Color): Color {.borrow.}
-proc `+=`*(a: var Color, b: Color) {.borrow.}
-proc `-`*(a, b: Color): Color {.borrow.}
-proc `-=`*(a: var Color, b: Color) {.borrow.}
-
-proc `*`*(a: Color, b: float32): Color {.borrow.}
-proc `*`*(a: float32, b: Color): Color {.borrow.}
-proc `*=`*(a: var Color, b: float32) {.borrow.}
-proc `/`*(a: Color, b: float32): Color {.borrow.}
-proc `/=`*(a: var Color, b: float32) {.borrow.}
-
-proc `*`*(a: Color, b: Color): Color {.inline.} = newColor(a.r*b.r, a.g*b.g, a.b*b.b)
-
-proc `$`*(a: Color): string {.borrow.}
-proc luminosity*(a: Color): float32 {.inline.} = 0.5 * (max(a.r, max(a.g, a.b)) + min(a.r, min(a.g, a.b)))
+type HDRImage* = ref object
+    width*, height*: int
+    pixels*: seq[Color]
 
 
 proc newHDRImage*(width, height: int): HDRImage {.inline.} = 
@@ -64,9 +29,9 @@ proc setPixel*(img: HDRImage; x, y: int, color: Color) {.inline.} =
     assert img.validPixel(x, y), fmt"Error! Index ({x}, {y}) out of bounds for a {img.width}x{img.height} HDRImage"
     img.pixels[img.pixelOffset(x, y)] = color
 
+
 proc avLuminosity*(img: HDRImage; eps = epsilon(float32)): float32 {.inline.} =
     pow(10, sum(img.pixels.mapIt(log10(eps + it.luminosity))) / img.pixels.len.float32)
-
 
 proc clamp(x: float32): float32 {.inline.} = x / (1.0 + x)
 proc clamp(x: Color): Color {.inline.} = newColor(clamp(x.r), clamp(x.g), clamp(x.b))
@@ -79,6 +44,11 @@ proc toneMap*(img: HDRImage; alpha, avLum: float32): HDRImage =
 proc applyToneMap*(img: var HDRImage; alpha, avLum: float32) =
     let lum = if avLum == 0.0: img.avLuminosity else: avLum
     img.pixels.applyIt(clamp(it * (alpha / lum)))
+
+
+proc stack*(base: ptr HDRImage, sample: HDRImage) =
+    for i in countup(0, sample.pixels.len - 1): 
+        base[].pixels[i] += sample.pixels[i]
 
 
 proc readFloat*(stream: Stream, endianness: Endianness = littleEndian): float32 = 

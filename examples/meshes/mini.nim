@@ -4,21 +4,23 @@ from std/times import cpuTime
 from std/strformat import fmt
 from std/osproc import execCmd
 
+var pcg = newPCG((38.uint64, 21.uint64))
 
 let 
     timeStart = cpuTime()
     outFile = "assets/images/examples/meshes/mini"
     camera = newPerspectiveCamera(
-        newPathTracer(numRays = 1, maxDepth = 1), 
+        newPathTracer(1, 1, 1), 
         viewport = (1600, 900), distance = 3.0, 
         newTranslation(newPoint3D(-10, 0, 0))
     )
 
-    comp = newComposition(newScaling(0.05), newRotZ(-45))
-    mini = newMesh("assets/meshes/minicooper.obj", transformation = comp, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
-    scene = newScene(@[mini])
+    comp = newComposition(newScaling(0.05), newRotation(-45, axisZ))
+    mat = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE))
+    mini = newMesh("assets/meshes/minicooper.obj", tkBinary, 10, (pcg.random, pcg.random), mat, comp)
+    scene = newScene(BLACK, @[mini], tkBinary, 1, (pcg.random, pcg.random))
 
-    image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
+    image = camera.sample(scene, (pcg.random, pcg.random))
 
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."

@@ -1,0 +1,2 @@
+a
+ellipsoid(1, 2, 3, try, translation([1, 0, 0]))

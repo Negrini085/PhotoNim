@@ -39,7 +39,8 @@ task demo, """Run the `PhotoNim` demo
 
       elif i == (commands.find("demo") + 1):
         demoCommand.add(" " & paramStr(i))
-        demoCommand.add(" " & "examples/sceneFiles/demo.txt")
+        demoCommand.add(" " & "examples/demo/demo.txt")
+        demoCommand.add(" " & "examples/demo/images/demo" & paramStr(i))
 
       else:
         demoCommand.add(" " & paramStr(i))
@@ -53,7 +54,6 @@ task demo, """Run the `PhotoNim` demo
       return
 
     exec demoCommand
-    exec "open examples/sceneFiles/demo**.png"
 
 
 task examples, "Run the `PhotoNim` examples":
@@ -66,11 +66,17 @@ task examples, "Run the `PhotoNim` examples":
 
 task test, "Run the `PhotoNim` tests":
   withDir "tests":   
-    exec "nim c -d:release --hints:off -r geometry.nim"    
-    exec "nim c -d:release --hints:off -r hdrimage.nim"    
-    exec "nim c -d:release --hints:off -r camera.nim"
-    exec "nim c -d:release --hints:off -r scene.nim"
     exec "nim c -d:release --hints:off -r pcg.nim"
+    exec "nim c -d:release --hints:off -r geometry.nim" 
+    exec "nim c -d:release --hints:off -r color.nim" 
+    exec "nim c -d:release --hints:off -r hdrimage.nim"    
+    exec "nim c -d:release --hints:off -r scene.nim"
+    exec "nim c -d:release --hints:off -r shape.nim"
+    exec "nim c -d:release --hints:off -r csg.nim"
+    exec "nim c -d:release --hints:off -r ray.nim"
     exec "nim c -d:release --hints:off -r hitrecord.nim"
-    exec "nim c -d:release --hints:off -r sceneFiles.nim"
-    exec "rm geometry hdrimage camera scene pcg hitrecord sceneFiles"
+    exec "nim c -d:release --hints:off -r renderer.nim"
+    exec "nim c -d:release --hints:off -r camera.nim"
+    exec "nim c -d:release --hints:off -r lexer.nim"
+    exec "nim c -d:release --hints:off -r parser.nim"
+    exec "rm pcg geometry color hdrimage scene shape csg ray hitrecord renderer camera lexer parser"

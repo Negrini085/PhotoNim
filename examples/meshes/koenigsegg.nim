@@ -1,25 +1,25 @@
 import PhotoNim
 
-
 from std/times import cpuTime
 from std/strformat import fmt
 from std/osproc import execCmd
 
+var pcg = newPCG((42.uint64, 2.uint64))
 
 let 
     timeStart = cpuTime()
     outFile = "assets/images/examples/meshes/koenigsegg"
     camera = newPerspectiveCamera(
-        newPathTracer(numRays = 5, maxDepth = 3), 
-        viewport = (1600, 900), distance = 3.0, 
-        newComposition(newRotX(-90), newTranslation(newPoint3D(-3, 0, 0)))
+        newPathTracer(1, 1, 1), viewport = (1600, 900), distance = 3.0, 
+        newComposition(newRotation(-90, axisX), newTranslation(newPoint3D(-3, 0, 0)))
     )
 
     comp2 = newScaling(0.1)
-    koenigsegg = newMesh("assets/meshes/koenigsegg.obj", transformation = comp2, treeKind = tkBinary, maxShapesPerLeaf = 10, rgState = 42, rgSeq = 2)
+    mat = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(WHITE)), newUniformPigment(WHITE))
+    koenigsegg = newMesh("assets/meshes/koenigsegg.obj", tkBinary, 10, (42.uint64, 2.uint64), mat, comp2)
     
-    scene = newScene(@[koenigsegg])
-    image = camera.sample(scene, rgState = 42, rgSeq = 1, samplesPerSide = 1, treeKind = tkBinary, maxShapesPerLeaf = 1)
+    scene = newScene(BLACK, @[koenigsegg], tkBinary, 1, (pcg.random, pcg.random))
+    image = camera.sample(scene, (pcg.random, pcg.random))
 
 
 echo fmt"Successfully rendered image in {cpuTime() - timeStart} seconds."

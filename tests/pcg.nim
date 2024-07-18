@@ -1,10 +1,12 @@
 import std/unittest
-import PhotoNim
+import ../src/pcg
 
 suite "PCG":
 
     setup:
-        var gen = newPCG(42, 54)
+        var 
+            randSet: RandomSetUp = (42.uint64, 54.uint64)
+            gen = newPCG(randSet)
 
     test "newPCG proc":
         # Checking PCG constructor
