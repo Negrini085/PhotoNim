@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 - *(PhotoNim)* Final change
 - *(PhotoNim)* Correct examples in .nimble file
 
+### PhotoNim
+
+- Add CLI help for rend command.
+
 ## [1.0.0] - 2024-07-18
 
 ### 🚀 Features
