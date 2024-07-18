@@ -182,7 +182,7 @@ proc newPathTracer*(nRays, depthLimit, rouletteLimit: SomeInteger): Renderer {.i
     Renderer(kind: rkPathTracer, nRays: nRays, depthLimit: depthLimit, rouletteLimit: rouletteLimit)
 ```
 
-In the following example there are 16 images produced all with a different number of rays fired per intersection and a certain number of bounces. The images are ordered in this way: on the y axis the numbers of rays fired are [1, 4, 9, 16], while on the x axis the bounces are [1, 2, 3, 4].
+In the following example there are 16 images produced with no anti-aliasing or russian roulette, but all with a different number of rays fired per intersection and a certain number of bounces. On the y axis the numbers of rays fired are [1, 4, 9, 16], while on the x axis the bounces are [1, 2, 3, 4].
 ![CornellBox](assets/images/examples/cornell.png)
 
 You can find many more examples in the `examples` folder.
