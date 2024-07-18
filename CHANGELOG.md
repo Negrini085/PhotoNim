@@ -6,6 +6,57 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(Parser)* Add parseCSGUnionSH proc
+- *(Parser)* Add parseHandlerSeq proc
+- *(Parser)* Add parseEllipsoidSH proc
+- *(csgUnion)* Add csgUnion handler kind and example
+- *(CSGDiff)* Add parseCSGDiffSH proc & test
+- *(CSGInt)* Add parseCSGIntSH proc & test
+- *(CSGDiff)* Add CSGDiff example
+- *(CSGDiff)* Add getAllHitPayloads proc & test
+- *(inShape)* Addd csgDiff case of & test
+- *(CSGDiff)* Add getHitPayload case of & test
+- *(CSGDiff)* Add CSGDiff type, newCSGDiff proc & test
+- *(CSGInt)* Add CSGInt example
+- *(CSGInt)* Add CSGInt allHitPayload proc
+- *(CSGInt)* Add CSGInt hitrecord proc
+- *(CSGInt)* Add inShape proc case of
+- *(CSG)* Add CSGInt type, constructor & test
+- *(HitPayload)* Add getAllHitPayload proc
+- *(Shape)* Add inAllShapes proc & test
+- *(Shape)* Add inShape proc & test
+- *(CSGUnion)* Add CSGUnion example
+- *(CSGUnion)* Ad parseCSGUnionSH proc
+- *(CSGUnion)* Add CSGUnion getHitPayload proc & test
+- *(CSGUnion)* Add getAABB proc & test
+- *(CSGUnion)* Add CSGUnion type, constructor & test
+- *(Ellipsoid)* Add ellipsoid example
+- *(Ellipsoid)* Add getHitPayload proc & test
+- *(Ellipsoid)* Add getUV proc & tests
+- *(Ellipsoid)* Add getNormal proc & test
+- *(Ellipsoid)* Add getABBB procs & tests
+- *(Shape)* Add new shape kind Ellipsoid & Ellipsoid contructor
+- *(Mesh)* Add obj file reading proc
+- *(Point)* Add * proc for Point2D, Point3D type
+- *(Normal)* Add toVec3 proc
+- *(CSGDIff)* Add CSGDiff rayIntersection proc
+- *(Shape)* Add allRayIntersections, implemented only for spherical shapes
+- *(Shape)* Add in_shape procedure
+- *(CSG)* New CSG example
+- *(CSGUnion)* Add fastIntersection procedure
+- *(CSG)* Add CSGUnion rayIntersection procedure
+- *(CSG)* New skCSGInt kind
+- *(CSG)* New CSGUnion and CSGDiff types
+- *(Ray)* Ray is now a simple object and not a ref object.
+- *(Scene)* New Light type
+- *(Shape)* SkTriangle now holds a seq[Points].
+- *(BVH)* New BVHTree type.
+- *(BVH)* Better Scene type has now a tree of type BVHNode
+- *(BVH)* GetClosestHit now has a default value for a miss, deprecating the usage of Option type.
+- *(BVH)* Better nodeStack sorting.
+- *(BVH)* Faster algorithm
+- *(BVH)* New algorithm to traverse BVH tree and retreive the closest hit.
+- *(ObjectHandler)* New type to unite Shape and Mesh types.
 - *(CookTorranceBRDF)* Corrected sampling pdf.
 - *(HDRImage)* HDRImage type is now a ref object.
 - *(Parser)* Add parseDefScene proc & test
@@ -44,11 +95,67 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(BRDF)* Removed ref object
+- *(tests)* First attempt at solving windows failed CI.
+- *(Cylinder)* Fix cylinder getHitPayload proc bug
+- *(Scaling)* Now correct scaling proc
+- *(Sphere)* Correct newSphere proc
+- *(tkComposition)* Fix tkComposition inverse proc
+- *(Ray)* Now ray.tSpan.min != 1, == 1e-5
+- *(Composition)* Correct composition normal apply
+- *(Interval)* Better newInterval proc
 - *(Scaling)* Fix issue #63
 - *(updateLocation)* Now it should work also on windows
 
 ### 🚜 Refactor
 
+- *(Shape)* Correct examples
+- *(PhotoNim)* Correct mesh examples, now working
+- *(CSG)* Change csg example, now woring
+- *(PhotoNim)* Update cornell example
+- *(geometry)* Now correct
+- *(PhotoNim)* Demo refactoring
+- *(PhotoNim)* Once again we can define scenes via text files
+- *(Parser)* Almost finished, just need to focus on parseDefScene and parseCamera
+- *(PhotoNim)* Now brdf, pigment & material in only one file
+- *(Parser)* Refactoring parser, need to update it to current code version
+- AABB alias type instead of explicit Interval[Point3D]. invRay -> localInvRay
+- *(sceneFiles)* Now split in lexer & parser, lexer tests are passing
+- *(PhotoNim)* Final tests
+- *(PhotoNim)* Correct geometry & hitrecord test
+- *(PhotoNim)* Correct test implementation for camera, brdf & csg
+- *(PhotoNim)* Correct source file
+- *(PhotoNim)* Small refactor, now scene tests are passing
+- *(inShape)* Add CSGUnion case of
+- *(CSGUnion)* Change hitPayload ray
+- *(SceneTests)* Change newCSGUnion proc test
+- *(GeometryTests)* Small refactoring, now all good
+- *(Mesh)* Made reading .obj files proc safer
+- *(Mesh)* Add functionalities to triangulate higher dimensional meshes
+- *(GeometryTest)* Add teardown enviroment
+- *(GeometryTest)* Add teardown enviroment
+- *(CSGUnion)* Smarter ray intersection implementation
+- *(CSGExample)* Change CSG example
+- *(Shape)* Delete allTimeHits proc
+- *(HitRecordTesting)* Now makes tests more exhausive, it could hit more than one shape
+- *(Geometry)* No more Vec4f
+- *(getClosestHit)* Better ordering and readability.
+- *(Scene)* BVHTree is now an object and the brdf & radiance in the OH is now reserved only for the hkShape.
+- *(Geometry)* Removed Mat, Vec is now reserved for float32, better templated ops on Vec and better geometry.nim code structure.
+- *(Camera)* Better parameters ordering in samplePixel.
+- *(SceneTests)* Now split in half, scene passing, currently working on shape
+- *(Demo)* Delete demo main, now using sceneFile
+- *(Cornell)* Correct Cornell example
+- *(Material)* Previous material implementation
+- *(demo)* Delete demo main, this should be executable by nimble tasks
+- *(Mesh)* Change mesh examples
+- *(Mesh)* Cange dragon example
+- *(Mesh)* Correct airplane example
+- *(scenFiles)* Now compatible with geometry
+- *(Geometry)* Apply no longer is a template proc, now divided
+- *(Geometry)* Now not using Mat4f, 0.4 s faster
+- *(HitRecord)* Better ray naming.
+- Shape.nim contains now the procedure to create an ObjectHandler of kind hkShape, similar with mesh.nim (to implement better in future)
 - *(DemoTask)* Now it's only possible to specify renderer kind
 - *(Demo)* Change demo task, automatically using demo.txt
 - *(sceneFiles)* That should be it
@@ -63,6 +170,11 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
+- *(Cornell)* Update Cornell box.
+- *(Geometry)* Add geometry documentation
+- *(PhotoNim)* Attempt to header documentation.
+- *(PCG)* Documentation and refactoring of newRandomSetUp proc.
+- *(Ray)* Documentation with nimDocs
 - *(examples)* Nspheres.nim updated.
 - RoadBike example updated.
 - *(HDRImage)* Add HDRImage definitive docs
@@ -71,6 +183,62 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(Material)* Add newTextureMaterial proc test
+- *(Parser)* Add parseCSGUnionSH proc test
+- *(Parser)* Add parseHandlerSeq proc test
+- *(Parser)* Add parseEllipsoidSH proc test
+- *(PhotoNim)* All good, updated to latest refactor
+- *(PhotoNim)* Final refactor
+- *(PhotoNim)* Create color.nim test file, add some checks to camera.nim
+- *(PhotoNim)* Ray test file
+- *(FlatRenderer)* Add FlatRenderer algorithm test
+- *(Renderer)* Add OnOff renderer test
+- *(Renderer)* Add Furnace test, got lost in code refactoring
+- *(CSGUnion)* Add getClosestHit proc test
+- *(CSGUnion)* Add newCSGUnion proc test
+- *(getClosestHit)* Another random testinsg, also when you are inside a shape is correct
+- *(PhotoNim)* Now passing
+- *(Geometry)* Now passing
+- *(CSGDiff)* Add getVertices and getAABB proc tests
+- *(CSGInt)* Add allHitPayload proc test
+- *(CSGInt)* Add CSGInt hitpayload proc test
+- *(CSGInt)* Add getAABB proc test
+- *(CSGInt)* Add getVertices proc test
+- *(HitPayload)* Add getAllHitPayload proc test
+- *(Parser)* Add parseCSGUnionSH proc test
+- *(HitPayload)* Extend CSGUnion proc test
+- *(CSGUnion)* Add getVertices test
+- *(Ellipsoid)* Add newEllipsoid proc test
+- *(CSGUnion)* Add rayIntersection proc test
+- *(Sphere)* Add non-uniform sphere tests, change newVec3( float32 in newVec3f(
+- *(Sphere)* Add allRayIntersection proc test
+- *(Shapes)* Makes some tests more exhaustive
+- *(tkComposition)* Add @ proc test
+- *(Sphere)* Add in_shape proc test
+- *(CSG)* Complete newskCSG... proc
+- *(CSG)* Correct skCSGInt constructor
+- *(getClosestHit)* We now are looking for hits, random testing once again
+- *(getClosestHit)* Add getClosestHit first random testing
+- *(getClosestHit)* Add getClosestHit test
+- *(PhotoNim)* Delete materials, now useless
+- *(PhotoNim)* Now passing
+- *(PhotoNim)* Split materialsin brdf & pigment
+- *(Camera)* Now passing
+- *(getLocalIntersection)* Add getLocalIntersection proc for available shape kinds
+- *(HitRecord)* Add HitPayload and HitInfo tests
+- *(Scene)* Now passing
+- *(Shape)* Now passing
+- *(Camera)* Now passing
+- *(PCG)* Now passing
+- *(Geometry)* Now passing
+- *(Rotation)* Makes rotation tests exhaustive
+- *(Geometry)* Add scaing on normal proc test
+- *(PhotoNim)* Refactoring all tests, now should pass everything
+- *(Material)* Add material tests
+- *(Camera)* Camera tests, now passing
+- *(Geometry)* Refactored and passing
+- *(Scene)* Now passing
+- Compatibility check and removed unused imports.
 - *(Parser)* Add parseVec & parseColor proc tests
 - *(DefScene)* Add newDefScene proc test
 - *(InputStream)* Add unreadToken proc test
@@ -86,6 +254,19 @@ All notable changes to this project will be documented in this file.
 ### Bug
 
 - *(sceneFiles)* Maybe I found it
+
+### Delete
+
+- *(Shape)* Delete inAllShapes proc and test, pointless
+
+### Example
+
+- *(airplane)* Lamp light brdf is now not nil.
+
+### Removed
+
+- *(Material)* Cook-Torrance BRDF model #50
+- *(Geometry)* Quat implementation.
 
 ## [0.3.0] - 2024-06-23
 
