@@ -274,7 +274,7 @@ All notable changes to this project will be documented in this file.
 - *(Material)* Cook-Torrance BRDF model #50
 - *(Geometry)* Quat implementation.
 
-## [0.3.0] - 2024-06-23
+## [1.0.0] - 2024-06-23
 
 ### 🚀 Features
 

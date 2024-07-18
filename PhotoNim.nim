@@ -1,6 +1,6 @@
 ## PhotoNim: a CPU Monte Carlo path tracer based on Bounding Volume Hierarchy with kmeans clustering.
 
-const PhotoNimVersion* = "PhotoNim 0.3.1"
+const PhotoNimVersion* = "PhotoNim 1.0.0"
 
 import src/[pcg, geometry, color, hdrimage, scene, shape, mesh, csg, material, ray, hitrecord, camera, renderer, lexer, parser]
 export pcg, geometry, color, hdrimage, scene, shape, mesh, csg, material, ray, hitrecord, camera, renderer, lexer, parser
