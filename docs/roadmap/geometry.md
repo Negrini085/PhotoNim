@@ -11,7 +11,6 @@ nav_order: 0
 </div>
 
 PhotoNim is a ray tracing code that enables the rendering of complex scenery. To solve the rendering equation, define shapes, and study the evolution of rays in space and time, it is necessary to implement code to address problems in linear geometry, work with vectors, and manage entire scenarios.
-
 <div style="height: 40px;"></div>
 <div style="text-align: center;">
     <span style="color: blue; font-size: 28px;"> Vector type </span>
