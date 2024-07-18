@@ -63,7 +63,6 @@ task examples, "Run the `PhotoNim` examples":
   exec "nim c -d:release --hints:off -r examples/shapes/bvh.nim"
   exec "rm examples/shapes/triangle examples/shapes/box examples/shapes/cylinder examples/shapes/bvh"
 
-
 task test, "Run the `PhotoNim` tests":
   withDir "tests":   
     exec "nim c -d:release --hints:off -r pcg.nim"
