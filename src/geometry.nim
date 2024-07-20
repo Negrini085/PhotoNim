@@ -304,7 +304,41 @@ proc getTotalAABB*(boxes: seq[AABB]): AABB =
 
 proc getCentroid*(aabb: AABB): Point3D {.inline.} =
     ## Procedure to get the centroid of an AABB, this is used to split handlers into children nodes using kmeans 
-    newPoint3D((aabb.min.x + aabb.max.x) / 2.0, (aabb.min.y + aabb.max.y) / 2.0, (aabb.min.z + aabb.max.z) / 2.0)
+    ## We need to check wether aabb limits are finite or not
+    var x, y, z: float32
+
+    # x component
+    if (copySign(aabb.min.x, 1.0) == Inf) and (copySign(aabb.max.x, 1.0) == Inf):
+        x = 0
+    elif copySign(aabb.min.x, 1.0) == Inf:
+        x = aabb.max.x
+    elif copySign(aabb.max.x, 1.0) == Inf:
+        x = aabb.min.x
+    else:
+        x = (aabb.min.x + aabb.max.x) / 2.0
+
+    # y component
+    if (copySign(aabb.min.y, 1.0) == Inf) and (copySign(aabb.max.y, 1.0) == Inf):
+        y = 0
+    elif copySign(aabb.min.y, 1.0) == Inf:
+        y = aabb.max.y
+    elif copySign(aabb.max.y, 1.0) == Inf:
+        y = aabb.min.y
+    else:
+        y = (aabb.min.y + aabb.max.y) / 2.0
+
+    # z component
+    if (copySign(aabb.min.z, 1.0) == Inf) and (copySign(aabb.max.z, 1.0) == Inf):
+        z = 0
+    elif copySign(aabb.min.z, 1.0) == Inf:
+        z = aabb.max.z
+    elif copySign(aabb.max.z, 1.0) == Inf:
+        z = aabb.min.z
+    else:
+        z = (aabb.min.z + aabb.max.z) / 2.0
+
+    newPoint3D(x, y, z)
+
 
 proc getVertices*(aabb: AABB): seq[Point3D] {.inline.} =
     ## Procedure to get AABB vertices
