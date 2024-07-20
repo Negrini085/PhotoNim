@@ -302,6 +302,95 @@ suite "Sphere":
         check areClose(aabb2.max, newPoint3D( 3,  3,  3))
     
 
+#-----------------------------#
+#       Plane test suite      #
+#-----------------------------#
+suite "Plane":
+
+    setup:
+        let
+            mat1 = newMaterial(newSpecularBRDF(newUniformPigment(WHITE)))
+            mat2 = newEmissiveMaterial(newDiffuseBRDF(newCheckeredPigment(BLACK, WHITE, 2, 2)), newCheckeredPigment(BLACK, WHITE, 2, 2))
+
+            pl1 = newPlane(mat1)
+            pl2 = newPlane(mat2)
+
+    teardown: 
+        discard pl1
+        discard pl2
+        discard mat1
+        discard mat2
+
+
+    test "newPlane proc":
+        # Checking newPlane proc
+
+        # FIRST PLANE
+        check pl1.kind == hkShape
+        check pl1.shape.kind == skPlane
+        check pl1.transformation.kind == tkIdentity
+
+        check pl1.material.kind == mkNonEmissive
+        check pl1.material.brdf.kind == SpecularBRDF
+        check pl1.material.brdf.pigment.kind == pkUniform
+        check areClose(pl1.material.brdf.pigment.getColor(newPoint2D(0, 0)), WHITE)
+
+        # SECOND PLANE
+        check pl2.kind == hkShape
+        check pl2.shape.kind == skPlane
+        check pl2.transformation.kind == tkIdentity
+
+        check pl2.material.kind == mkEmissive
+        check pl2.material.brdf.kind == DiffuseBRDF
+        check pl2.material.brdf.pigment.kind == pkCheckered
+
+
+    test "getNormal proc":
+        # Checking plane normal computation method
+        var
+            pt1 = ORIGIN3D
+            pt2 = newPoint3D(-100, 30, 0)
+            d = newVec3(-1, 2, -1)
+        
+        # FIRST PLANE
+        check areClose(pl1.shape.getNormal(pt1, d), eZ.Normal)
+        check areClose(pl1.shape.getNormal(pt2, d), ez.Normal)
+
+        # SECOND PLANE
+        check areClose(pl2.shape.getNormal(pt1, d), eZ.Normal)
+        check areClose(pl2.shape.getNormal(pt2, d), ez.Normal)
+
+    
+    test "getUV proc":
+        # Checking (u, v) coordinates computation
+        var
+            pt1 = newPoint3D(1.5, 0.5, 0)
+            pt2 = newPoint3D(0.5, 0.5, 0)
+
+        # FIRST PLANE
+        check areClose(pl1.shape.getUV(pt1), newPoint2D(0.5, 0.5))
+        check areClose(pl1.shape.getUV(pt2), newPoint2D(0.5, 0.5))
+
+        # SECOND PLANE
+        check areClose(pl2.shape.getUV(pt1), newPoint2D(0.5, 0.5))
+        check areClose(pl2.shape.getUV(pt2), newPoint2D(0.5, 0.5))
+
+
+    test "getAABB (Local) proc":
+        # Checking getAABB proc, gives AABB in plane local reference system
+        let
+            aabb1 = getAABB(pl1.shape)
+            aabb2 = getAABB(pl2.shape)
+        
+        # FIRST PLANE
+        check aabb1.min.x == -Inf and aabb1.min.y == -Inf and aabb1.min.z == -Inf
+        check aabb1.max.x ==  Inf and aabb1.max.y ==  Inf and aabb1.max.z == 0
+        
+        # SECOND PLANE
+        check aabb2.min.x == -Inf and aabb2.min.y == -Inf and aabb2.min.z == -Inf
+        check aabb2.max.x ==  Inf and aabb2.max.y ==  Inf and aabb2.max.z == 0
+
+
 
 #-------------------------------#
 #      Triangle test suite      #
