@@ -21,10 +21,25 @@ proc getVertices(shape: Shape): seq[Point3D] {.inline.} =
     of skTriangle: shape.vertices
     else: shape.getAABB.getVertices
 
+proc getWorldAABB*(shape: Shape, trans: Transformation): AABB = 
+    # Procedure to get a World AABB, in order to be sure that the plane is actually
+    # encapsulated in its aabb, we just want to set it as world itself (we do one more check, 
+    # but we are sure about the solution we will find)
+
+    let kind = shape.kind
+    case kind
+    of skPlane:
+        if trans.kind == tkIdentity:
+            return shape.getAABB
+        return (newPoint3D(-Inf, -Inf, -Inf), newPoint3D(Inf, Inf, Inf))
+    else:
+        return newAABB shape.getVertices.mapIt(apply(trans, it))
+
+
 proc newShapeHandler*(shape: Shape, material: Material, transformation: Transformation): ObjectHandler {.inline.} =
     ObjectHandler(
         kind: hkShape, 
-        aabb: newAABB shape.getVertices.mapIt(apply(transformation, it)),
+        aabb: getWorldAABB(shape, trans),
         transformation: transformation, 
         shape: shape, 
         material: material
