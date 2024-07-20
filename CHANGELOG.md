@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 - *(PhotoNim)* Final change
 - *(PhotoNim)* Correct examples in .nimble file
 
+### 🧪 Testing
+
+- *(Shape)* Add Plane test suite
+
 ### PhotoNim
 
 - Add CLI help for rend command.
