@@ -39,7 +39,7 @@ proc getWorldAABB*(shape: Shape, trans: Transformation): AABB =
 proc newShapeHandler*(shape: Shape, material: Material, transformation: Transformation): ObjectHandler {.inline.} =
     ObjectHandler(
         kind: hkShape, 
-        aabb: getWorldAABB(shape, trans),
+        aabb: getWorldAABB(shape, transformation),
         transformation: transformation, 
         shape: shape, 
         material: material

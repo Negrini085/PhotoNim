@@ -313,7 +313,7 @@ suite "Plane":
             mat2 = newEmissiveMaterial(newDiffuseBRDF(newCheckeredPigment(BLACK, WHITE, 2, 2)), newCheckeredPigment(BLACK, WHITE, 2, 2))
 
             pl1 = newPlane(mat1)
-            pl2 = newPlane(mat2)
+            pl2 = newPlane(mat2, newRotation(30, axisX))
 
     teardown: 
         discard pl1
@@ -338,7 +338,11 @@ suite "Plane":
         # SECOND PLANE
         check pl2.kind == hkShape
         check pl2.shape.kind == skPlane
-        check pl2.transformation.kind == tkIdentity
+        check pl2.transformation.kind == tkRotation
+        
+        check pl2.transformation.axis == axisX
+        check areClose(pl2.transformation.sin, sin(PI/6), eps = 1e-6) 
+        check areClose(pl2.transformation.cos, cos(PI/6), eps = 1e-6)
 
         check pl2.material.kind == mkEmissive
         check pl2.material.brdf.kind == DiffuseBRDF
@@ -389,6 +393,21 @@ suite "Plane":
         # SECOND PLANE
         check aabb2.min.x == -Inf and aabb2.min.y == -Inf and aabb2.min.z == -Inf
         check aabb2.max.x ==  Inf and aabb2.max.y ==  Inf and aabb2.max.z == 0
+
+
+    test "getWorldAABB proc":
+        # Checking getWorldAABB proc, gives AABB in world reference system
+        let
+            aabb1 = pl1.aabb
+            aabb2 = pl2.aabb
+        
+        # FIRST PLANE
+        check aabb1.min.x == -Inf and aabb1.min.y == -Inf and aabb1.min.z == -Inf
+        check aabb1.max.x ==  Inf and aabb1.max.y ==  Inf and aabb1.max.z == 0
+        
+        # SECOND PLANE
+        check aabb2.min.x == -Inf and aabb2.min.y == -Inf and aabb2.min.z == -Inf
+        check aabb2.max.x ==  Inf and aabb2.max.y ==  Inf and aabb2.max.z ==  Inf
 
 
 
