@@ -1,6 +1,6 @@
 import pcg, geometry, color, material
 
-from std/sequtils import newSeqWith, toSeq, mapIt, keepItIf
+from std/sequtils import newSeqWith, toSeq, mapIt, keepItIf, filterIt
 
 
 type    
@@ -20,6 +20,7 @@ type
         mspl*: int ## The capacity of a leaf `BVHNode`.
         root*: BVHNode ## The root `BVHNode`.
         handlers*: seq[ObjectHandler] ## The `ObjectHandler`s contained in the tree.
+        planeHandlers*: seq[ObjectHandler] ## Planes contained in scene
 
 
     NodeKind* = enum nkBranch, nkLeaf
@@ -184,7 +185,7 @@ proc newBVHNode*(handlers: seq[tuple[key: int, val: ObjectHandler]], kClusters, 
     )
 
 
-proc newBVHTree*(handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): BVHTree {.inline.} =
+proc newBVHTree*(handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerLeaf: int, rgSetUp: RandomSetUp): BVHTree =
     ## Creates a new Bounding Volume Hierarchy (BVH) Tree for organizing `ObjectHandler`s inside a `Scene`.
     ##
     ## Parameters:
@@ -193,11 +194,13 @@ proc newBVHTree*(handlers: seq[ObjectHandler], treeKind: TreeKind, maxShapesPerL
     ## - `maxShapesPerLeaf`: `int` -> The maximum number of shapes allowed in a leaf node.
     ## - `rgSetUp`: `RandomSetUp` -> Random setup parameters for initializing the BVH tree using kmeans clustering.
 
+    let hand = handlers.filterIt(it.kind != hkShape) & handlers.filterIt(it.kind == hkShape).filterIt(it.shape.kind != skPlane)
     BVHTree(
         kind: treeKind, 
         mspl: maxShapesPerLeaf, 
-        root: newBVHNode(handlers.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp), 
-        handlers: handlers
+        root: newBVHNode(hand.pairs.toSeq, treeKind.int, maxShapesPerLeaf, rgSetUp), 
+        handlers: hand,
+        planeHandlers: handlers.filterIt(it.kind == hkShape).filterIt(it.shape.kind == skPlane)
     )
 
 
@@ -214,6 +217,6 @@ proc newScene*(bgColor: Color, handlers: seq[ObjectHandler], treeKind: TreeKind,
     ##
     ## Raises:
     ## - `AssertionError` if the `handlers` sequence is empty.
-
-    doAssert handlers.len > 0, "Error! Cannot create a Scene from an empty sequence of ObjectHandlers."
+    let msg = "Error! Cannot create a Scene from an empty sequence of ObjectHandlers which are not Planes."
+    doAssert (handlers.filterIt(it.kind != hkShape) & handlers.filterIt(it.kind == hkShape).filterIt(it.shape.kind != skPlane)).len > 0, msg
     Scene(bgColor: bgColor, tree: newBVHTree(handlers, treeKind, maxShapesPerLeaf, rgSetUp))

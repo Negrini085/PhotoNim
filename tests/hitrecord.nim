@@ -363,3 +363,49 @@ suite "Tree traverse":
         # Fourth ray --> Origin: (0, 0, 0), Dir: ( 0, 0, 1)
         # In world, we should get no intersections at all
         check scene.tree.getClosestHit(ray4).info.hit.isNil
+
+
+    test "getClosestHit (plane)":
+        # Checking getClosestHit for a ray-plane intersection.
+        # Here we need to assure that time computation is indeed correct.
+
+        let
+            mat1 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(1, 0, 0))), newUniformPigment(newColor(1, 0, 0)))
+            mat2 = newEmissiveMaterial(newDiffuseBRDF(newUniformPigment(newColor(0, 0, 1))), newUniformPigment(newColor(0, 0, 1)))
+
+            plane = newPlane(mat2)        
+            ray1 = Ray(origin: newPoint3D(0, 0, 1), dir: -eZ, depth: 0)
+            ray2 = Ray(origin: newPoint3D(0, 0, 3), dir: -eZ, depth: 0)
+            ray3 = Ray(origin: newPoint3D(4, 1, 1), dir: -eX, depth: 0)
+
+        var 
+            rg = newPCG(rs)
+            handlSeq = newSeq[ObjectHandler](500)
+        
+        for i in 0..<5:
+            for j in 0..<498:
+                handlSeq[j] = newSphere(newPoint3D(rg.rand(-10, 10), rg.rand(-10, 10), rg.rand(-15, -5)), rg.rand(0, 4), mat1)
+
+            handlSeq[498] = plane
+            handlSeq[499] = newSphere(newPoint3D(0, 0, 4), 2, mat1)
+            scene = newScene(BLACK, handlSeq, tkBinary, 1, (rg.random, rg.random))
+
+            # First ray --> Origin: (0, 0, 1), Dir: (0, 0,-1)
+            # In world, we should get intersection in (0, 0, 0)
+            hitPayload = scene.tree.getClosestHit(ray1)
+            check hitPayload.info.hit.shape.kind == skPlane
+            check areClose(hitPayload.info.t, 1)
+            check areClose(hitPayload.pt, newPoint3D(0, 0, 0))
+            check areClose(hitPayload.rayDir, -eZ)
+
+            # Second ray --> Origin: (0, 0, 3), Dir: (0, 0,-1)
+            # In world, we should get intersection in (0, 0, -2)
+            hitPayload = scene.tree.getClosestHit(ray2)
+            check hitPayload.info.hit.shape.kind == skSphere
+            check areClose(hitPayload.info.t, 1)
+            check areClose(hitPayload.pt, newPoint3D(0, 0,-2))
+            check areClose(hitPayload.rayDir, -eZ)
+
+            # Third ray --> Origin: (4, 0, 0), Dir: (-1, 0, 0)
+            # In world, we should not get intersections at all 
+            check scene.tree.getClosestHit(ray3).info.hit.isNil

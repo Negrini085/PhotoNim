@@ -191,6 +191,7 @@ Options:
             raise newException(CatchableError, msg)
 
         inStr = newInputStream(fStr, fileIn, 4)
+        echo "Parsing scene"
         dSc = inStr.parseDefScene()
 
         if dSc.camera.isNone:
@@ -200,6 +201,7 @@ Options:
         dSc.camera.get.renderer = rend
         
         # Actual rendering proc
+        echo "Rendering image"
         img = dSc.camera.get.sample(scene = newScene(BLACK, dSc.scene, tkBinary, mShapes, newRandomSetup(pcg)), newRandomSetup(pcg), nSamp)
 
         img.savePFM(pfmOut)

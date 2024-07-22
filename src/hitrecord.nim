@@ -55,8 +55,16 @@ proc getClosestHit*(tree: BVHTree, worldRay: Ray): HitPayload =
 
     result = HitPayload(info: (hit: nil, t: Inf.float32), pt: worldRay.origin, rayDir: worldRay.dir)
 
+    let planeSH = tree.planeHandlers
+    var tPlane: float32
+    if planeSH.len != 0:
+        for i in planeSH:
+            tPlane = worldRay.transform(i.transformation.inverse).getShapeHit(i.shape)
+            if tPlane < result.info.t:
+                result = updateClosestHit(result.info.t, i, worldRay) 
+
     let tRootHit = worldRay.getBoxHit(tree.root.aabb)
-    if tRootHit == Inf: return result
+    if tRootHit == Inf and result.info.t == Inf: return result
 
     var nodesHitStack = newSeqOfCap[HitInfo[BVHNode]](tree.kind.int * tree.kind.int * tree.kind.int)
     nodesHitStack.add (tree.root, tRootHit) 
