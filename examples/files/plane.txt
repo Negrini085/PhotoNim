@@ -1,0 +1,10 @@
+# Materials used in demo rendering
+material mat1(diffuse(checkered(<1, 1, 1>, <0, 1, 0>, 2, 2)), uniform(<0, 0, 0>))
+material mat2(diffuse(uniform(<0, 0.498, 1>)), uniform(<0, 0.498, 1>))
+
+# Shapes used in demo rendering
+sphere([0, 0,  0], 10000, mat2)
+plane(mat1, translation([0, 0,-2]))
+
+# Camera used in demo rendering
+camera(perspective, 1600, 900, 1.0, identity)
