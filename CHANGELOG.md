@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [1.0.1] - 2024-07-22
 
 ### 🚀 Features
 
@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚜 Refactor
 
+- *(PhotoNim)* Correct version number
 - *(PhotoNim)* Planes are no longer in BVHTree
 - *(PhotoNim)* Final change
 - *(PhotoNim)* Correct examples in .nimble file
