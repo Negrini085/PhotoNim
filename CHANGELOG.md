@@ -4,13 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(PhotoNim)* Some examples
+- *(Shape)* Add getWorldAABB proc
+
+### 🐛 Bug Fixes
+
+- *(Geometry)* Correct getCentroid proc
+
 ### 🚜 Refactor
 
+- *(PhotoNim)* Planes are no longer in BVHTree
 - *(PhotoNim)* Final change
 - *(PhotoNim)* Correct examples in .nimble file
 
 ### 🧪 Testing
 
+- *(PhotoNim)* Now passing
+- *(getClosestHit)* Plane intersection computed as expected
+- *(getWorldAABB)* Now AABB for plane shape should not be a problem no more
 - *(Shape)* Add Plane test suite
 
 ### PhotoNim
