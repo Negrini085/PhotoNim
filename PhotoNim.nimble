@@ -1,5 +1,5 @@
 # Package
-version       = "1.0.0"
+version       = "1.0.1"
 author        = "lorenzoliuzzo & Negrini085"
 description   = "A CPU raytracer written in Nim"
 license       = "GPL-3.0-or-later"
