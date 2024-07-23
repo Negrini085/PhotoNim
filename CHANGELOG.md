@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🚜 Refactor
+
+- *(PhotoNim)* Correct version number
+
 ## [1.0.1] - 2024-07-22
 
 ### 🚀 Features
